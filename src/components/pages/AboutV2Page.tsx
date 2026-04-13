@@ -3,6 +3,7 @@ import { ArrowRight, Layers, Mic, Zap, SlidersHorizontal, Euro, Cpu, Clock, Pale
 import { Button } from '@/components/ui/DesignSystem';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { BarWaveform } from './BarWaveform';
+import { Logo } from '@/components/ui/Logo';
 
 interface AboutV2PageProps {
     user: any;
@@ -774,32 +775,32 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                 </div>
             </section>
 
-            {/* 7. MANIFESTO — light bg, blurry image, dark text */}
-            <section className="relative overflow-hidden bg-zinc-50 dark:bg-zinc-100 px-5 sm:px-8 lg:px-12 py-24 sm:py-32">
-                {/* Blurry background image */}
-                <div className="absolute inset-0 overflow-hidden">
-                    <img
-                        src="/home/v2/hero-new-5.png"
-                        className="absolute inset-0 w-full h-full object-cover scale-110"
-                        style={{ filter: 'blur(48px)', opacity: 0.18 }}
-                        aria-hidden
-                    />
-                </div>
-                <div className="relative z-10 max-w-6xl mx-auto flex flex-col gap-8">
-                    <h2 className="font-kumbh font-bold tracking-tighter text-zinc-900 lowercase leading-[0.88] text-4xl sm:text-5xl lg:text-6xl">
-                        {de ? (
-                            <>ki beherrscht optik, physik und komposition — auf einem level, das bisher elite-studios vorbehalten war. <span className="text-orange-500">diese macht liegt nun in deinen händen. übertreffe den professionellen standard. alles was du brauchst, liegt direkt in deinen fingerspitzen.</span></>
-                        ) : (
-                            <>ai masters looks, physics, and composition — at a level once reserved for elite studios. <span className="text-orange-500">this power is now yours. surpass the professional standard. everything you need is at your fingertips.</span></>
-                        )}
-                    </h2>
-                    <div>
-                        <Button variant="primary" size="l" onClick={onGetStarted} icon={<ArrowRight className="w-4 h-4" />} iconPosition="right">
-                            {de ? 'Kostenlos starten' : 'Get started free'}
-                        </Button>
+            {/* 7. MANIFESTO */}
+            <div className="relative w-full overflow-hidden bg-white dark:bg-zinc-950 px-5 sm:px-8 py-24 sm:py-32">
+                <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-orange-500/40 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 -left-16 w-72 h-72 bg-orange-400/30 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 -right-16 w-72 h-72 bg-amber-500/30 rounded-full blur-[100px] pointer-events-none" />
+                <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center text-center gap-8">
+                    <div className="flex flex-col gap-5 font-kumbh font-bold tracking-tighter lowercase leading-tight text-4xl sm:text-5xl lg:text-6xl">
+                        <p className="text-zinc-900 dark:text-white">
+                            {de
+                                ? 'ki beherrscht optik, physik und komposition auf einem level, das bisher elite-studios vorbehalten war.'
+                                : 'ai masters looks, physics, and composition at a level once reserved for elite studios.'}
+                        </p>
+                        <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+                            {de ? 'diese macht liegt nun in deinen händen.' : 'this power is now yours.'}
+                        </p>
+                        <p className="text-zinc-900 dark:text-white">
+                            {de
+                                ? <>übertreffe den professionellen standard. alles was du brauchst, liegt direkt in deinen fingerspitzen. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" /></>
+                                : <>surpass the professional standard. everything you need is at your fingertips. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" /></>}
+                        </p>
                     </div>
+                    <Button variant="primary" size="l" onClick={onGetStarted} icon={<ArrowRight className="w-4 h-4" />} iconPosition="right">
+                        {de ? 'Kostenlos starten' : 'Get started free'}
+                    </Button>
                 </div>
-            </section>
+            </div>
 
             {/* CTA BANNER */}
             <div className="relative w-full overflow-hidden bg-white dark:bg-zinc-950">
