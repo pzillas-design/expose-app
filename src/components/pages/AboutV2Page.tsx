@@ -654,7 +654,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
             <div className="relative z-10 px-5 sm:px-8 lg:px-12" style={{ height: '33.33%', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 max-w-6xl w-full mx-auto">
                     <div className="flex flex-col gap-2">
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xs">
+                        <p className="text-base text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xs">
                             {de
                                 ? 'exposé verwandelt jeden Raum in professionelle Fotos. Mit KI, in Sekunden.'
                                 : 'exposé turns any space into professional listing photos. With AI, in seconds.'}
@@ -665,7 +665,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                                 de ? '5 € Startguthaben' : '€5 starter credits',
                                 de ? '4K Auflösung' : '4K resolution',
                             ].map((item, i) => (
-                                <li key={i} className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-300">
+                                <li key={i} className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300">
                                     <span className="w-1 h-1 rounded-full bg-orange-500 shrink-0" />
                                     {item}
                                 </li>
