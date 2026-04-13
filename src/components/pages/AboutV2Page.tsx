@@ -399,11 +399,11 @@ const SlotChip: React.FC<{ options: string[]; tick: number; delayMs: number }> =
     const widest = options.reduce((a, b) => b.length > a.length ? b : a, '');
 
     return (
-        <div className="flex items-center gap-1.5 bg-zinc-900/80 border border-white/10 rounded-xl px-3.5 py-2.5">
-            <ChevronRight className="w-3 h-3 text-orange-400 shrink-0" />
+        <div className="flex items-center gap-1.5 bg-zinc-900/80 border border-white/10 rounded-xl px-4 py-3 lg:px-5 lg:py-3.5">
+            <ChevronRight className="w-3 h-3 lg:w-4 lg:h-4 text-orange-400 shrink-0" />
             <div className="relative overflow-hidden">
-                <span className="text-xs text-white font-medium whitespace-nowrap invisible select-none block px-0.5" aria-hidden>{widest}</span>
-                <span className="text-xs text-white font-medium whitespace-nowrap absolute inset-0 flex items-center justify-center"
+                <span className="text-xs lg:text-sm text-white font-medium whitespace-nowrap invisible select-none block px-0.5" aria-hidden>{widest}</span>
+                <span className="text-xs lg:text-sm text-white font-medium whitespace-nowrap absolute inset-0 flex items-center justify-center"
                       style={{ transform: `translateY(${ty})`, opacity: op, transition: 'transform 0.18s ease, opacity 0.18s ease' }}>
                     {label}
                 </span>
@@ -426,9 +426,9 @@ const AskChip: React.FC<{ isActive: boolean; de: boolean }> = ({ isActive, de })
     }, [isActive]); // eslint-disable-line
 
     return (
-        <div className="flex items-center gap-2.5 bg-zinc-900/80 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-2.5 whitespace-nowrap">
-            <Mic className="w-3.5 h-3.5 text-white/45 shrink-0" />
-            <span className="text-xs text-white/65">
+        <div className="flex items-center gap-2.5 bg-zinc-900/80 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 lg:px-5 lg:py-3.5 whitespace-nowrap">
+            <Mic className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-white/45 shrink-0" />
+            <span className="text-xs lg:text-sm text-white/65">
                 {words.slice(0, count).join(' ')}
                 {count < words.length && <span className="inline-block w-px h-3 bg-white/40 ml-0.5 animate-pulse align-middle" />}
             </span>
@@ -531,7 +531,14 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
-            <style>{`@media (min-width: 640px) { .verb-slide { top: 12% !important; height: 62% !important; } }`}</style>
+            <style>{`
+                @media (min-width: 640px) {
+                    .verb-slide { top: 12% !important; height: 66% !important; }
+                    .verb-cta  { position: absolute !important; top: 78% !important; height: 22% !important; left: 0; right: 0; }
+                    .verb-typo { top: 12% !important; height: 66% !important; }
+                    .verb-wave { top: 12% !important; bottom: 22% !important; }
+                }
+            `}</style>
             {/* Image slides — flush with page grid (px-5 sm:px-8 lg:px-12) */}
             {VERB_SCENES.map((s, i) => {
                 const isActive = active === i;
@@ -602,7 +609,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
             </svg>
 
             {/* Waveform overlay (scene 1) */}
-            <div className="absolute inset-0 pointer-events-none"
+            <div className="verb-wave absolute inset-0 pointer-events-none"
                 style={{ zIndex: 5, opacity: active === 1 ? 1 : 0, transition: 'opacity 0.6s ease' }}>
                 <BarWaveform isActive={active === 1} />
             </div>
@@ -613,9 +620,9 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
             {/* 2nd sixth — blank */}
             <div style={{ height: '16.67%', flexShrink: 0 }} />
             {/* 3rd sixth — verb typography */}
-            <div className="relative z-10 select-none" style={{ height: '16.67%', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '0 3%' }}>
+            <div className="verb-typo relative z-10 select-none" style={{ height: '16.67%', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '0 3%' }}>
                 <div className="relative flex items-baseline justify-center"
-                    style={{ fontSize: 'clamp(1.6rem, 6.5vw, 10rem)', lineHeight: 1, gap: '0.22em' }}>
+                    style={{ fontSize: 'clamp(2.5rem, 9vw, 9rem)', lineHeight: 1, gap: '0.22em' }}>
                     <div className="relative">
                         <span className="font-kumbh font-bold tracking-tighter lowercase whitespace-nowrap invisible" aria-hidden>
                             {VERB_SCENES[active].verb}
@@ -637,7 +644,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                 </div>
 
                 {/* Chips — hidden on mobile */}
-                <div className="hidden sm:flex relative h-10 items-center justify-center" style={{ minWidth: 260 }}>
+                <div className="hidden sm:flex relative h-12 lg:h-14 items-center justify-center mt-2 lg:mt-4" style={{ minWidth: 260 }}>
                     {chips.map((chip, i) => (
                         <div key={i} className="absolute inset-0 flex items-center justify-center pointer-events-none"
                             style={{ opacity: active === i ? 1 : 0, transition: 'opacity 0.4s ease' }}>
@@ -651,23 +658,23 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
             <div style={{ height: '16.67%', flexShrink: 0 }} />
 
             {/* 5th+6th — CTA, aligned with image edges */}
-            <div className="relative z-10 px-5 sm:px-8 lg:px-12" style={{ height: '33.33%', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="verb-cta relative z-10 px-5 sm:px-8 lg:px-12" style={{ height: '33.33%', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 max-w-6xl w-full mx-auto">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-4">
                         <p className="text-base text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xs">
                             {de
                                 ? 'exposé verwandelt jeden Raum in professionelle Fotos. Mit KI, in Sekunden.'
                                 : 'exposé turns any space into professional listing photos. With AI, in seconds.'}
                         </p>
-                        <ul className="flex flex-wrap gap-x-4 gap-y-1">
+                        <ul className="flex flex-wrap gap-x-5 gap-y-1">
                             {[
-                                de ? 'Kein Abo' : 'No subscription',
-                                de ? '5 € Startguthaben' : '€5 starter credits',
-                                de ? '4K Auflösung' : '4K resolution',
+                                { label: de ? 'Kein Abo' : 'No subscription', dot: false },
+                                { label: de ? '5 € Startguthaben' : '€5 starter credits', dot: true },
+                                { label: de ? '4K Auflösung' : '4K resolution', dot: true },
                             ].map((item, i) => (
                                 <li key={i} className="flex items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-300">
-                                    <span className="w-1 h-1 rounded-full bg-orange-500 shrink-0" />
-                                    {item}
+                                    {item.dot && <span className="w-1 h-1 rounded-full bg-zinc-400 dark:bg-zinc-500 shrink-0" />}
+                                    {item.label}
                                 </li>
                             ))}
                         </ul>
