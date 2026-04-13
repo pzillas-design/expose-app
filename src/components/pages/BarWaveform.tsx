@@ -75,7 +75,7 @@ export const BarWaveform: React.FC<BarWaveformProps> = ({ isActive }) => {
 
                 const x = startX + i * gap;
                 ctx.fillStyle = active
-                    ? `rgba(249, 115, 22, ${0.75 + 0.25 * (barH / (H * 0.44))})`
+                    ? `rgba(249, 115, 22, 1)`
                     : 'rgba(249, 115, 22, 0.28)';
 
                 // Draw bar symmetrically above and below center

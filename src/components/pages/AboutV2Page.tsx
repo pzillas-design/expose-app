@@ -621,8 +621,8 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                 </g>
             </svg>
 
-            {/* Waveform overlay (scene 1) */}
-            <div className="verb-wave absolute inset-0 pointer-events-none"
+            {/* Waveform overlay (scene 1) — hidden on mobile */}
+            <div className="verb-wave hidden sm:block absolute inset-0 pointer-events-none"
                 style={{ zIndex: 5, opacity: active === 1 ? 1 : 0, transition: 'opacity 0.6s ease' }}>
                 <BarWaveform isActive={active === 1} />
             </div>
