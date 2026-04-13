@@ -185,7 +185,7 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
             `}</style>
 
             <div ref={ref} className="px-5 sm:px-8 lg:px-12 mb-10 sm:mb-14">
-                <div className="flex flex-col leading-[0.88]">
+                <div className="max-w-6xl mx-auto flex flex-col leading-[0.88]">
                     {[LINE1, LINE2].map((line, i) => (
                         <span key={i}
                             className="font-kumbh font-bold tracking-tighter text-zinc-900 dark:text-white lowercase block"
@@ -660,7 +660,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
 
             {/* 5th+6th — CTA, aligned with image edges */}
             <div className="relative z-10 px-5 sm:px-8 lg:px-12" style={{ height: '33.33%', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 max-w-6xl w-full">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 max-w-6xl w-full mx-auto">
                     <div className="flex flex-col gap-2">
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xs">
                             {de
@@ -780,8 +780,8 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                 <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[500px] h-[260px] bg-orange-500/20 dark:bg-orange-500/30 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute top-1/2 -translate-y-1/2 -left-20 w-64 h-64 bg-red-500/15 dark:bg-red-500/20 rounded-full blur-[90px] pointer-events-none" />
                 <div className="absolute top-1/2 -translate-y-1/2 -right-20 w-64 h-64 bg-orange-400/15 dark:bg-orange-400/20 rounded-full blur-[90px] pointer-events-none" />
-                <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center text-center gap-16">
-                    <div className="flex flex-col gap-5 font-kumbh font-semibold tracking-tighter lowercase" style={{ fontSize: 'clamp(2rem, 5.5vw, 6rem)', lineHeight: 1.05 }}>
+                <div className="relative z-10 max-w-6xl mx-auto flex flex-col items-center text-center gap-16">
+                    <div className="flex flex-col gap-5 font-kumbh font-semibold tracking-tighter lowercase" style={{ fontSize: 'clamp(1.8rem, 4.5vw, 5rem)', lineHeight: 1.05 }}>
                         {de ? (<>
                             <p className="text-zinc-900 dark:text-white">
                                 die kraft der form, farbe und ästhetik, einst ein privileg, gehört sie nun uns allen.
