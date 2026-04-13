@@ -362,9 +362,6 @@ const PremiumVideoCard: React.FC<{
     );
 };
 
-// Custom directional cursors for hero navigation
-const CURSOR_PREV = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Ccircle cx='22' cy='22' r='20' fill='rgba(0%2C0%2C0%2C0.42)'/%3E%3Cpath d='M25 14 L16 22 L25 30' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") 22 22, w-resize`;
-const CURSOR_NEXT = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Ccircle cx='22' cy='22' r='20' fill='rgba(0%2C0%2C0%2C0.42)'/%3E%3Cpath d='M19 14 L28 22 L19 30' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") 22 22, e-resize`;
 
 // ── VerbSection — hero ────────────────────────────────────
 const VERB_SCENES = [
@@ -545,7 +542,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                     <div key={i}
                         className="absolute left-5 right-5 sm:left-8 sm:right-8 lg:left-12 lg:right-12 rounded-2xl overflow-hidden"
                         style={{
-                            top: '16.67%', height: '50%', zIndex: 0,
+                            top: '8%', height: '72%', zIndex: 0,
                             opacity: isActive ? 1 : 0,
                             transform: `translateX(${xOffset}px) scale(${scale})`,
                             transition: isActive
@@ -609,12 +606,6 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                 <BarWaveform isActive={active === 1} />
             </div>
 
-            {/* Cursor click zones — desktop only, left=prev right=next */}
-            <div className="absolute hidden sm:grid grid-cols-2"
-                style={{ top: '16.67%', height: '50%', left: 0, right: 0, zIndex: 8 }}>
-                <div style={{ cursor: CURSOR_PREV }} onClick={goToPrev} />
-                <div style={{ cursor: CURSOR_NEXT }} onClick={goToNext} />
-            </div>
 
             {/* 1st sixth — navbar spacer */}
             <div style={{ height: '16.67%', flexShrink: 0 }} />
