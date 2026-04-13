@@ -121,14 +121,23 @@ const CardWall: React.FC<{ de: boolean }> = ({ de }) => {
                             {/* Hover inner glow */}
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none z-10 rounded-3xl" />
 
-                            {/* Image bg for img cards */}
+                            {/* Image bg for img cards — text overlaid */}
                             {card.type === 'usp' && card.img && (
-                                <div className="w-full aspect-[4/3] overflow-hidden">
+                                <div className="relative w-full aspect-[4/3] overflow-hidden">
                                     <img src={card.img} alt="" className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                    <div className="absolute bottom-0 left-0 right-0 p-7 sm:p-8 flex flex-col gap-2">
+                                        <h3 className="text-3xl sm:text-4xl font-kumbh font-bold tracking-tight text-white leading-tight">
+                                            {de ? card.de : card.en}
+                                        </h3>
+                                        <p className="text-sm text-white/60 leading-relaxed">
+                                            {de ? card.sub_de : card.sub_en}
+                                        </p>
+                                    </div>
                                 </div>
                             )}
 
-                            <div className={`flex flex-col gap-4 relative z-10 p-7 sm:p-8 ${card.type === 'usp' && card.img ? 'pt-5' : ''}`}>
+                            <div className={`flex flex-col gap-4 relative z-10 p-7 sm:p-8 ${card.type === 'usp' && card.img ? 'hidden' : ''}`}>
                                 {/* Icon */}
                                 {card.type === 'usp' && card.icon && !card.img && (
                                     <div className="mb-2">{card.icon}</div>
