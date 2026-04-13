@@ -1,10 +1,10 @@
 import React from 'react';
 
 const TIERS = [
-    { res: '0.5 K', price: '0.05 €', label: 'Quick draft' },
-    { res: '1 K',   price: '0.10 €', label: 'Standard' },
-    { res: '2 K',   price: '0.20 €', label: 'High quality' },
-    { res: '4 K',   price: '0.40 €', label: 'Full resolution' },
+    { res: '0.5 K', price: '0.05 €', label: 'up to 512 × 512 px' },
+    { res: '1 K',   price: '0.10 €', label: 'up to 1024 × 1024 px' },
+    { res: '2 K',   price: '0.20 €', label: 'up to 2048 × 2048 px' },
+    { res: '4 K',   price: '0.40 €', label: 'up to 4096 × 4096 px' },
 ];
 
 export const PricingSection: React.FC = () => (
@@ -30,13 +30,9 @@ export const PricingSection: React.FC = () => (
                             <span className="font-kumbh font-semibold text-zinc-900 dark:text-white w-10">
                                 {tier.res}
                             </span>
-                            <span className="text-sm text-zinc-400 dark:text-zinc-500">
-                                {tier.label}
-                            </span>
+                            <span className="text-sm text-zinc-400 dark:text-zinc-500">{tier.label}</span>
                         </div>
-                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">
-                            {tier.price}
-                        </span>
+                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100 tabular-nums">{tier.price}</span>
                     </div>
                 ))}
             </div>

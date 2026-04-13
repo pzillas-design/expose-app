@@ -9,8 +9,7 @@ const footerLinks = (t: TranslationFunction) => [
     { label: t('footer_photos') || 'Gallery', to: '/' },
     { label: t('footer_about') || 'About', to: '/about' },
     { label: 'Blog', to: '/blog' },
-    { label: 'Instagram', to: 'https://www.instagram.com/expose.ae', external: true },
-    { label: 'Product Hunt', to: 'https://www.producthunt.com/posts/expose-ae', external: true },
+    { label: 'Instagram', to: 'https://www.instagram.com/expos.ae/', external: true },
     { label: t('footer_contact') || 'Contact', to: '/contact' },
     { label: t('footer_legal') || 'Legal', to: '/impressum' }
 ];

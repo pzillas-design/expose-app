@@ -35,19 +35,19 @@ const CARDS: CardDef[] = [
     },
     {
         type: 'usp', accent: 'glass',
-        img: '/home/v2/hero-new-4.png',
+        img: '/home/v2/voice-3.png',
         en: 'Voice control.', de: 'Voice Control.',
         sub_en: 'Describe what you see. The AI acts.', sub_de: 'Beschreibe was du siehst. Die KI handelt.',
     },
     {
         type: 'usp', accent: 'dark',
-        icon: <SlidersHorizontal className="w-6 h-6 text-zinc-400" />,
+        icon: <SlidersHorizontal className="w-8 h-8 text-zinc-400" strokeWidth={1.5} />,
         en: 'Set it once.', de: 'Einmal aufsetzen.',
         sub_en: 'Presets keep every output on-brand.', sub_de: 'Presets halten jedes Bild on-brand.',
     },
     {
         type: 'usp', accent: 'orange',
-        icon: <Euro className="w-6 h-6 text-white/80" />,
+        icon: <Euro className="w-8 h-8 text-white/80" strokeWidth={1.5} />,
         en: 'Pay per image.', de: 'Pro Bild bezahlen.',
         sub_en: 'No subscription. From 0.05 €.', sub_de: 'Kein Abo. Ab 0,05 €.',
     },
@@ -65,21 +65,9 @@ const CARDS: CardDef[] = [
     },
     {
         type: 'usp', accent: 'glass',
-        icon: <Cpu className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />,
-        en: "World's leading model.", de: 'Führendes Modell.',
-        sub_en: 'Powered by AI.', sub_de: 'Angetrieben von neuester KI.',
-    },
-    {
-        type: 'usp', accent: 'dark',
-        icon: <Clock className="w-6 h-6 text-zinc-400" />,
-        en: 'Unlimited history.', de: 'Unendlicher Verlauf.',
-        sub_en: 'Never lose a good prompt again.', sub_de: 'Verliere nie wieder einen guten Prompt.',
-    },
-    {
-        type: 'usp', accent: 'orange',
-        icon: <Zap className="w-6 h-6 text-white/80" />,
-        en: 'In seconds.', de: 'In Sekunden.',
-        sub_en: 'High-speed generation.', sub_de: 'High-Speed Generierung.',
+        icon: <Cpu className="w-8 h-8 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />,
+        en: 'Nano Banana 2.', de: 'Nano Banana 2.',
+        sub_en: 'Powered by the latest generation model.', sub_de: 'Angetrieben vom neuesten Modell.',
     },
     {
         type: 'usp', accent: 'glass',
@@ -89,7 +77,7 @@ const CARDS: CardDef[] = [
     },
     {
         type: 'usp', accent: 'dark',
-        icon: <Palette className="w-6 h-6 text-zinc-400" />,
+        icon: <Palette className="w-8 h-8 text-zinc-400" strokeWidth={1.5} />,
         en: 'Brand consistency.', de: 'Markentreue.',
         sub_en: 'Export assets that fit your style.', sub_de: 'Exportiere Bilder, die zu dir passen.',
     },
@@ -135,7 +123,7 @@ const MarqueeCard: React.FC<{ card: CardDef; de: boolean; h: number; w?: number 
                     <img src={card.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-90" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-                        <h3 className="text-base font-kumbh font-bold tracking-tight text-white leading-tight">
+                        <h3 className="text-xl font-kumbh font-bold tracking-tight text-white leading-tight">
                             {de ? card.de : card.en}
                         </h3>
                     </div>
@@ -144,7 +132,7 @@ const MarqueeCard: React.FC<{ card: CardDef; de: boolean; h: number; w?: number 
                 <div className="flex flex-col p-4 h-full">
                     {card.type === 'usp' && card.icon && <div className="mb-auto">{card.icon}</div>}
                     <div className="mt-auto">
-                        <h3 className={`text-base font-kumbh font-bold tracking-tight leading-tight ${isOrange ? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
+                        <h3 className={`text-lg font-kumbh font-bold tracking-tight leading-tight ${isOrange ? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
                             {de ? card.de : card.en}
                         </h3>
                         {card.type === 'usp' && (de ? card.sub_de : card.sub_en) && (
@@ -172,8 +160,8 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
         return () => clearTimeout(t);
     }, [visible]);
 
-    const ROW1 = [CARDS[1], CARDS[0], CARDS[3], CARDS[6], CARDS[8], CARDS[5], CARDS[11]];
-    const ROW2 = [CARDS[2], CARDS[10], CARDS[7], CARDS[3], CARDS[6], CARDS[11], CARDS[0]];
+    const ROW1 = [CARDS[1], CARDS[0], CARDS[3], CARDS[6], CARDS[4], CARDS[5], CARDS[9]];
+    const ROW2 = [CARDS[2], CARDS[8], CARDS[7], CARDS[3], CARDS[6], CARDS[9], CARDS[0]];
 
     return (
         <section className="bg-white dark:bg-zinc-950 py-24 sm:py-32 overflow-hidden">
@@ -263,22 +251,9 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
             <p className="font-kumbh font-bold tracking-tighter text-zinc-900 dark:text-white lowercase leading-[0.88] text-4xl sm:text-5xl">
                 {de ? 'das sagen andere.' : 'what people say.'}
             </p>
-            {/* Stats cards */}
-            <div className="grid grid-cols-3 gap-4">
-                {[
-                    { value: '16,430', label: de ? 'Bilder generiert' : 'images generated' },
-                    { value: '1,040',  label: de ? 'Kreative' : 'creatives' },
-                    { value: '4 K',    label: de ? 'Max. Auflösung' : 'max resolution' },
-                ].map((s, i) => (
-                    <div key={i} className="flex flex-col gap-1 p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900">
-                        <span className="text-3xl sm:text-4xl font-kumbh font-bold tracking-tight text-zinc-900 dark:text-white">{s.value}</span>
-                        <span className="text-sm text-zinc-400 dark:text-zinc-500">{s.label}</span>
-                    </div>
-                ))}
-            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {TESTIMONIALS.map((item, i) => (
-                    <div key={i} className="flex flex-col gap-5 p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900">
+                    <div key={i} className="flex flex-col gap-5 p-8 sm:p-10 rounded-2xl bg-zinc-50 dark:bg-zinc-900">
                         <p className="text-base sm:text-lg font-kumbh font-medium text-zinc-900 dark:text-white leading-snug">
                             "{de ? item.de : item.en}"
                         </p>
@@ -289,6 +264,19 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
                                 <span className="text-xs text-zinc-400 dark:text-zinc-500">{item.role}</span>
                             </div>
                         </div>
+                    </div>
+                ))}
+            </div>
+            {/* Stats — plain, no card styling */}
+            <div className="flex flex-row divide-x divide-zinc-200 dark:divide-zinc-800 mt-2">
+                {[
+                    { value: '16,430', label: de ? 'Bilder generiert' : 'images generated' },
+                    { value: '1,040',  label: de ? 'Kreative' : 'creatives' },
+                    { value: '4 K',    label: de ? 'Max. Auflösung' : 'max resolution' },
+                ].map((s, i) => (
+                    <div key={i} className="flex flex-col gap-0.5 px-8 first:pl-0">
+                        <span className="text-3xl sm:text-4xl font-kumbh font-bold tracking-tight text-zinc-900 dark:text-white">{s.value}</span>
+                        <span className="text-sm text-zinc-400 dark:text-zinc-500">{s.label}</span>
                     </div>
                 ))}
             </div>
@@ -757,10 +745,10 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                     </div>
                     <div className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800/60">
                         {([
-                            { res: '0.5 K', price: '0.05 €', label: de ? 'Schneller Entwurf' : 'Quick draft' },
-                            { res: '1 K',   price: '0.10 €', label: de ? 'Standard'          : 'Standard'    },
-                            { res: '2 K',   price: '0.20 €', label: de ? 'Hohe Qualität'     : 'High quality' },
-                            { res: '4 K',   price: '0.40 €', label: de ? 'Volle Auflösung'   : 'Full resolution' },
+                            { res: '0.5 K', price: '0.05 €', label: 'up to 512 × 512 px'   },
+                            { res: '1 K',   price: '0.10 €', label: 'up to 1024 × 1024 px' },
+                            { res: '2 K',   price: '0.20 €', label: 'up to 2048 × 2048 px' },
+                            { res: '4 K',   price: '0.40 €', label: 'up to 4096 × 4096 px' },
                         ] as { res: string; price: string; label: string }[]).map((tier, i) => (
                             <div key={i} className="flex items-center justify-between py-4">
                                 <div className="flex items-center gap-5">
