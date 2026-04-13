@@ -168,7 +168,7 @@ const CardWall: React.FC<{ de: boolean }> = ({ de }) => {
     const { ref, visible } = useCardWallReveal();
     return (
         <section className="py-20 sm:py-28 px-5 sm:px-10 lg:px-16 bg-white dark:bg-zinc-950 overflow-hidden">
-            <div className="w-full max-w-6xl mx-auto">
+            <div className="w-full">
                 <p className="text-sm text-zinc-400 dark:text-zinc-500 mb-10 sm:mb-14">why exposé</p>
                 <div
                     ref={ref}
