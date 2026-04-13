@@ -34,8 +34,8 @@ export const VoiceUploadModal: React.FC<VoiceUploadModalProps> = ({ isOpen, onCl
                     onDrop={(e) => {
                         e.preventDefault();
                         setIsDragOver(false);
-                        const files = e.dataTransfer
-                            ? Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
+                        const files: File[] = e.dataTransfer
+                            ? Array.from(e.dataTransfer.files as FileList).filter((f: File) => f.type.startsWith('image/'))
                             : [];
                         if (files.length > 0) {
                             const dt = new DataTransfer();

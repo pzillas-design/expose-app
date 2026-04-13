@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { decodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
+import { decodeBase64, encodeBase64 } from "https://deno.land/std@0.207.0/encoding/base64.ts";
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
 import { prepareSourceImage, extractBase64FromDataUrl, urlToBase64 } from './utils/imageProcessing.ts';
 import { prepareParts, generateImage as geminiGenerateImage, extractGeneratedImage } from './services/gemini.ts';
@@ -80,7 +80,7 @@ const saveGeminiResult = async (
         requestType, qualityMode, finalModelName, prompt, targetTitle,
         userId, userEmail, parentId, sourceWidth, sourceHeight,
         sourceRealWidth, sourceRealHeight, sourceBaseName, sourceVersion, sourceId,
-        annotations, apiRequestPayload, generationStartTime,
+        sourceFolderId, annotations, apiRequestPayload, generationStartTime,
         activeTemplateId, variableValues
     } = webhookData;
 
@@ -157,6 +157,7 @@ const saveGeminiResult = async (
         version: currentVersion,
         prompt: prompt,
         parent_id: (requestType === 'edit' || parentId) ? (parentId || sourceId || null) : null,
+        folder_id: sourceFolderId ?? sourceId ?? jobId,
         annotations: annotations || '[]',
         generation_params: {
             quality: qualityMode,
@@ -230,7 +231,7 @@ Deno.serve(async (req) => {
         // New Structured Payload extraction
         const {
             type: requestType,
-            prompt,
+            prompt: rawPrompt,
             variables,
             originalImage: payloadOriginalImage,
             annotationImage: payloadAnnotationImage,
@@ -247,8 +248,17 @@ Deno.serve(async (req) => {
             // Legacy/Fallback fields
             sourceImage,
             groupParentId,
-            attachments: legacyAttachments
+            sourceFolderId,     // folder_id of source image — propagated to generated result
+            attachments: legacyAttachments,
+            sourceStoragePath,  // internal storage path — preferred over signed URL fetch
+            isRepeat,           // true when user presses "More" / repeat generation
         } = payload;
+
+        // For repeat/"More" generations: append a random variation ID so Gemini's implicit
+        // input caching doesn't anchor the model to the same output. Without this, identical
+        // prompt + source image hits the cache and produces very similar results every time.
+        const varId = Math.random().toString(36).slice(2, 7).toUpperCase();
+        const prompt = isRepeat ? `${rawPrompt} [v:${varId}]` : rawPrompt;
 
         // Early content validation — prevents credit deduction for empty requests
         if (!prompt?.trim() && !sourceImage?.src && !payloadOriginalImage && !payloadReferences?.length) {
@@ -258,12 +268,7 @@ Deno.serve(async (req) => {
         logInfo('Generation Start', `User: ${user.id}, Quality: ${qualityMode}, Job: ${newId}, Board: ${board_id}`);
         console.log(`[DEBUG] Request Type: ${requestType}`);
         console.log(`[DEBUG] Prompt: ${prompt?.substring(0, 30)}...`);
-        console.log(`[DEBUG] Source Image present: ${!!sourceImage}`);
-        if (sourceImage) {
-            console.log(`[DEBUG] Source Image ID: ${sourceImage.id}`);
-            console.log(`[DEBUG] Source Image baseName: ${sourceImage.baseName}`);
-            console.log(`[DEBUG] Source Image full:`, JSON.stringify(sourceImage, null, 2));
-        }
+        console.log(`[DEBUG] Source Image present: ${!!sourceImage}, refs: ${payloadReferences?.length ?? 0}`);
 
         // Check credits and profile
         const cost = COSTS[qualityMode] || 0;
@@ -303,15 +308,19 @@ Deno.serve(async (req) => {
         // Response is returned immediately below so the client is never left waiting.
         // EdgeRuntime.waitUntil keeps the function alive up to 5 minutes after response.
         EdgeRuntime.waitUntil((async () => {
+            const taskStartMs = Date.now();
             let bgStage = 'init';
+            let concurrentCount = 0;
             let apiRequestPayload: any = {}; // hoisted — updateStage can reference it from first call
-            // Fire-and-forget stage tracker — writes current_stage to request_payload so
-            // the admin/client can see where a killed background task got stuck.
+            // Fire-and-forget stage tracker — writes current_stage + elapsed to request_payload.
             const updateStage = (stage: string, extra?: Record<string, any>) => {
                 bgStage = stage;
+                const elapsedMs = Date.now() - taskStartMs;
+                logInfo('Stage', `→ ${stage} (elapsed: ${elapsedMs}ms, job: ${newId})`);
                 const payload = { ...apiRequestPayload };
                 payload.current_stage = stage;
                 payload.stage_updated_at = new Date().toISOString();
+                payload.stage_elapsed_ms = elapsedMs;
                 if (extra) Object.assign(payload, extra);
                 supabaseAdmin.from('generation_jobs')
                     .update({ request_payload: payload })
@@ -319,12 +328,56 @@ Deno.serve(async (req) => {
                     .then(() => {});
             };
             try {
+                // Mark as init immediately so 'unknown' stage never appears in failed jobs
+                updateStage('init');
+
+                // Count concurrent jobs early for diagnostics + admission control
+                const { count: _cc } = await supabaseAdmin
+                    .from('generation_jobs')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('status', 'processing');
+                concurrentCount = _cc || 0;
+                logInfo('BG Task Start', `job=${newId} quality=${qualityMode} user=${user.id} concurrent=${concurrentCount}`);
+
+                // Admission control: max 5 concurrent nb2-4k jobs to prevent overload cascade
+                if (qualityMode === 'nb2-4k') {
+                    const { count: concurrent4k } = await supabaseAdmin
+                        .from('generation_jobs')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('status', 'processing')
+                        .eq('quality_mode', 'nb2-4k');
+                    if ((concurrent4k || 0) > 5) {
+                        throw new Error('Server busy — too many concurrent 4K jobs, please try again in a moment');
+                    }
+                }
+
+                // Persist concurrent_jobs count on the job row for later correlation
+                supabaseAdmin.from('generation_jobs')
+                    .update({ concurrent_jobs: concurrentCount })
+                    .eq('id', newId)
+                    .then(() => {});
+
                 // Prepare source image (base64)
                 updateStage('prepare_source');
                 let finalSourceBase64 = null;
-                const sourceToProcess = payloadOriginalImage || sourceImage?.src;
-                if (sourceToProcess) {
-                    finalSourceBase64 = await prepareSourceImage(sourceToProcess);
+                if (sourceStoragePath) {
+                    // Direct admin storage download with 20s timeout
+                    const STORAGE_TIMEOUT_MS = 20_000;
+                    const { data: storageBlob, error: storageErr } = await Promise.race([
+                        supabaseAdmin.storage.from('user-content').download(sourceStoragePath),
+                        new Promise<never>((_, reject) =>
+                            setTimeout(() => reject(new Error(`Storage download timed out after ${STORAGE_TIMEOUT_MS / 1000}s`)), STORAGE_TIMEOUT_MS)
+                        )
+                    ]);
+                    if (storageErr) throw new Error(`Storage download failed: ${storageErr.message}`);
+                    const arrayBuffer = await storageBlob.arrayBuffer();
+                    finalSourceBase64 = encodeBase64(new Uint8Array(arrayBuffer));
+                } else {
+                    // Fallback: HTTP fetch for images without a storage path
+                    const sourceToProcess = payloadOriginalImage || sourceImage?.src;
+                    if (sourceToProcess) {
+                        finalSourceBase64 = await prepareSourceImage(sourceToProcess);
+                    }
                 }
 
                 const isNb2Mode = qualityMode.startsWith('nb2-');
@@ -428,7 +481,7 @@ Deno.serve(async (req) => {
                     targetTitle,
                     userId: user.id,
                     userEmail: user.email,
-                    parentId: groupParentId || sourceImage?.id || null,
+                    parentId: sourceImage?.id || null,
                     sourceWidth: sourceImage?.width,
                     sourceHeight: sourceImage?.height,
                     sourceRealWidth: sourceImage?.realWidth || sourceImage?.width,
@@ -436,6 +489,7 @@ Deno.serve(async (req) => {
                     sourceBaseName: sourceImage?.baseName || sourceImage?.title,
                     sourceVersion: sourceImage?.version,
                     sourceId: sourceImage?.id || null,
+                    sourceFolderId: sourceFolderId ?? sourceImage?.folderId ?? sourceImage?.id ?? null,
                     annotations: (resolvedReferences.length > 0) ? JSON.stringify(resolvedReferences.map((r: any) => ({
                         id: crypto.randomUUID(),
                         type: 'reference_image',
@@ -481,7 +535,8 @@ Deno.serve(async (req) => {
                         generationConfig,
                         !!finalSourceBase64,
                         hasMask,
-                        hasRefs
+                        hasRefs,
+                        () => updateStage('gemini_retry_503')
                     ),
                     new Promise<never>((_, reject) =>
                         setTimeout(() => reject(new Error(`Gemini timeout after ${GEMINI_TIMEOUT_MS / 1000}s`)), GEMINI_TIMEOUT_MS)
@@ -502,7 +557,17 @@ Deno.serve(async (req) => {
                 }
                 const providerLatencyMs = Date.now() - providerStartTime;
 
-                const generatedImage = extractGeneratedImage(geminiResponse);
+                let generatedImage = extractGeneratedImage(geminiResponse);
+                if (!generatedImage) {
+                    // Auto-retry once on MALFORMED_FUNCTION_CALL — transient Gemini flakiness
+                    const candidate0 = geminiResponse?.candidates?.[0];
+                    if (candidate0?.finishReason === 'MALFORMED_FUNCTION_CALL') {
+                        logInfo('Gemini Retry', 'MALFORMED_FUNCTION_CALL — retrying once...');
+                        updateStage('gemini_retry');
+                        geminiResponse = await callGeminiWithTimeout();
+                        generatedImage = extractGeneratedImage(geminiResponse);
+                    }
+                }
                 if (!generatedImage) {
                     // Extract rejection reason from response for better error messages
                     const candidate = geminiResponse?.candidates?.[0];
@@ -557,7 +622,18 @@ Deno.serve(async (req) => {
 
             } catch (bgErr: any) {
                 const errorMsg = bgErr?.message || (typeof bgErr === 'string' ? bgErr : 'Background task failed');
-                logError('Background Task', errorMsg, { jobId: newId, failureStage: bgStage });
+                const elapsedMs = Date.now() - taskStartMs;
+                logError('Background Task', errorMsg, { jobId: newId, failureStage: bgStage, elapsedMs, qualityMode, concurrentCount });
+
+                // Write structured error to error_logs for debugging
+                supabaseAdmin.from('error_logs').insert({
+                    user_id: user.id,
+                    user_email: user.email,
+                    message: `[${bgStage}] ${errorMsg}`,
+                    context: JSON.stringify({ jobId: newId, stage: bgStage, elapsedMs, qualityMode, concurrentCount }),
+                    source: 'edge-function',
+                    url: newId,
+                }).then(() => {});
 
                 // Refund credits on background failure
                 if (refundData) {
@@ -597,10 +673,14 @@ Deno.serve(async (req) => {
         })());
 
         // Respond immediately — client will poll generation_jobs for completion
+        // Include parent_id so the client can set up parentId on the placeholder image
+        // without waiting for the DB record to be written.
+        const responseParentId = payload?.sourceImage?.id || null;
         return new Response(JSON.stringify({
             success: true,
             jobId: newId,
-            status: 'processing'
+            status: 'processing',
+            parent_id: responseParentId
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200,

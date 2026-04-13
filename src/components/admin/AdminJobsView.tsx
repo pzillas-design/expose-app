@@ -21,6 +21,16 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
     const [loadingMore, setLoadingMore] = useState(false);
     const [search, setSearch] = useState('');
     const [selectedJob, setSelectedJob] = useState<any | null>(null);
+
+    const handleSelectJob = useCallback(async (job: any) => {
+        if (job._type === 'voice') { setSelectedJob(job); return; }
+        setSelectedJob(job);
+        // Lazy-load heavy JSONB fields only when opening detail
+        if (!job.requestPayload && !job.webhookData) {
+            const detail = await adminService.getJobDetail(job.id);
+            if (detail) setSelectedJob(prev => prev?.id === job.id ? { ...prev, ...detail } : prev);
+        }
+    }, []);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const isMobile = useMobile();
@@ -149,7 +159,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         return (
                                                             <tr
                                                                 key={row.id}
-                                                                onClick={() => setSelectedJob(row)}
+                                                                onClick={() => handleSelectJob(row)}
                                                                 className={`cursor-pointer transition-colors ${isSelected ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                                             >
                                                                 <td className="px-5 py-3.5 text-zinc-500 text-xs whitespace-nowrap">
@@ -185,7 +195,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const payload = j.requestPayload || {};
                                                     const hasVars = payload.variables && Object.keys(payload.variables).length > 0;
                                                     const isMultiEdit = (payload.batchSize || 1) > 1 || !!payload.isMultiEdit;
-                                                    const hasAnnotation = payload.hasMask || (!j.requestPayload && j.type === 'Edit');
+                                                    const hasAnnotation = j.hasMask || j.type === 'Edit';
                                                     const isRepeat = !!payload.isRepeat;
 
                                                     // Resolution badge
@@ -200,7 +210,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     return (
                                                     <tr
                                                         key={j.id}
-                                                        onClick={() => setSelectedJob(j)}
+                                                        onClick={() => handleSelectJob(j)}
                                                         className={`cursor-pointer transition-colors ${isSelected ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                                     >
                                                         <td className="px-5 py-3.5 text-zinc-500 text-xs whitespace-nowrap">

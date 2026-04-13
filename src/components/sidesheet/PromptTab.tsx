@@ -122,23 +122,35 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     // Voice-created variables: listen for custom events from the voice assistant
     useEffect(() => {
         const handleSetVariables = (e: Event) => {
-            const { controls } = (e as CustomEvent).detail as { controls: Array<{ label: string; options: string[] }> };
+            const { controls } = (e as CustomEvent).detail as { controls: Array<{ label: string; options: string[]; selected?: string[] }> };
             if (!controls?.length || !selectedImage) return;
 
+            const now = Date.now();
             // Convert to PresetControl format with generated IDs
             const presetControls: PresetControl[] = controls.map((c, ci) => ({
-                id: `voice-${ci}-${Date.now()}`,
+                id: `voice-${ci}-${now}`,
                 label: c.label,
                 options: c.options.map((opt, oi) => ({
-                    id: `voice-opt-${ci}-${oi}-${Date.now()}`,
+                    id: `voice-opt-${ci}-${oi}-${now}`,
                     label: opt,
                     value: opt
                 }))
             }));
 
+            // Build initial selection from the optional `selected` field
+            const initialValues: Record<string, string[]> = {};
+            presetControls.forEach((ctrl, ci) => {
+                const preSelected = controls[ci].selected;
+                if (preSelected?.length) {
+                    const validOptions = new Set(ctrl.options.map(o => o.value));
+                    const valid = preSelected.filter(v => validOptions.has(v));
+                    if (valid.length) initialValues[ctrl.id] = valid;
+                }
+            });
+
             // Create a temporary template object (not persisted to DB)
             const tempTemplate: PromptTemplate = {
-                id: `voice-temp-${Date.now()}`,
+                id: `voice-temp-${now}`,
                 title: 'Voice Variables',
                 prompt: '',
                 tags: [],
@@ -149,9 +161,9 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             };
 
             setActiveTemplate(tempTemplate);
-            setControlValues({});
+            setControlValues(initialValues);
             setHiddenControlIds([]);
-            onUpdateVariables(selectedImage.id, tempTemplate.id, {});
+            onUpdateVariables(selectedImage.id, tempTemplate.id, initialValues);
         };
 
         const handleToggleVariable = (e: Event) => {

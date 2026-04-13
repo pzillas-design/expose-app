@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 
 import { HeroHeadline } from './HeroHeadline';
 
@@ -56,7 +56,7 @@ const FloatingImage = memo(({ src, depth, x, y, size }: FloatingImageProps) => {
                     className="w-full h-full transition-opacity duration-300"
                     alt="Canvas Element"
                     loading="eager"
-                    decoding="sync"
+                    decoding="async"
                 />
                 <div className={`absolute -inset-4 bg-orange-500/10 rounded-full transition-opacity duration-500 pointer-events-none ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
             </div>
@@ -82,11 +82,14 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
     // Clean cut: fully visible 0-0.14, fades 0.14-0.20, gone 0.20+
     const heroOpacity = progress <= 0.14 ? 1 : progress >= 0.20 ? 0 : 1 - (progress - 0.14) / 0.06;
 
-    // Direct zoom from progress — CSS transition on the container handles smoothing
+    // Direct zoom from progress — set directly on ref to avoid documentElement cascade recalc
     const depth = localProgress * 2200;
+    const zoomContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        document.documentElement.style.setProperty('--hero-zoom-z', `${depth}px`);
+        if (zoomContainerRef.current) {
+            zoomContainerRef.current.style.transform = `translate3d(0, 0, ${depth}px)`;
+        }
     }, [depth]);
 
     return (
@@ -99,8 +102,9 @@ export const HeroStage: React.FC<HeroStageProps> = memo(({ progress, scrollActiv
         >
             <div className="absolute inset-0 overflow-hidden" style={{ perspective: '2000px' }}>
                 <div
+                    ref={zoomContainerRef}
                     className="relative w-full h-full preserve-3d"
-                    style={{ transform: 'translate3d(0, 0, var(--hero-zoom-z, 0px))', transition: 'transform 0.12s linear' }}
+                    style={{ transform: 'translate3d(0, 0, 0px)', transition: 'transform 0.12s linear' }}
                 >
                     {/* Floating Images */}
                     {FLOATING_IMAGES.map((img, i) => (

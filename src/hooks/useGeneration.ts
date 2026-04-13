@@ -4,6 +4,7 @@ import { suppressCreditToast } from '@/services/creditToastGuard';
 import { imageService } from '@/services/imageService';
 import { generateMaskFromAnnotations } from '@/utils/maskGenerator';
 import { generateAnnotationImage } from '@/utils/annotationUtils';
+import { compressImage } from '@/utils/imageUtils';
 import { generateId } from '@/utils/ids';
 import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, StructuredReference } from '@/types';
 import { sendGenerationCompleteNotification } from '@/utils/notifications';
@@ -28,6 +29,8 @@ interface UseGenerationProps {
     onImageSaved?: () => void;
     /** Called when a generation completes successfully — used to mark image as unseen in feed */
     onGenerationComplete?: (id: string) => void;
+    /** Called when generation is attempted without a logged-in user — opens sign-in modal */
+    onSignIn?: () => void;
 }
 
 const COSTS: Record<string, number> = {
@@ -35,6 +38,17 @@ const COSTS: Record<string, number> = {
     'nb2-1k': 0.10,
     'nb2-2k': 0.20,
     'nb2-4k': 0.40,
+};
+
+// Automatic quality downgrade chain — tried once after all retries are exhausted
+const QUALITY_FALLBACK: Record<string, string> = {
+    'nb2-4k': 'nb2-2k',
+    'nb2-2k': 'nb2-1k',
+    'nb2-1k': 'nb2-05k',
+};
+
+const QUALITY_LABEL: Record<string, string> = {
+    'nb2-4k': '4K', 'nb2-2k': '2K', 'nb2-1k': '1K', 'nb2-05k': '0.5K',
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
@@ -97,20 +111,6 @@ const translateError = (errorMsg: string, t: (key: any) => string): string => {
     // Bad Request
     if (msg.includes("bad request") || msg.includes("400") || msg.includes("invalid")) {
         return t('error_invalid_prompt');
-    }
-
-    // Kie.ai API errors — Fallback with raw detail for other Kie errors
-    if (
-        msg.includes("kie task failed:") ||
-        msg.includes("kie createtask") ||
-        msg.includes("kie recordinfo") ||
-        msg.includes("kie task complete") ||
-        msg.includes("kie result download") ||
-        msg.includes("image generation failed on kie") ||
-        msg.startsWith("kie.ai error:")
-    ) {
-        const cleaned = errorMsg.replace(/^kie\.ai error:\s*/i, '').replace(/\s*\(Status:\s*\d+\)\s*$/, '').substring(0, 180);
-        return `${t('error_generation_failed')}: ${cleaned}`;
     }
 
     // Fallback — include raw message for debuggability
@@ -215,7 +215,7 @@ if (typeof window !== 'undefined') {
 
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
-    qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, showToast, t, confirm, onImageSaved, onGenerationComplete
+    qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, showToast, t, confirm, onImageSaved, onGenerationComplete, onSignIn
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
     // Track { startTime, quality } per jobId so we can record actual duration on completion
@@ -229,6 +229,8 @@ export const useGeneration = ({
     const jobCompleteCallbacks = React.useRef<Record<string, () => void>>({});
     // Source image ID that was active when each generation was started — used to guard auto-navigate
     const generationSourceIds = React.useRef<Record<string, string | null>>({});
+    // One-shot retry functions per jobId — called automatically on timeout, then cleared
+    const pendingRetryFns = React.useRef<Record<string, (() => void) | null>>({});
 
     /**
      * Returns true if we should auto-navigate to the finished image:
@@ -242,23 +244,36 @@ export const useGeneration = ({
         return current === sourceId || current === newId;
     };
 
-    const pollForJob = useCallback(async (jobId: string) => {
+    const pollForJob = useCallback(async (jobId: string, quality?: string) => {
         if (attachedJobIds.current.has(jobId)) return;
         attachedJobIds.current.add(jobId);
 
+        // Quality from param, or fall back to jobTimingRef (set at job creation)
+        const resolvedQuality = quality || jobTimingRef.current[jobId]?.quality || '';
+        const is4K = resolvedQuality === 'nb2-4k';
+
+        // nb2-4k: Gemini has up to 200s server-side — client must not give up before that.
+        // Other modes: shorter timeouts are fine.
+        const stuckAttempts = is4K ? 36 : 14;   // 180s vs 70s  (-20%)
+        const maxAttempts   = is4K ? 44 : 19;   // 220s vs 95s absolute ceiling (-20%)
+
         let attempts = 0;
-        const maxAttempts = 90; // 7.5 minutes at 5s interval — covers worst-case Pro·4K (2-5 min)
+        let googleOverloadWarningShown = false; // show yellow toast only once per job
 
         const poll = async () => {
             attempts++;
             if (attempts > maxAttempts) {
-                // Timeout: Edge Function likely died (status 546) — clean up stuck job
-                showToast(translateError('timeout', t), 'error');
-                setRows(prev => prev.map(row => ({
-                    ...row,
-                    items: row.items.filter(i => i.id !== jobId)
-                })).filter(r => r.items.length > 0));
+                // Absolute ceiling reached — stop polling client-side
+                const retryFn = pendingRetryFns.current[jobId];
+                delete pendingRetryFns.current[jobId];
+                setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
+                if (retryFn) {
+                    showToast(t('toast_auto_retry'), 'success');
+                    retryFn();
+                } else {
+                    showToast(translateError('timeout', t), 'error');
+                }
                 return;
             }
 
@@ -323,6 +338,9 @@ export const useGeneration = ({
                     })
                 })));
 
+                        // Job succeeded — clear any pending retry fn
+                delete pendingRetryFns.current[jobId];
+
                 // Increment total image count in settings
                 onImageSaved?.();
                 onGenerationComplete?.(jobId);
@@ -335,47 +353,62 @@ export const useGeneration = ({
                 return;
             }
 
-            // 2. Check if job failed
+            // 2. Check if job failed or retrying
             const { data: jobData } = await supabase
                 .from('generation_jobs')
-                .select('status, error')
+                .select('status, error, request_payload')
                 .eq('id', jobId)
                 .maybeSingle();
 
+            // Show yellow warning toast once when Google AI is retrying due to overload
+            if (!googleOverloadWarningShown && (jobData?.request_payload as any)?.current_stage === 'gemini_retry_503') {
+                googleOverloadWarningShown = true;
+                showToast(t('warning_google_overload'), 'info');
+            }
+
             if (jobData?.status === 'failed') {
                 const jobError = (jobData as any).error || "";
-                const translated = translateError(jobError, t);
-                showToast(translated, "error");
-                setRows(prev => prev.map(row => ({
-                    ...row,
-                    items: row.items.filter(i => i.id !== jobId)
-                })).filter(r => r.items.length > 0));
+                const isTransient = jobError.toLowerCase().includes('timeout') || jobError.includes('520');
+                const retryFn = isTransient ? pendingRetryFns.current[jobId] : null;
+                delete pendingRetryFns.current[jobId];
+                setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
+                if (retryFn) {
+                    showToast(t('toast_auto_retry'), 'success');
+                    retryFn();
+                } else {
+                    showToast(translateError(jobError, t), "error");
+                }
                 return;
             }
 
-            // 2b. Detect stuck "processing" jobs — only after 6 min (72×5s)
-            // We wait longer than the Edge Function's own background limit so the webhook
-            // still has a chance to fire for slow Pro·4K jobs before we declare failure.
-            if (jobData?.status === 'processing' && attempts >= 72) {
-                // Mark failed in DB and refund credits — the background task was likely killed before its catch block ran
-                try {
-                    // Mark job as failed — credit refund happens server-side via pg_cron
-                    const { data: job } = await supabase
-                        .from('generation_jobs').select('request_payload').eq('id', jobId).maybeSingle();
-                    const lastStage = (job?.request_payload as any)?.current_stage || 'unknown';
-                    await supabase
-                        .from('generation_jobs')
-                        .update({ status: 'failed', error: `Timeout at stage: ${lastStage} - credits refunded` })
-                        .eq('id', jobId);
-                } catch { /* non-critical — job cleanup, best-effort */ }
+            // 2b. Detect stuck "processing" jobs
+            if (jobData?.status === 'processing' && attempts >= stuckAttempts) {
+                // For nb2-4k: server owns the job state — never write failed from client.
+                // The Edge Function has up to 200s, and pg_cron handles refunds after 8 min.
+                // For other modes: write failed so the cron + UI stay consistent.
+                if (!is4K) {
+                    try {
+                        const { data: job } = await supabase
+                            .from('generation_jobs').select('request_payload').eq('id', jobId).maybeSingle();
+                        const lastStage = (job?.request_payload as any)?.current_stage || 'unknown';
+                        await supabase
+                            .from('generation_jobs')
+                            .update({ status: 'failed', error: `Timeout at stage: ${lastStage} - credits refunded` })
+                            .eq('id', jobId);
+                    } catch { /* non-critical */ }
+                }
 
-                showToast(translateError('timeout', t), 'error');
-                setRows(prev => prev.map(row => ({
-                    ...row,
-                    items: row.items.filter(i => i.id !== jobId)
-                })).filter(r => r.items.length > 0));
+                const retryFn = pendingRetryFns.current[jobId];
+                delete pendingRetryFns.current[jobId];
+                setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
+                if (retryFn) {
+                    showToast(t('toast_auto_retry'), 'success');
+                    retryFn();
+                } else {
+                    showToast(translateError('timeout', t), 'error');
+                }
                 return;
             }
 
@@ -421,13 +454,14 @@ export const useGeneration = ({
             .filter(i => i.isGenerating && !!i.generationStartTime)
             .map(i => i.id);
 
-        generatingIds.forEach(id => {
-            if (!attachedJobIds.current.has(id)) {
-                // Ensure auto-navigation works for jobs resumed after reload
-                navigateOnCompleteIds.current.add(id);
-                pollForJob(id);
-            }
-        });
+        rows.flatMap(r => r.items)
+            .filter(i => i.isGenerating && !!i.generationStartTime)
+            .forEach(item => {
+                if (!attachedJobIds.current.has(item.id)) {
+                    navigateOnCompleteIds.current.add(item.id);
+                    pollForJob(item.id, item.quality as string | undefined);
+                }
+            });
     }, [rows, pollForJob]);
 
     const performGeneration = useCallback(async (
@@ -439,9 +473,17 @@ export const useGeneration = ({
         activeTemplateId?: string,
         variableValues?: Record<string, string[]>,
         customReferenceInstructions?: Record<string, string>,
-        groupParentId?: string
+        isRepeat?: boolean,
+        _autoRetryCount = 0,
+        _qualityOverride?: string
     ) => {
         if (!sourceImage) return;
+
+        // Guard: must be logged in — open sign-in modal instead of showing error toast
+        if (!user && !isAuthDisabled) {
+            onSignIn?.();
+            return;
+        }
 
         // Guard: validate that there's enough input to produce a meaningful generation
         const hasPrompt = !!prompt?.trim();
@@ -470,7 +512,8 @@ export const useGeneration = ({
             }
         }
 
-        const cost = COSTS[qualityMode];
+        const effectiveQuality = _qualityOverride ?? qualityMode;
+        const cost = COSTS[effectiveQuality];
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
@@ -494,7 +537,7 @@ export const useGeneration = ({
         const currentAnnotations = sourceImage.annotations || [];
         const currentRefs = currentAnnotations.filter(a => a.type === 'reference_image');
         const estimateKey = buildEstimateKey({
-            qualityMode,
+            qualityMode: effectiveQuality,
             requestType: 'edit',
             hasSourceImage: true,
             hasMask: currentAnnotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)),
@@ -502,7 +545,7 @@ export const useGeneration = ({
         });
 
         // 2. CONCURRENCY & DURATION — simple hardcoded values per quality
-        const estimatedDuration = ESTIMATED_DURATIONS[qualityMode] || 25000;
+        const estimatedDuration = ESTIMATED_DURATIONS[effectiveQuality] || 25000;
 
         // 3. SHOW PLACEHOLDER IMMEDIATELY
         const placeholder: CanvasImage = {
@@ -515,16 +558,16 @@ export const useGeneration = ({
             maskSrc: undefined,
             thumbSrc: sourceImage.thumbSrc,
             src: sourceImage.src,
-            annotations: (sourceImage.annotations || []).filter(a => a.type === 'reference_image'),
-            parentId: groupParentId ?? sourceImage.id,
+            annotations: [], // Generated results start blank — reference images stay on the source image
+            parentId: sourceImage.id,
+            folderId: sourceImage.folderId ?? sourceImage.id, // Inherit stack root — never changes
             generationPrompt: prompt,
             // Store full request body on the child so "Mehr" can replay it exactly.
-            // userDraftPrompt is intentionally empty — SideSheet shows clean for children.
-            // variableValues/activeTemplateId are kept for replay but not displayed (SideSheet init guards).
-            userDraftPrompt: '',
+            // userDraftPrompt stores the user-facing prompt so SideSheet can display it when revisiting.
+            userDraftPrompt: draftPrompt || '',
             activeTemplateId: activeTemplateId,
             variableValues: variableValues,
-            quality: qualityMode,
+            quality: effectiveQuality as GenerationQuality,
             estimatedDuration,
             createdAt: Date.now(),
             updatedAt: Date.now()
@@ -539,7 +582,7 @@ export const useGeneration = ({
         });
 
         // Track start time so pollForJob can record actual duration
-        jobTimingRef.current[newId] = { startTime: Date.now(), quality: qualityMode, estimateKey };
+        jobTimingRef.current[newId] = { startTime: Date.now(), quality: effectiveQuality, estimateKey };
 
         // Record which image was active when generate was pressed — used to guard auto-navigate
         generationSourceIds.current[newId] = activeIdRef.current;
@@ -581,11 +624,32 @@ export const useGeneration = ({
                     instruction: customReferenceInstructions?.[ann.id] || ann.text || ''
                 }));
 
+                // If the source image is already stored in our storage (has storage_path),
+                // skip client-side compression entirely — the edge function downloads the
+                // original bytes via admin storage, which avoids JPEG recompression quality
+                // loss (especially important for cascaded "More" generations).
+                // For fresh uploads / blob URLs, fall back to client-side compression.
+                const useStoragePath = !!(sourceImage.storage_path && !sourceImage.src?.startsWith('blob:'));
+                let originalImageForRequest: string | undefined;
+                if (!useStoragePath && sourceImage.src) {
+                    try {
+                        const blob = await compressImage(sourceImage.src, 3840, 0.7);
+                        originalImageForRequest = await new Promise<string>(resolve => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result as string);
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch (err) {
+                        console.warn('[useGeneration] Client compress failed, using URL fallback:', err);
+                        originalImageForRequest = sourceImage.src;
+                    }
+                }
+
                 const structuredRequest: StructuredGenerationRequest = {
                     type: 'edit',
                     prompt: prompt,
                     variables: variableValues || {},
-                    originalImage: sourceImage.src,
+                    originalImage: originalImageForRequest,
                     annotationImage: annotationImageBase64,
                     references: structuredRefs
                 };
@@ -601,14 +665,14 @@ export const useGeneration = ({
                         status: 'processing',
                         cost: cost,
                         prompt_preview: prompt,
-                        parent_id: groupParentId ?? sourceImage.id,
+                        parent_id: sourceImage.id,
                         request_payload: {
                             hasSourceImage: !!sourceImage.src,
                             hasMask: !!maskDataUrl,
                             referenceImagesCount: refs.length,
                             batchSize,
                             isMultiEdit: batchSize > 1,
-                            isRepeat: !!groupParentId,
+                            isRepeat: !!isRepeat,
                             variables: variableValues || {},
                         }
                     }).then(() => {});
@@ -623,7 +687,7 @@ export const useGeneration = ({
                     targetVersion: newVersion,
                     targetTitle: placeholder.title,
                     activeTemplateId: activeTemplateId,
-                    groupParentId,
+                    isRepeat: !!isRepeat,
                 });
 
                 if (finalImage) {
@@ -681,12 +745,30 @@ export const useGeneration = ({
             }
         };
 
+        // Register retry fn: same-quality up to 3×, then auto-downgrade quality once
+        const fallbackQuality = QUALITY_FALLBACK[effectiveQuality];
+        if (_autoRetryCount < 3) {
+            // Same quality retry
+            pendingRetryFns.current[newId] = () => {
+                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, isRepeat, _autoRetryCount + 1, _qualityOverride);
+            };
+        } else if (fallbackQuality && !_qualityOverride) {
+            // All same-quality retries exhausted → try once with lower quality
+            pendingRetryFns.current[newId] = () => {
+                const fromLabel = QUALITY_LABEL[effectiveQuality] || effectiveQuality;
+                const toLabel = QUALITY_LABEL[fallbackQuality] || fallbackQuality;
+                showToast(`${fromLabel} nicht verfügbar — versuche ${toLabel}…`, 'success');
+                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, isRepeat, 0, fallbackQuality);
+            };
+        }
+
         processGenerationAsync();
     }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm]);
 
 
-    const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
-        const cost = COSTS[modelId] || 0;
+    const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = [], _autoRetryCount = 0, _qualityOverride?: string) => {
+        const effectiveModelId = _qualityOverride ?? modelId;
+        const cost = COSTS[effectiveModelId] || 0;
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
@@ -810,6 +892,21 @@ export const useGeneration = ({
                 // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
         };
+
+        // Register retry fn: same-quality up to 3×, then auto-downgrade quality once
+        const fallbackModelId = QUALITY_FALLBACK[effectiveModelId];
+        if (_autoRetryCount < 3) {
+            pendingRetryFns.current[newId] = () => {
+                void performNewGeneration(prompt, modelId, ratio, attachments, _autoRetryCount + 1, _qualityOverride);
+            };
+        } else if (fallbackModelId && !_qualityOverride) {
+            pendingRetryFns.current[newId] = () => {
+                const fromLabel = QUALITY_LABEL[effectiveModelId] || effectiveModelId;
+                const toLabel = QUALITY_LABEL[fallbackModelId] || fallbackModelId;
+                showToast(`${fromLabel} nicht verfügbar — versuche ${toLabel}…`, 'success');
+                void performNewGeneration(prompt, modelId, ratio, attachments, 0, fallbackModelId);
+            };
+        }
 
         processNewSync();
     }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, t, confirm]);

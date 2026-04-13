@@ -214,7 +214,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const isCreate = mode === 'create';
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
     const isGallery = !isDetail && !isCreate && (currentPath === '/' || currentPath === '');
-    const isSpecialPage = ['/about', '/legal', '/impressum', '/contact', '/privacy', '/datenschutz'].includes(currentPath);
+    const isSpecialPage = ['/about', '/legal', '/impressum', '/contact', '/privacy', '/datenschutz', '/blog'].includes(currentPath);
+    const isBlogPost = /^\/blog\/.+/.test(currentPath);
 
     const balanceDisplay = user && displayCredits !== null && (
         <Tooltip text={t('balance')}>
@@ -282,7 +283,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : (
         <div className="flex items-center gap-1">
-            {isSpecialPage ? (
+            {isBlogPost ? (
+                <RoundIconButton
+                    icon={<ChevronLeft className="w-5 h-5" />}
+                    onClick={() => window.history.back()}
+                    variant="ghost"
+                    tooltip="Blog"
+                />
+            ) : isSpecialPage ? (
                 <RoundIconButton
                     icon={<LayoutGrid className="w-5 h-5" />}
                     onClick={user ? (onBack || (() => window.location.href = '/')) : onSignIn}
@@ -591,7 +599,26 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             >
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
-                    {isSpecialPage ? (
+                    {isBlogPost ? (
+                        <button
+                            className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                : isMobile
+                                    ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                    : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
+                                }`}
+                            onClick={() => window.history.back()}
+                        >
+                            <ChevronLeft className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                            <div
+                                className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}
+                            >
+                                <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                    Blog
+                                </span>
+                            </div>
+                        </button>
+                    ) : isSpecialPage ? (
                         <button
                             className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
                                 ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
@@ -606,7 +633,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                     }`}
                             >
-                                <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                     {t('nav_gallery') || 'Galerie'}
                                 </span>
                             </div>
@@ -626,7 +653,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                     }`}
                             >
-                                <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                     {t('nav_gallery') || 'Galerie'}
                                 </span>
                             </div>
@@ -648,7 +675,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                             }`}
                                     >
-                                        <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                        <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                             {t('nav_upload') || 'Hochladen'}
                                         </span>
                                     </div>
@@ -667,7 +694,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                             }`}
                                     >
-                                        <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                        <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                             {t('nav_create') || 'Generieren'}
                                         </span>
                                     </div>
@@ -765,7 +792,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                             className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                                 }`}
                                         >
-                                            <span className="whitespace-nowrap text-sm font-medium leading-none text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                            <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
                                                 {t('nav_menu') || 'Menü'}
                                             </span>
                                         </div>

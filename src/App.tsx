@@ -2,6 +2,7 @@ import React, { useEffect, Suspense, useCallback } from 'react';
 import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
 import { RotateCw, Download, Info, Trash2, Loader2, Upload, ImageIcon } from 'lucide-react';
 import { RoundIconButton, Theme, Typo } from '@/components/ui/DesignSystem';
+import { useModalStack } from '@/components/ui/ModalStack';
 import { useNanoController } from '@/hooks/useNanoController';
 import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
 import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
@@ -20,16 +21,22 @@ import { CreatePage } from '@/components/pages/CreatePage';
 // Lazy loaded pages
 const HomePage = React.lazy(() => import('@/components/pages/HomePage').then(m => ({ default: m.HomePage })));
 const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
+const ContactPage = React.lazy(() => import('@/components/pages/ContactPage').then(m => ({ default: m.ContactPage })));
+const BlogPage = React.lazy(() => import('@/components/pages/BlogPage').then(m => ({ default: m.BlogPage })));
+const BlogPostPage = React.lazy(() => import('@/components/pages/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
 const SettingsModal = React.lazy(() => import('@/components/settings/SettingsModal').then(m => ({ default: m.SettingsModal })));
 const SharedTemplatePage = React.lazy(() => import('@/components/pages/SharedTemplatePage').then(m => ({ default: m.SharedTemplatePage })));
 const HeroPlayground = React.lazy(() => import('@/components/pages/HeroPlayground').then(m => ({ default: m.HeroPlayground })));
 const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const ImageInfoModal = React.lazy(() => import('@/components/canvas/ImageInfoModal').then(m => ({ default: m.ImageInfoModal })));
+const AboutV2Page = React.lazy(() => import('@/components/pages/AboutV2Page').then(m => ({ default: m.AboutV2Page })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage, persistToolCallLog, persistTranscriptLog } from '@/services/voiceAdminService';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    // React 19 ships no .d.ts — declare props explicitly so TS finds it
+    declare props: { children: React.ReactNode };
     state = { hasError: false };
     static getDerivedStateFromError(): { hasError: boolean } { return { hasError: true }; }
     componentDidCatch(error: Error) { console.error('[SettingsModal] render error:', error); }
@@ -74,6 +81,7 @@ export function App() {
     // Track whether last image selection was from a user action (arrows/thumbs) vs programmatic (generation)
     const isUserNavigationRef = React.useRef(false);
 
+    const { closeTop: closeTopModal } = useModalStack();
     const [isCreationModalOpen, setIsCreationModalOpen] = React.useState(false);
     const [isDetailExiting, setIsDetailExiting] = React.useState(false);
     const [isCreditsModalOpen, setIsCreditsModalOpen] = React.useState(false);
@@ -175,6 +183,12 @@ export function App() {
         // Sync Detail view from URL
         if (!location.pathname.startsWith('/image/')) {
             if (state.activeId && !isNavigatingProgrammatically.current) {
+                // On /create: if a new image was just created, navigate to it
+                if (location.pathname === '/create' && allImages.some(i => i.id === state.activeId)) {
+                    isNavigatingProgrammatically.current = true;
+                    navigate(`/image/${state.activeId}`);
+                    return;
+                }
                 actions.handleSelection(null, false, false);
             }
             return;
@@ -197,13 +211,9 @@ export function App() {
     }, [location.pathname, state.activeId, actions, expandedGroupId]);
 
 
-    // Close SideSheet when navigating to a generating image via generation (not user arrow/thumb clicks)
+    // Reset user navigation ref when active image changes
     useEffect(() => {
         if (!state.activeId) return;
-        const targetImg = allImages.find(i => i.id === state.activeId);
-        if (targetImg?.isGenerating && !isUserNavigationRef.current) {
-            setDetailSideSheetVisible(false);
-        }
         isUserNavigationRef.current = false;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state.activeId]);
@@ -406,17 +416,17 @@ export function App() {
 
             if (!img) return null;
 
-            const isGenerating = !!(img as any).isGenerating;
-            const genNote = isGenerating
-                ? (state.currentLang === 'de' ? ' (WIRD GENERIERT — Bild ist noch NICHT fertig, NICHT beschreiben!)' : ' (GENERATING — image is NOT ready, do NOT describe it!)')
-                : '';
+            // While generating: suppress visual context sync entirely.
+            // The tool-response message already told the AI generation started —
+            // sending context again causes duplicate announcements.
+            if ((img as any).isGenerating) return null;
 
             return {
-                contextKey: `detail:${img.id}:${isGenerating ? 'gen' : 'ready'}`,
+                contextKey: `detail:${img.id}`,
                 summary: state.currentLang === 'de'
-                    ? `Detailansicht: ${img.title || 'Unbenannt'}${genNote}`
-                    : `Detail view: ${img.title || 'Untitled'}${genNote}`,
-                frames: isGenerating || !thumb ? [] : [{ id: img.id, src: thumb, label: img.title || 'detail-image' }]
+                    ? `Detailansicht: ${img.title || 'Unbenannt'}`
+                    : `Detail view: ${img.title || 'Untitled'}`,
+                frames: thumb ? [{ id: img.id, src: thumb, label: img.title || 'detail-image' }] : []
             };
         }
 
@@ -432,17 +442,19 @@ export function App() {
                     : state.rows.map((r: any) => r.items[0]).filter(Boolean) as any[];
 
             const isStack = !!stackId;
-            const itemsText = displayImages.slice(0, 20).map((img: any, i: number) => {
+            // Exclude generating placeholders from count/context — prevents spurious sync while generation is running
+            const readyImages = displayImages.filter((img: any) => !img.isGenerating);
+            const itemsText = readyImages.slice(0, 20).map((img: any, i: number) => {
                 const row = Math.floor(i / cols) + 1;
                 const col = (i % cols) + 1;
                 return `[${i + 1}] Reihe ${row}, Bild ${col}: ${img.title || 'Unbenannt'}`;
             }).join('\n');
 
             return {
-                contextKey: `grid:${stackId || 'root'}:${state.isSelectMode ? 'select' : 'normal'}:${displayImages.length}:${cols}`,
+                contextKey: `grid:${stackId || 'root'}:${state.isSelectMode ? 'select' : 'normal'}:${readyImages.length}:${cols}`,
                 summary: state.currentLang === 'de'
-                    ? `${isStack ? 'Stapel' : 'Galerie'} (${displayImages.length} Bilder), ${cols} pro Reihe:\n${itemsText}`
-                    : `${isStack ? 'Stack' : 'Gallery'} (${displayImages.length} images), ${cols} per row:\n${itemsText}`,
+                    ? `${isStack ? 'Stapel' : 'Galerie'} (${readyImages.length} Bilder), ${cols} pro Reihe:\n${itemsText}`
+                    : `${isStack ? 'Stack' : 'Gallery'} (${readyImages.length} images), ${cols} per row:\n${itemsText}`,
                 frames: []
             };
         }
@@ -683,10 +695,9 @@ export function App() {
             return { ok: true, message: state.currentLang === 'de' ? 'Vorheriges Bild.' : 'Previous image.' };
         },
         goBack: async () => {
-            // Priority 1: Close settings modal if open
-            if (isSettingsModalOpen) {
-                setIsSettingsModalOpen(false);
-                return { ok: true, message: state.currentLang === 'de' ? 'Einstellungen geschlossen.' : 'Settings closed.' };
+            // Priority 1: Close topmost modal if any is open
+            if (closeTopModal()) {
+                return { ok: true, message: state.currentLang === 'de' ? 'Geschlossen.' : 'Closed.' };
             }
 
             // Priority 2: Close annotation mode if active
@@ -751,7 +762,7 @@ export function App() {
                 ? { ok: true, message: state.currentLang === 'de' ? `Format ${ratio} ausgewählt.` : `Selected ${ratio} ratio.` }
                 : { ok: false, message: state.currentLang === 'de' ? 'Format konnte nicht gesetzt werden.' : 'Could not set aspect ratio.' };
         },
-        createVariables: async (controls: Array<{ label: string; options: string[] }>) => {
+        createVariables: async (controls: Array<{ label: string; options: string[]; selected?: string[] }>) => {
             if (!controls || controls.length === 0) {
                 return { ok: false, message: state.currentLang === 'de' ? 'Keine Variablen angegeben.' : 'No variables provided.' };
             }
@@ -875,14 +886,28 @@ export function App() {
             return { ok: true, message: state.currentLang === 'de' ? `Preset "${preset.title}" angewendet${controlLabels}. Prompt: "${preset.prompt?.slice(0, 80)}..."` : `Applied preset "${preset.title}"${controlLabels}. Prompt: "${preset.prompt?.slice(0, 80)}..."` };
         },
         goToSourceImage: async () => {
-            if (!location.pathname.startsWith('/image/')) {
+            const isInDetail = location.pathname.startsWith('/image/');
+            const isInStack = location.pathname.startsWith('/stack/');
+
+            if (!isInDetail && !isInStack) {
                 return { ok: false, message: state.currentLang === 'de' ? 'Öffne zuerst ein Bild.' : 'Open an image first.' };
             }
-            const currentId = location.pathname.split('/').pop();
-            const currentImg = currentId ? allImages.find(i => i.id === currentId) : null;
+
+            const pathId = location.pathname.split('/').pop();
+
+            // From stack view: find the root (no parentId) image in the stack's row
+            if (isInStack) {
+                const row = state.rows.find((r: any) => r.id === pathId);
+                const rootImg = row?.items.find((i: any) => !i.parentId) || row?.items[0];
+                if (!rootImg) return { ok: false, message: state.currentLang === 'de' ? 'Quellbild nicht gefunden.' : 'Source image not found.' };
+                navigate(`/image/${rootImg.id}`);
+                return { ok: true, message: state.currentLang === 'de' ? `Zum Quellbild "${rootImg.title || 'Original'}" gewechselt.` : `Switched to source image "${rootImg.title || 'Original'}".` };
+            }
+
+            // From detail view: walk up the parent chain
+            const currentImg = pathId ? allImages.find(i => i.id === pathId) : null;
             if (!currentImg) return { ok: false, message: state.currentLang === 'de' ? 'Bild nicht gefunden.' : 'Image not found.' };
 
-            // Walk up the parent chain to find the root source image
             let sourceImg = currentImg;
             let depth = 0;
             while ((sourceImg as any).parentId && depth < 10) {
@@ -896,7 +921,7 @@ export function App() {
                 return { ok: false, message: state.currentLang === 'de' ? 'Das ist bereits das Quellbild.' : 'This is already the source image.' };
             }
 
-            handleSelectImage(sourceImg.id);
+            navigate(`/image/${sourceImg.id}`);
             return { ok: true, message: state.currentLang === 'de' ? `Zum Quellbild "${sourceImg.title || 'Original'}" gewechselt.` : `Switched to source image "${sourceImg.title || 'Original'}".` };
         }
     });
@@ -934,11 +959,13 @@ export function App() {
 
     const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
-    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/impressum');
+    const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/impressum' || location.pathname === '/contact' || location.pathname === '/blog' || location.pathname.startsWith('/blog/'));
     
     // Pages that should have an expandable Hero header
-    const expandableRoutes = ['/', '/about', '/impressum'];
-    const isExpandableRoute = expandableRoutes.includes(location.pathname);
+    const expandableRoutes = ['/', '/about', '/about-v2', '/impressum'];
+    const isExpandableRoute = expandableRoutes.includes(location.pathname)
+        || location.pathname === '/blog'
+        || location.pathname.startsWith('/blog/');
 
     const outerContainerClasses = isAppLayout
         ? "h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col overflow-hidden"
@@ -1338,6 +1365,9 @@ export function App() {
                             </AdminRoute>
                         } />
 
+                        <Route path="/blog" element={<BlogPage t={t} lang={state.currentLang} onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }} />} />
+                        <Route path="/blog/:slug" element={<BlogPostPage t={t} lang={state.currentLang} onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }} />} />
+
                         <Route path="/impressum" element={<ImpressumPage
                             user={user}
                             userProfile={userProfile}
@@ -1346,7 +1376,37 @@ export function App() {
                             onCreateNew={() => setIsCreationModalOpen(true)}
                             onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
                         />} />
+                        <Route path="/contact" element={<ContactPage
+                            user={user}
+                            userProfile={userProfile}
+                            credits={credits}
+                            t={t}
+                            onCreateNew={() => setIsCreationModalOpen(true)}
+                            onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
+                        />} />
                         <Route path="/legal" element={<Navigate to="/impressum" replace />} />
+                        <Route path="/about-v2" element={
+                            <AboutV2Page
+                                user={user}
+                                userProfile={userProfile}
+                                credits={credits}
+                                t={t}
+                                lang={state.currentLang}
+                                onSignIn={() => {
+                                    setAuthModalMode('signin');
+                                    setIsAuthModalOpen(true);
+                                }}
+                                onGetStarted={() => {
+                                    if (user) {
+                                        navigate('/');
+                                        return;
+                                    }
+                                    setAuthModalMode('signup');
+                                    setIsAuthModalOpen(true);
+                                }}
+                            />
+                        } />
+
                         <Route path="/s/:slug" element={
                             <SharedTemplatePage
                                 user={user}

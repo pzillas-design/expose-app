@@ -1,5 +1,6 @@
 
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { flushSync } from 'react-dom';
 import { AnnotationObject, TranslationFunction } from '@/types';
 import { X, Check, Pen, Trash, RotateCw } from 'lucide-react';
 import { Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
@@ -103,9 +104,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     useEffect(() => {
         if (currentActiveId) {
+            // Desktop: small delay is fine. Touch uses flushSync path instead.
             setTimeout(() => {
-                const activeInput = document.querySelector('.annotation-ui input') as HTMLInputElement;
-                if (activeInput) activeInput.focus();
+                const el = document.querySelector('.annotation-ui [contenteditable]') as HTMLElement | null;
+                if (el && document.activeElement !== el) el.focus();
             }, 50);
         }
     }, [currentActiveId]);
@@ -128,6 +130,27 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     const currentPathRef = useRef<{ x: number, y: number }[]>([]);
     // Normalized brush size (in annotation space) captured at stroke start
     const brushSizeNormalizedRef = useRef<number>(20);
+
+    // Global mouseup/touchend: commit or discard stroke when pointer released outside canvas
+    const isDrawingRef = useRef(false);
+    useEffect(() => {
+        const handleGlobalUp = () => {
+            if (!isDrawingRef.current) return;
+            isDrawingRef.current = false;
+            setIsDrawing(false);
+            if (currentPathRef.current.length > 1) {
+                onChange([...annotations, { id: generateId(), type: 'mask_path', points: [...currentPathRef.current], strokeWidth: brushSizeNormalizedRef.current, color: '#fff', text: '', createdAt: Date.now() }]);
+            }
+            currentPathRef.current = [];
+            onInteractionEnd?.();
+        };
+        window.addEventListener('mouseup', handleGlobalUp);
+        window.addEventListener('touchend', handleGlobalUp);
+        return () => {
+            window.removeEventListener('mouseup', handleGlobalUp);
+            window.removeEventListener('touchend', handleGlobalUp);
+        };
+    }, [annotations, onChange, onInteractionEnd]);
 
     const renderCanvas = useCallback(() => {
         const canvas = canvasRef.current;
@@ -208,6 +231,19 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         }
     }, [annW, annH, renderCanvas]);
 
+    // Ref-based drag flag — updated synchronously so the touchmove listener
+    // below can check it without waiting for a React re-render cycle.
+    const isDraggingRef = useRef(false);
+
+    // Register the non-passive touchmove listener ONCE on mount.
+    // Using a useEffect with dragState as dep would add it too late (after render),
+    // by which time the first touchmove has already fired and scrolled the page.
+    useEffect(() => {
+        const prevent = (e: TouchEvent) => { if (isDraggingRef.current) e.preventDefault(); };
+        document.addEventListener('touchmove', prevent, { passive: false });
+        return () => document.removeEventListener('touchmove', prevent);
+    }, []);
+
     // Returns coordinates in normalized annotation space (annW × annH)
     const getCoordinates = (clientX: number, clientY: number) => {
         if (!canvasRef.current) return { x: 0, y: 0 };
@@ -247,6 +283,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
             }
 
             setIsDrawing(true);
+            isDrawingRef.current = true;
             currentPathRef.current = [{ x, y }];
             setActiveMaskId(null);
         }
@@ -408,13 +445,25 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
     const handleMouseUp = (e: React.MouseEvent | React.TouchEvent) => {
         if (dragState) {
-            if (!dragState.isMoved) setActiveMaskId(dragState.id);
+            isDraggingRef.current = false;
+            if (!dragState.isMoved) {
+                // On touch: use flushSync so the input renders immediately within the
+                // same gesture context, then focus it — avoids needing a second tap.
+                const isTouch = 'changedTouches' in e;
+                if (isTouch) {
+                    flushSync(() => setActiveMaskId(dragState.id));
+                    (document.querySelector('.annotation-ui [contenteditable]') as HTMLElement | null)?.focus();
+                } else {
+                    setActiveMaskId(dragState.id);
+                }
+            }
             setDragState(null);
             onInteractionEnd?.();
             return;
         }
         if (!isDrawing) return;
         setIsDrawing(false);
+        isDrawingRef.current = false;
         if (currentPathRef.current.length > 1) {
             onChange([...annotations, { id: generateId(), type: 'mask_path', points: [...currentPathRef.current], strokeWidth: brushSizeNormalizedRef.current, color: '#fff', text: '', createdAt: Date.now() }]);
         }
@@ -422,8 +471,9 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
         onInteractionEnd?.();
     };
 
-    const startDrag = (e: React.MouseEvent, id: string, mode: any, ann: AnnotationObject, vertexIndex?: number) => {
+    const startDrag = (e: React.MouseEvent | React.TouchEvent, id: string, mode: any, ann: AnnotationObject, vertexIndex?: number) => {
         e.stopPropagation(); e.preventDefault();
+        isDraggingRef.current = true; // synchronously enable scroll-lock before first touchmove
         onInteractionStart?.();
         const clientX = 'touches' in e ? (e as any).touches[0].clientX : (e as any).clientX;
         const clientY = 'touches' in e ? (e as any).touches[0].clientY : (e as any).clientY;
@@ -437,12 +487,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
     };
 
     return (
-        <div ref={containerRef} className="absolute inset-0 z-10 w-full h-full" onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
+        <div ref={containerRef} className={`absolute inset-0 z-10 w-full h-full touch-none ${activeTab === 'none' ? 'pointer-events-none' : ''}`} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onTouchStart={handleMouseDown} onTouchMove={handleMouseMove} onTouchEnd={handleMouseUp} onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
             <canvas
                 ref={canvasRef}
                 className={`
- absolute inset-0 w-full h-full 
+ absolute inset-0 w-full h-full
  ${activeTab === 'brush' && maskTool === 'brush' ? 'touch-none cursor-none' : 'cursor-default'}
+ ${activeTab === 'none' ? 'pointer-events-none' : ''}
  `}
             />
 
@@ -491,11 +542,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         stroke={isActiveItem ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'}
                                         strokeWidth={isActiveItem ? 2 : 1}
                                         className="pointer-events-auto cursor-move"
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation();
-                                            setActiveMaskId(ann.id);
-                                            startDrag(e, ann.id, 'move', ann);
-                                        }}
+                                        onMouseDown={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
+                                        onTouchStart={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
                                     />
                                 </svg>
                                 {isActiveItem && (
@@ -503,7 +551,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         {points.map((p, idx) => (
                                             <div key={idx} className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] pointer-events-auto"
                                                 style={{ left: `${(p.x / annW) * 100}%`, top: `${(p.y / annH) * 100}%`, transform: 'translate(-50%,-50%)' }}
-                                                onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
+                                                onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, idx)}
+                                                onTouchStart={(e) => startDrag(e, ann.id, 'vertex', ann, idx)} />
                                         ))}
                                         <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
                                             style={{ left: `${(center.x / annW) * 100}%`, top: `${(center.y / annH) * 100}%`, transform: 'translate(-50%, -50%)' }}
@@ -529,21 +578,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         stroke="transparent"
                                         strokeWidth="20"
                                         className="pointer-events-auto cursor-move"
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation();
-                                            setActiveMaskId(ann.id);
-                                            startDrag(e, ann.id, 'move', ann);
-                                        }}
+                                        onMouseDown={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
+                                        onTouchStart={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
                                     />
                                 </svg>
                                 {isActiveItem && (
                                     <>
                                         <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] pointer-events-auto"
                                             style={{ left: `${(p0.x / annW) * 100}%`, top: `${(p0.y / annH) * 100}%`, transform: 'translate(-50%,-50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 0)} />
+                                            onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 0)}
+                                            onTouchStart={(e) => startDrag(e, ann.id, 'vertex', ann, 0)} />
                                         <div className="absolute w-4 h-4 bg-white border-2 border-primary rounded-full cursor-pointer z-[60] pointer-events-auto"
                                             style={{ left: `${(p1.x / annW) * 100}%`, top: `${(p1.y / annH) * 100}%`, transform: 'translate(-50%,-50%)' }}
-                                            onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
+                                            onMouseDown={(e) => startDrag(e, ann.id, 'vertex', ann, 1)}
+                                            onTouchStart={(e) => startDrag(e, ann.id, 'vertex', ann, 1)} />
                                         <button className="absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
                                             style={{ left: `${(centerX / annW) * 100}%`, top: `${(centerY / annH) * 100}%`, transform: 'translate(-50%, -50%)' }}
                                             onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
@@ -579,11 +627,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         stroke={isActiveItem ? 'rgba(255, 255, 255, 0.8)' : 'rgba(255, 255, 255, 0.3)'}
                                         strokeWidth={isActiveItem ? 2 : 1}
                                         className="pointer-events-auto cursor-move"
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation();
-                                            setActiveMaskId(ann.id);
-                                            startDrag(e, ann.id, 'move', ann);
-                                        }}
+                                        onMouseDown={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
+                                        onTouchStart={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
                                     />
                                 </svg>
                                 {isActiveItem && (
@@ -604,6 +649,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                     transform: 'translate(-50%, -50%)'
                                                 }}
                                                 onMouseDown={(e) => startDrag(e, ann.id, h.mode as any, ann)}
+                                                onTouchStart={(e) => startDrag(e, ann.id, h.mode as any, ann)}
                                             />
                                         ))}
 
@@ -694,17 +740,15 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                         stroke="transparent"
                                         strokeWidth={Math.max(20, (ann as any).strokeWidth || 40)}
                                         className="pointer-events-auto cursor-move"
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation();
-                                            setActiveMaskId(ann.id);
-                                            startDrag(e, ann.id, 'move', ann);
-                                        }}
+                                        onMouseDown={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
+                                        onTouchStart={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); startDrag(e, ann.id, 'move', ann); }}
                                     />
                                 </svg>
                                 {isActiveItem && (
                                     <button className="annotation-ui absolute p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 pointer-events-auto transition-colors z-[60] flex items-center justify-center w-9 h-9"
                                         style={{ left: `${maskCenterPct?.left ?? leftPct}%`, top: `${maskCenterPct?.top ?? topPct}%`, transform: 'translate(-50%, -50%)' }}
                                         onMouseDown={(e) => e.stopPropagation()}
+                                        onTouchStart={(e) => e.stopPropagation()}
                                         onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}>
                                         <Trash className="w-4 h-4" />
                                     </button>
@@ -714,9 +758,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
                         {showChip && (
                             <div
-                                className={`absolute annotation-ui ${isActiveItem ? 'z-[60]' : 'z-20'}`}
+                                className={`absolute annotation-ui pointer-events-auto ${isActiveItem ? 'z-[60]' : 'z-20'}`}
                                 style={{ left: `${leftPct}%`, top: `${topPct}%` }}
-                                onMouseDown={(e) => ann.type === 'stamp' && startDrag(e, ann.id, 'move', ann)}
+                                onMouseDown={(e) => (isActive && ann.type === 'stamp') && startDrag(e, ann.id, 'move', ann)}
+                                onTouchStart={(e) => (isActive && ann.type === 'stamp') && startDrag(e, ann.id, 'move', ann)}
                             >
                                 <div style={{ transform: finalTransform }} className={`${dragState?.id === ann.id ? '' : 'transition-transform duration-200'}`}>
                                     {isActiveItem ? (
@@ -728,17 +773,27 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                                     <img src={ann.referenceImage} className={OVERLAY_STYLES.RefImage} alt="ref" />
                                                 </div>
                                             )}
-                                            <input
-                                                value={ann.text || ''}
-                                                onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
-                                                onKeyDown={(e) => { if (e.key === 'Enter') setActiveMaskId(null); }}
-                                                placeholder="Text eingeben"
-                                                className={`bg-transparent border-none outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 mr-1.5`}
+                                            <div
+                                                ref={(el) => {
+                                                    // Sync external text changes without resetting cursor
+                                                    if (el && document.activeElement !== el && el.textContent !== (ann.text || '')) {
+                                                        el.textContent = ann.text || '';
+                                                    }
+                                                }}
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                role="textbox"
+                                                data-placeholder="Text eingeben"
+                                                onInput={(e) => updateAnnotation(ann.id, { text: e.currentTarget.textContent || '', emoji: undefined })}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); setActiveMaskId(null); } e.stopPropagation(); }}
+                                                className={`chip-editable bg-transparent outline-none ${Typo.Micro} tracking-normal flex-1 focus:ring-0 min-w-[80px] max-w-[160px] text-zinc-900 dark:text-zinc-100 mr-1.5 break-words`}
                                                 onMouseDown={(e) => e.stopPropagation()}
+                                                onTouchStart={(e) => e.stopPropagation()}
                                             />
                                             <Tooltip text="Save">
                                                 <button
                                                     onMouseDown={(e) => e.stopPropagation()}
+                                                    onTouchStart={(e) => e.stopPropagation()}
                                                     onClick={(e) => { e.stopPropagation(); setActiveMaskId(null); }}
                                                     className={OVERLAY_STYLES.SaveBtn}
                                                 >
@@ -749,10 +804,8 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                     ) : (
                                         <div
                                             className={`${OVERLAY_STYLES.ChipContainer} p-1.5 cursor-move hover:scale-105 group/chip`}
-                                            onMouseDown={(e) => {
-                                                e.stopPropagation();
-                                                startDrag(e, ann.id, 'move', ann);
-                                            }}
+                                            onMouseDown={(e) => { e.stopPropagation(); startDrag(e, ann.id, 'move', ann); }}
+                                            onTouchStart={(e) => { e.stopPropagation(); startDrag(e, ann.id, 'move', ann); }}
                                         >
                                             <div className={`${OVERLAY_STYLES.Arrow} ${borderArrowClass}`} style={borderArrowStyle} />
                                             <div className={`${OVERLAY_STYLES.Arrow} ${fillArrowClass}`} style={fillArrowStyle} />
@@ -767,13 +820,22 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
                                             <div className="flex items-center gap-0.5">
                                                 <button
                                                     onMouseDown={(e) => e.stopPropagation()}
-                                                    onClick={(e) => { e.stopPropagation(); setActiveMaskId(ann.id); }}
-                                                    className={`${OVERLAY_STYLES.ActionBtn} opacity-0 group-hover/chip:opacity-100 transition-opacity duration-200`}
+                                                    onTouchStart={(e) => e.stopPropagation()}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (!isActive) {
+                                                            // Enter brush mode first, then activate this stamp for editing
+                                                            onEditStart?.('brush');
+                                                        }
+                                                        setActiveMaskId(ann.id);
+                                                    }}
+                                                    className={`${OVERLAY_STYLES.ActionBtn} hidden md:flex opacity-0 group-hover/chip:opacity-100 transition-opacity duration-200`}
                                                 >
                                                     <Pen className="w-3 h-3" />
                                                 </button>
                                                 <button
                                                     onMouseDown={(e) => e.stopPropagation()}
+                                                    onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); deleteAnnotation(ann.id); }}
                                                     onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
                                                     className={`${OVERLAY_STYLES.ActionBtn} opacity-50 hover:opacity-100 ml-1`}
                                                 >

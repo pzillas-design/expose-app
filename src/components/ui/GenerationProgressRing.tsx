@@ -79,15 +79,7 @@ export const GenerationProgressRing: React.FC<GenerationProgressRingProps> = ({
             return next;
         });
 
-        // Auto-open popover when a new generation starts
-        for (const img of generatingImages) {
-            if (!prevIds.has(img.id)) {
-                setIsOpen(true);
-                setIsFadingOut(false);
-                setIsPopoverClosing(false);
-                break;
-            }
-        }
+        // Auto-open disabled — user opens manually via the ring button
 
         prevGeneratingIdsRef.current = currentIds;
     }, [generatingImages]);

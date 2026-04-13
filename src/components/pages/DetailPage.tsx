@@ -9,6 +9,7 @@ import { EditorCanvas } from '@/components/canvas/EditorCanvas';
 import { ObjectsTab } from '@/components/sidesheet/ObjectsTab';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { GenerationProgressBar } from '@/components/canvas/ImageItem';
+import { useToast } from '@/components/ui/Toast';
 
 /* ── Circular progress for thumb strip generating placeholders ── */
 const ThumbCircularProgress: React.FC<{ startTime?: number; estimatedDuration?: number }> = ({ startTime, estimatedDuration }) => {
@@ -181,6 +182,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     state, actions, t
 }) => {
     const isMobile = useMobile();
+    const { showToast } = useToast();
     const [loadedImageId, setLoadedImageId] = useState<string | null>(null);
     const isMainLoaded = loadedImageId === selectedId;
     // Track previous loaded image src so it stays visible during navigation flicker
@@ -252,6 +254,23 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         suppressEntryAnimRef.current = true;
         onSelectImage(id);
     }, [onSelectImage]);
+
+    // Right-click on the canvas overlay (brush mode) → re-dispatch contextmenu to the
+    // underlying <img> so the native browser menu ("Copy Image", "Save As…") appears.
+    const handleOverlayContextMenu = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        const currentImg = imgRef.current;
+        if (!currentImg) return;
+        const domImg = document.getElementById(`detail-img-${currentImg.id}`);
+        if (!domImg) return;
+        // Synthetic contextmenu on the real <img> — browser shows native "Copy Image" menu
+        domImg.dispatchEvent(new MouseEvent('contextmenu', {
+            bubbles: true,
+            cancelable: true,
+            clientX: e.clientX,
+            clientY: e.clientY,
+        }));
+    }, []);
 
     const img = imageMap.get(selectedId);
     const idx = imageIndexMap.get(selectedId) ?? -1;
@@ -411,12 +430,17 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const [displayBox, setDisplayBox] = useState({ width: 0, height: 0 });
 
+    // In annotation mode (brush/text/shapes) the bottom toolbars float over the image.
+    // Reserve this many pixels at the bottom so the image scales to fit above them.
+    const BRUSH_BOTTOM_RESERVE = 176;
+
     const updateDisplayBox = useCallback(() => {
         const viewport = imageViewportRef.current;
         if (!viewport || imgNaturalDims.width <= 0 || imgNaturalDims.height <= 0) return;
 
         const viewportWidth = viewport.clientWidth;
-        const viewportHeight = viewport.clientHeight;
+        const reservedBottom = state.sideSheetMode === 'brush' ? BRUSH_BOTTOM_RESERVE : 0;
+        const viewportHeight = viewport.clientHeight - reservedBottom;
         if (viewportWidth <= 0 || viewportHeight <= 0) return;
 
         const scale = Math.min(
@@ -428,7 +452,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             width: Math.max(1, Math.round(imgNaturalDims.width * scale)),
             height: Math.max(1, Math.round(imgNaturalDims.height * scale))
         });
-    }, [imgNaturalDims.height, imgNaturalDims.width]);
+    }, [imgNaturalDims.height, imgNaturalDims.width, state.sideSheetMode]);
 
     useEffect(() => {
         updateDisplayBox();
@@ -658,15 +682,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
             {/* Removed internal header - handled by AppNavbar */}
 
-            <main className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
-                {/* Canvas Area — mobile: height computed from image aspect ratio; desktop: flex-1 */}
+            <main className={`flex-1 flex flex-col md:flex-row md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+                {/* Canvas Area — mobile brush: flex-1 (fills screen); mobile normal: fixed aspect-ratio height; desktop: flex-1 */}
                 <div
-                    className="md:flex-1 flex flex-col bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden group shrink-0 md:shrink"
-                    style={isMobile
+                    className={`flex flex-col bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
+                    style={isMobile && state.sideSheetMode !== 'brush'
                         ? {
                             height: (imgNaturalDims.width ?? 0) > 0 && (imgNaturalDims.height ?? 0) > 0
-                                ? `${Math.round(window.innerWidth * imgNaturalDims.height / imgNaturalDims.width) + (state.sideSheetMode === 'brush' ? 64 : 0)}px`
-                                : `${window.innerWidth + (state.sideSheetMode === 'brush' ? 64 : 0)}px`
+                                ? `${Math.round(window.innerWidth * imgNaturalDims.height / imgNaturalDims.width)}px`
+                                : `${window.innerWidth}px`
                         }
                         : undefined
                     }
@@ -690,7 +714,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         {state.sideSheetMode !== 'brush' && (
                             <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-all duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-0 group-hover:opacity-100'}`}>
                                 <div className="flex items-center gap-2 pointer-events-auto">
-                                    {img.generationPrompt && img.parentId && (
+                                    {img.generationPrompt && (
                                         <Tooltip text={t('generate_more')} shortcut="M">
                                             <button
                                                 onClick={() => actions.handleGenerateMore(img)}
@@ -712,8 +736,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             </div>
                         )}
 
-                        {/* Sizing wrapper: image and annotations share the exact same fitted box */}
-                        <div ref={imageViewportRef} className="absolute inset-0 flex items-center justify-center">
+                        {/* Sizing wrapper: image and annotations share the exact same fitted box.
+                            In brush mode a paddingBottom reserves space for the floating toolbars
+                            so the image scales to fit above them and the bottom edge stays reachable. */}
+                        <div
+                            ref={imageViewportRef}
+                            className="absolute inset-0 flex items-center justify-center"
+                            style={state.sideSheetMode === 'brush' ? { paddingBottom: BRUSH_BOTTOM_RESERVE } : undefined}
+                        >
                             {displayBox.width > 0 && displayBox.height > 0 && (
                                 <div
                                     className={`relative shrink-0 transition-[opacity,transform] duration-[180ms] ease-in ${isExiting ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}
@@ -723,8 +753,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     {showBlob && (() => {
                                         const parentImg = img.parentId ? imageMap.get(img.parentId) : null;
                                         const parentLoadSrc = parentImg?.thumbSrc || parentImg?.src;
-                                        // Fallback: use the placeholder's own thumbSrc (copied from source during creation)
-                                        const blurSrc = parentLoadSrc || img.thumbSrc;
+                                        // Fallback chain: parent thumb → parent src → own thumbSrc → own src (blob ok, better than bubbles)
+                                        const blurSrc = parentLoadSrc || img.thumbSrc || (img.src && !img.src.startsWith('blob:empty') ? img.src : undefined);
                                         if (blurSrc) {
                                             return (
                                                 <div className="absolute inset-0 overflow-hidden">
@@ -784,7 +814,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     />
 
                                     {!showBlob && isMainLoaded && logicalDims.width > 0 && logicalDims.height > 0 && (
-                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' || state.activeShape ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' || state.activeShape ? 'pointer-events-auto' : 'pointer-events-none'}`} onContextMenu={handleOverlayContextMenu}>
                                             <EditorCanvas
                                                 width={logicalDims.width}
                                                 height={logicalDims.height}
@@ -810,8 +840,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         </div>{/* closes sizing wrapper */}
                     </div>{/* closes image container */}
 
-                    {/* Bottom Area: Fixed space so canvas never jumps */}
-                    <div className={`${state.sideSheetMode === 'brush' ? 'h-20' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
+                    {/* Bottom Area: Fixed space so canvas never jumps (desktop only in brush mode; mobile uses fixed toolbar) */}
+                    <div className={`${state.sideSheetMode === 'brush' && !isMobile ? 'h-20' : state.sideSheetMode !== 'brush' ? 'h-0' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — desktop only */}
                         <div
                             ref={thumbStripRef}
@@ -861,8 +891,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             </div>
                         </div>
 
-                        {/* Annotations Toolbar */}
-                        {state.sideSheetMode === 'brush' && <div className="absolute bottom-6 left-0 right-0 z-50 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                        {/* Annotations Toolbar — fixed bottom on mobile, absolute on desktop */}
+                        {state.sideSheetMode === 'brush' && <div className={`${isMobile ? 'fixed bottom-6' : 'absolute bottom-6'} left-0 right-0 z-50 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150`}>
                             {/* Secondary Row: Contextual Sub-Menu */}
                             <div className="w-full flex justify-center pointer-events-none">
                                 {subMenu === 'text' && (
@@ -934,7 +964,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         />
                                         <Tooltip text={t('clear_all_brush') || 'Pinselstriche löschen'} side="top">
                                             <button
-                                                onClick={() => actions.handleUpdateAnnotations(img.id, img.annotations?.filter((a: any) => a.type !== 'path') || [])}
+                                                onClick={() => actions.handleUpdateAnnotations(img.id, img.annotations?.filter((a: any) => a.type !== 'mask_path') || [])}
                                                 className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors shrink-0"
                                             >
                                                 <Trash className="w-4 h-4" />
@@ -1013,6 +1043,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     )}
 
                     <SideSheet
+                        key={state.selectedImage?.id ?? 'no-selection'}
                         width={isMobile ? '100%' : `${sidebarWidth}px`}
                         disableMobileSheet={isMobile}
                         selectedImage={state.selectedImage}
@@ -1054,6 +1085,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         onSaveRecentPrompt={actions.recordPresetUsage}
                         onUpdateImageTitle={actions.updateProfile}
                         userProfile={state.userProfile}
+                        initialPrompt={
+                            state.selectedImage?.parentId
+                                ? imageMap.get(state.selectedImage.parentId)?.userDraftPrompt ?? ''
+                                : state.selectedImage?.userDraftPrompt ?? ''
+                        }
                     />
                 </aside>
             </main >

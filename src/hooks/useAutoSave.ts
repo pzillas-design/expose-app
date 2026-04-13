@@ -4,206 +4,142 @@ import { ImageRow, CanvasImage } from '@/types';
 
 /**
  * Auto-Save Hook
- * Automatically saves canvas state to Supabase every 30 seconds in the background.
- * Only saves when user is logged in and there are changes.
+ * Saves only changed images (dirty tracking) to avoid upserting all 50 images on every tick.
+ * Batches upserts in chunks of 10 to stay under statement timeout.
  */
+
+const AUTOSAVE_DELAY_MS = 30_000;
+const UPSERT_BATCH_SIZE = 10;
+
+function imageToPayload(img: CanvasImage, userId: string) {
+    return {
+        id: img.id,
+        user_id: userId,
+        storage_path: img.storage_path || '',
+        width: Math.round(img.width),
+        height: Math.round(img.height),
+        real_width: img.realWidth || img.width,
+        real_height: img.realHeight || img.height,
+        title: img.title,
+        base_name: img.baseName || img.title,
+        version: img.version || 1,
+        annotations: JSON.stringify(img.annotations || []),
+        prompt: img.generationPrompt || '',
+        user_draft_prompt: img.userDraftPrompt || '',
+        generation_params: {
+            quality: img.quality || 'nb2-2k',
+            activeTemplateId: img.activeTemplateId,
+            variableValues: img.variableValues
+        },
+        ...(img.parentId !== undefined ? { parent_id: img.parentId } : {}),
+        created_at: new Date(img.createdAt || Date.now()).toISOString(),
+        updated_at: new Date().toISOString()
+    };
+}
+
+async function upsertInBatches(payload: ReturnType<typeof imageToPayload>[]) {
+    for (let i = 0; i < payload.length; i += UPSERT_BATCH_SIZE) {
+        const batch = payload.slice(i, i + UPSERT_BATCH_SIZE);
+        const { error } = await supabase.from('images').upsert(batch, { onConflict: 'id' });
+        if (error) throw error;
+    }
+}
+
 export const useAutoSave = (
     rows: ImageRow[],
     user: any,
     isAuthDisabled: boolean
 ) => {
-    const lastSavedRef = useRef<string>('');
+    // Dirty tracking: map of imageId -> last-saved fingerprint
+    const savedFingerprintsRef = useRef<Map<string, string>>(new Map());
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isSavingRef = useRef(false);
-
-    // Keep a ref to the latest rows so the unmount hook can access current state
     const rowsRef = useRef(rows);
+
+    useEffect(() => { rowsRef.current = rows; }, [rows]);
+
+    const fingerprint = (img: CanvasImage) =>
+        `${img.version}|${img.userDraftPrompt}|${img.generationPrompt}|${img.activeTemplateId}|${JSON.stringify(img.variableValues)}|${img.annotations?.length ?? 0}|${img.parentId ?? ''}`;
+
+    const getDirtyImages = useCallback((currentRows: ImageRow[]): CanvasImage[] => {
+        return currentRows
+            .flatMap(r => r.items)
+            .filter(img => {
+                if (img.isGenerating || !img.src) return false;
+                if (img.src.startsWith('blob:') && !img.storage_path) return false;
+                const fp = fingerprint(img);
+                return savedFingerprintsRef.current.get(img.id) !== fp;
+            });
+    }, []);
+
+    const markSaved = useCallback((images: CanvasImage[]) => {
+        images.forEach(img => savedFingerprintsRef.current.set(img.id, fingerprint(img)));
+    }, []);
+
+    // ── localStorage (Beta / auth-disabled) ──────────────────────────────────
     useEffect(() => {
-        rowsRef.current = rows;
-    }, [rows]);
+        if (!isAuthDisabled) return;
 
-    // Helper to extract saveable images
-    const getImagesToSave = (currentRows: ImageRow[]): CanvasImage[] => {
-        return currentRows.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
-    };
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
-    // Main Auto-Save Logic
+        saveTimeoutRef.current = setTimeout(() => {
+            try {
+                localStorage.setItem('beta_canvas_state', JSON.stringify(rows));
+            } catch (err) {
+                console.error('[AutoSave] localStorage save failed:', err);
+            }
+        }, 5000);
+
+        return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
+    }, [rows, isAuthDisabled]);
+
+    // ── Supabase (production) ─────────────────────────────────────────────────
     useEffect(() => {
-        // For Beta (auth disabled): Use localStorage
-        if (isAuthDisabled) {
-            const currentState = JSON.stringify(rows);
-            if (currentState === lastSavedRef.current) return;
+        if (isAuthDisabled || !user) return;
 
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-            saveTimeoutRef.current = setTimeout(() => {
-                try {
-                    console.log('[AutoSave] Saving to localStorage (Beta mode)...');
-                    localStorage.setItem('beta_canvas_state', currentState);
-                    lastSavedRef.current = currentState;
-                    console.log('[AutoSave] Saved to localStorage successfully');
-                } catch (err) {
-                    console.error('[AutoSave] localStorage save failed:', err);
-                }
-            }, 5000);
-
-            return () => {
-                if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-                // Force save on unmount if there's pending state
-                const currentUnmountState = JSON.stringify(rowsRef.current);
-                if (currentUnmountState !== lastSavedRef.current) {
-                    try {
-                        console.log('[AutoSave] Force saving to localStorage on unmount...');
-                        localStorage.setItem('beta_canvas_state', currentUnmountState);
-                        lastSavedRef.current = currentUnmountState;
-                    } catch (err) {
-                        console.error('[AutoSave] Unmount localStorage save failed:', err);
-                    }
-                }
-            };
-        }
-
-        // For Production (with auth): Use Supabase
-        if (!user) return;
-
-        // Skip if no changes
-        const currentState = JSON.stringify(rows);
-        if (currentState === lastSavedRef.current) return;
-
-        // Skip if already saving
-        if (isSavingRef.current) return;
-
-        // Debounce: Only save every 30s
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
         saveTimeoutRef.current = setTimeout(async () => {
+            if (isSavingRef.current) return;
+            const dirty = getDirtyImages(rows);
+            if (dirty.length === 0) return;
+
+            isSavingRef.current = true;
+            console.log(`[AutoSave] Starting save (${dirty.length} dirty images)...`);
             try {
-                isSavingRef.current = true;
-                const imagesToSave = getImagesToSave(rows);
-
-                if (imagesToSave.length === 0) {
-                    lastSavedRef.current = currentState; // Update ref even if empty to avoid loop
-                    isSavingRef.current = false;
-                    return;
-                }
-
-                console.log('[AutoSave] Starting save...');
-
-                // Batch Upsert
-                const payload = imagesToSave.map(img => {
-                    const isBlob = img.src.startsWith('blob:');
-
-                    // Skip blob images that haven't been persisted yet (no storage_path)
-                    if (isBlob && !img.storage_path) {
-                        return null;
-                    }
-
-                    return {
-                        id: img.id,
-                        user_id: user.id,
-                        storage_path: img.storage_path || '',
-                        width: Math.round(img.width),
-                        height: Math.round(img.height),
-                        real_width: img.realWidth || img.width,
-                        real_height: img.realHeight || img.height,
-                        title: img.title,
-                        base_name: img.baseName || img.title,
-                        version: img.version || 1,
-                        annotations: JSON.stringify(img.annotations || []),
-                        prompt: img.generationPrompt || '',
-                        user_draft_prompt: img.userDraftPrompt || '',
-                        generation_params: {
-                            quality: img.quality || 'nb2-2k',
-                            activeTemplateId: img.activeTemplateId,
-                            variableValues: img.variableValues
-                        },
-                        parent_id: img.parentId || null,
-                        created_at: new Date(img.createdAt || Date.now()).toISOString(),
-                        updated_at: new Date().toISOString()
-                    };
-                }).filter((item): item is NonNullable<typeof item> => item !== null);
-
-                if (payload.length > 0) {
-                    const { error } = await supabase
-                        .from('images')
-                        .upsert(payload, { onConflict: 'id' });
-
-                    if (error) {
-                        console.error('[AutoSave] Error:', error);
-                    } else {
-                        console.log('[AutoSave] Saved', payload.length, 'images successfully');
-                        lastSavedRef.current = currentState;
-                    }
-                } else {
-                    // No valid payload (all blobs not yet persisted)
-                    lastSavedRef.current = currentState;
-                }
-            } catch (err) {
-                console.error('[AutoSave] Exception:', err);
+                const payload = dirty.map(img => imageToPayload(img, user.id));
+                await upsertInBatches(payload);
+                markSaved(dirty);
+                console.log(`[AutoSave] Saved ${dirty.length} images successfully`);
+            } catch (err: any) {
+                console.error('[AutoSave] Error:', err);
             } finally {
                 isSavingRef.current = false;
             }
-        }, 30000); // 30 seconds
+        }, AUTOSAVE_DELAY_MS);
 
-        return () => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        };
-    }, [rows, user, isAuthDisabled]);
+        return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
+    }, [rows, user, isAuthDisabled, getDirtyImages, markSaved]);
 
-    // Force save on unmount
+    // ── Force-save on unmount ─────────────────────────────────────────────────
     useEffect(() => {
         return () => {
             if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+            if (!user || isAuthDisabled || isSavingRef.current) return;
 
-            // Trigger immediate save on unmount if we have unsaved work
-            // Using rowsRef instead of rows to prevent stale closure data on unmount
-            if (user && !isAuthDisabled && !isSavingRef.current) {
-                const imagesToSave = rowsRef.current.flatMap(r => r.items).filter(img => !img.isGenerating && img.src);
+            const dirty = getDirtyImages(rowsRef.current);
+            if (dirty.length === 0) return;
 
-                if (imagesToSave.length > 0) {
-                    const payload = imagesToSave.map(img => {
-                        const isBlob = img.src.startsWith('blob:');
-                        if (isBlob && !img.storage_path) return null;
-
-                        return {
-                            id: img.id,
-                            user_id: user.id,
-                                storage_path: img.storage_path || '',
-                            width: Math.round(img.width),
-                            height: Math.round(img.height),
-                            real_width: img.realWidth || img.width,
-                            real_height: img.realHeight || img.height,
-                            title: img.title,
-                            base_name: img.baseName || img.title,
-                            version: img.version || 1,
-                            annotations: JSON.stringify(img.annotations || []),
-                            prompt: img.generationPrompt || '',
-                            user_draft_prompt: img.userDraftPrompt || '',
-                            generation_params: {
-                                quality: img.quality || 'nb2-2k',
-                                activeTemplateId: img.activeTemplateId,
-                                variableValues: img.variableValues
-                            },
-                            parent_id: img.parentId || null,
-                            created_at: new Date(img.createdAt || Date.now()).toISOString(),
-                            updated_at: new Date().toISOString()
-                        };
-                    }).filter(Boolean);
-
-                    if (payload.length > 0) {
-                        console.log('[AutoSave] Force save on unmount');
-                        (async () => {
-                            try {
-                                await supabase.from('images').upsert(payload, { onConflict: 'id' });
-                                console.log('[AutoSave] Unmount save complete');
-                            } catch (err) {
-                                console.error('[AutoSave] Unmount save failed:', err);
-                            }
-                        })();
-                    }
+            const payload = dirty.map(img => imageToPayload(img, user.id));
+            console.log(`[AutoSave] Force save on unmount (${dirty.length} images)`);
+            (async () => {
+                try {
+                    await upsertInBatches(payload);
+                    console.log('[AutoSave] Unmount save complete');
+                } catch (err) {
+                    console.error('[AutoSave] Unmount save failed:', err);
                 }
-            }
+            })();
         };
-    }, []); // Empty deps - only run on unmount
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 };

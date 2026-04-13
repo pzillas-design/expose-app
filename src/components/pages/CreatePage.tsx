@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { BlobBackground } from '@/components/ui/BlobBackground';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
+import { compressImage } from '@/utils/imageUtils';
 
 const ASPECT_RATIOS = [
     { label: '16:9', value: '16:9' },
@@ -26,6 +26,30 @@ const AspectBox = ({ ratio, active }: { ratio: string; active: boolean }) => {
     );
 };
 
+const Swoosh = () => (
+    <>
+        <style>{`
+            @keyframes expose-swoosh {
+                0%   { transform: translateX(-120%) skewX(-12deg); opacity: 0; }
+                15%  { opacity: 1; }
+                85%  { opacity: 1; }
+                100% { transform: translateX(260%) skewX(-12deg); opacity: 0; }
+            }
+        `}</style>
+        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+            <div style={{
+                position: 'absolute',
+                top: '-10%',
+                bottom: '-10%',
+                width: '30%',
+                background: 'linear-gradient(90deg, transparent, rgba(130,130,130,0.09), rgba(150,150,150,0.13), transparent)',
+                animation: 'expose-swoosh 2.2s ease-in-out infinite',
+                filter: 'blur(6px)',
+            }} />
+        </div>
+    </>
+);
+
 interface CreatePageProps {
     onCreateNew: (prompt: string, model: string, ratio: string, attachments: string[]) => void;
     onBack: () => void;
@@ -40,6 +64,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
     const isMobile = useMobile();
     const [selectedRatio, setSelectedRatio] = useState('4:3');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [referenceFiles, setReferenceFiles] = useState<string[]>([]); // base64 data URLs
 
     const [ratioW, ratioH] = selectedRatio.split(':').map(Number);
 
@@ -64,11 +89,38 @@ export const CreatePage: React.FC<CreatePageProps> = ({
         return () => ro.disconnect();
     }, [ratioW, ratioH]);
 
+    const handleAddReference = useCallback((file: File) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            if (typeof e.target?.result === 'string') {
+                // Compress to max 1024px / 0.8 quality so the payload stays
+                // well under Supabase's 6 MB edge-function body limit.
+                try {
+                    const blob = await compressImage(e.target.result as string, 1024, 0.8);
+                    const compressed = await new Promise<string>((res, rej) => {
+                        const r = new FileReader();
+                        r.onload = ev => res(ev.target?.result as string);
+                        r.onerror = rej;
+                        r.readAsDataURL(blob);
+                    });
+                    setReferenceFiles(prev => [...prev, compressed]);
+                } catch {
+                    // fallback: use raw data URL if compression fails
+                    setReferenceFiles(prev => [...prev, e.target!.result as string]);
+                }
+            }
+        };
+        reader.readAsDataURL(file);
+    }, []);
+
+    const handleRemoveReference = useCallback((idx: number) => {
+        setReferenceFiles(prev => prev.filter((_, i) => i !== idx));
+    }, []);
+
     const handleGenerate = useCallback((prompt: string) => {
         setIsGenerating(true);
-        // onCreateNew calls selectAndSnap(newId) which navigates directly to /image/newId
-        onCreateNew(prompt, state.qualityMode || 'nb2-2k', selectedRatio, []);
-    }, [onCreateNew, state.qualityMode, selectedRatio]);
+        onCreateNew(prompt, state.qualityMode || 'nb2-2k', selectedRatio, referenceFiles);
+    }, [onCreateNew, state.qualityMode, selectedRatio, referenceFiles]);
 
     const sidebarWidth = 380;
 
@@ -81,20 +133,16 @@ export const CreatePage: React.FC<CreatePageProps> = ({
             >
                 <div ref={canvasAreaRef} className="absolute inset-0 flex items-center justify-center p-6 md:p-12 bg-zinc-100 dark:bg-zinc-950">
                     <div
-                        className="relative rounded-2xl bg-white dark:bg-zinc-900 flex items-center justify-center animate-in fade-in zoom-in-95 duration-300 overflow-visible"
+                        className="relative rounded-2xl bg-white dark:bg-zinc-900 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 overflow-visible"
                         style={previewSize
                             ? { width: previewSize.w, height: previewSize.h }
                             : { aspectRatio: `${ratioW} / ${ratioH}`, maxWidth: '100%', maxHeight: '100%' }
                         }
                     >
-                        {/* blobs clipped inside rounded box */}
-                        {isGenerating && (
-                            <div className="absolute inset-0 rounded-2xl overflow-hidden">
-                                <BlobBackground />
-                            </div>
-                        )}
+                        {/* Swoosh animation while generating */}
+                        {isGenerating && <Swoosh />}
 
-                        {/* ratio picker */}
+                        {/* Ratio picker */}
                         <div
                             className={`relative z-10 flex items-center gap-1 transition-opacity duration-300 ${isGenerating ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                             onClick={(e) => e.stopPropagation()}
@@ -119,6 +167,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                                 </button>
                             ))}
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -129,6 +178,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                 style={{ width: isMobile ? undefined : `${sidebarWidth}px` }}
             >
                 <SideSheet
+                    key="create"
                     width={isMobile ? '100%' : `${sidebarWidth}px`}
                     disableMobileSheet={isMobile}
                     selectedImage={null}
@@ -169,6 +219,9 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                     onSaveRecentPrompt={actions.recordPresetUsage}
                     onUpdateImageTitle={actions.updateProfile}
                     userProfile={state.userProfile}
+                    onAddReference={handleAddReference}
+                    createReferenceFiles={referenceFiles}
+                    onRemoveCreateReference={handleRemoveReference}
                 />
             </aside>
         </div>

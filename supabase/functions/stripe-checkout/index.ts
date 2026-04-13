@@ -61,6 +61,32 @@ Deno.serve(async (req) => {
             throw new Error(`Invalid redirect URL: ${success_url}`);
         }
 
+        // Get or create Stripe Customer — link to profile for future refunds
+        const { data: profileData } = await supabaseAdmin
+            .from('profiles')
+            .select('stripe_customer_id')
+            .eq('id', userId)
+            .single()
+
+        let stripeCustomerId = profileData?.stripe_customer_id
+
+        if (!stripeCustomerId) {
+            // Check if customer already exists in Stripe by email
+            const existing = await stripe.customers.list({ email: user.email ?? '', limit: 1 })
+            if (existing.data.length > 0) {
+                stripeCustomerId = existing.data[0].id
+            } else {
+                const customer = await stripe.customers.create({
+                    email: user.email ?? undefined,
+                    metadata: { user_id: user.id },
+                })
+                stripeCustomerId = customer.id
+            }
+            // Save to profile
+            await supabaseAdmin.from('profiles').update({ stripe_customer_id: stripeCustomerId }).eq('id', userId)
+            console.log(`[checkout] linked Stripe customer ${stripeCustomerId} to user ${userId}`)
+        }
+
         console.log(`[checkout] creating Stripe session for ${user.email}, amount: ${amount}...`);
 
         const session = await stripe.checkout.sessions.create({
@@ -81,7 +107,7 @@ Deno.serve(async (req) => {
             mode: 'payment',
             success_url,
             cancel_url,
-            customer_email: user.email,
+            customer: stripeCustomerId,
             metadata: {
                 user_id: user.id,
                 amount: amount.toString(),

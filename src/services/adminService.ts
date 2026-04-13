@@ -24,6 +24,7 @@ export const adminService = {
             totalSpent: user.total_spent || 0.0,
             joinedAt: new Date(user.created_at).getTime(),
             lastActiveAt: user.last_active_at ? new Date(user.last_active_at).getTime() : 0,
+            stripeCustomerId: user.stripe_customer_id || null,
         }));
     },
 
@@ -48,6 +49,34 @@ export const adminService = {
             console.error('AdminService: Profile update failed!', error.message, error.details, error.hint);
             throw error;
         }
+    },
+
+    /**
+     * Get Stripe payment history for a customer
+     */
+    async getStripePayments(stripeCustomerId: string): Promise<any[]> {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error('Not authenticated');
+        const res = await supabase.functions.invoke('admin-stats', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: { stripeCustomerId },
+        });
+        if (res.error) throw new Error(res.error.message);
+        return res.data?.payments || [];
+    },
+
+    /**
+     * Issue a Stripe refund for a payment intent
+     */
+    async createStripeRefund(paymentIntentId: string, amountCents?: number): Promise<void> {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error('Not authenticated');
+        const res = await supabase.functions.invoke('admin-refund', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: { paymentIntentId, amountCents },
+        });
+        if (res.error) throw new Error(res.error.message);
+        if (res.data?.error) throw new Error(res.data.error);
     },
 
     /**
@@ -86,7 +115,7 @@ export const adminService = {
     async getJobs(page?: number, pageSize?: number): Promise<any[]> {
         let query = supabase
             .from('generation_jobs')
-            .select('*')
+            .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, downloaded_at')
             .order('created_at', { ascending: false });
 
         if (page !== undefined && pageSize !== undefined) {
@@ -117,13 +146,14 @@ export const adminService = {
                 .select('id, full_name, email')
                 .in('id', userIds)
                 .then(({ data: profiles }) => {
-                    if (profiles) profiles.forEach(p => { profilesMap[p.id] = p.full_name || p.email || 'Unknown'; });
+                    if (profiles) profiles.forEach(p => { profilesMap[p.id] = { name: p.full_name || p.email || 'Unknown', email: p.email || null }; });
                 }) : Promise.resolve(),
         ]);
 
         return (data || []).map(job => ({
             id: job.id,
-            userName: profilesMap[job.user_id] || job.user_name || 'Unknown',
+            userName: profilesMap[job.user_id]?.name || job.user_name || 'Unknown',
+            userEmail: profilesMap[job.user_id]?.email || job.user_email || null,
             type: job.type || 'Generation',
             model: job.model || 'unknown',
             qualityMode: job.quality_mode || job.model || 'unknown',
@@ -133,7 +163,7 @@ export const adminService = {
             cost: job.cost || 0,
             createdAt: new Date(job.created_at).getTime(),
             resultImage: imagesMap[job.id] || null,  // Attach result image if available
-            requestPayload: job.request_payload || null,  // Attach API request for debugging
+            requestPayload: null,  // Loaded on-demand via getJobDetail()
             requestType: job.request_type || null,
             hasSourceImage: job.has_source_image ?? null,
             hasMask: job.has_mask ?? null,
@@ -144,9 +174,25 @@ export const adminService = {
             tokensPrompt: job.tokens_prompt ?? null,
             tokensCompletion: job.tokens_completion ?? null,
             tokensTotal: job.tokens_total ?? null,
-            webhookData: job.webhook_data || null,
+            webhookData: null,  // Loaded on-demand via getJobDetail()
             downloadedAt: job.downloaded_at || null
         }));
+    },
+
+    /**
+     * Fetch the heavy JSONB fields for a single job (loaded on-demand when opening detail view).
+     */
+    async getJobDetail(jobId: string): Promise<{ requestPayload: any; webhookData: any } | null> {
+        const { data, error } = await supabase
+            .from('generation_jobs')
+            .select('request_payload, webhook_data')
+            .eq('id', jobId)
+            .single();
+        if (error || !data) return null;
+        return {
+            requestPayload: data.request_payload || null,
+            webhookData: data.webhook_data || null,
+        };
     },
 
     /**
@@ -159,7 +205,7 @@ export const adminService = {
             .from('voice_logs')
             .select('session_id, user_id, kind, tool_name, tool_status, source, text, ts')
             .order('ts', { ascending: false })
-            .limit(500);
+            .limit(limit);
 
         if (error) throw error;
         if (!data?.length) return [];
@@ -172,10 +218,10 @@ export const adminService = {
         }
 
         const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))];
-        const profilesMap: Record<string, string> = {};
+        const profilesMap: Record<string, { name: string; email: string | null }> = {};
         if (userIds.length > 0) {
             const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
-            if (profiles) profiles.forEach(p => { profilesMap[p.id] = p.full_name || p.email || 'Unknown'; });
+            if (profiles) profiles.forEach(p => { profilesMap[p.id] = { name: p.full_name || p.email || 'Unknown', email: p.email || null }; });
         }
 
         return Array.from(sessionMap.entries())
@@ -195,7 +241,8 @@ export const adminService = {
                     id: `voice-${sessionId}`,
                     _type: 'voice' as const,
                     sessionId,
-                    userName: profilesMap[userId] || 'Unknown',
+                    userName: profilesMap[userId]?.name || 'Unknown',
+                    userEmail: profilesMap[userId]?.email || null,
                     createdAt: startedAt,
                     durationMs: endedAt - startedAt,
                     messageCount: transcripts.length,

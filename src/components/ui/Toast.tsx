@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { createPortal } from 'react-dom';
 import { X, Check, AlertTriangle, Info } from 'lucide-react';
 import { Theme, Typo, IconButton } from './DesignSystem';
+import { logError } from '../../services/errorLogger';
 
 // --- Types ---
 
@@ -40,6 +41,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const showToast = useCallback((message: string, type: ToastType = 'info', duration = 6000, onClick?: () => void) => {
         const id = Math.random().toString(36).substring(2, 9);
         setToasts(prev => [...prev, { id, message, type, duration, onClick }]);
+
+        // Auto-log error toasts to DB for admin visibility
+        if (type === 'error') {
+            logError(message, {
+                source: 'toast',
+                context: typeof window !== 'undefined' ? window.location.pathname : undefined,
+            });
+        }
 
         if (duration > 0) {
             setTimeout(() => {

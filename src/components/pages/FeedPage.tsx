@@ -770,6 +770,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
                         return (
                             <SideSheet
+                                key={selectedImage?.id ?? 'no-selection'}
                                 selectedImage={selectedImage}
                                 selectedImages={selectedImages}
                                 sideSheetMode={state?.sideSheetMode || 'prompt'}
@@ -808,6 +809,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 onSaveTemplate={actions?.saveTemplate || (async () => { })}
                                 onDeleteTemplate={actions?.deleteTemplate || (async () => { })}
                                 userProfile={state?.userProfile}
+                                initialPrompt={
+                                    selectedImage?.parentId
+                                        ? imageIdMap.get(selectedImage.parentId)?.userDraftPrompt ?? ''
+                                        : selectedImage?.userDraftPrompt ?? ''
+                                }
                             />
                         );
                     })() : (

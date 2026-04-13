@@ -41,7 +41,7 @@ export const PresetLibrary: React.FC<PresetLibraryProps> = ({
 
     // Filter templates by language
     const languageFilteredTemplates = useMemo(() => {
-        return templates.filter(t => !t.lang || t.lang === currentLang);
+        return templates.filter(t => t.isCustom || !t.lang || t.lang === currentLang);
     }, [templates, currentLang]);
 
     const displayTemplates = useMemo(() => {

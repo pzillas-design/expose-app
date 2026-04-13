@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>exposé</title>
   <meta name="description"
     content="exposé is a powerful AI image generation and editing workspace. Use visual prompting, iterative parallel generations, and precision control to bring your vision to life." />
@@ -27,9 +27,13 @@
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
+  <link rel="preload" as="style"
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Kumbh+Sans:wght@300;400;500;600;700&display=swap"
-    rel="stylesheet">
+    onload="this.onload=null;this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Kumbh+Sans:wght@300;400;500;600;700&display=swap">
+  </noscript>
 
   <!-- Structured Data -->
   <script type="application/ld+json">
@@ -37,14 +41,33 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "exposé",
+    "alternateName": "expose.ae",
+    "url": "https://expose.ae",
     "operatingSystem": "Web",
     "applicationCategory": "DesignApplication",
-    "description": "AI-powered image generation and editing workspace with visual prompting and iterative control.",
+    "applicationSubCategory": "AI Image Generation",
+    "description": "AI-powered image generation and editing workspace. Create, iterate and refine images with visual prompting, voice control, precision masking and stacked versioning. Built for designers, photographers and creative professionals.",
+    "featureList": [
+      "Visual prompting with drawing and masking tools",
+      "Voice-controlled creative workflow via Gemini Live",
+      "Iterative image stacking and versioning",
+      "Presets and reusable prompt templates",
+      "Multiple quality tiers from 0.5k to 4k resolution",
+      "Shape and annotation tools for guided generation",
+      "Credit-based pricing — pay per generation"
+    ],
+    "screenshot": "https://expose.ae/og_image.png",
     "offers": {
       "@type": "Offer",
       "price": "0",
-      "priceCurrency": "USD"
-    }
+      "priceCurrency": "USD",
+      "description": "Free tier with starter credits. Additional credits available for purchase."
+    },
+    "audience": {
+      "@type": "Audience",
+      "audienceType": "Designers, photographers, creative professionals, e-commerce teams"
+    },
+    "keywords": "AI image generation, visual prompting, AI image editor, voice controlled AI, iterative image creation, AI design tool, inpainting, image workspace"
   }
   </script>
 

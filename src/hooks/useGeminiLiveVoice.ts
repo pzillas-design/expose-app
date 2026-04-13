@@ -151,7 +151,7 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'set_prompt_text',
-        description: 'Write a prompt for image generation or editing. Write in the user\'s language. For edits: describe ONLY the desired change, never the current state. Keep prompts short and professional.',
+        description: 'Write a prompt for image generation or editing. ALWAYS call this together with create_variables — never call create_variables without also calling set_prompt_text. Write in the user\'s language. For edits: describe ONLY the desired change, never the current state. Keep prompts short and professional.',
         parameters: {
             type: Type.OBJECT,
             properties: {
@@ -204,7 +204,7 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'create_variables',
-        description: 'Create variable controls so the user can explore creative directions. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each. Existing selections are preserved when a label stays the same. When the user describes something that fits no existing option, call create_variables again with updated options that match their request — the app merges selections automatically.',
+        description: 'Create variable controls so the user can explore creative directions. ALWAYS call set_prompt_text first in the same turn — never call create_variables without a prompt. Call this proactively with every edit suggestion — 2-4 variables with 3-4 options each. Existing selections are preserved when a label stays the same. When the user describes something that fits no existing option, call create_variables again with updated options that match their request — the app merges selections automatically.',
         parameters: {
             type: Type.OBJECT,
             properties: {
@@ -215,7 +215,8 @@ const toolDeclarations: FunctionDeclaration[] = [
                         type: Type.OBJECT,
                         properties: {
                             label: { type: Type.STRING, description: 'Variable label, e.g. "Farbe" or "Stil"' },
-                            options: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Option values, e.g. ["Rot", "Blau", "Gold"]' }
+                            options: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Option values, e.g. ["Rot", "Blau", "Gold"]' },
+                            selected: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Optional: option values to pre-select when creating this control, e.g. ["Blau"]. Use to set a recommended starting point.' }
                         },
                         required: ['label', 'options']
                     }
@@ -448,6 +449,19 @@ export function useGeminiLiveVoice({
     const getAppContextRef = useRef(getAppContext);
     useEffect(() => { getAppContextRef.current = getAppContext; });
 
+    // Always-fresh ref to getVisualContext — prevents syncVisualContext from
+    // recreating on every navigation (location.pathname changes getVoiceVisualContext
+    // in App.tsx, which would cascade through syncVisualContext → visual sync effect).
+    const getVisualContextRef = useRef(getVisualContext);
+    useEffect(() => { getVisualContextRef.current = getVisualContext; });
+
+    // Always-fresh refs for callbacks used inside syncVisualContext.
+    // Keeps syncVisualContext stable even when these logging callbacks change.
+    const onToolCallRef = useRef(onToolCall);
+    useEffect(() => { onToolCallRef.current = onToolCall; });
+    const onVisualContextChangeRef = useRef(onVisualContextChange);
+    useEffect(() => { onVisualContextChangeRef.current = onVisualContextChange; });
+
     // Ref mirror of state — avoids stale closures in async callbacks
     const stateRef = useRef<VoiceUiState>('off');
     const setVoiceState = useCallback((next: VoiceUiState | ((prev: VoiceUiState) => VoiceUiState)) => {
@@ -488,8 +502,8 @@ export function useGeminiLiveVoice({
         () => toolDeclarations
             .filter(tool => enabledToolNames.has(tool.name || ''))
             .map(tool => {
-                const override = config.tools.find(t => t.name === tool.name)?.description;
-                return override ? { ...tool, description: override } : tool;
+                const dbDesc = config.tools.find(t => t.name === tool.name)?.description;
+                return { ...tool, description: dbDesc ?? '' };
             }),
         [enabledToolNames, config.tools]
     );
@@ -629,14 +643,21 @@ export function useGeminiLiveVoice({
         // Block for 5s after any tool batch completes.
         if (Date.now() < syncLockedUntilRef.current) return;
 
-        const visualContext = getVisualContext();
+        const visualContext = getVisualContextRef.current();
         if (!visualContext || visualContext.contextKey === lastVisualContextKeyRef.current) return;
         lastVisualContextKeyRef.current = visualContext.contextKey;
-        onVisualContextChange?.(visualContext.summary, visualContext.frames.length);
+        onVisualContextChangeRef.current?.(visualContext.summary, visualContext.frames.length);
 
         try {
             const isDetailWithFrame = visualContext.frames.length > 0;
-            sessionRef.current.sendRealtimeInput({ text: visualContext.summary });
+            const frameId = visualContext.frames[0]?.id || null;
+            const willNudge = isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT') && frameId && frameId !== lastNudgedImageIdRef.current;
+
+            // Only send the summary text when NOT nudging — nudge replaces it.
+            // Sending both causes Gemini to respond twice (once to summary, once to nudge).
+            if (!willNudge) {
+                sessionRef.current.sendRealtimeInput({ text: visualContext.summary });
+            }
 
             for (const frame of visualContext.frames.slice(0, 4)) {
                 const payload = await fetchFramePayload(frame);
@@ -644,16 +665,15 @@ export function useGeminiLiveVoice({
             }
 
             // Nudge the AI to acknowledge the image — only once per image, not on every context update
-            const frameId = visualContext.frames[0]?.id || null;
-            if (isDetailWithFrame && !visualContext.summary.includes('WIRD GENERIERT') && frameId && frameId !== lastNudgedImageIdRef.current) {
-                lastNudgedImageIdRef.current = frameId;
+            if (willNudge) {
+                lastNudgedImageIdRef.current = frameId!;
                 const imageLabel = visualContext.frames[0]?.label || 'Bild';
                 await new Promise(r => setTimeout(r, 1500));
                 sessionRef.current?.sendRealtimeInput({ text: `[Du siehst jetzt "${imageLabel}". Beschreibe kurz was du siehst und frage was der User ändern möchte.]` });
             }
 
             // Log which image was visually sent — visible in Live Monitor for debugging
-            onToolCall?.({
+            onToolCallRef.current?.({
                 id: `visual-sync-${Date.now()}`,
                 sessionId: sessionIdRef.current,
                 name: '📷 visual_context_synced',
@@ -664,7 +684,7 @@ export function useGeminiLiveVoice({
             });
         } catch (syncError) {
             console.error('[voice] visual context sync failed', syncError);
-            onToolCall?.({
+            onToolCallRef.current?.({
                 id: `visual-sync-err-${Date.now()}`,
                 sessionId: sessionIdRef.current,
                 name: '📷 visual_context_synced',
@@ -674,7 +694,7 @@ export function useGeminiLiveVoice({
                 timestamp: Date.now(),
             });
         }
-    }, [config.visualContextEnabled, getVisualContext, onToolCall, onVisualContextChange]);
+    }, [config.visualContextEnabled]);
 
     // --- Tool execution ---
 
@@ -1015,7 +1035,7 @@ export function useGeminiLiveVoice({
                     },
                     ...(config.inputTranscriptionEnabled ? { inputAudioTranscription: {} } : {}),
                     ...(config.outputTranscriptionEnabled ? { outputAudioTranscription: {} } : {}),
-                    generationConfig: { temperature: config.temperature ?? 1.1 },
+                    temperature: config.temperature ?? 1.1,
                     ...(config.thinkingLevel && config.thinkingLevel !== 'none' ? { thinkingConfig: { thinkingLevel: config.thinkingLevel } as any } : {}),
                     systemInstruction: `${config.systemPrompt}\n\nSession language: ${lang === 'de' ? 'German (Deutsch) — respond in German' : 'English — respond in English'}.`,
                     ...(activeToolDeclarations.length > 0 ? { tools: [{ functionDeclarations: activeToolDeclarations }] } : {}),
@@ -1039,9 +1059,20 @@ export function useGeminiLiveVoice({
                     },
                     onclose: (e: CloseEvent) => {
                         console.log('[voice] session closed', JSON.stringify({ code: e?.code, reason: e?.reason, wasClean: e?.wasClean }));
+                        // Capture state BEFORE stop() clears it — used to detect premature close
+                        const closedWhileStarting = stateRef.current === 'starting' || stateRef.current === 'greeting';
                         sessionRef.current = null;
                         // Always run full cleanup so mic stream is released
                         stop();
+                        // If session closed before fully connecting, surface an error so the
+                        // user sees a retry button instead of the assistant silently disappearing.
+                        if (closedWhileStarting) {
+                            const reason = e?.reason || (e?.code ? `Code ${e.code}` : '');
+                            setError(lang === 'de'
+                                ? `Verbindung fehlgeschlagen${reason ? ` (${reason})` : ''} — bitte erneut versuchen`
+                                : `Connection failed${reason ? ` (${reason})` : ''} — please try again`);
+                            setState('error');
+                        }
                     }
                 }
             });
@@ -1091,7 +1122,6 @@ export function useGeminiLiveVoice({
         showToast,
         startMicrophone,
         stop,
-        syncVisualContext
     ]);
 
     // Animated level for speaking/listening states

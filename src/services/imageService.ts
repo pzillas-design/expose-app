@@ -54,6 +54,7 @@ export const imageService = {
             prompt: image.generationPrompt,
             user_draft_prompt: image.userDraftPrompt,
             parent_id: image.parentId,
+            folder_id: image.folderId ?? image.id,
             annotations: cleanedAnnotations ? JSON.stringify(cleanedAnnotations) : null,
             generation_params: {
                 quality: image.quality,
@@ -212,6 +213,7 @@ export const imageService = {
         aspectRatio,
         activeTemplateId,
         groupParentId,
+        isRepeat,
         sourceImage // Passed for local dimension calculation fallback
     }: {
         payload: any; // StructuredGenerationRequest
@@ -224,7 +226,8 @@ export const imageService = {
         targetTitle?: string;
         aspectRatio?: string;
         activeTemplateId?: string;
-        groupParentId?: string;
+        isRepeat?: boolean;
+        groupParentId?: string; // @deprecated — kept for call-site compatibility during migration
     }): Promise<CanvasImage> {
         console.log(`Generation: Invoking Edge Function for job ${newId}...`);
 
@@ -240,22 +243,41 @@ export const imageService = {
             }
         } catch { /* localStorage unavailable */ }
 
+        // Strip annotations from sourceImage before sending — reference image base64
+        // data is already in payload.references; sending it again in sourceImage.annotations
+        // would triple the payload size and cause OOM in the Deno edge function.
+        const sourceImageForEdge = sourceImage ? {
+            ...sourceImage,
+            annotations: (sourceImage.annotations || []).map(ann =>
+                ann.type === 'reference_image'
+                    ? { ...ann, referenceImage: undefined, _tempSrc: undefined }
+                    : ann
+            )
+        } : sourceImage;
+
         const { data, error } = await supabase.functions.invoke('generate-image', {
-            ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {}),
+            headers: {
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
             body: {
                 ...payload,
                 qualityMode,
                 newId,
                 modelName,
-                attachments,
+                // attachments intentionally omitted — reference images are already in payload.references
                 aspectRatio,
                 targetTitle,
                 activeTemplateId: activeTemplateId || undefined,
-                sourceImage,
-                groupParentId: groupParentId || undefined,
-                // Pass the storage path so the edge function can download the image
-                // directly from Supabase Storage (faster & more reliable than fetching signed URL)
+                sourceImage: sourceImageForEdge,
+                // folder_id of source so edge function can propagate it to the generated image
+                sourceFolderId: sourceImage?.folderId ?? sourceImage?.id ?? undefined,
+                // Pass storage_path when available so the edge function downloads original
+                // bytes directly (no JPEG recompression loss). Falls back to base64 in
+                // payload.originalImage for blob URLs / images without a storage path.
                 sourceStoragePath: sourceImage?.storage_path || undefined,
+                // Tell edge function this is a repeat so it appends a variation ID to break
+                // Gemini's implicit input caching and encourage diverse outputs.
+                isRepeat: isRepeat || undefined,
                 // Provider: 'gemini' for Google AI Studio, undefined/omitted for default (kie.ai)
                 provider: import.meta.env.VITE_IMAGE_PROVIDER || undefined
             }
@@ -373,7 +395,8 @@ export const imageService = {
             height: logicalHeight,
             realWidth: genWidth,
             realHeight: genHeight,
-            parentId: result.parent_id || (sourceImage.id !== newId ? sourceImage.id : sourceImage.parentId)
+            parentId: (result.parent_id ?? result.parentId) ?? (sourceImage.parentId ?? sourceImage.id),
+            folderId: result.folder_id || (sourceImage.folderId ?? sourceImage.id)
         };
     },
 
@@ -434,6 +457,7 @@ export const imageService = {
             userDraftPrompt: record.user_draft_prompt || '',
             annotations: resolvedAnns,
             parentId: record.parent_id,
+            folderId: record.folder_id || record.parent_id || record.id,
             quality: record.generation_params?.quality || 'nb2-2k',
             activeTemplateId: record.generation_params?.activeTemplateId,
             variableValues: record.generation_params?.variableValues,
@@ -456,7 +480,7 @@ export const imageService = {
         // 1. Get Completed Images & Active Jobs in parallel
         const imgsQuery = supabase
             .from('images')
-            .select('*', { count: 'exact' })
+            .select('*', { count: 'estimated' })
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .order('id', { ascending: false })
@@ -580,9 +604,15 @@ export const imageService = {
             const baseName = parentBaseName || 'Generation';
             const startTime = new Date(job.created_at).getTime();
 
+            // Inherit folder_id from parent so skeleton lands in the right stack row
+            const parentFolderId = (parent as CanvasImage)?.folderId || (parent as any)?.folder_id || job.parent_id || job.id;
+
+            // Prefer the resolved CanvasImage (has signed thumbSrc) over raw DB record
+            const parentCanvasImg = loadedImages.find(img => img.id === job.parent_id);
             const skeleton: CanvasImage = {
                 id: job.id,
-                src: parent?.src || '', // Use parent image as placeholder if available
+                src: parentCanvasImg?.src || (parent as any)?.src || '',
+                thumbSrc: parentCanvasImg?.thumbSrc || parentCanvasImg?.src || undefined,
                 storage_path: '',
                 width: parent ? (parent.width / (parent.height || 512)) * 512 : 512,
                 height: 512,
@@ -592,6 +622,7 @@ export const imageService = {
                 isGenerating: true,
                 generationStartTime: startTime,
                 parentId: job.parent_id, // Map persistent lineage from DB
+                folderId: parentFolderId,
                 generationPrompt: job.prompt,
                 quality: job.model as any,
                 createdAt: startTime,
@@ -602,31 +633,14 @@ export const imageService = {
             loadedImages.push(skeleton);
         });
 
-        // 4. Group into Rows by Root Ancestry
+        // 4. Group into Rows by folder_id (explicit, immutable stack root).
+        // Falls back to img.id for images without folder_id (pre-migration data).
         const rows: ImageRow[] = [];
         const imageMap = new Map<string, CanvasImage>(loadedImages.map(img => [img.id, img]));
         const groups = new Map<string, CanvasImage[]>();
 
-        const getRootId = (img: CanvasImage): string => {
-            let current = img;
-            let depth = 0;
-            // Trace back to the oldest parent available in the current set
-            while (current.parentId && imageMap.has(current.parentId) && depth < 50) {
-                current = imageMap.get(current.parentId)!;
-                depth++;
-            }
-            // If the oldest visible one has a parentId, that missing parent is our "virtual" root.
-            // This ensures all siblings of the same missing parent stay in the same row.
-            return current.parentId || current.id;
-        };
-
         loadedImages.forEach(img => {
-            // Group strictly by root ancestry (parent_id chain).
-            // If the root is not in the loaded set (deleted parent), each orphan
-            // stands alone — never merge by baseName which causes false groupings
-            // when unrelated images share a filename or prompt snippet.
-            const groupId = getRootId(img);
-
+            const groupId = img.folderId ?? img.id;
             if (!groups.has(groupId)) groups.set(groupId, []);
             groups.get(groupId)!.push(img);
         });
@@ -721,23 +735,13 @@ export const imageService = {
 
         const loadedImages = await Promise.all(dbImages.map(rec => imageService.resolveImageRecord(rec, signedUrlMap)));
 
-        // Group into rows
+        // Group into rows by folder_id (immutable stack root).
         const rows: ImageRow[] = [];
         const imageMap = new Map<string, CanvasImage>(loadedImages.map(img => [img.id, img]));
         const groups = new Map<string, CanvasImage[]>();
 
-        const getRootId = (img: CanvasImage): string => {
-            let current = img;
-            let depth = 0;
-            while (current.parentId && imageMap.has(current.parentId) && depth < 50) {
-                current = imageMap.get(current.parentId)!;
-                depth++;
-            }
-            return current.parentId || current.id;
-        };
-
         loadedImages.forEach(img => {
-            const groupId = getRootId(img);
+            const groupId = img.folderId ?? img.id;
             if (!groups.has(groupId)) groups.set(groupId, []);
             groups.get(groupId)!.push(img);
         });
@@ -813,7 +817,7 @@ export const imageService = {
     async countUserImages(userId: string): Promise<number> {
         const { count, error } = await supabase
             .from('images')
-            .select('*', { count: 'exact', head: true })
+            .select('*', { count: 'estimated', head: true })
             .eq('user_id', userId);
         if (error) {
             console.error('[imageService] countUserImages error:', error);

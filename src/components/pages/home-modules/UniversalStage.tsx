@@ -16,11 +16,24 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ t, lang }) => {
 
     const targetP = useRef(0);
     const currentP = useRef(0);
+    // Cache track geometry to avoid getBoundingClientRect() on every scroll event
+    const trackTopCached = useRef(0);
+    const travelDistanceCached = useRef(1);
+
+    const cacheTrackGeometry = () => {
+        const track = trackRef.current;
+        if (track) {
+            const rect = track.getBoundingClientRect();
+            trackTopCached.current = rect.top + window.scrollY;
+            travelDistanceCached.current = Math.max(rect.height - window.innerHeight, 1);
+        }
+    };
 
     useEffect(() => {
         let active = true;
         let animationFrameId: number;
         trackRef.current = document.querySelector('[data-hero-scroll-track]') as HTMLElement;
+        cacheTrackGeometry();
 
         const updateLoop = () => {
             if (!active) return;
@@ -37,22 +50,21 @@ export const UniversalStage: React.FC<UniversalStageProps> = ({ t, lang }) => {
         };
 
         const handleScroll = () => {
-            const track = trackRef.current;
-            if (track) {
-                const rect = track.getBoundingClientRect();
-                const travelDistance = rect.height - window.innerHeight;
-                const p = Math.min(Math.max(-rect.top / travelDistance, 0), 1);
-                targetP.current = p;
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = requestAnimationFrame(updateLoop);
-            }
+            const p = Math.min(Math.max(
+                (window.scrollY - trackTopCached.current) / travelDistanceCached.current,
+                0), 1);
+            targetP.current = p;
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = requestAnimationFrame(updateLoop);
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
+        window.addEventListener('resize', cacheTrackGeometry, { passive: true });
         handleScroll();
         return () => {
             active = false;
             window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', cacheTrackGeometry);
             cancelAnimationFrame(animationFrameId);
         };
     }, []);

@@ -72,6 +72,44 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
         } catch { /* ignore */ }
     }, []);
 
+    const loadImageFromUrl = useCallback(async (url: string): Promise<boolean> => {
+        // 1. Try direct canvas load (works if CORS headers present)
+        const tryDirect = () => new Promise<string>((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    canvas.getContext('2d')?.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/jpeg', 0.9));
+                } catch { reject(new Error('tainted')); }
+            };
+            img.onerror = () => reject(new Error('load failed'));
+            img.src = url;
+        });
+
+        // 2. Proxy fallback
+        const tryProxy = async () => {
+            const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(url)}`;
+            const res = await fetch(proxyUrl);
+            if (!res.ok) throw new Error('proxy failed');
+            const blob = await res.blob();
+            return fileToDataUrl(new File([blob], 'image', { type: blob.type }));
+        };
+
+        try {
+            const dataUrl = await tryDirect().catch(() => tryProxy());
+            setImageSrc(dataUrl);
+            setModalState('preview');
+            setCrop({ x: 0, y: 0, width: 100, height: 100 });
+            return true;
+        } catch {
+            return false;
+        }
+    }, []);
+
     // ── Paste handler — catches Cmd+V while modal is open ──
     useEffect(() => {
         if (!isOpen || modalState !== 'empty') return;
@@ -206,8 +244,40 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
                 onDrop={async (e) => {
                     e.preventDefault();
                     setIsDragOver(false);
+
+                    // 1. Native file drag
                     const file = Array.from(e.dataTransfer.files as FileList).find((f: File) => f.type.startsWith('image/'));
-                    if (file) loadImage(file);
+                    if (file) { loadImage(file); return; }
+
+                    // 2. DataTransfer item (same-browser tab drag)
+                    const imageItem = Array.from(e.dataTransfer.items as unknown as DataTransferItem[]).find(i => i.kind === 'file' && i.type.startsWith('image/'));
+                    if (imageItem) {
+                        const f = imageItem.getAsFile();
+                        if (f) { loadImage(f); return; }
+                    }
+
+                    // 3. Extract image URL from dragged HTML (browser → browser)
+                    const html = e.dataTransfer.getData('text/html');
+                    if (html) {
+                        const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+                        if (match?.[1]) {
+                            const ok = await loadImageFromUrl(match[1]);
+                            if (ok) return;
+                        }
+                    }
+
+                    // 4. Try URI list
+                    const uriList = e.dataTransfer.getData('text/uri-list');
+                    if (uriList) {
+                        for (const url of uriList.split('\n').filter(u => u.trim() && !u.startsWith('#'))) {
+                            const ok = await loadImageFromUrl(url);
+                            if (ok) return;
+                        }
+                    }
+
+                    // 5. Nothing worked — show paste hint
+                    setPasteHint(true);
+                    setTimeout(() => setPasteHint(false), 4000);
                 }}
             >
                 <div className="w-12 h-12 rounded-full bg-white dark:bg-zinc-700 flex items-center justify-center">
@@ -216,6 +286,13 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
                 <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
                     {de ? 'Bild hochladen' : 'Upload image'}
                 </p>
+                {pasteHint && (
+                    <p className="text-xs text-orange-500 text-center animate-pulse">
+                        {de
+                            ? 'Rechtsklick → „Bild kopieren" → Command+V'
+                            : 'Right-click → "Copy image" → Command+V'}
+                    </p>
+                )}
             </div>
 
             {/* Hint — mobile vs desktop */}

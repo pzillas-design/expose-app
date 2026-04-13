@@ -10,6 +10,7 @@ import {
 import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
 import { generateId } from '@/utils/ids';
+import { compressImage } from '@/utils/imageUtils';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { useItemDialog } from '@/components/ui/Dialog';
@@ -56,6 +57,8 @@ interface SideSheetProps {
     onInteractionStart: () => void;
     onInteractionEnd: () => void;
     onAddReference?: (file: File, annotationId?: string) => void;
+    createReferenceFiles?: string[];
+    onRemoveCreateReference?: (idx: number) => void;
     onUpload?: () => void;
     onCreateNew?: () => void;
     qualityMode: GenerationQuality;
@@ -71,6 +74,7 @@ interface SideSheetProps {
     userProfile: any;
     width?: string;
     disableMobileSheet?: boolean;
+    initialPrompt?: string;
 }
 
 // ─── Helper: Eyebrow Label ────────────────────────────────────────────────────
@@ -102,7 +106,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const isGlobalDragOver = props.isGlobalDragOver ?? props.isDragOver ?? false;
 
     // ── State ──
-    const [prompt, setPrompt] = useState('');
+    const [prompt, setPrompt] = useState(() => props.initialPrompt ?? selectedImage?.userDraftPrompt ?? '');
     const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
     const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
@@ -153,7 +157,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // Voice-created variables: listen for custom events from the voice assistant
     useEffect(() => {
         const handleSetVariables = (e: Event) => {
-            const { controls } = (e as CustomEvent).detail as { controls: Array<{ label: string; options: string[] }> };
+            const { controls } = (e as CustomEvent).detail as { controls: Array<{ label: string; options: string[]; selected?: string[] }> };
             if (!controls?.length) return;
 
             // Build a map of old label → { controlId, selectedValues } so we can preserve selections
@@ -166,24 +170,32 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 }
             });
 
+            const now = Date.now();
             const presetControls: PresetControl[] = controls.map((c, ci) => ({
-                id: `voice-${ci}-${Date.now()}`,
+                id: `voice-${ci}-${now}`,
                 label: c.label,
                 options: c.options.map((opt, oi) => ({
-                    id: `voice-opt-${ci}-${oi}-${Date.now()}`,
+                    id: `voice-opt-${ci}-${oi}-${now}`,
                     label: opt,
                     value: opt
                 }))
             }));
 
-            // Carry over selections for labels that still exist with matching option values
+            // Carry over old user selections first; fall back to AI pre-selection for new labels
             const newValues: Record<string, string[]> = {};
-            presetControls.forEach(ctrl => {
+            presetControls.forEach((ctrl, ci) => {
+                const validOptions = new Set(ctrl.options.map(o => o.value));
                 const old = oldLabelMap.get(ctrl.label.toLowerCase());
                 if (old) {
-                    const validOptions = new Set(ctrl.options.map(o => o.value));
+                    // Preserve existing user selection
                     const kept = old.values.filter(v => validOptions.has(v));
-                    if (kept.length) newValues[ctrl.id] = kept;
+                    if (kept.length) { newValues[ctrl.id] = kept; return; }
+                }
+                // Apply AI pre-selection for this control
+                const preSelected = controls[ci].selected;
+                if (preSelected?.length) {
+                    const valid = preSelected.filter(v => validOptions.has(v));
+                    if (valid.length) newValues[ctrl.id] = valid;
                 }
             });
 
@@ -241,6 +253,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const [initialAnns, setInitialAnns] = useState<AnnotationObject[]>([]);
     const isInteracting = useRef(false);
     const lastSelectedIdRef = useRef<string | null>(null);
+    // Always-current ref to selectedImage — prevents stale closure in useImperativeHandle callbacks
+    const selectedImageRef = useRef(selectedImage);
+    useEffect(() => { selectedImageRef.current = selectedImage; }, [selectedImage]);
     const { confirm } = useItemDialog();
 
     // Inspiration / Reference Image
@@ -284,17 +299,21 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     useEffect(() => {
         if (!selectedImage) return;
         if (selectedImage.id !== lastSelectedIdRef.current) {
-            const isChild = !!selectedImage.parentId;
-            if (isChild) {
-                // Generated child image: keep current prompt + variables visible so the user
-                // can see what was applied and re-use it. Don't reset anything.
-            } else if (!isMulti) {
-                // Single-select, non-child: load this image's saved state.
+            if (!isMulti) {
+                // Load this image's saved state (both child and non-child images store their settings).
+                // Children store draftPrompt/variableValues/activeTemplateId from generation time,
+                // so the SideSheet correctly shows what was applied when revisiting a generated image.
                 setPrompt(selectedImage.userDraftPrompt || '');
                 setActiveTemplateId(selectedImage.activeTemplateId || null);
                 setControlValues(selectedImage.variableValues || {});
             }
             // Multi-select: keep current values so variable selection survives batch mode.
+            // Always reset modal/UI state that must not bleed between images.
+            setIsInspirationOpen(false);
+            setViewingRefAnn(null);
+            setInspirationInitialSrc(null);
+            setHiddenControlIds([]);
+            setLabelOverrides({});
             lastSelectedIdRef.current = selectedImage.id;
         }
     }, [selectedImage?.id, isMulti]);
@@ -364,9 +383,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     React.useImperativeHandle(ref, () => ({
         handleInteractionStart: () => { isInteracting.current = true; onInteractionStartExt?.(); },
         handleInteractionEnd: () => {
-            if (!selectedImage || !isInteracting.current) return;
+            // Use ref instead of closure — selectedImage may be stale if a chip was deleted
+            // during the interaction (e.g. brush stroke + chip delete race)
+            const current = selectedImageRef.current;
+            if (!current || !isInteracting.current) return;
             isInteracting.current = false;
-            updateAnnotationsWithHistory(selectedImage.annotations || [], true);
+            updateAnnotationsWithHistory(current.annotations || [], true);
             onInteractionEndExt?.();
         }
     }));
@@ -542,13 +564,37 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         return () => document.removeEventListener('paste-reference-image', handler);
     });
 
-    const handleInspirationComplete = (base64: string) => {
-        if (!selectedImage) return;
+    const handleInspirationComplete = async (base64: string) => {
+        if (!selectedImage) {
+            // Create mode — no image yet, delegate to external handler
+            if (props.onAddReference) {
+                fetch(base64).then(r => r.blob()).then(blob => {
+                    const file = new File([blob], 'reference.png', { type: 'image/png' });
+                    props.onAddReference!(file);
+                });
+            }
+            setIsInspirationOpen(false);
+            return;
+        }
+
+        // Compress to max 1024px / 0.8 quality so the payload stays well under
+        // Supabase's 6 MB edge-function body limit (raw iPhone photos are 7-13 MB).
+        let compressed = base64;
+        try {
+            const blob = await compressImage(base64, 1024, 0.8);
+            compressed = await new Promise<string>((res, rej) => {
+                const r = new FileReader();
+                r.onload = ev => res(ev.target?.result as string);
+                r.onerror = rej;
+                r.readAsDataURL(blob);
+            });
+        } catch { /* fallback to original if compression fails */ }
+
         const currentAnns = selectedImage.annotations || [];
         if (viewingRefAnn) {
-            updateAnnotationsWithHistory(currentAnns.map(a => a.id === viewingRefAnn.id ? { ...a, referenceImage: base64 } : a));
+            updateAnnotationsWithHistory(currentAnns.map(a => a.id === viewingRefAnn.id ? { ...a, referenceImage: compressed } : a));
         } else {
-            const newRef: AnnotationObject = { id: generateId(), type: 'reference_image', points: [], strokeWidth: 0, color: '#fff', text: '', referenceImage: base64, createdAt: Date.now() };
+            const newRef: AnnotationObject = { id: generateId(), type: 'reference_image', points: [], strokeWidth: 0, color: '#fff', text: '', referenceImage: compressed, createdAt: Date.now() };
             updateAnnotationsWithHistory([...currentAnns, newRef]);
         }
         setViewingRefAnn(null);
@@ -562,7 +608,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         (e.nativeEvent as any).__sideSheetHandled = true;
         onGlobalDragLeave();
         setIsSideZoneActive(false);
-        if (!selectedImage) return;
+        if (!selectedImage && !props.onAddReference) return;
         const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/'));
         if (files.length > 0) {
             const reader = new FileReader();
@@ -668,11 +714,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             onChange={e => handlePromptChange(e.target.value)}
                                             placeholder={t('describe_changes') || 'Describe your changes…'}
                                             disabled={selectedImage?.isGenerating}
+                                            autoComplete="off"
+                                            autoCorrect="off"
+                                            autoCapitalize="off"
+                                            spellCheck={false}
                                             className={`w-full bg-transparent outline-none ${Typo.Prompt} resize-none min-h-[140px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600`}
                                         />
                                     </div>
 
-                                    {/* Reference images tray */}
+                                    {/* Reference images tray — edit mode */}
                                     {referenceAnns.length > 0 && (
                                         <div className="flex flex-wrap gap-2 pt-1">
                                             {referenceAnns.map(ann => (
@@ -684,6 +734,26 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     <img src={ann.referenceImage} className="w-full h-full object-cover" alt="ref" />
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                                                        className="absolute top-1 right-1 w-6 h-6 bg-black/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Reference images tray — create mode */}
+                                    {!selectedImage && props.createReferenceFiles && props.createReferenceFiles.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 pt-1">
+                                            {props.createReferenceFiles.map((src, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="group relative w-[88px] h-[88px] rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700"
+                                                >
+                                                    <img src={src} className="w-full h-full object-cover" alt="ref" />
+                                                    <button
+                                                        onClick={() => props.onRemoveCreateReference?.(idx)}
                                                         className="absolute top-1 right-1 w-6 h-6 bg-black/80 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                                     >
                                                         <X className="w-4 h-4" />
@@ -827,9 +897,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         className="relative w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
                                                     >
                                                         <Camera className="w-4 h-4" />
-                                                        {referenceAnns.length > 0 && (
+                                                        {(referenceAnns.length + (props.createReferenceFiles?.length ?? 0)) > 0 && (
                                                             <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
-                                                                {referenceAnns.length}
+                                                                {referenceAnns.length + (props.createReferenceFiles?.length ?? 0)}
                                                             </span>
                                                         )}
                                                     </button>
@@ -841,7 +911,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                             ? 'Lade ein Referenzbild hoch, an dem sich die KI orientieren soll.'
                                                             : 'Upload a reference image the AI can use as guidance.'}
                                                         placement="auto"
-                                                        enabled={hasPromptText && referenceAnns.length === 0}
+                                                        enabled={hasPromptText && referenceAnns.length === 0 && (props.createReferenceFiles?.length ?? 0) === 0}
                                                     />
                                                 )}
                                             </div>
@@ -881,6 +951,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             <div className="relative shrink-0">
                                                 <button
                                                     onClick={() => setIsQualityOpen(p => !p)}
+                                                    title="Resolution"
                                                     className="h-10 flex items-center gap-1.5 px-3 rounded-full text-[12px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
                                                 >
                                                     {qualityMode.split('-')[1] === '05k' ? '0.5K' : qualityMode.split('-')[1].toUpperCase()}
@@ -890,19 +961,21 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     <>
                                                         <div className="fixed inset-0 z-40" onClick={() => setIsQualityOpen(false)} />
                                                         <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-2 w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
+                                                            <p className="px-2 pt-0.5 pb-1.5 text-[10px] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">Resolution</p>
                                                             {/* Resolution + Price */}
-                                                            {(['1k', '2k', '4k'] as const).map(res => {
+                                                            {(['05k', '1k', '2k', '4k'] as const).map(res => {
                                                                 const q = `nb2-${res}` as GenerationQuality;
-                                                                const COSTS: Record<string, number> = { 'nb2-1k': 0.10, 'nb2-2k': 0.20, 'nb2-4k': 0.40 };
+                                                                const COSTS: Record<string, number> = { 'nb2-05k': 0.05, 'nb2-1k': 0.10, 'nb2-2k': 0.20, 'nb2-4k': 0.40 };
                                                                 const cost = COSTS[q];
                                                                 const isActive = qualityMode === q;
+                                                                const label = res === '05k' ? '0.5K' : res.toUpperCase();
                                                                 return (
                                                                     <button
                                                                         key={res}
                                                                         onClick={() => { onQualityModeChange(q); setIsQualityOpen(false); }}
                                                                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12px] transition-colors ${isActive ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'}`}
                                                                     >
-                                                                        {res.toUpperCase()}
+                                                                        {label}
                                                                         <span className="text-[11px] text-zinc-400">{`${cost.toFixed(2)} €`}</span>
                                                                     </button>
                                                                 );

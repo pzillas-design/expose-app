@@ -8,7 +8,7 @@ interface ConfirmDialogProps {
     title: string;
     description: string;
     confirmLabel: string;
-    cancelLabel: string;
+    cancelLabel?: string;
     onConfirm: () => void;
     onCancel: () => void;
     variant?: 'danger' | 'primary';
@@ -55,13 +55,15 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                     >
                         {confirmLabel}
                     </Button>
-                    <Button
-                        variant="secondary"
-                        onClick={onCancel}
-                        className="w-full"
-                    >
-                        {cancelLabel}
-                    </Button>
+                    {cancelLabel && (
+                        <Button
+                            variant="secondary"
+                            onClick={onCancel}
+                            className="w-full"
+                        >
+                            {cancelLabel}
+                        </Button>
+                    )}
                 </div>
             </div>
         </div>,

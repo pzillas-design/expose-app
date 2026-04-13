@@ -350,12 +350,41 @@ export const useNanoController = () => {
     const activeIdRef = React.useRef<string | null>(activeId);
     React.useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
 
+    // Always-current ref to rows — used by autoStartAfterUpload polling
+    const rowsRef = React.useRef(rows);
+    React.useEffect(() => { rowsRef.current = rows; }, [rows]);
+
     const { performGeneration, performNewGeneration } = useGeneration({
         rows, setRows, user, userProfile, credits, setCredits,
         qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, showToast, t, confirm,
         onImageSaved: () => setTotalImageCount(prev => prev + 1),
         onGenerationComplete: handleGenerationComplete,
+        onSignIn: () => { setAuthModalMode('signin'); setIsAuthModalOpen(true); },
     });
+
+    // Poll until blob: URL is replaced with a real signed URL, then fire generation
+    const autoStartAfterUpload = React.useCallback((
+        imgId: string,
+        prompt: string,
+        draftPrompt?: string,
+        activeTemplateId?: string,
+        variableValues?: Record<string, string[]>
+    ) => {
+        const maxWait = 30_000;
+        const started = Date.now();
+        const poll = () => {
+            const img = rowsRef.current.flatMap(r => r.items).find(i => i.id === imgId);
+            if (img && img.src && !img.src.startsWith('blob:')) {
+                performGeneration(img, prompt, 1, true, draftPrompt, activeTemplateId, variableValues);
+            } else if (Date.now() - started < maxWait) {
+                setTimeout(poll, 400);
+            } else {
+                showToast(currentLang === 'de' ? 'Upload fehlgeschlagen – bitte erneut versuchen' : 'Upload failed – please try again', 'error');
+            }
+        };
+        setTimeout(poll, 400);
+    }, [performGeneration, showToast, currentLang]);
+
 
     const { handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, handleUpdateImageTitle } = usePersistence({
         user, isAuthDisabled, setRows
@@ -368,7 +397,8 @@ export const useNanoController = () => {
 
     const handleDeleteImage = useCallback(async (id: string, skipConfirm = false, onBeforeDelete?: () => void): Promise<boolean> => {
         if (!user) {
-            showToast(currentLang === 'de' ? 'Bitte logge dich ein' : 'Please log in', 'error');
+            setAuthModalMode('signin');
+            setIsAuthModalOpen(true);
             return false;
         }
 
@@ -511,14 +541,10 @@ export const useNanoController = () => {
             // (simultaneous requests can cause one to be silently dropped by the Supabase client)
             let snapIndex = 0;
             selectedImages.forEach((img, batchIdx) => {
-                // Block images whose signed URL isn't ready yet (still blob: or empty)
+                // If image is still uploading, auto-start generation once the signed URL is ready
                 if (!img.src || img.src.startsWith('blob:')) {
-                    showToast(
-                        currentLang === 'de'
-                            ? 'Ein Bild wird noch hochgeladen – bitte kurz warten'
-                            : 'An image is still uploading – please wait a moment',
-                        'error'
-                    );
+                    const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
+                    autoStartAfterUpload(img.id, finalPrompt, draftPrompt, activeTemplateId, variableValues);
                     return;
                 }
                 const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
@@ -533,12 +559,8 @@ export const useNanoController = () => {
             setIsSelectMode(false);
         } else if (selectedImage) {
             if (!selectedImage.src || selectedImage.src.startsWith('blob:')) {
-                showToast(
-                    currentLang === 'de'
-                        ? 'Bild wird noch hochgeladen – bitte kurz warten'
-                        : 'Image is still uploading – please wait a moment',
-                    'error'
-                );
+                const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
+                autoStartAfterUpload(selectedImage.id, finalPrompt, draftPrompt, activeTemplateId, variableValues);
                 return;
             }
             const finalPrompt = typeof prompt === 'string' ? prompt : (selectedImage.userDraftPrompt || '');
@@ -551,7 +573,7 @@ export const useNanoController = () => {
                 );
                 return;
             }
-            performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues);
+            performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues, undefined, !!selectedImage.parentId);
         }
     }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, showToast, currentLang]);
 
@@ -563,18 +585,6 @@ export const useNanoController = () => {
             img = idOrImg;
         }
         if (!img) return;
-
-        // Walk the full ancestry chain to find the root original for grouping.
-        // We use img as the actual source for the API (preserves annotations/edits),
-        // but store groupParentId = root.id so the result lands in the original source's stack.
-        let root: CanvasImage = img;
-        let depth = 0;
-        while (root.parentId && depth < 50) {
-            const parent = allImages.find(p => p.id === root.parentId);
-            if (!parent) break;
-            root = parent;
-            depth++;
-        }
 
         // Full request body is stored on the image (generationPrompt + variableValues + activeTemplateId).
         // "Mehr" simply replays it. userDraftPrompt is '' for children (clean SideSheet), so fall back to generationPrompt.
@@ -589,19 +599,16 @@ export const useNanoController = () => {
             return;
         }
 
-        // Use the DIRECT parent as the API source (the image that was the input when img was
-        // originally generated). For a direct child of root this is the same as root; for
-        // grandchildren it's the intermediate child — matching what the AI originally saw.
-        // groupParentId keeps the result grouped under the root stack.
-        const groupParentId = root.id !== img.id ? root.id : undefined;
+        // Use directParent as the source — this is identical to navigating back to the parent
+        // and pressing Generate manually: same source image (with its mask/shapes/annotations),
+        // same prompt. Stack grouping is handled by folder_id (inherited from source), so no
+        // groupParentId root-walking is needed anymore.
         const directParent = img.parentId
             ? (allImages.find(p => p.id === img.parentId) ?? img)
             : img;
-        const sourceForApi = directParent.id !== img.id
-            ? { ...directParent, annotations: img.annotations || [] }
-            : img;
-        performGeneration(sourceForApi, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, groupParentId);
-    }, [allImages, performGeneration]);
+        // isRepeat=true so Gemini's implicit input caching is busted with a variation ID
+        performGeneration(directParent, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, true);
+    }, [allImages, performGeneration, showToast, currentLang]);
 
     const handleCreateNew = useCallback(async (prompt: string, model: string, ratio: string, attachments: string[] = []) => {
         performNewGeneration(prompt, model, ratio, attachments);
@@ -720,7 +727,8 @@ export const useNanoController = () => {
         handleCreateNew,
         recordPresetUsage,
         refreshTemplates,
-        savePreset: saveTemplate,
+        saveTemplate,
+        deleteTemplate,
         refreshImageCount,
         setGridColumns,
         handleLoadMore,

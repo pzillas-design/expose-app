@@ -124,8 +124,11 @@ export const AdminUsersView: React.FC<AdminUsersViewProps> = ({ t }) => {
                                         onClick={() => setSelectedUser(u)}
                                         className={`cursor-pointer transition-colors ${selectedUser?.id === u.id ? 'bg-zinc-50 dark:bg-zinc-800/50' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/30'}`}
                                     >
-                                        <td className="px-5 py-3.5 font-medium text-black dark:text-white">
-                                            {getUserIdentifier(u)}
+                                        <td className="px-5 py-3.5">
+                                            <div className="font-medium text-black dark:text-white">{u.email || getUserIdentifier(u)}</div>
+                                            {u.name && u.name !== 'New User' && u.name !== 'User' && (
+                                                <div className="text-xs text-zinc-400 mt-0.5">{u.name}</div>
+                                            )}
                                         </td>
                                         <td className="px-5 py-3.5">
                                             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'}`}>

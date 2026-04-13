@@ -1,6 +1,7 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Theme, Typo, IconButton } from './DesignSystem';
+import { useModalStack } from './ModalStack';
 
 interface ModalProps {
     isOpen: boolean;
@@ -47,6 +48,25 @@ export const Modal: React.FC<ModalProps> = ({
     footer,
     className = '',
 }) => {
+    const { register } = useModalStack();
+
+    // Register in the global stack + handle ESC — both wired to same onClose
+    useEffect(() => {
+        if (!isOpen) return;
+        const deregister = register(onClose);
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                onClose();
+            }
+        };
+        document.addEventListener('keydown', handler, { capture: true });
+        return () => {
+            deregister();
+            document.removeEventListener('keydown', handler, { capture: true });
+        };
+    }, [isOpen, onClose, register]);
+
     if (!isOpen) return null;
 
     return (

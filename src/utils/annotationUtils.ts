@@ -163,18 +163,11 @@ export async function generateAnnotationImage(
             const scaledX = ann.x * scaleX;
             const scaledY = ann.y * scaleY;
 
-            // Draw Emoji if exists
-            if (ann.emoji) {
-                ctx.font = `${(ann.width || 48) * scaleX}px serif`; // Scale emoji size
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(ann.emoji, scaledX, scaledY);
-            }
-
+            // Emojis are UI-only — never rendered into the annotation image.
             // Draw text label with white text on red background
             if (ann.text) {
                 const fontSize = 20 * scaleX; // Scale font size
-                const textY = scaledY + (ann.emoji ? 30 * scaleY : 0); // Scale offset
+                const textY = scaledY; // always at stamp center when emoji suppressed
 
                 ctx.font = `bold ${fontSize}px sans-serif`;
                 ctx.textAlign = 'center';

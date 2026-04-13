@@ -301,11 +301,11 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
 
         if (currentLang === 'de') {
             if (promptDe.trim()) {
-                results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
+                results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, user_id: activeTemplate?.user_id, title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
             }
         } else {
             if (promptEn.trim()) {
-                results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
+                results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, user_id: activeTemplate?.user_id, title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
             }
         }
 
@@ -328,22 +328,26 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
     };
 
     const handleShareClick = async () => {
-        // Auto-save so the template always has a slug before the share modal opens
-        const results: { id?: string; title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
-        if (currentLang === 'de') {
-            if (promptDe.trim()) results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
-        } else {
-            if (promptEn.trim()) results.push({ id: selectedId !== 'new' && selectedId ? selectedId : undefined, title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
-        }
-        try {
-            const saved = await onSave(results, { closeOnSuccess: false });
-            if (saved) {
-                setSelectedId(saved.id);
-                setSavedTemplateForShare(saved);
+        // Only save if unsaved (new preset) — avoid duplicating already-saved presets
+        if (selectedId === 'new') {
+            const results: { id?: string; title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
+            if (currentLang === 'de') {
+                if (promptDe.trim()) results.push({ title: titleDe.trim() || 'Untitled', prompt: promptDe, tags: [], controls: controlsDe, lang: 'de' });
             } else {
+                if (promptEn.trim()) results.push({ title: titleEn.trim() || 'Untitled', prompt: promptEn, tags: [], controls: controlsEn, lang: 'en' });
+            }
+            try {
+                const saved = await onSave(results, { closeOnSuccess: false });
+                if (saved) {
+                    setSelectedId(saved.id);
+                    setSavedTemplateForShare(saved);
+                } else {
+                    setSavedTemplateForShare(activeTemplate);
+                }
+            } catch {
                 setSavedTemplateForShare(activeTemplate);
             }
-        } catch {
+        } else {
             setSavedTemplateForShare(activeTemplate);
         }
         setIsShareModalOpen(true);
@@ -481,7 +485,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                     title={t('confirm_delete_preset')}
                     description={activeTemplate?.title || ''}
                     confirmLabel={t('delete')}
-                    cancelLabel={t('cancel')}
+                    variant="danger"
                     onConfirm={() => {
                         if (selectedId && selectedId !== 'new') onDelete?.(selectedId);
                         setIsDeleteDialogOpen(false);
