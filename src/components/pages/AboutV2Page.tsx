@@ -73,11 +73,11 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                     {HERO_IMGS.map((img, i) => (
                         <div
                             key={i}
-                            className={`${img.cls} rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-700`}
+                            className={`${img.cls} rounded-xl sm:rounded-2xl overflow-hidden`}
                             style={{
-                                opacity: imgsIn ? 1 : 0,
-                                transform: imgsIn ? 'scale(1)' : 'scale(0.95)',
-                                transitionDelay: `${i * 100}ms`,
+                                clipPath: imgsIn ? 'inset(0% 0% 0% 0% round 12px)' : 'inset(0% 50% 0% 50% round 12px)',
+                                transition: `clip-path 0.7s cubic-bezier(0.22, 1, 0.36, 1)`,
+                                transitionDelay: `${i * 90}ms`,
                             }}
                         >
                             <img src={img.src} alt="" className="w-full h-full object-cover" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
