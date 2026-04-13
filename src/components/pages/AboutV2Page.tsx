@@ -781,12 +781,12 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                     <img src="/home/v2/hero-new-5.png" className="absolute inset-0 w-full h-full object-cover scale-110"
                          style={{ filter: 'blur(48px)', opacity: 0.18 }} aria-hidden />
                 </div>
-                <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center text-center gap-8">
-                    <div className="flex flex-col gap-5 font-kumbh font-bold tracking-tighter lowercase leading-snug text-4xl sm:text-5xl lg:text-6xl">
+                <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center text-center gap-12">
+                    <div className="flex flex-col gap-5 font-kumbh font-bold tracking-tighter lowercase leading-normal text-4xl sm:text-5xl lg:text-6xl">
                         <p className="text-zinc-900 dark:text-white">
                             {de
-                                ? 'ki beherrscht licht, raum und charakter auf einem level, das bisher elite-studios vorbehalten war.'
-                                : 'ai masters light, space, and character at a level once reserved for elite studios.'}
+                                ? 'ki beherrscht optik, physik und komposition auf einem level, das bisher elite-studios vorbehalten war.'
+                                : 'ai masters looks, physics, and composition at a level once reserved for elite studios.'}
                         </p>
                         <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
                             {de ? 'diese macht liegt nun in deinen händen.' : 'this power is now yours.'}
