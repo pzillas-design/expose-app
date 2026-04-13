@@ -172,7 +172,7 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
     }, [visible]);
 
     const ROW1 = [CARDS[1], CARDS[0], CARDS[3], CARDS[6], CARDS[8], CARDS[5], CARDS[11]];
-    const ROW2 = [CARDS[2], CARDS[10], CARDS[7], CARDS[4], CARDS[6], CARDS[9], CARDS[0]];
+    const ROW2 = [CARDS[2], CARDS[10], CARDS[7], CARDS[3], CARDS[6], CARDS[11], CARDS[0]];
 
     return (
         <section className="bg-white dark:bg-zinc-950 py-24 sm:py-32 overflow-hidden">
@@ -201,20 +201,13 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
                 </div>
             </div>
 
-            {/* Mobile: 2-column grid */}
-            <div className="lg:hidden px-5 sm:px-8 grid grid-cols-2 gap-3">
-                {ROW1.map((card, i) => (
-                    <MarqueeCard key={i} card={card} de={de} h={200} w={undefined} />
-                ))}
-            </div>
-
-            {/* Desktop: animated marquee */}
-            <div className="hidden lg:flex flex-col gap-3">
-                <div className="mq-anim" style={{ animation: 'mq-left 80s linear infinite', display: 'flex', gap: '12px', width: 'max-content' }}>
-                    {[...ROW1, ...ROW1].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={280} />)}
+            {/* Always: 2 animated marquee rows */}
+            <div className="flex flex-col gap-3">
+                <div className="mq-anim" style={{ animation: 'mq-left 80s linear infinite', display: 'flex', gap: '10px', width: 'max-content' }}>
+                    {[...ROW1, ...ROW1].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={220} />)}
                 </div>
-                <div className="mq-anim" style={{ animation: 'mq-left 60s linear infinite', display: 'flex', gap: '12px', width: 'max-content' }}>
-                    {[...ROW2, ...ROW2].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={200} />)}
+                <div className="mq-anim" style={{ animation: 'mq-left 60s linear infinite', display: 'flex', gap: '10px', width: 'max-content' }}>
+                    {[...ROW2, ...ROW2].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={160} />)}
                 </div>
             </div>
         </section>
@@ -329,8 +322,8 @@ const PremiumVideoCard: React.FC<{
                 <div className="relative rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 leading-[0]">
                     <video ref={thumbRef} src={src} muted playsInline
                         className="w-full h-auto object-contain group-hover:opacity-95 transition-opacity duration-300" />
-                    {/* Very light overlay */}
-                    <div className="absolute inset-0 bg-black/8" />
+                    {/* Dark overlay on thumbnail */}
+                    <div className="absolute inset-0 bg-black/25" />
                     {/* Plain triangle play button */}
                     <div className="absolute inset-0 flex items-center justify-center">
                         <svg className="w-10 h-10 text-white/55 group-hover:text-white/85 transition-colors drop-shadow-sm"
@@ -367,6 +360,10 @@ const PremiumVideoCard: React.FC<{
         </div>
     );
 };
+
+// Custom directional cursors for hero navigation
+const CURSOR_PREV = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Ccircle cx='22' cy='22' r='20' fill='rgba(0%2C0%2C0%2C0.42)'/%3E%3Cpath d='M25 14 L16 22 L25 30' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") 22 22, w-resize`;
+const CURSOR_NEXT = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Ccircle cx='22' cy='22' r='20' fill='rgba(0%2C0%2C0%2C0.42)'/%3E%3Cpath d='M19 14 L28 22 L19 30' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") 22 22, e-resize`;
 
 // ── VerbSection — hero ────────────────────────────────────
 const VERB_SCENES = [
@@ -498,6 +495,9 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
         return () => { vAnim.cancel(); sAnim.cancel(); };
     }, [active]);
 
+    const goToPrev = () => setActive(a => { prevActiveRef.current = a; return (a - 1 + N) % N; });
+    const goToNext = () => setActive(a => { prevActiveRef.current = a; return (a + 1) % N; });
+
     const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
     const handleTouchEnd   = (e: React.TouchEvent) => {
         if (touchStartX.current === null) return;
@@ -533,7 +533,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
-            {/* Image slides — responsive margins: 3% mobile, 11% sm+ */}
+            {/* Image slides — flush with page grid (px-5 sm:px-8 lg:px-12) */}
             {VERB_SCENES.map((s, i) => {
                 const isActive = active === i;
                 const isPrev   = prevActiveRef.current === i && !isActive;
@@ -542,7 +542,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
 
                 return (
                     <div key={i}
-                        className="absolute left-[3%] right-[3%] sm:left-[11%] sm:right-[11%] rounded-2xl overflow-hidden"
+                        className="absolute left-5 right-5 sm:left-8 sm:right-8 lg:left-12 lg:right-12 rounded-2xl overflow-hidden"
                         style={{
                             top: '16.67%', height: '50%', zIndex: 0,
                             opacity: isActive ? 1 : 0,
@@ -608,6 +608,13 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                 <BarWaveform isActive={active === 1} />
             </div>
 
+            {/* Cursor click zones — desktop only, left=prev right=next */}
+            <div className="absolute hidden sm:grid grid-cols-2"
+                style={{ top: '16.67%', height: '50%', left: 0, right: 0, zIndex: 8 }}>
+                <div style={{ cursor: CURSOR_PREV }} onClick={goToPrev} />
+                <div style={{ cursor: CURSOR_NEXT }} onClick={goToNext} />
+            </div>
+
             {/* 1st sixth — navbar spacer */}
             <div style={{ height: '16.67%', flexShrink: 0 }} />
             {/* 2nd sixth — blank */}
@@ -651,8 +658,8 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
             <div style={{ height: '16.67%', flexShrink: 0 }} />
 
             {/* 5th+6th — CTA, aligned with image edges */}
-            <div className="relative z-10" style={{ height: '33.33%', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 5% 0 3%' }}>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5" style={{ paddingLeft: '0', paddingRight: '0', maxWidth: '94%' }}>
+            <div className="relative z-10 px-5 sm:px-8 lg:px-12" style={{ height: '33.33%', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 max-w-6xl w-full">
                     <div className="flex flex-col gap-2">
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xs">
                             {de
@@ -696,13 +703,26 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
             {/* 2. FEATURE MARQUEE */}
             <FeatureMarquee de={de} />
 
-            {/* 3. VIDEO DEMOS */}
+            {/* 3. VIDEO DEMOS + STATS */}
             <section className="bg-white dark:bg-zinc-950 px-5 sm:px-8 lg:px-12 py-24 sm:py-32">
-                <div className="max-w-6xl mx-auto flex flex-col gap-12 sm:gap-14">
+                <div className="max-w-6xl mx-auto flex flex-col gap-10 sm:gap-12">
                     <h2 className="font-kumbh font-bold tracking-tighter text-zinc-900 dark:text-white lowercase leading-[0.88] text-4xl sm:text-5xl lg:text-6xl">
-                        {de ? 'in aktion.' : 'in action.'}
+                        {de ? 'sieh exposé in aktion.' : 'see exposé in action.'}
                     </h2>
-                    <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
+                    {/* Stats row above videos */}
+                    <div className="flex flex-row gap-0 divide-x divide-zinc-100 dark:divide-zinc-800/60">
+                        {[
+                            { value: '1,643', label: de ? 'Bilder generiert' : 'images generated' },
+                            { value: '104',   label: de ? 'Kreative' : 'creatives' },
+                            { value: '4 K',   label: de ? 'Max. Auflösung' : 'max resolution' },
+                        ].map((s, i) => (
+                            <div key={i} className="flex flex-col gap-0.5 px-5 sm:px-8 first:pl-0 last:pr-0">
+                                <span className="text-2xl sm:text-3xl font-kumbh font-bold tracking-tight text-zinc-900 dark:text-white">{s.value}</span>
+                                <span className="text-xs text-zinc-400 dark:text-zinc-500">{s.label}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
                         <PremiumVideoCard
                             src="/home/v2/demo-batch.mp4"
                             label={de ? 'Set-Bearbeitung' : 'One-Click Sets'}
@@ -723,22 +743,6 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
 
             {/* 4. TESTIMONIALS */}
             <TestimonialsWall de={de} />
-
-            {/* 5. STATS */}
-            <section className="bg-white dark:bg-zinc-950 px-5 sm:px-8 lg:px-12 py-14 sm:py-20">
-                <div className="max-w-6xl mx-auto flex flex-row gap-0 divide-x divide-zinc-100 dark:divide-zinc-800/60">
-                    {[
-                        { value: '1,643', label: de ? 'Bilder generiert' : 'images generated' },
-                        { value: '104',   label: de ? 'Kreative' : 'creatives' },
-                        { value: '4 K',   label: de ? 'Max. Auflösung' : 'max resolution' },
-                    ].map((s, i) => (
-                        <div key={i} className="flex flex-col gap-1 px-5 sm:px-10 first:pl-0 last:pr-0">
-                            <span className="text-3xl sm:text-4xl font-kumbh font-bold tracking-tight text-zinc-900 dark:text-white">{s.value}</span>
-                            <span className="text-xs text-zinc-400 dark:text-zinc-500">{s.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </section>
 
             {/* 6. PRICING */}
             <section className="bg-white dark:bg-zinc-950 px-5 sm:px-8 lg:px-12 py-24 sm:py-32">
