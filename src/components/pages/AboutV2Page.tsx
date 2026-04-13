@@ -263,6 +263,19 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
             <p className="font-kumbh font-bold tracking-tighter text-zinc-900 dark:text-white lowercase leading-[0.88] text-4xl sm:text-5xl">
                 {de ? 'das sagen andere.' : 'what people say.'}
             </p>
+            {/* Stats cards */}
+            <div className="grid grid-cols-3 gap-4">
+                {[
+                    { value: '16,430', label: de ? 'Bilder generiert' : 'images generated' },
+                    { value: '1,040',  label: de ? 'Kreative' : 'creatives' },
+                    { value: '4 K',    label: de ? 'Max. Auflösung' : 'max resolution' },
+                ].map((s, i) => (
+                    <div key={i} className="flex flex-col gap-1 p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900">
+                        <span className="text-3xl sm:text-4xl font-kumbh font-bold tracking-tight text-zinc-900 dark:text-white">{s.value}</span>
+                        <span className="text-sm text-zinc-400 dark:text-zinc-500">{s.label}</span>
+                    </div>
+                ))}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {TESTIMONIALS.map((item, i) => (
                     <div key={i} className="flex flex-col gap-5 p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900">
@@ -709,19 +722,6 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                     <h2 className="font-kumbh font-bold tracking-tighter text-zinc-900 dark:text-white lowercase leading-[0.88] text-4xl sm:text-5xl lg:text-6xl">
                         {de ? 'sieh exposé in aktion.' : 'see exposé in action.'}
                     </h2>
-                    {/* Stats row above videos */}
-                    <div className="flex flex-row gap-0 divide-x divide-zinc-100 dark:divide-zinc-800/60">
-                        {[
-                            { value: '16,430', label: de ? 'Bilder generiert' : 'images generated' },
-                            { value: '1,040',  label: de ? 'Kreative' : 'creatives' },
-                            { value: '4 K',   label: de ? 'Max. Auflösung' : 'max resolution' },
-                        ].map((s, i) => (
-                            <div key={i} className="flex flex-col gap-0.5 px-5 sm:px-8 first:pl-0 last:pr-0">
-                                <span className="text-2xl sm:text-3xl font-kumbh font-bold tracking-tight text-zinc-900 dark:text-white">{s.value}</span>
-                                <span className="text-xs text-zinc-400 dark:text-zinc-500">{s.label}</span>
-                            </div>
-                        ))}
-                    </div>
                     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
                         <PremiumVideoCard
                             src="/home/v2/demo-batch.mp4"
