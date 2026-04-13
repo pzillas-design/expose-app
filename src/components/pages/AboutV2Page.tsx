@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Layers, Mic, Zap, SlidersHorizontal, MousePointer2, Euro } from 'lucide-react';
+import { ArrowRight, Layers, Mic, Zap, SlidersHorizontal, MousePointer2, Euro, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/DesignSystem';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 
@@ -72,16 +72,22 @@ const CARDS: CardDef[] = [
         sub_en: 'Layer versions on top of each other. The best wins.', sub_de: 'Versionen übereinanderlegen. Das Beste gewinnt.',
     },
     {
-        type: 'quote', accent: 'glass',
-        en: 'Variables alone saves our team hours every week.', de: 'Variables spart unserem Team täglich Stunden.',
-        author: 'Marc Dubois', role: 'Creative Director',
+        type: 'usp', accent: 'glass',
+        icon: <Cpu className="w-10 h-10 text-white/60" />,
+        en: "World's leading model under the hood.", de: 'Das weltweit führende Modell unter der Haube.',
+        sub_en: "Powered by Google's Nano Banana 2 — the most capable image model available.", sub_de: 'Angetrieben von Googles Nano Banana 2 — dem leistungsfähigsten Bildmodell der Welt.',
     },
 ];
 
-const ACCENT_STYLES: Record<string, React.CSSProperties> = {
+const ACCENT_STYLES_DARK: Record<string, React.CSSProperties> = {
     dark:   { background: 'linear-gradient(145deg, #27272a, #18181b)', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 1px 0 rgba(255,255,255,0.07) inset, 0 24px 48px rgba(0,0,0,0.5)' },
     orange: { background: 'linear-gradient(145deg, #f97316, #ea580c, #c2410c)', border: '1px solid rgba(255,150,50,0.3)', boxShadow: '0 1px 0 rgba(255,200,100,0.25) inset, 0 24px 48px rgba(234,88,12,0.35)' },
     glass:  { background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)' },
+};
+const ACCENT_STYLES_LIGHT: Record<string, React.CSSProperties> = {
+    dark:   { background: 'linear-gradient(145deg, #f4f4f5, #e4e4e7)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 48px rgba(0,0,0,0.08)' },
+    orange: { background: 'linear-gradient(145deg, #f97316, #ea580c, #c2410c)', border: '1px solid rgba(255,150,50,0.3)', boxShadow: '0 1px 0 rgba(255,200,100,0.25) inset, 0 24px 48px rgba(234,88,12,0.2)' },
+    glass:  { background: 'linear-gradient(145deg, rgba(255,255,255,0.85), rgba(255,255,255,0.6))', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 1px 0 rgba(255,255,255,1) inset, 0 24px 48px rgba(0,0,0,0.08)', backdropFilter: 'blur(12px)' },
 };
 
 function useCardWallReveal() {
@@ -97,73 +103,86 @@ function useCardWallReveal() {
     return { ref, visible };
 }
 
+// Grid layout: each card gets a colspan hint
+const CARD_SPANS = [2, 1, 1, 1, 1, 1, 2, 1, 1, 1];
+
+const Card: React.FC<{ card: CardDef; de: boolean; visible: boolean; delay: number }> = ({ card, de, visible, delay }) => {
+    const isDark = document.documentElement.classList.contains('dark');
+    const ACCENT = isDark ? ACCENT_STYLES_DARK : ACCENT_STYLES_LIGHT;
+    const isOrange = card.accent === 'orange';
+    const textMuted = isOrange ? 'text-white/60' : isDark ? 'text-zinc-400' : 'text-zinc-500';
+    const textMain = isOrange || (card.accent === 'glass' && isDark) ? 'text-white' : isDark ? 'text-white' : 'text-zinc-900';
+
+    return (
+        <div
+            className="rounded-3xl relative overflow-hidden group cursor-default h-full"
+            style={{
+                ...ACCENT[card.accent],
+                opacity: visible ? 1 : 0,
+                transform: visible ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.97)',
+                transition: `opacity 0.65s ease, transform 0.65s cubic-bezier(0.22,1,0.36,1)`,
+                transitionDelay: `${delay}ms`,
+            }}
+        >
+            {/* Glossy top sheen */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none z-10" />
+            {/* Hover glow */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none z-10 rounded-3xl" />
+
+            {card.type === 'usp' && card.img ? (
+                /* Image card — full bleed with text overlay */
+                <div className="relative w-full h-full min-h-[260px] overflow-hidden">
+                    <img src={card.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-7 flex flex-col gap-2 z-10">
+                        <h3 className="text-3xl sm:text-4xl font-kumbh font-bold tracking-tight text-white leading-tight">
+                            {de ? card.de : card.en}
+                        </h3>
+                        <p className="text-sm text-white/55 leading-relaxed">{de ? card.sub_de : card.sub_en}</p>
+                    </div>
+                </div>
+            ) : card.type === 'quote' ? (
+                <div className="flex flex-col gap-5 p-7 sm:p-8 h-full relative z-10">
+                    <p className={`text-2xl sm:text-3xl font-kumbh font-semibold tracking-tight leading-snug ${textMain}`}>
+                        "{de ? card.de : card.en}"
+                    </p>
+                    <div className={`flex flex-col gap-0.5 pt-4 mt-auto border-t ${isDark ? 'border-white/10' : 'border-black/8'}`}>
+                        <span className={`text-sm font-medium ${textMain}`}>{card.author}</span>
+                        <span className={`text-xs ${textMuted}`}>{card.role}</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-4 p-7 sm:p-8 h-full relative z-10">
+                    {card.icon && <div className="mb-1">{card.icon}</div>}
+                    <h3 className={`text-3xl sm:text-4xl font-kumbh font-bold tracking-tight leading-tight ${textMain}`}>
+                        {de ? card.de : card.en}
+                    </h3>
+                    <p className={`text-sm leading-relaxed mt-auto ${textMuted}`}>
+                        {de ? card.sub_de : card.sub_en}
+                    </p>
+                </div>
+            )}
+        </div>
+    );
+};
+
 const CardWall: React.FC<{ de: boolean }> = ({ de }) => {
     const { ref, visible } = useCardWallReveal();
     return (
-        <section className="py-24 px-5 sm:px-10 lg:px-16 bg-zinc-950 overflow-hidden">
-            <div className="w-full max-w-6xl mx-auto">
-                <p className="text-sm text-zinc-500 mb-10 sm:mb-14">why exposé</p>
-                <div ref={ref} className="columns-1 sm:columns-2 lg:columns-3 gap-4 sm:gap-5 [column-fill:_balance]">
+        <section className="py-24 px-5 sm:px-10 lg:px-16 bg-white dark:bg-zinc-950 overflow-hidden">
+            <div className="w-full max-w-7xl mx-auto">
+                <p className="text-sm text-zinc-400 dark:text-zinc-500 mb-10 sm:mb-14">why exposé</p>
+                <div
+                    ref={ref}
+                    className="grid gap-4 sm:gap-5"
+                    style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
+                >
                     {CARDS.map((card, i) => (
                         <div
                             key={i}
-                            className="break-inside-avoid mb-4 sm:mb-5 rounded-3xl relative overflow-hidden group cursor-default"
-                            style={{
-                                ...ACCENT_STYLES[card.accent],
-                                opacity: visible ? 1 : 0,
-                                transform: visible ? 'translateY(0)' : 'translateY(28px)',
-                                transition: `opacity 0.6s ease, transform 0.6s cubic-bezier(0.22,1,0.36,1)`,
-                                transitionDelay: `${i * 55}ms`,
-                            }}
+                            style={{ gridColumn: `span ${CARD_SPANS[i] ?? 1}` }}
                         >
-                            {/* Glossy top sheen */}
-                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none z-10" />
-                            {/* Hover inner glow */}
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none z-10 rounded-3xl" />
-
-                            {/* Image bg for img cards — text overlaid */}
-                            {card.type === 'usp' && card.img && (
-                                <div className="relative w-full aspect-[4/3] overflow-hidden">
-                                    <img src={card.img} alt="" className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                                    <div className="absolute bottom-0 left-0 right-0 p-7 sm:p-8 flex flex-col gap-2">
-                                        <h3 className="text-3xl sm:text-4xl font-kumbh font-bold tracking-tight text-white leading-tight">
-                                            {de ? card.de : card.en}
-                                        </h3>
-                                        <p className="text-sm text-white/60 leading-relaxed">
-                                            {de ? card.sub_de : card.sub_en}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className={`flex flex-col gap-4 relative z-10 p-7 sm:p-8 ${card.type === 'usp' && card.img ? 'hidden' : ''}`}>
-                                {/* Icon */}
-                                {card.type === 'usp' && card.icon && !card.img && (
-                                    <div className="mb-2">{card.icon}</div>
-                                )}
-
-                                {card.type === 'quote' ? (
-                                    <>
-                                        <p className="text-2xl sm:text-3xl font-kumbh font-semibold tracking-tight text-white leading-snug">
-                                            "{de ? card.de : card.en}"
-                                        </p>
-                                        <div className="flex flex-col gap-0.5 pt-3 border-t border-white/10">
-                                            <span className="text-sm font-medium text-white/70">{card.author}</span>
-                                            <span className="text-xs text-white/30">{card.role}</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <h3 className={`font-kumbh font-bold tracking-tight leading-tight text-white ${card.img ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}>
-                                            {de ? card.de : card.en}
-                                        </h3>
-                                        <p className={`text-sm leading-relaxed ${card.accent === 'orange' ? 'text-white/60' : card.accent === 'glass' ? 'text-white/50' : 'text-zinc-400'}`}>
-                                            {de ? card.sub_de : card.sub_en}
-                                        </p>
-                                    </>
-                                )}
-                            </div>
+                            <Card card={card} de={de} visible={visible} delay={i * 55} />
                         </div>
                     ))}
                 </div>
