@@ -780,7 +780,7 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                 <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[500px] h-[260px] bg-orange-500/20 dark:bg-orange-500/30 rounded-full blur-[100px] pointer-events-none" />
                 <div className="absolute top-1/2 -translate-y-1/2 -left-20 w-64 h-64 bg-red-500/15 dark:bg-red-500/20 rounded-full blur-[90px] pointer-events-none" />
                 <div className="absolute top-1/2 -translate-y-1/2 -right-20 w-64 h-64 bg-orange-400/15 dark:bg-orange-400/20 rounded-full blur-[90px] pointer-events-none" />
-                <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center text-center gap-12">
+                <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center text-center gap-16">
                     <div className="flex flex-col gap-5 font-kumbh font-semibold tracking-tighter lowercase" style={{ fontSize: 'clamp(2rem, 5.5vw, 6rem)', lineHeight: 1.05 }}>
                         {de ? (<>
                             <p className="text-zinc-900 dark:text-white">
