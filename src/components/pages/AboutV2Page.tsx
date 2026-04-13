@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Layers, Mic, Zap, SlidersHorizontal, MousePointer2, Euro } from 'lucide-react';
 import { Button } from '@/components/ui/DesignSystem';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 
@@ -14,71 +14,154 @@ interface AboutV2PageProps {
 }
 
 // ── Card Wall ──────────────────────────────────────────────
-const CARDS = [
-    // USPs
-    { type: 'usp', size: 'tall',   en: 'Iterate visually.',         de: 'Visuell iterieren.',         sub_en: 'Draw on the image. Tell the AI exactly where.',       sub_de: 'Direkt aufs Bild zeichnen. Der KI genau zeigen, wo.' },
-    { type: 'usp', size: 'normal', en: 'Run 12 at once.',           de: '12 auf einmal.',              sub_en: 'Parallel generation — pick the best, keep going.',     sub_de: 'Parallel generieren — das Beste auswählen, weitermachen.' },
-    { type: 'usp', size: 'normal', en: 'Set it once.',              de: 'Einmal aufsetzen.',           sub_en: 'Variables and presets keep every output on-brand.',    sub_de: 'Variables und Presets halten jedes Bild on-brand.' },
-    { type: 'usp', size: 'wide',   en: 'Pay per image.',            de: 'Pro Bild bezahlen.',          sub_en: 'No subscription. Credits never expire. From 0.05 €.',  sub_de: 'Kein Abo. Credits verfallen nicht. Ab 0,05 €.' },
-    { type: 'usp', size: 'normal', en: 'Voice control.',            de: 'Voice Control.',              sub_en: 'Just describe what you see. The AI listens.',          sub_de: 'Einfach beschreiben. Die KI hört zu.' },
-    { type: 'usp', size: 'normal', en: '0.5 K → 4 K.',             de: '0,5 K → 4 K.',               sub_en: 'Draft fast. Export sharp.',                            sub_de: 'Schnell skizzieren. Scharf exportieren.' },
-    // Testimonials
-    { type: 'quote', size: 'wide',   en: 'What used to take hours takes minutes.',           de: 'Was früher Stunden dauerte, dauert jetzt Minuten.',         author: 'Agentur Donnerkeil', role: 'Creative Agency' },
-    { type: 'quote', size: 'normal', en: 'I direct the AI exactly where I want it.',         de: 'Ich dirigiere die KI genau dorthin, wo ich sie haben will.', author: 'Sarah Chen',          role: 'Interior Photographer' },
-    { type: 'quote', size: 'normal', en: 'Variables alone saves our team hours every week.', de: 'Variables spart unserem Team täglich Stunden.',              author: 'Marc Dubois',         role: 'Creative Director' },
+type CardDef =
+    | { type: 'usp';   accent: 'dark'|'orange'|'glass'; icon?: React.ReactNode; img?: string; en: string; de: string; sub_en: string; sub_de: string; }
+    | { type: 'quote'; accent: 'dark'|'orange'|'glass'; en: string; de: string; author: string; role: string; };
+
+const CARDS: CardDef[] = [
+    {
+        type: 'usp', accent: 'orange',
+        icon: <MousePointer2 className="w-10 h-10 text-white/80" />,
+        en: 'Direct the AI.', de: 'Dirigiere die KI.',
+        sub_en: 'Draw on the image. Mark exactly where you want the change.', sub_de: 'Direkt aufs Bild zeichnen. Genau zeigen, wo die Änderung hin soll.',
+    },
+    {
+        type: 'usp', accent: 'dark',
+        img: '/home/v2/v2-a.png',
+        en: 'Run 12 at once.', de: '12 auf einmal.',
+        sub_en: 'Parallel generation — compare, pick, move on.', sub_de: 'Parallel generieren — vergleichen, auswählen, weitermachen.',
+    },
+    {
+        type: 'quote', accent: 'glass',
+        en: 'What used to take hours takes minutes.', de: 'Was früher Stunden dauerte, dauert jetzt Minuten.',
+        author: 'Agentur Donnerkeil', role: 'Creative Agency',
+    },
+    {
+        type: 'usp', accent: 'dark',
+        icon: <SlidersHorizontal className="w-10 h-10 text-zinc-400" />,
+        en: 'Set it once.', de: 'Einmal aufsetzen.',
+        sub_en: 'Variables and presets keep every output on-brand.', sub_de: 'Variables und Presets halten jedes Bild on-brand.',
+    },
+    {
+        type: 'usp', accent: 'orange',
+        icon: <Euro className="w-10 h-10 text-white/80" />,
+        en: 'Pay per image.', de: 'Pro Bild bezahlen.',
+        sub_en: 'No subscription. Credits never expire. From 0.05 €.', sub_de: 'Kein Abo. Credits verfallen nicht. Ab 0,05 €.',
+    },
+    {
+        type: 'quote', accent: 'dark',
+        en: 'I direct the AI exactly where I want it.', de: 'Ich dirigiere die KI genau dorthin, wo ich sie haben will.',
+        author: 'Sarah Chen', role: 'Interior Photographer',
+    },
+    {
+        type: 'usp', accent: 'glass',
+        icon: <Mic className="w-10 h-10 text-white/60" />,
+        en: 'Voice control.', de: 'Voice Control.',
+        sub_en: 'Describe what you see. The AI listens and acts.', sub_de: 'Beschreibe was du siehst. Die KI hört zu und handelt.',
+    },
+    {
+        type: 'usp', accent: 'dark',
+        img: '/home/v2/v2-b.png',
+        en: '0.5 K → 4 K.', de: '0,5 K → 4 K.',
+        sub_en: 'Draft fast. Export sharp.', sub_de: 'Schnell skizzieren. Scharf exportieren.',
+    },
+    {
+        type: 'usp', accent: 'orange',
+        icon: <Layers className="w-10 h-10 text-white/80" />,
+        en: 'Stack & compare.', de: 'Stapeln & vergleichen.',
+        sub_en: 'Layer versions on top of each other. The best wins.', sub_de: 'Versionen übereinanderlegen. Das Beste gewinnt.',
+    },
+    {
+        type: 'quote', accent: 'glass',
+        en: 'Variables alone saves our team hours every week.', de: 'Variables spart unserem Team täglich Stunden.',
+        author: 'Marc Dubois', role: 'Creative Director',
+    },
 ];
 
-const CardWall: React.FC<{ de: boolean }> = ({ de }) => (
-    <section className="min-h-screen flex items-center py-20 px-5 sm:px-10 lg:px-16 bg-zinc-950 overflow-hidden">
-        <div className="w-full max-w-6xl mx-auto">
-            <p className="text-sm text-zinc-500 mb-8 sm:mb-12">why exposé</p>
-            <div className="columns-1 sm:columns-2 lg:columns-3 gap-3 sm:gap-4 [column-fill:_balance]">
-                {CARDS.map((card, i) => (
-                    <div
-                        key={i}
-                        className={`
-                            break-inside-avoid mb-3 sm:mb-4 rounded-2xl p-6 sm:p-7
-                            relative overflow-hidden group cursor-default
-                            ${card.type === 'quote'
-                                ? 'bg-zinc-900 border border-zinc-800'
-                                : 'bg-gradient-to-br from-zinc-800 to-zinc-900 border border-zinc-700/50'
-                            }
-                        `}
-                        style={{
-                            boxShadow: '0 1px 0 0 rgba(255,255,255,0.06) inset, 0 -1px 0 0 rgba(0,0,0,0.4) inset, 0 8px 32px rgba(0,0,0,0.4)',
-                        }}
-                    >
-                        {/* Glossy top highlight */}
-                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                        {/* Subtle inner glow on hover */}
-                        <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none" />
+const ACCENT_STYLES: Record<string, React.CSSProperties> = {
+    dark:   { background: 'linear-gradient(145deg, #27272a, #18181b)', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 1px 0 rgba(255,255,255,0.07) inset, 0 24px 48px rgba(0,0,0,0.5)' },
+    orange: { background: 'linear-gradient(145deg, #f97316, #ea580c, #c2410c)', border: '1px solid rgba(255,150,50,0.3)', boxShadow: '0 1px 0 rgba(255,200,100,0.25) inset, 0 24px 48px rgba(234,88,12,0.35)' },
+    glass:  { background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)' },
+};
 
-                        {card.type === 'quote' ? (
-                            <div className="flex flex-col gap-4 relative z-10">
-                                <p className="text-xl sm:text-2xl font-kumbh font-semibold tracking-tight text-white leading-snug">
-                                    "{de ? card.de : card.en}"
-                                </p>
-                                <div className="flex flex-col gap-0.5 pt-2 border-t border-zinc-800">
-                                    <span className="text-sm font-medium text-zinc-300">{card.author}</span>
-                                    <span className="text-xs text-zinc-600">{card.role}</span>
+function useCardWallReveal() {
+    const ref = useRef<HTMLDivElement>(null);
+    const [visible, setVisible] = useState(false);
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold: 0.05 });
+        obs.observe(el);
+        return () => obs.disconnect();
+    }, []);
+    return { ref, visible };
+}
+
+const CardWall: React.FC<{ de: boolean }> = ({ de }) => {
+    const { ref, visible } = useCardWallReveal();
+    return (
+        <section className="py-24 px-5 sm:px-10 lg:px-16 bg-zinc-950 overflow-hidden">
+            <div className="w-full max-w-6xl mx-auto">
+                <p className="text-sm text-zinc-500 mb-10 sm:mb-14">why exposé</p>
+                <div ref={ref} className="columns-1 sm:columns-2 lg:columns-3 gap-4 sm:gap-5 [column-fill:_balance]">
+                    {CARDS.map((card, i) => (
+                        <div
+                            key={i}
+                            className="break-inside-avoid mb-4 sm:mb-5 rounded-3xl relative overflow-hidden group cursor-default"
+                            style={{
+                                ...ACCENT_STYLES[card.accent],
+                                opacity: visible ? 1 : 0,
+                                transform: visible ? 'translateY(0)' : 'translateY(28px)',
+                                transition: `opacity 0.6s ease, transform 0.6s cubic-bezier(0.22,1,0.36,1)`,
+                                transitionDelay: `${i * 55}ms`,
+                            }}
+                        >
+                            {/* Glossy top sheen */}
+                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none z-10" />
+                            {/* Hover inner glow */}
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/[0.04] to-transparent pointer-events-none z-10 rounded-3xl" />
+
+                            {/* Image bg for img cards */}
+                            {card.type === 'usp' && card.img && (
+                                <div className="w-full aspect-[4/3] overflow-hidden">
+                                    <img src={card.img} alt="" className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" />
                                 </div>
+                            )}
+
+                            <div className={`flex flex-col gap-4 relative z-10 p-7 sm:p-8 ${card.type === 'usp' && card.img ? 'pt-5' : ''}`}>
+                                {/* Icon */}
+                                {card.type === 'usp' && card.icon && !card.img && (
+                                    <div className="mb-2">{card.icon}</div>
+                                )}
+
+                                {card.type === 'quote' ? (
+                                    <>
+                                        <p className="text-2xl sm:text-3xl font-kumbh font-semibold tracking-tight text-white leading-snug">
+                                            "{de ? card.de : card.en}"
+                                        </p>
+                                        <div className="flex flex-col gap-0.5 pt-3 border-t border-white/10">
+                                            <span className="text-sm font-medium text-white/70">{card.author}</span>
+                                            <span className="text-xs text-white/30">{card.role}</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h3 className={`font-kumbh font-bold tracking-tight leading-tight text-white ${card.img ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}>
+                                            {de ? card.de : card.en}
+                                        </h3>
+                                        <p className={`text-sm leading-relaxed ${card.accent === 'orange' ? 'text-white/60' : card.accent === 'glass' ? 'text-white/50' : 'text-zinc-400'}`}>
+                                            {de ? card.sub_de : card.sub_en}
+                                        </p>
+                                    </>
+                                )}
                             </div>
-                        ) : (
-                            <div className="flex flex-col gap-3 relative z-10">
-                                <h3 className="text-2xl sm:text-3xl font-kumbh font-bold tracking-tight text-white leading-tight">
-                                    {de ? card.de : card.en}
-                                </h3>
-                                <p className="text-sm text-zinc-400 leading-relaxed">
-                                    {de ? card.sub_de : card.sub_en}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                ))}
+                        </div>
+                    ))}
+                </div>
             </div>
-        </div>
-    </section>
-);
+        </section>
+    );
+};
 
 const HERO_IMGS = [
     { src: '/home/v2/v2-hero-1.png', cls: 'col-span-2 row-span-2' },
@@ -153,8 +236,11 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                 </div>
             </section>
 
-            {/* ── 2. HOOK ── */}
-            <section className={`${snap} flex items-center justify-center bg-zinc-950 px-5 sm:px-10`}>
+            {/* ── 2b. CARD WALL ── */}
+            <CardWall de={de} />
+
+            {/* ── HOOK ── */}
+            <section className={`${snap} flex items-center justify-center bg-zinc-950 px-5 sm:px-10 border-t border-white/5`}>
                 <p className="max-w-3xl text-center text-4xl sm:text-6xl lg:text-7xl font-kumbh font-bold tracking-tighter leading-[1.05] text-white lowercase">
                     {de
                         ? <>"Ein Prompt. Ein Bild.<br /><span className="text-zinc-600">Das reicht nicht."</span></>
@@ -162,9 +248,6 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                     }
                 </p>
             </section>
-
-            {/* ── 2b. CARD WALL ── */}
-            <CardWall de={de} />
 
             {/* ── 3. PARALLEL GENERATION ── */}
             <section className={`${snap} flex flex-col justify-center px-5 sm:px-10 lg:px-16 py-16 gap-10`}>
