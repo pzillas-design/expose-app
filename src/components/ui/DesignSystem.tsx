@@ -222,7 +222,7 @@ export const ModalFooter: React.FC<{ children: React.ReactNode; className?: stri
 // -- Buttons --
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'primary-mono' | 'secondary' | 'danger' | 'ghost' | 'white' | 'black' | 'generate';
-    size?: 's' | 'm' | 'l';
+    size?: 's' | 'm' | 'l' | 'xl';
     icon?: React.ReactNode;
     iconPosition?: 'left' | 'right';
     isLoading?: boolean;
@@ -244,6 +244,7 @@ export const Button: React.FC<ButtonProps> = ({
         s: 'h-8 px-4',
         m: 'h-10 px-5',
         l: 'h-12 px-6',
+        xl: 'h-16 px-10 text-base',
     };
 
     // Aesthetic variants
