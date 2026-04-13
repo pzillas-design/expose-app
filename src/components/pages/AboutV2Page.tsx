@@ -548,7 +548,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                 @media (min-width: 640px) {
                     .verb-slide { top: 12% !important; height: 66% !important; }
                     .verb-cta  { position: absolute !important; top: 78% !important; height: 22% !important; left: 0; right: 0; }
-                    .verb-typo { top: 12% !important; height: 66% !important; }
+                    .verb-typo { position: absolute !important; top: 12% !important; height: 66% !important; left: 0; right: 0; }
                     .verb-wave { top: 12% !important; bottom: 22% !important; }
                 }
             `}</style>
