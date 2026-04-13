@@ -170,20 +170,18 @@ const CardWall: React.FC<{ de: boolean }> = ({ de }) => {
         <section className="py-20 sm:py-28 px-5 sm:px-10 lg:px-16 bg-white dark:bg-zinc-950 overflow-hidden">
             <div className="w-full">
                 <p className="text-sm text-zinc-400 dark:text-zinc-500 mb-10 sm:mb-14">why exposé</p>
-                <div
-                    ref={ref}
-                    className="grid gap-3 sm:gap-4"
-                    style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}
-                >
-                    {CARDS.map((card, i) => (
+                <div ref={ref} className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+                    {CARDS.map((card, i) => {
+                        const span = CARD_SPANS[i] ?? 1;
+                        return (
                         <div
                             key={i}
-                            className="min-h-[200px]"
-                            style={{ gridColumn: `span ${CARD_SPANS[i] ?? 1}` }}
+                            className={`min-h-[200px] ${span === 2 ? 'sm:col-span-2' : 'sm:col-span-1'}`}
                         >
                             <Card card={card} de={de} visible={visible} delay={i * 50} />
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </section>
