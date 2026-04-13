@@ -782,21 +782,24 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                 <div className="absolute top-1/2 -translate-y-1/2 -right-20 w-64 h-64 bg-orange-400/15 dark:bg-orange-400/20 rounded-full blur-[90px] pointer-events-none" />
                 <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center text-center gap-12">
                     <div className="flex flex-col gap-5 font-kumbh font-semibold tracking-tighter lowercase" style={{ fontSize: 'clamp(2rem, 5.5vw, 6rem)', lineHeight: 1.05 }}>
-                        <p className="text-zinc-900 dark:text-white">
-                            {de
-                                ? 'willkommen in der ära der ästhetik.'
-                                : 'ai masters looks, physics, and composition at a level once reserved for elite studios.'}
-                        </p>
-                        <p className={de ? 'text-zinc-900 dark:text-white' : 'bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent'}>
-                            {de
-                                ? 'die kraft der form, farbe und komposition, einst ein privileg, gehört sie nun uns allen.'
-                                : 'this power is now yours.'}
-                        </p>
-                        <p className={de ? 'bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent' : 'text-zinc-900 dark:text-white'}>
-                            {de
-                                ? <>alles was du brauchst, liegt in deiner hand. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" /></>
-                                : <>surpass the professional standard. everything you need is at your fingertips. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" /></>}
-                        </p>
+                        {de ? (<>
+                            <p className="text-zinc-900 dark:text-white">
+                                die kraft der form, farbe und ästhetik, einst ein privileg, gehört sie nun uns allen.
+                            </p>
+                            <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+                                alles was du brauchst, liegt in deiner hand. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
+                            </p>
+                        </>) : (<>
+                            <p className="text-zinc-900 dark:text-white">
+                                ai masters looks, physics, and composition at a level once reserved for elite studios.
+                            </p>
+                            <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
+                                this power is now yours.
+                            </p>
+                            <p className="text-zinc-900 dark:text-white">
+                                surpass the professional standard. everything you need is at your fingertips. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
+                            </p>
+                        </>)}
                     </div>
                     <Button variant="primary" size="l" onClick={onGetStarted} icon={<ChevronRight className="w-5 h-5" />} iconPosition="right">
                         {de ? 'exposé öffnen' : 'open exposé'}
