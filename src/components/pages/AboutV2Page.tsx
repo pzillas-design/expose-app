@@ -784,8 +784,8 @@ export const AboutV2Page: React.FC<AboutV2PageProps> = ({
                     <div className="flex flex-col gap-5 font-kumbh font-bold tracking-tighter lowercase leading-snug text-4xl sm:text-5xl lg:text-6xl">
                         <p className="text-zinc-900 dark:text-white">
                             {de
-                                ? 'ki beherrscht optik, physik und komposition auf einem level, das bisher elite-studios vorbehalten war.'
-                                : 'ai masters looks, physics, and composition at a level once reserved for elite studios.'}
+                                ? 'ki beherrscht licht, raum und emotionen auf einem level, das bisher elite-studios vorbehalten war.'
+                                : 'ai masters light, space, and emotions at a level once reserved for elite studios.'}
                         </p>
                         <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
                             {de ? 'diese macht liegt nun in deinen händen.' : 'this power is now yours.'}
