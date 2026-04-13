@@ -79,15 +79,16 @@ const CARDS: CardDef[] = [
     },
 ];
 
+// no borders, no shadows — just bg fills
 const ACCENT_STYLES_DARK: Record<string, React.CSSProperties> = {
-    dark:   { background: 'linear-gradient(145deg, #27272a, #18181b)', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 1px 0 rgba(255,255,255,0.07) inset, 0 24px 48px rgba(0,0,0,0.5)' },
-    orange: { background: 'linear-gradient(145deg, #f97316, #ea580c, #c2410c)', border: '1px solid rgba(255,150,50,0.3)', boxShadow: '0 1px 0 rgba(255,200,100,0.25) inset, 0 24px 48px rgba(234,88,12,0.35)' },
-    glass:  { background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02))', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)' },
+    dark:   { background: '#1c1c1e' },
+    orange: { background: 'linear-gradient(135deg, #f97316, #dc2626)' },
+    glass:  { background: '#27272a', backdropFilter: 'blur(12px)' },
 };
 const ACCENT_STYLES_LIGHT: Record<string, React.CSSProperties> = {
-    dark:   { background: 'linear-gradient(145deg, #f4f4f5, #e4e4e7)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 0 rgba(255,255,255,0.9) inset, 0 24px 48px rgba(0,0,0,0.08)' },
-    orange: { background: 'linear-gradient(145deg, #f97316, #ea580c, #c2410c)', border: '1px solid rgba(255,150,50,0.3)', boxShadow: '0 1px 0 rgba(255,200,100,0.25) inset, 0 24px 48px rgba(234,88,12,0.2)' },
-    glass:  { background: 'linear-gradient(145deg, rgba(255,255,255,0.85), rgba(255,255,255,0.6))', border: '1px solid rgba(0,0,0,0.08)', boxShadow: '0 1px 0 rgba(255,255,255,1) inset, 0 24px 48px rgba(0,0,0,0.08)', backdropFilter: 'blur(12px)' },
+    dark:   { background: '#f1f1f1' },
+    orange: { background: 'linear-gradient(135deg, #f97316, #dc2626)' },
+    glass:  { background: '#e8e8e8' },
 };
 
 function useCardWallReveal() {
@@ -104,7 +105,8 @@ function useCardWallReveal() {
 }
 
 // Grid layout: each card gets a colspan hint
-const CARD_SPANS = [2, 1, 1, 1, 1, 1, 2, 1, 1, 1];
+// 4-col grid: each number = how many of 4 cols this card spans
+const CARD_SPANS = [2, 2, 2, 1, 1, 2, 1, 1, 1, 1];
 
 const Card: React.FC<{ card: CardDef; de: boolean; visible: boolean; delay: number }> = ({ card, de, visible, delay }) => {
     const isDark = document.documentElement.classList.contains('dark');
@@ -115,19 +117,15 @@ const Card: React.FC<{ card: CardDef; de: boolean; visible: boolean; delay: numb
 
     return (
         <div
-            className="rounded-3xl relative overflow-hidden group cursor-default h-full"
+            className="rounded-2xl relative overflow-hidden cursor-default h-full"
             style={{
                 ...ACCENT[card.accent],
                 opacity: visible ? 1 : 0,
-                transform: visible ? 'translateY(0) scale(1)' : 'translateY(32px) scale(0.97)',
+                transform: visible ? 'translateY(0) scale(1)' : 'translateY(28px) scale(0.97)',
                 transition: `opacity 0.65s ease, transform 0.65s cubic-bezier(0.22,1,0.36,1)`,
                 transitionDelay: `${delay}ms`,
             }}
         >
-            {/* Glossy top sheen */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none z-10" />
-            {/* Hover glow */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none z-10 rounded-3xl" />
 
             {card.type === 'usp' && card.img ? (
                 /* Image card — full bleed with text overlay */
@@ -169,20 +167,21 @@ const Card: React.FC<{ card: CardDef; de: boolean; visible: boolean; delay: numb
 const CardWall: React.FC<{ de: boolean }> = ({ de }) => {
     const { ref, visible } = useCardWallReveal();
     return (
-        <section className="py-24 px-5 sm:px-10 lg:px-16 bg-white dark:bg-zinc-950 overflow-hidden">
-            <div className="w-full max-w-7xl mx-auto">
+        <section className="py-20 sm:py-28 px-5 sm:px-10 lg:px-16 bg-white dark:bg-zinc-950 overflow-hidden">
+            <div className="w-full max-w-6xl mx-auto">
                 <p className="text-sm text-zinc-400 dark:text-zinc-500 mb-10 sm:mb-14">why exposé</p>
                 <div
                     ref={ref}
-                    className="grid gap-4 sm:gap-5"
-                    style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}
+                    className="grid gap-3 sm:gap-4"
+                    style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}
                 >
                     {CARDS.map((card, i) => (
                         <div
                             key={i}
+                            className="min-h-[200px]"
                             style={{ gridColumn: `span ${CARD_SPANS[i] ?? 1}` }}
                         >
-                            <Card card={card} de={de} visible={visible} delay={i * 55} />
+                            <Card card={card} de={de} visible={visible} delay={i * 50} />
                         </div>
                     ))}
                 </div>
