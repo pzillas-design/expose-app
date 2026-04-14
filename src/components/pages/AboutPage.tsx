@@ -737,7 +737,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
 };
 
 // ── Page ──────────────────────────────────────────────────
-export const AboutV2Page: React.FC<AboutV2PageProps> = ({
+export const AboutPage: React.FC<AboutV2PageProps> = ({
     user, userProfile, credits, t, lang, onSignIn, onGetStarted,
 }) => {
     const de = lang === 'de';
