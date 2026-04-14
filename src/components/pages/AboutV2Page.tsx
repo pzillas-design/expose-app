@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Layers, Mic, Zap, SlidersHorizontal, Euro, Cpu, Clock, Palette, ChevronRight, X } from 'lucide-react';
+import { ArrowRight, Layers, Mic, Zap, SlidersHorizontal, Euro, Cpu, Clock, Palette, ChevronRight, X, Grip, Banana, AudioWaveform, SquareStack } from 'lucide-react';
 import { Button } from '@/components/ui/DesignSystem';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { BarWaveform } from './BarWaveform';
@@ -17,76 +17,71 @@ interface AboutV2PageProps {
 
 // ── Card definitions ──────────────────────────────────────
 type CardDef =
-    | { type: 'usp';   accent: 'dark'|'orange'|'glass'; icon?: React.ReactNode; img?: string; en: string; de: string; sub_en?: string; sub_de?: string; }
+    | { type: 'usp';   accent: 'dark'|'orange'|'glass'|'placeholder'; icon?: React.ReactNode; img?: string; photos?: string[]; en: string; de: string; sub_en?: string; sub_de?: string; }
     | { type: 'quote'; accent: 'dark'|'orange'|'glass'; en: string; de: string; author: string; role: string; };
 
 const CARDS: CardDef[] = [
     {
-        type: 'usp', accent: 'glass',
-        img: '/home/v2/hero-new-2.png',
-        en: 'Direct the AI.', de: 'Dirigiere die KI.',
-        sub_en: 'Draw on the image. Mark exactly where.', sub_de: 'Direkt aufs Bild zeichnen.',
+        type: 'usp', accent: 'placeholder',
+        photos: ['/home/v2/p-draw-1.jpg', '/home/v2/p-draw-2.jpg'],
+        en: 'Draw on it', de: 'Direkt drauf',
     },
     {
         type: 'usp', accent: 'dark',
         img: '/home/v2/v2-a.png',
-        en: 'Run 12 at once.', de: '12 auf einmal.',
-        sub_en: 'Parallel generation — compare, pick, move on.', sub_de: 'Parallel generieren — vergleichen, weitermachen.',
+        en: 'Run 12 at once', de: '12 auf einmal',
     },
     {
-        type: 'usp', accent: 'glass',
-        img: '/home/v2/voice-3.png',
-        en: 'Voice control.', de: 'Voice Control.',
-        sub_en: 'Describe what you see. The AI acts.', sub_de: 'Beschreibe was du siehst. Die KI handelt.',
+        type: 'usp', accent: 'dark',
+        icon: <AudioWaveform className="w-8 h-8 text-zinc-400" strokeWidth={1.5} />,
+        en: 'Just say it', de: 'Einfach sagen',
     },
     {
         type: 'usp', accent: 'dark',
         icon: <SlidersHorizontal className="w-8 h-8 text-zinc-400" strokeWidth={1.5} />,
-        en: 'Set it once.', de: 'Einmal aufsetzen.',
-        sub_en: 'Presets keep every output on-brand.', sub_de: 'Presets halten jedes Bild on-brand.',
+        en: 'Set once', de: 'Einmal. Fertig',
     },
     {
         type: 'usp', accent: 'orange',
         icon: <Euro className="w-8 h-8 text-white/80" strokeWidth={1.5} />,
-        en: 'Pay per image.', de: 'Pro Bild bezahlen.',
-        sub_en: 'No subscription. From 0.05 €.', sub_de: 'Kein Abo. Ab 0,05 €.',
-    },
-    {
-        type: 'usp', accent: 'glass',
-        img: '/home/v2/hero-new-1.png',
-        en: 'Stack & compare.', de: 'Stapeln & vergleichen.',
-        sub_en: 'Layer versions. The best wins.', sub_de: 'Versionen übereinanderlegen.',
+        en: 'From 0.05 €', de: 'Ab 0,05 €',
     },
     {
         type: 'usp', accent: 'dark',
-        img: '/home/v2/v2-b.png',
-        en: '0.5 K → 4 K.', de: '0,5 K → 4 K.',
-        sub_en: 'Draft fast. Export sharp.', sub_de: 'Schnell skizzieren. Scharf exportieren.',
+        icon: <SquareStack className="w-8 h-8 text-zinc-400" strokeWidth={1.5} />,
+        en: 'Batch Edit', de: 'Batch Edit',
     },
     {
         type: 'usp', accent: 'glass',
-        icon: <Cpu className="w-8 h-8 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />,
-        en: 'Nano Banana 2.', de: 'Nano Banana 2.',
-        sub_en: 'Powered by the latest generation model.', sub_de: 'Angetrieben vom neuesten Modell.',
+        img: '/home/v2/p-eye.jpg',
+        en: '4K Auflösung', de: '4K Auflösung',
     },
     {
         type: 'usp', accent: 'glass',
-        img: '/home/v2/hero-new-3.png',
-        en: 'Magic Wand.', de: 'Zauberstab.',
-        sub_en: 'Let AI refine your words.', sub_de: 'Lass die KI deine Prompts veredeln.',
+        icon: <Banana className="w-8 h-8 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />,
+        en: 'Nano Banana 2', de: 'Nano Banana 2',
+    },
+    {
+        type: 'usp', accent: 'glass',
+        icon: <Mic className="w-8 h-8 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />,
+        en: 'Magic Wand', de: 'Zauberstab',
     },
     {
         type: 'usp', accent: 'dark',
         icon: <Palette className="w-8 h-8 text-zinc-400" strokeWidth={1.5} />,
-        en: 'Brand consistency.', de: 'Markentreue.',
-        sub_en: 'Export assets that fit your style.', sub_de: 'Exportiere Bilder, die zu dir passen.',
+        en: 'Faster with presets', de: 'Schneller mit Presets',
+    },
+    {
+        type: 'usp', accent: 'glass',
+        en: 'Type on it', de: 'Text drauf',
     },
 ];
 
 const CARD_BG: Record<string, string> = {
-    dark:   'bg-zinc-100 dark:bg-[#1c1c1e]',
-    glass:  'bg-zinc-200 dark:bg-[#27272a]',
-    orange: '',
+    dark:        'bg-zinc-100 dark:bg-[#1c1c1e]',
+    glass:       'bg-zinc-200 dark:bg-[#27272a]',
+    orange:      '',
+    placeholder: 'bg-zinc-900',
 };
 const ORANGE_GRADIENT: React.CSSProperties = {
     background: 'linear-gradient(135deg, #f97316, #dc2626)',
@@ -109,37 +104,75 @@ function useCardWallReveal() {
 }
 
 // ── Marquee card ──────────────────────────────────────────
+const PhotoCycler: React.FC<{ photos: string[]; label: string }> = ({ photos, label }) => {
+    const [idx, setIdx] = useState(0);
+    const [prev, setPrev] = useState<number | null>(null);
+    useEffect(() => {
+        const t = setInterval(() => {
+            setPrev(idx);
+            setIdx(i => (i + 1) % photos.length);
+        }, 3800);
+        return () => clearInterval(t);
+    }, [idx, photos.length]);
+    useEffect(() => {
+        if (prev === null) return;
+        const t = setTimeout(() => setPrev(null), 1800);
+        return () => clearTimeout(t);
+    }, [prev]);
+    return (
+        <>
+            {photos.map((src, i) => (
+                <img
+                    key={src}
+                    src={src}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{
+                        opacity: i === idx ? 1 : i === prev ? 0 : 0,
+                        transition: i === idx ? 'opacity 1.8s ease' : i === prev ? 'opacity 1.8s ease' : 'none',
+                        zIndex: i === idx ? 2 : i === prev ? 1 : 0,
+                    }}
+                />
+            ))}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10" />
+            <div className="absolute bottom-0 left-0 right-0 p-4 z-20">
+                <h3 className="text-3xl font-kumbh font-bold tracking-tight text-white leading-tight">{label}</h3>
+            </div>
+        </>
+    );
+};
+
 const MarqueeCard: React.FC<{ card: CardDef; de: boolean; h: number; w?: number }> = ({ card, de, h, w }) => {
     const isOrange = card.accent === 'orange';
-    const width = w ?? ((card.type === 'usp' && card.img) ? 420 : 300);
+    const hasPhotos = card.type === 'usp' && card.photos && card.photos.length > 0;
+    const width = w ?? ((card.type === 'usp' && (card.img || hasPhotos)) ? 420 : 300);
 
     return (
         <div
-            style={{ width, height: h, flexShrink: 0, ...(isOrange ? ORANGE_GRADIENT : {}) }}
-            className={`rounded-2xl relative overflow-hidden ${!isOrange ? CARD_BG[card.accent] : ''}`}
+            style={{ width, height: h, flexShrink: 0, marginRight: 10, ...(isOrange ? ORANGE_GRADIENT : {}) }}
+            className={`rounded-2xl relative overflow-hidden ${!isOrange ? CARD_BG[card.accent] ?? '' : ''}`}
         >
-            {card.type === 'usp' && card.img ? (
+            {hasPhotos && card.type === 'usp' && card.photos ? (
+                <PhotoCycler photos={card.photos} label={de ? card.de : card.en} />
+            ) : card.type === 'usp' && card.img ? (
                 <>
                     <img src={card.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-90" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-                        <h3 className="text-xl font-kumbh font-bold tracking-tight text-white leading-tight">
+                        <h3 className="text-3xl font-kumbh font-bold tracking-tight text-white leading-tight">
                             {de ? card.de : card.en}
                         </h3>
                     </div>
                 </>
             ) : (
-                <div className="flex flex-col p-4 h-full">
-                    {card.type === 'usp' && card.icon && <div className="mb-auto">{card.icon}</div>}
+                <div className="flex flex-col p-5 h-full">
+                    {card.type === 'usp' && card.icon && (
+                        <div className="mb-auto [&>svg]:w-12 [&>svg]:h-12">{card.icon}</div>
+                    )}
                     <div className="mt-auto">
                         <h3 className={`text-lg font-kumbh font-bold tracking-tight leading-tight ${isOrange ? 'text-white' : 'text-zinc-900 dark:text-white'}`}>
                             {de ? card.de : card.en}
                         </h3>
-                        {card.type === 'usp' && (de ? card.sub_de : card.sub_en) && (
-                            <p className={`text-xs leading-relaxed mt-1 ${isOrange ? 'text-white/60' : 'text-zinc-500 dark:text-zinc-400'}`}>
-                                {de ? card.sub_de : card.sub_en}
-                            </p>
-                        )}
                     </div>
                 </div>
             )}
@@ -160,16 +193,21 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
         return () => clearTimeout(t);
     }, [visible]);
 
-    const ROW1 = [CARDS[1], CARDS[0], CARDS[3], CARDS[6], CARDS[4], CARDS[5], CARDS[9]];
-    const ROW2 = [CARDS[2], CARDS[8], CARDS[7], CARDS[3], CARDS[6], CARDS[9], CARDS[0]];
+    const ROW1 = [CARDS[0], CARDS[6], CARDS[3], CARDS[4], CARDS[10]];
+    const ROW2 = [CARDS[2], CARDS[7], CARDS[5], CARDS[9]];
 
     return (
         <section className="bg-white dark:bg-zinc-950 py-24 sm:py-32 overflow-hidden">
             <style>{`
                 @keyframes mq-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-                @media (hover: hover) { .mq-anim:hover { animation-play-state: paused; } }
-                .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
-                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .mq-row { overflow: hidden; }
+                .mq-anim { animation: mq-left var(--mq-dur, 80s) linear infinite; display: flex; width: max-content; will-change: transform; }
+                @media (hover: hover) { .mq-row:hover .mq-anim { animation-play-state: paused; } }
+                @media (max-width: 639px) {
+                    .mq-row { overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; cursor: grab; }
+                    .mq-row::-webkit-scrollbar { display: none; }
+                    .mq-anim { animation: none !important; }
+                }
             `}</style>
 
             <div ref={ref} className="px-5 sm:px-8 lg:px-12 mb-10 sm:mb-14">
@@ -192,11 +230,15 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
 
             {/* Always: 2 animated marquee rows */}
             <div className="flex flex-col gap-3">
-                <div className="mq-anim" style={{ animation: 'mq-left 80s linear infinite', display: 'flex', gap: '10px', width: 'max-content' }}>
-                    {[...ROW1, ...ROW1].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={330} />)}
+                <div className="mq-row">
+                    <div className="mq-anim" style={{ '--mq-dur': '80s' } as React.CSSProperties}>
+                        {[...ROW1, ...ROW1].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={330} />)}
+                    </div>
                 </div>
-                <div className="mq-anim" style={{ animation: 'mq-left 60s linear infinite', display: 'flex', gap: '10px', width: 'max-content' }}>
-                    {[...ROW2, ...ROW2].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={240} />)}
+                <div className="mq-row">
+                    <div className="mq-anim" style={{ '--mq-dur': '60s' } as React.CSSProperties}>
+                        {[...ROW2, ...ROW2].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={240} />)}
+                    </div>
                 </div>
             </div>
         </section>
@@ -206,11 +248,13 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
 // ── Testimonials ──────────────────────────────────────────
 const TESTIMONIALS = [
     {
-        en: 'What used to take hours takes minutes.',
-        de: 'Was früher Stunden dauerte, dauert jetzt Minuten.',
-        author: 'Agentur Donnerkeil',
-        role: 'Creative Agency',
+        en: 'it really works!',
+        de: 'Es funktioniert wirklich!',
+        author: 'Ariane Keudel',
+        role: 'DONNERKEIL Fotoagentur',
         color: '#f97316',
+        large: true,
+        avatar: '/home/v2/ariane-keudel.jpg',
     },
     {
         en: 'I direct the AI exactly where I want it.',
@@ -220,15 +264,15 @@ const TESTIMONIALS = [
         color: '#64748b',
     },
     {
-        en: 'Variables alone saves our team hours every week.',
-        de: 'Variables spart unserem Team täglich Stunden.',
+        en: 'We set our style up once — and then it\'s just tap, tap, tap. Every image flows out like a production line.',
+        de: 'Wir richten unseren Stil einmal ein — und dann ist es nur noch Tap, Tap, Tap. Jedes Bild kommt raus wie am Fließband.',
         author: 'Marc Dubois',
         role: 'Creative Director',
         color: '#71717a',
     },
     {
-        en: 'The annotation tool changed everything for us.',
-        de: 'Das Annotationswerkzeug hat alles verändert.',
+        en: 'A huge advantage is that physical home staging is often no longer necessary. Effects like natural sunlight — midday sun through the windows — are convincingly realistic.',
+        de: 'Ein großer Vorteil ist, dass ein physisches Homestaging oft gar nicht mehr notwendig ist. Effekte wie natürliches Sonnenlicht (z. B. Mittagssonne durch die Fenster) funktionieren sehr überzeugend und realistisch.',
         author: 'Lena Strauss',
         role: 'Real Estate Agency',
         color: '#78716c',
@@ -254,11 +298,14 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {TESTIMONIALS.map((item, i) => (
                     <div key={i} className="flex flex-col gap-5 p-8 sm:p-10 rounded-2xl bg-zinc-50 dark:bg-zinc-900">
-                        <p className="text-base sm:text-lg font-kumbh font-medium text-zinc-900 dark:text-white leading-snug">
+                        <p className={`font-kumbh font-medium text-zinc-900 dark:text-white leading-snug ${'large' in item && item.large ? 'text-3xl sm:text-4xl font-bold tracking-tight' : 'text-base sm:text-lg'}`}>
                             "{de ? item.de : item.en}"
                         </p>
                         <div className="flex items-center gap-3 mt-auto">
-                            <Avatar name={item.author} color={item.color} />
+                            {'avatar' in item && item.avatar
+                                ? <img src={item.avatar} alt={item.author} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                                : <Avatar name={item.author} color={item.color} />
+                            }
                             <div className="flex flex-col">
                                 <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{item.author}</span>
                                 <span className="text-xs text-zinc-400 dark:text-zinc-500">{item.role}</span>
@@ -353,8 +400,8 @@ const PremiumVideoCard: React.FC<{
                         <video ref={lbRef} src={src} controls muted playsInline
                             className="w-full rounded-2xl shadow-2xl" />
                         <button onClick={() => setOpen(false)}
-                            className="absolute -top-10 right-0 text-white/50 hover:text-white transition-colors">
-                            <X className="w-5 h-5" />
+                            className="absolute -top-12 right-0 w-9 h-9 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 text-white/70 hover:text-white transition-all duration-200 backdrop-blur-md">
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
@@ -370,7 +417,7 @@ const VERB_SCENES = [
     { verb: 'ask',        img: '/home/v2/hero-new-4.png' },
     { verb: 'streamline', img: '/home/v2/hero-new-1.png' },
     { verb: 'upscale',    img: '/home/v2/hero-new-3.png' },
-    { verb: 'own',        img: '/home/v2/hero-new-6.png' },
+    { verb: 'own',        img: '/home/v2/p-taucher2.jpg' },
 ];
 
 const SLOT_OPTIONS = [
