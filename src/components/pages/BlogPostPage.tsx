@@ -48,7 +48,7 @@ const renderBlock = (block: ContentBlock, idx: number) => {
                     {block.items.map((item, i) => (
                         <li key={i} className="flex gap-3 text-zinc-600 dark:text-zinc-300 text-base leading-relaxed">
                             <span className="text-zinc-300 dark:text-zinc-600 mt-1 shrink-0">–</span>
-                            <span>{item}</span>
+                            <span dangerouslySetInnerHTML={{ __html: item }} />
                         </li>
                     ))}
                 </ul>
@@ -59,7 +59,7 @@ const renderBlock = (block: ContentBlock, idx: number) => {
                     {block.items.map((item, i) => (
                         <li key={i} className="flex gap-3 text-zinc-600 dark:text-zinc-300 text-base leading-relaxed">
                             <span className="text-zinc-400 dark:text-zinc-500 font-mono text-sm shrink-0 mt-0.5">{String(i + 1).padStart(2, '0')}</span>
-                            <span>{item}</span>
+                            <span dangerouslySetInnerHTML={{ __html: item }} />
                         </li>
                     ))}
                 </ol>

@@ -8,7 +8,9 @@ type TranslationFunction = (key: string) => string;
 const footerLinks = (t: TranslationFunction) => [
     { label: t('footer_photos') || 'Gallery', to: '/' },
     { label: t('footer_about') || 'About', to: '/about' },
-    { label: t('footer_blog') || 'Journal', to: '/blog' },
+    { label: 'Blog', to: '/blog' },
+    { label: 'Instagram', to: 'https://www.instagram.com/expos.ae/', external: true },
+    { label: t('footer_contact') || 'Contact', to: '/contact' },
     { label: t('footer_legal') || 'Legal', to: '/impressum' }
 ];
 
@@ -37,12 +39,28 @@ function FooterNav({ t, onGalleryClick }: { t: TranslationFunction, onGalleryCli
                     }
                 };
 
+                const linkClass = "text-[14px] font-normal text-zinc-400 transition-colors duration-200 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-100";
+
+                if (link.external) {
+                    return (
+                        <a
+                            key={link.to}
+                            href={link.to}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={linkClass}
+                        >
+                            {link.label}
+                        </a>
+                    );
+                }
+
                 return (
                     <Link
                         key={link.to}
                         to={link.to}
                         onClick={handleClick}
-                        className="text-[14px] font-normal text-zinc-400 transition-colors duration-200 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-100"
+                        className={linkClass}
                     >
                         {link.label}
                     </Link>

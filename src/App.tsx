@@ -29,6 +29,7 @@ const SharedTemplatePage = React.lazy(() => import('@/components/pages/SharedTem
 const HeroPlayground = React.lazy(() => import('@/components/pages/HeroPlayground').then(m => ({ default: m.HeroPlayground })));
 const AdminDashboard = React.lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 const ImageInfoModal = React.lazy(() => import('@/components/canvas/ImageInfoModal').then(m => ({ default: m.ImageInfoModal })));
+const AboutV2Page = React.lazy(() => import('@/components/pages/AboutV2Page').then(m => ({ default: m.AboutV2Page })));
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage, persistToolCallLog, persistTranscriptLog } from '@/services/voiceAdminService';
@@ -961,7 +962,7 @@ export function App() {
     const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/impressum' || location.pathname === '/contact' || location.pathname === '/blog' || location.pathname.startsWith('/blog/'));
     
     // Pages that should have an expandable Hero header
-    const expandableRoutes = ['/', '/about', '/impressum'];
+    const expandableRoutes = ['/', '/about', '/about-v2', '/impressum'];
     const isExpandableRoute = expandableRoutes.includes(location.pathname)
         || location.pathname === '/blog'
         || location.pathname.startsWith('/blog/');
@@ -1384,6 +1385,28 @@ export function App() {
                             onSignIn={() => { setAuthModalMode('signin'); setIsAuthModalOpen(true); }}
                         />} />
                         <Route path="/legal" element={<Navigate to="/impressum" replace />} />
+                        <Route path="/about-v2" element={
+                            <AboutV2Page
+                                user={user}
+                                userProfile={userProfile}
+                                credits={credits}
+                                t={t}
+                                lang={state.currentLang}
+                                onSignIn={() => {
+                                    setAuthModalMode('signin');
+                                    setIsAuthModalOpen(true);
+                                }}
+                                onGetStarted={() => {
+                                    if (user) {
+                                        navigate('/');
+                                        return;
+                                    }
+                                    setAuthModalMode('signup');
+                                    setIsAuthModalOpen(true);
+                                }}
+                            />
+                        } />
+
                         <Route path="/s/:slug" element={
                             <SharedTemplatePage
                                 user={user}

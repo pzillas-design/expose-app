@@ -5,6 +5,10 @@ import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { Button } from '@/components/ui/DesignSystem';
 import { UniversalStage } from './home-modules/UniversalStage';
+import { StatsSection } from './home-modules/StatsSection';
+import { PersonasSection } from './home-modules/PersonasSection';
+import { PricingSection } from './home-modules/PricingSection';
+import { TestimonialsSection } from './home-modules/TestimonialsSection';
 
 interface HomePageProps {
     user: any;
@@ -27,6 +31,18 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
                 <section data-hero-scroll-track className="relative h-[1800vh]">
                     <UniversalStage t={t} lang={lang} />
                 </section>
+
+                {/* Stats strip */}
+                <StatsSection />
+
+                {/* Personas — built for */}
+                <PersonasSection />
+
+                {/* Pricing — pay as you go */}
+                <PricingSection />
+
+                {/* Testimonials */}
+                <TestimonialsSection lang={lang} />
 
                 {/* 2. Section 5: Clean CTA (Traditional Scroll) */}
                 <section className="relative min-h-[70vh] flex flex-col items-center justify-center px-6 pt-20 pb-20 overflow-hidden">
