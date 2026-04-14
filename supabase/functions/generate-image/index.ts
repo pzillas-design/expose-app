@@ -5,6 +5,7 @@ import { decodeBase64, encodeBase64 } from "https://deno.land/std@0.207.0/encodi
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from './utils/aspectRatio.ts';
 import { prepareSourceImage, extractBase64FromDataUrl, urlToBase64 } from './utils/imageProcessing.ts';
 import { prepareParts, generateImage as geminiGenerateImage, extractGeneratedImage } from './services/gemini.ts';
+import { createKieTask, pollKieTask } from './services/kie.ts';
 import { COSTS } from './types/index.ts';
 import { verifyJwtSignature } from '../_shared/auth.ts';
 
@@ -50,6 +51,44 @@ const buildUploadDateFolder = (date: Date) => {
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const yyyy = String(date.getFullYear());
     return `upload${dd}${mm}${yyyy}`;
+};
+
+/**
+ * Uploads a base64 image to temp storage and returns a signed URL for Kie.ai.
+ * Kie requires HTTP URLs, not base64.
+ */
+const uploadTempForKie = async (supabaseAdmin: any, base64: string, jobId: string, idx: number): Promise<string | null> => {
+    try {
+        const binaryData = decodeBase64(base64);
+        const tempPath = `_temp_kie/${jobId}_${idx}.jpg`;
+        const { error } = await supabaseAdmin.storage
+            .from('user-content')
+            .upload(tempPath, binaryData, { contentType: 'image/jpeg', upsert: true });
+        if (error) return null;
+        const { data } = await supabaseAdmin.storage
+            .from('user-content')
+            .createSignedUrl(tempPath, 3600);
+        return data?.signedUrl || null;
+    } catch {
+        return null;
+    }
+};
+
+/**
+ * Returns true if the Google error is worth retrying via Kie.ai fallback.
+ * Covers: timeouts, Google 503s, malformed responses, empty image responses.
+ */
+const isKieRetryable = (err: any): boolean => {
+    const msg = String(err?.message || err || '');
+    return (
+        msg.includes('timeout') ||
+        msg.includes('503') ||
+        msg.includes('Deadline expired') ||
+        msg.includes('UNAVAILABLE') ||
+        msg.includes('MALFORMED_FUNCTION_CALL') ||
+        msg.includes('NO_IMAGE') ||
+        msg.includes('no image')
+    );
 };
 
 const claimSave = async (supabaseAdmin: any, jobId: string): Promise<boolean> => {
@@ -510,6 +549,16 @@ Deno.serve(async (req) => {
                     throw new Error('Google API key missing');
                 }
 
+                // ── Kie.ai fallback wraps the entire Google call + save ──────────────
+                // If Google returns a retryable error (timeout/503/MALFORMED/NO_IMAGE)
+                // AND qualityMode is not 0.5K (Kie doesn't support it),
+                // we transparently retry via Kie.ai without failing the job.
+                const kieApiKey = Deno.env.get('KIE_API_KEY');
+                const kieSupported = qualityMode !== 'nb2-05k' && !!kieApiKey;
+                let usedKieFallback = false;
+
+                try {
+
                 // Write webhook_data + stage to DB BEFORE calling Gemini
                 // so that even if the function dies mid-call we have full diagnostics
                 updateStage('gemini_call');
@@ -618,7 +667,89 @@ Deno.serve(async (req) => {
                     geminiResponse?.usageMetadata
                 );
 
-                logInfo('Google Generation Saved', `Job ${newId} completed via Google`);
+                    logInfo('Google Generation Saved', `Job ${newId} completed via Google`);
+
+                } catch (googleErr: any) {
+                    // ── Kie.ai fallback ───────────────────────────────────────────────
+                    if (kieSupported && isKieRetryable(googleErr)) {
+                        logInfo('Kie Fallback', `Google failed (${googleErr.message}) — falling back to Kie.ai`);
+                        updateStage('kie_fallback');
+
+                        // Build image URL list for Kie (needs HTTP URLs, not base64)
+                        const kieImageUrls: string[] = [];
+
+                        // Source image — prefer original HTTP URL, else upload to temp storage
+                        const sourceHttpUrl = (payloadOriginalImage?.startsWith('http'))
+                            ? payloadOriginalImage
+                            : (sourceImage?.src?.startsWith('http') ? sourceImage.src : null);
+
+                        if (sourceHttpUrl) {
+                            kieImageUrls.push(sourceHttpUrl);
+                        } else if (finalSourceBase64) {
+                            const tempUrl = await uploadTempForKie(supabaseAdmin, finalSourceBase64, newId, 0);
+                            if (tempUrl) kieImageUrls.push(tempUrl);
+                        }
+
+                        // Annotation mask — upload to temp storage
+                        if (payloadAnnotationImage) {
+                            const annBase64 = payloadAnnotationImage.startsWith('data:')
+                                ? payloadAnnotationImage.split(',')[1]
+                                : payloadAnnotationImage;
+                            const annUrl = await uploadTempForKie(supabaseAdmin, annBase64, newId, kieImageUrls.length);
+                            if (annUrl) kieImageUrls.push(annUrl);
+                        }
+
+                        // References (HTTP URLs only)
+                        if (resolvedReferences?.length) {
+                            for (const ref of resolvedReferences) {
+                                if (ref.src?.startsWith('http') && kieImageUrls.length < 8) {
+                                    kieImageUrls.push(ref.src);
+                                }
+                            }
+                        }
+
+                        const kieResolution = qualityMode === 'nb2-4k' ? '4K'
+                            : qualityMode === 'nb2-2k' ? '2K' : '1K';
+                        const kieModelName = 'nano-banana-2';
+
+                        logInfo('Kie API Call', `Model: ${kieModelName}, Res: ${kieResolution}, AR: ${bestRatio}, Images: ${kieImageUrls.length}`);
+
+                        const kieTaskId = await createKieTask(
+                            kieApiKey,
+                            kieModelName,
+                            { prompt, variables, annotationImage: payloadAnnotationImage },
+                            kieImageUrls,
+                            bestRatio,
+                            kieResolution,
+                        );
+
+                        await supabaseAdmin
+                            .from('generation_jobs')
+                            .update({ request_payload: { ...apiRequestPayload, kie_task_id: kieTaskId, provider: 'kie_fallback' } })
+                            .eq('id', newId);
+
+                        const { imageUrl: kieImageUrl } = await pollKieTask(kieApiKey, kieTaskId);
+
+                        // Download Kie result and save via existing save infrastructure
+                        const kieBase64 = await urlToBase64(kieImageUrl);
+                        Object.assign(apiRequestPayload, { provider: 'kie_fallback', kieTaskId });
+
+                        updateStage('save_result');
+                        await saveGeminiResult(
+                            supabaseAdmin,
+                            newId,
+                            { base64: kieBase64, mimeType: 'image/jpeg' },
+                            webhookData,
+                        );
+
+                        usedKieFallback = true;
+                        logInfo('Kie Fallback Saved', `Job ${newId} completed via Kie.ai`);
+
+                    } else {
+                        throw googleErr;
+                    }
+                }
+                // ── end Google + Kie fallback block ──────────────────────────────────
 
             } catch (bgErr: any) {
                 const errorMsg = bgErr?.message || (typeof bgErr === 'string' ? bgErr : 'Background task failed');
