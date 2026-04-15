@@ -8,6 +8,7 @@ import { compressImage } from '@/utils/imageUtils';
 import { generateId } from '@/utils/ids';
 import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, StructuredReference } from '@/types';
 import { sendGenerationCompleteNotification } from '@/utils/notifications';
+import { trackImageGenerated } from '@/utils/analytics';
 
 interface UseGenerationProps {
     rows: ImageRow[];
@@ -344,6 +345,7 @@ export const useGeneration = ({
                 // Increment total image count in settings
                 onImageSaved?.();
                 onGenerationComplete?.(jobId);
+                trackImageGenerated();
 
                 // Send browser notification if enabled and tab is inactive
                 sendGenerationCompleteNotification(t('notification_generation_done'));
@@ -715,6 +717,7 @@ export const useGeneration = ({
 
                     onImageSaved?.();
                     onGenerationComplete?.(newId);
+                    trackImageGenerated();
                     showToast('Bild generiert', 'success', 6000);
                 } else {
                     // Async pattern: Edge Function accepted job, background processing started.
@@ -869,6 +872,7 @@ export const useGeneration = ({
 
                     onImageSaved?.();
                     onGenerationComplete?.(newId);
+                    trackImageGenerated();
                     sendGenerationCompleteNotification(t('notification_generation_done'));
                     showToast('Bild generiert', 'success', 6000);
                 } else {

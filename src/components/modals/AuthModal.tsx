@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { trackSignup } from '@/utils/analytics';
 import { X, Mail, Lock, ArrowRight, Loader2, Fingerprint, LogIn } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { Button, Theme, Typo, IconButton, Input } from '@/components/ui/DesignSystem';
@@ -51,6 +52,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
             if (mode === 'signup') {
                 const { error } = await supabase.auth.signUp({ email, password });
                 if (error) throw error;
+                trackSignup();
                 setSuccessMsg(t('auth_check_email_conf'));
             } else if (mode === 'signin') {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
