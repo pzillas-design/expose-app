@@ -22,7 +22,7 @@ export const trackSignup = () => {
 export const trackImageGenerated = () => {
     safeGtag('event', 'conversion', {
         send_to: `${AW_ID}/7576705152`,
-        value: 1,
+        value: 0.2,
         currency: 'EUR',
     });
 };
