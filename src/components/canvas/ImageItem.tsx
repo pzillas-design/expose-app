@@ -186,6 +186,8 @@ export const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDura
         return () => cancelAnimationFrame(rafId);
     }, [startTime, estimatedDuration, finishing]);
 
+    if (!startTime && !finishing) return null;
+
     return (
         <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
             {/* Track — half tile width, clearly white */}
@@ -413,8 +415,8 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                     <>
                         {/* Grey ghost shimmer while generating — neutral, no orange */}
                 {image.isGenerating && (
-                    <div className="absolute inset-0 z-30 overflow-hidden bg-zinc-900/8 dark:bg-zinc-100/5">
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 dark:via-white/10 to-transparent skew-x-12 animate-[shimmer-ghost_4s_ease-in-out_infinite]" />
+                    <div className="absolute inset-0 z-30 overflow-hidden">
+                        <div className="absolute inset-y-0 -left-full w-[300%] bg-gradient-to-r from-transparent via-white/8 dark:via-white/5 to-transparent animate-[shimmer-ghost_8s_ease-in-out_infinite]" />
                     </div>
                 )}
                         <GenerationProgressBar
