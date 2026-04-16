@@ -28,7 +28,7 @@ const CARDS: CardDef[] = [
     },
     {
         type: 'usp', accent: 'dark',
-        img: '/home/v2/v2-a.png',
+        img: '/home/v2/v2-a.webp',
         en: 'Run 12 at once', de: '12 auf einmal',
     },
     {
@@ -340,12 +340,13 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
 // ── Video card with lightbox ──────────────────────────────
 const PremiumVideoCard: React.FC<{
     src: string;
+    poster?: string;
     label: string;
     sub: string;
     variant?: string;
     index?: number;
     de?: boolean;
-}> = ({ src, label, sub }) => {
+}> = ({ src, poster, label, sub }) => {
     const thumbRef = useRef<HTMLVideoElement>(null);
     const lbRef    = useRef<HTMLVideoElement>(null);
     const [open, setOpen] = useState(false);
@@ -375,7 +376,7 @@ const PremiumVideoCard: React.FC<{
             {/* Thumbnail */}
             <div className="group relative cursor-pointer" onClick={() => setOpen(true)}>
                 <div className="relative rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 leading-[0]">
-                    <video ref={thumbRef} src={src} muted playsInline preload="metadata"
+                    <video ref={thumbRef} src={src} poster={poster} muted playsInline preload="metadata"
                         className="w-full h-auto object-contain group-hover:opacity-95 transition-opacity duration-300" />
                     {/* Dark overlay on thumbnail */}
                     <div className="absolute inset-0 bg-black/25" />
@@ -403,7 +404,7 @@ const PremiumVideoCard: React.FC<{
                     <div className="relative w-full max-w-5xl mx-4 sm:mx-8"
                          style={{ animation: 'lb-scale 0.3s cubic-bezier(0.22,1,0.36,1)' }}
                          onClick={e => e.stopPropagation()}>
-                        <video ref={lbRef} src={src} controls muted playsInline
+                        <video ref={lbRef} src={src} poster={poster} controls muted playsInline
                             className="w-full rounded-2xl shadow-2xl" />
                         <button onClick={() => setOpen(false)}
                             className="absolute -top-12 right-0 w-9 h-9 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 text-white/70 hover:text-white transition-all duration-200 backdrop-blur-md">
@@ -419,10 +420,10 @@ const PremiumVideoCard: React.FC<{
 
 // ── VerbSection — hero ────────────────────────────────────
 const VERB_SCENES = [
-    { verb: 'annotate',   img: '/home/v2/hero-new-2.png' },
-    { verb: 'ask',        img: '/home/v2/hero-new-4.png' },
-    { verb: 'streamline', img: '/home/v2/hero-new-1.png' },
-    { verb: 'upscale',    img: '/home/v2/hero-new-3.png' },
+    { verb: 'annotate',   img: '/home/v2/hero-new-2.webp' },
+    { verb: 'ask',        img: '/home/v2/hero-new-4.webp' },
+    { verb: 'streamline', img: '/home/v2/hero-new-1.webp' },
+    { verb: 'upscale',    img: '/home/v2/hero-new-3.webp' },
     { verb: 'own',        img: '/home/v2/p-taucher2.jpg' },
 ];
 
@@ -768,6 +769,7 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
                     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
                         <PremiumVideoCard
                             src="/home/v2/demo-batch.mp4"
+                            poster="/home/v2/demo-batch-poster.jpg"
                             label={de ? 'Set-Bearbeitung' : 'One-Click Sets'}
                             sub={de
                                 ? 'Bearbeite hunderte Bilder gleichzeitig mit nur einem Prompt.'
@@ -775,6 +777,7 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
                         />
                         <PremiumVideoCard
                             src="/home/v2/demo.mp4"
+                            poster="/home/v2/demo-poster.jpg"
                             label={de ? 'Anmerkungen' : 'Visual Annotations'}
                             sub={de
                                 ? 'Dirigiere die KI mit Zeichnungen direkt auf dem Bild.'
