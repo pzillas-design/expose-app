@@ -1,49 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://www.expose.ae/</loc>
+    <loc>https://expose.ae/</loc>
     <lastmod>2026-02-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.expose.ae/blog</loc>
+    <loc>https://expose.ae/blog</loc>
     <lastmod>2026-04-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.expose.ae/blog/one-room-multiple-angles</loc>
+    <loc>https://expose.ae/blog/one-room-multiple-angles</loc>
     <lastmod>2026-04-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.expose.ae/blog/visual-prompting-guide</loc>
+    <loc>https://expose.ae/blog/visual-prompting-guide</loc>
     <lastmod>2026-03-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.expose.ae/blog/variables-presets</loc>
+    <loc>https://expose.ae/blog/variables-presets</loc>
     <lastmod>2026-03-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.expose.ae/blog/reference-images-style-matching</loc>
+    <loc>https://expose.ae/blog/reference-images-style-matching</loc>
     <lastmod>2026-04-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.expose.ae/impressum</loc>
+    <loc>https://expose.ae/impressum</loc>
     <lastmod>2026-02-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://www.expose.ae/contact</loc>
+    <loc>https://expose.ae/contact</loc>
     <lastmod>2026-02-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
