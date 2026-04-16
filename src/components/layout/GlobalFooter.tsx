@@ -72,7 +72,7 @@ function FooterNav({ t, onGalleryClick }: { t: TranslationFunction, onGalleryCli
 
 export const GlobalFooter: React.FC<{ t: TranslationFunction, onGalleryClick?: () => void }> = ({ t, onGalleryClick }) => {
     return (
-        <footer className="mt-auto w-full bg-white px-6 pb-12 pt-7 dark:bg-zinc-950 sm:px-8 sm:pb-16 sm:pt-8 lg:px-12 xl:px-16">
+        <footer className="mt-auto w-full bg-white px-6 pb-16 pt-10 dark:bg-zinc-950 sm:px-8 sm:pb-20 sm:pt-12 lg:px-12 xl:px-16">
             <div className="flex w-full flex-col gap-6 sm:gap-7 md:flex-row md:items-center md:justify-between md:gap-8">
                 <div className="flex justify-center md:justify-start">
                     <FooterLockup />

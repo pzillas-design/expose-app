@@ -151,10 +151,10 @@ html:not(.dark) {
   }
 }
 
-/* Slow ghost shimmer with pause — used on generating thumbnails */
+/* Gentle wide sweep — single soft gradient pass over generating thumbnails */
 @keyframes shimmer-ghost {
-  0%, 35%  { transform: translateX(-150%); }
-  75%, 100% { transform: translateX(250%); }
+  0%, 25%  { transform: translateX(-37%); }
+  75%, 100% { transform: translateX(37%); }
 }
 
 @keyframes loading-bar {

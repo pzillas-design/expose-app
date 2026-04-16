@@ -50,8 +50,10 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
  const requestType = job.requestType || (hasSource ? 'edit' : 'create');
  const rawModel = job.model || '';
  const lowerModel = rawModel.toLowerCase();
- const provider =
-  lowerModel.includes('gemini') || lowerModel.includes('nb2') || lowerModel.includes('nano-banana')
+ const isKieFallback = payload.provider === 'kie_fallback';
+ const provider = isKieFallback
+  ? 'kie_fallback'
+  : lowerModel.includes('gemini') || lowerModel.includes('nb2') || lowerModel.includes('nano-banana')
    ? 'google'
    : 'legacy';
  const providerModelVersion = payload.providerModelVersion || img?.model_version || rawModel || '–';
@@ -80,7 +82,9 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
  };
 
  const providerRows: { label: string; value: React.ReactNode }[] = [
-  { label: 'Provider', value: provider },
+  { label: 'Provider', value: isKieFallback
+   ? <span className="font-semibold text-violet-500">Kie.ai (Fallback)</span>
+   : provider },
   { label: 'Provider Model', value: formatValue(rawModel) },
   { label: 'Provider Model Version', value: formatValue(providerModelVersion) },
   { label: 'Provider Response ID', value: formatValue(webhookData.providerResponseId || payload.responseId) },

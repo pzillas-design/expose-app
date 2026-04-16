@@ -28,7 +28,7 @@ const CARDS: CardDef[] = [
     },
     {
         type: 'usp', accent: 'dark',
-        img: '/home/v2/v2-a.png',
+        img: '/home/v2/v2-a.webp',
         en: 'Run 12 at once', de: '12 auf einmal',
     },
     {
@@ -142,10 +142,10 @@ const PhotoCycler: React.FC<{ photos: string[]; label: string }> = ({ photos, la
     );
 };
 
-const MarqueeCard: React.FC<{ card: CardDef; de: boolean; h: number; w?: number }> = ({ card, de, h, w }) => {
+const MarqueeCard: React.FC<{ card: CardDef; de: boolean; h: number; w?: number; scale?: number }> = ({ card, de, h, w, scale = 1 }) => {
     const isOrange = card.accent === 'orange';
     const hasPhotos = card.type === 'usp' && card.photos && card.photos.length > 0;
-    const width = w ?? ((card.type === 'usp' && (card.img || hasPhotos)) ? 420 : 300);
+    const width = w ?? Math.round(((card.type === 'usp' && (card.img || hasPhotos)) ? 420 : 300) * scale);
 
     return (
         <div
@@ -186,6 +186,12 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
     const LINE1 = de ? 'ein prompt ist' : 'one prompt is';
     const LINE2 = de ? 'nie genug.'     : 'never enough.';
     const [shown, setShown] = useState(false);
+    const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+    useEffect(() => {
+        const fn = () => setIsMobile(window.innerWidth < 640);
+        window.addEventListener('resize', fn);
+        return () => window.removeEventListener('resize', fn);
+    }, []);
 
     useEffect(() => {
         if (!visible) return;
@@ -232,12 +238,12 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
             <div className="flex flex-col gap-3">
                 <div className="mq-row">
                     <div className="mq-anim" style={{ '--mq-dur': '80s' } as React.CSSProperties}>
-                        {[...ROW1, ...ROW1].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={330} />)}
+                        {[...ROW1, ...ROW1].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={isMobile ? 190 : 330} scale={isMobile ? 0.65 : 1} />)}
                     </div>
                 </div>
                 <div className="mq-row">
                     <div className="mq-anim" style={{ '--mq-dur': '60s' } as React.CSSProperties}>
-                        {[...ROW2, ...ROW2].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={240} />)}
+                        {[...ROW2, ...ROW2].map((card, i) => <MarqueeCard key={i} card={card} de={de} h={isMobile ? 150 : 240} scale={isMobile ? 0.65 : 1} />)}
                     </div>
                 </div>
             </div>
@@ -321,7 +327,7 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
                     { value: '1,040',  label: de ? 'Kreative' : 'creatives' },
                     { value: '4 K',    label: de ? 'Max. Auflösung' : 'max resolution' },
                 ].map((s, i) => (
-                    <div key={i} className="flex flex-col gap-0.5 px-8 first:pl-0">
+                    <div key={i} className="flex flex-col gap-0.5 px-4 sm:px-8 first:pl-0">
                         <span className="text-3xl sm:text-4xl font-kumbh font-bold tracking-tight text-zinc-900 dark:text-white">{s.value}</span>
                         <span className="text-sm text-zinc-400 dark:text-zinc-500">{s.label}</span>
                     </div>
@@ -334,12 +340,13 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
 // ── Video card with lightbox ──────────────────────────────
 const PremiumVideoCard: React.FC<{
     src: string;
+    poster?: string;
     label: string;
     sub: string;
     variant?: string;
     index?: number;
     de?: boolean;
-}> = ({ src, label, sub }) => {
+}> = ({ src, poster, label, sub }) => {
     const thumbRef = useRef<HTMLVideoElement>(null);
     const lbRef    = useRef<HTMLVideoElement>(null);
     const [open, setOpen] = useState(false);
@@ -369,7 +376,7 @@ const PremiumVideoCard: React.FC<{
             {/* Thumbnail */}
             <div className="group relative cursor-pointer" onClick={() => setOpen(true)}>
                 <div className="relative rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-900 leading-[0]">
-                    <video ref={thumbRef} src={src} muted playsInline
+                    <video ref={thumbRef} src={src} poster={poster} muted playsInline preload="metadata"
                         className="w-full h-auto object-contain group-hover:opacity-95 transition-opacity duration-300" />
                     {/* Dark overlay on thumbnail */}
                     <div className="absolute inset-0 bg-black/25" />
@@ -397,7 +404,7 @@ const PremiumVideoCard: React.FC<{
                     <div className="relative w-full max-w-5xl mx-4 sm:mx-8"
                          style={{ animation: 'lb-scale 0.3s cubic-bezier(0.22,1,0.36,1)' }}
                          onClick={e => e.stopPropagation()}>
-                        <video ref={lbRef} src={src} controls muted playsInline
+                        <video ref={lbRef} src={src} poster={poster} controls muted playsInline
                             className="w-full rounded-2xl shadow-2xl" />
                         <button onClick={() => setOpen(false)}
                             className="absolute -top-12 right-0 w-9 h-9 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 text-white/70 hover:text-white transition-all duration-200 backdrop-blur-md">
@@ -413,10 +420,10 @@ const PremiumVideoCard: React.FC<{
 
 // ── VerbSection — hero ────────────────────────────────────
 const VERB_SCENES = [
-    { verb: 'annotate',   img: '/home/v2/hero-new-2.png' },
-    { verb: 'ask',        img: '/home/v2/hero-new-4.png' },
-    { verb: 'streamline', img: '/home/v2/hero-new-1.png' },
-    { verb: 'upscale',    img: '/home/v2/hero-new-3.png' },
+    { verb: 'annotate',   img: '/home/v2/hero-new-2.webp' },
+    { verb: 'ask',        img: '/home/v2/hero-new-4.webp' },
+    { verb: 'streamline', img: '/home/v2/hero-new-1.webp' },
+    { verb: 'upscale',    img: '/home/v2/hero-new-3.webp' },
     { verb: 'own',        img: '/home/v2/p-taucher2.jpg' },
 ];
 
@@ -619,9 +626,9 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                 );
             })}
 
-            {/* Annotate SVG overlay */}
+            {/* Annotate SVG overlay — hidden on mobile (positions designed for 1440px) */}
             <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"
-                className="absolute inset-0 w-full h-full pointer-events-none"
+                className="hidden sm:block absolute inset-0 w-full h-full pointer-events-none"
                 style={{ zIndex: 5, opacity: active === 0 ? 1 : 0, transition: 'opacity 0.6s ease' }}>
                 <g transform="translate(155, 185) scale(0.44, 0.44)">
                     <path d="M1 227.453C11.501 121.453 78.9989 21.4536 213.499 2.95358C347.999 -15.5464 523.499 98.9538 504.457 278.547C485.414 458.141 353.921 507.02 230.999 476.953C108.077 446.887 24.9739 321.216 65.6044 161.469"
@@ -656,8 +663,8 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                 </g>
             </svg>
 
-            {/* Waveform overlay (scene 1) — hidden on mobile */}
-            <div className="verb-wave hidden sm:block absolute inset-0 pointer-events-none"
+            {/* Waveform overlay (scene 1) */}
+            <div className="verb-wave absolute inset-0 pointer-events-none"
                 style={{ zIndex: 5, opacity: active === 1 ? 1 : 0, transition: 'opacity 0.6s ease' }}>
                 <BarWaveform isActive={active === 1} />
             </div>
@@ -727,9 +734,11 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                             ))}
                         </ul>
                     </div>
-                    <Button variant="primary" size="xl" onClick={onGetStarted} icon={<ArrowRight className="w-4 h-4" />} iconPosition="right">
-                        {de ? 'Kostenlos starten' : 'Get started free'}
-                    </Button>
+                    <div className="w-full sm:w-auto mt-2 sm:mt-0">
+                        <Button variant="primary" size="xl" onClick={onGetStarted} icon={<ArrowRight className="w-4 h-4" />} iconPosition="right" className="w-full sm:w-auto">
+                            {de ? 'starte exposé' : 'open exposé'}
+                        </Button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -743,7 +752,7 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
     const de = lang === 'de';
 
     return (
-        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-orange-500 selection:text-white">
+        <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-orange-500 selection:text-white overflow-x-hidden">
 
             {/* 1. HERO */}
             <VerbSection de={de} onGetStarted={onGetStarted} />
@@ -760,6 +769,7 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
                     <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
                         <PremiumVideoCard
                             src="/home/v2/demo-batch.mp4"
+                            poster="/home/v2/demo-batch-poster.jpg"
                             label={de ? 'Set-Bearbeitung' : 'One-Click Sets'}
                             sub={de
                                 ? 'Bearbeite hunderte Bilder gleichzeitig mit nur einem Prompt.'
@@ -767,6 +777,7 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
                         />
                         <PremiumVideoCard
                             src="/home/v2/demo.mp4"
+                            poster="/home/v2/demo-poster.jpg"
                             label={de ? 'Anmerkungen' : 'Visual Annotations'}
                             sub={de
                                 ? 'Dirigiere die KI mit Zeichnungen direkt auf dem Bild.'
@@ -811,7 +822,7 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
 
             {/* 7. MANIFESTO */}
             <div className="relative w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 px-5 sm:px-8" style={{ paddingTop: '14rem', paddingBottom: '10rem' }}>
-                <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[500px] h-[260px] bg-orange-500/20 dark:bg-orange-500/30 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[min(500px,90vw)] h-[200px] sm:h-[260px] bg-orange-500/20 dark:bg-orange-500/30 rounded-full blur-[80px] sm:blur-[100px] pointer-events-none" />
                 <div className="absolute top-1/2 -translate-y-1/2 -left-20 w-64 h-64 bg-red-500/15 dark:bg-red-500/20 rounded-full blur-[90px] pointer-events-none" />
                 <div className="absolute top-1/2 -translate-y-1/2 -right-20 w-64 h-64 bg-orange-400/15 dark:bg-orange-400/20 rounded-full blur-[90px] pointer-events-none" />
                 <div className="relative z-10 max-w-6xl mx-auto flex flex-col items-center text-center gap-16">

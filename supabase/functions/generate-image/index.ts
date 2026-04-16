@@ -80,26 +80,41 @@ const uploadTempForKie = async (supabaseAdmin: any, base64: string, jobId: strin
  */
 const isKieRetryable = (err: any): boolean => {
     const msg = String(err?.message || err || '');
-    return (
-        msg.includes('timeout') ||
-        msg.includes('503') ||
-        msg.includes('Deadline expired') ||
-        msg.includes('UNAVAILABLE') ||
-        msg.includes('MALFORMED_FUNCTION_CALL') ||
-        msg.includes('NO_IMAGE') ||
-        msg.includes('no image')
+    // Block content policy errors — Kie would also reject these
+    const isContentBlock = (
+        msg.includes('SAFETY') ||
+        msg.includes('PROHIBITED_CONTENT') ||
+        msg.includes('blocked:') ||
+        msg.includes('finish: SAFETY') ||
+        msg.includes('finish: PROHIBITED')
     );
+    if (isContentBlock) return false;
+    // Route everything else to Kie (quota, timeouts, server errors, empty responses, etc.)
+    return true;
 };
 
 const claimSave = async (supabaseAdmin: any, jobId: string): Promise<boolean> => {
-    const { data } = await supabaseAdmin
+    // Try processing first (normal path)
+    const { data: processing } = await supabaseAdmin
         .from('generation_jobs')
         .update({ status: 'saving' })
         .eq('id', jobId)
         .eq('status', 'processing')
         .select('id');
 
-    return Array.isArray(data) && data.length > 0;
+    if (Array.isArray(processing) && processing.length > 0) return true;
+
+    // Also claim if pg_cron already marked it failed with its timeout message
+    // (Kie takes >8min so cron can fire before Kie finishes)
+    const { data: timedOut } = await supabaseAdmin
+        .from('generation_jobs')
+        .update({ status: 'saving' })
+        .eq('id', jobId)
+        .eq('status', 'failed')
+        .like('error', '%Server timeout%')
+        .select('id');
+
+    return Array.isArray(timedOut) && timedOut.length > 0;
 };
 
 const saveGeminiResult = async (
@@ -294,10 +309,7 @@ Deno.serve(async (req) => {
         } = payload;
 
         // For repeat/"More" generations: append a random variation ID so Gemini's implicit
-        // input caching doesn't anchor the model to the same output. Without this, identical
-        // prompt + source image hits the cache and produces very similar results every time.
-        const varId = Math.random().toString(36).slice(2, 7).toUpperCase();
-        const prompt = isRepeat ? `${rawPrompt} [v:${varId}]` : rawPrompt;
+        const prompt = rawPrompt;
 
         // Early content validation — prevents credit deduction for empty requests
         if (!prompt?.trim() && !sourceImage?.src && !payloadOriginalImage && !payloadReferences?.length) {
@@ -553,7 +565,7 @@ Deno.serve(async (req) => {
                 // If Google returns a retryable error (timeout/503/MALFORMED/NO_IMAGE)
                 // AND qualityMode is not 0.5K (Kie doesn't support it),
                 // we transparently retry via Kie.ai without failing the job.
-                const kieApiKey = Deno.env.get('KIE_API_KEY');
+                const kieApiKey = Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai');
                 const kieSupported = qualityMode !== 'nb2-05k' && !!kieApiKey;
                 let usedKieFallback = false;
 

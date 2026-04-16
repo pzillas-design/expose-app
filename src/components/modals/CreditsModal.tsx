@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { trackCreditsPurchased } from '@/utils/analytics';
 import { Button, Theme } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { TranslationFunction } from '@/types';
@@ -53,6 +54,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
         setIsProcessing(true);
         try {
             await onAddFunds(finalAmount);
+            trackCreditsPurchased(finalAmount);
             setIsTopUpExpanded(false);
             setCustomAmount('');
         } finally {
