@@ -197,6 +197,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const isMultiEdit = (payload.batchSize || 1) > 1 || !!payload.isMultiEdit;
                                                     const hasAnnotation = j.hasMask || j.type === 'Edit';
                                                     const isRepeat = !!payload.isRepeat;
+                                                    const isKie = j.provider === 'kie_fallback';
 
                                                     // Resolution badge
                                                     const m = j.qualityMode || j.model || '';
@@ -220,6 +221,10 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         <td className="px-5 py-3.5">
                                                             <div className="flex items-center gap-1 flex-wrap">
                                                                 {res && <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${resColor}`}>{res}</span>}
+                                                                {isKie
+                                                                    ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">Kie</span>
+                                                                    : <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Google</span>
+                                                                }
                                                                 {isMultiEdit && <span className={badgeClass}>Multi Edit</span>}
                                                                 {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
                                                                 {hasVars      && <span className={badgeClass}>Variablen</span>}
