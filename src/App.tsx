@@ -1230,7 +1230,7 @@ export function App() {
                                     voiceFocusIndex={voiceFocusIndex}
                                 />
                             ) : (
-                                <HomePage
+                                <AboutPage
                                     user={user}
                                     userProfile={userProfile}
                                     credits={credits}
