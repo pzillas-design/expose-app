@@ -390,17 +390,7 @@ Deno.serve(async (req) => {
                 concurrentCount = _cc || 0;
                 logInfo('BG Task Start', `job=${newId} quality=${qualityMode} user=${user.id} concurrent=${concurrentCount}`);
 
-                // Admission control: max 5 concurrent nb2-4k jobs to prevent overload cascade
-                if (qualityMode === 'nb2-4k') {
-                    const { count: concurrent4k } = await supabaseAdmin
-                        .from('generation_jobs')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('status', 'processing')
-                        .eq('quality_mode', 'nb2-4k');
-                    if ((concurrent4k || 0) > 5) {
-                        throw new Error('Server busy — too many concurrent 4K jobs, please try again in a moment');
-                    }
-                }
+                // No admission control — Google handles concurrency natively
 
                 // Persist concurrent_jobs count on the job row for later correlation
                 supabaseAdmin.from('generation_jobs')
