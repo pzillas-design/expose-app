@@ -249,15 +249,9 @@ export const useGeneration = ({
         if (attachedJobIds.current.has(jobId)) return;
         attachedJobIds.current.add(jobId);
 
-        // Quality from param, or fall back to jobTimingRef (set at job creation)
-        const resolvedQuality = quality || jobTimingRef.current[jobId]?.quality || '';
-        const is4K = resolvedQuality === 'nb2-4k';
-
-        // nb2-4k + Kie primary: server owns job state — client must not give up early.
-        // Kie thresholds are set dynamically once we see provider:'kie_primary' in the job.
-        // Other modes: shorter timeouts are fine.
-        let stuckAttempts = is4K ? 36 : 14;   // 180s vs 70s
-        let maxAttempts   = is4K ? 44 : 19;   // 220s vs 95s absolute ceiling
+        // Server (edge function + pg_cron) owns all job state — client just polls.
+        // pg_cron marks failed after 8 min; we poll for up to 10 min as a safety net.
+        const maxAttempts = 120; // 120 × 5s = 600s (10 min)
 
         let attempts = 0;
         let googleOverloadWarningShown = false; // show yellow toast only once per job
@@ -265,17 +259,11 @@ export const useGeneration = ({
         const poll = async () => {
             attempts++;
             if (attempts > maxAttempts) {
-                // Absolute ceiling reached — stop polling client-side
-                const retryFn = pendingRetryFns.current[jobId];
+                // 10 min ceiling reached — stop polling, server/pg_cron will clean up
                 delete pendingRetryFns.current[jobId];
                 setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
-                if (retryFn) {
-                    showToast(t('toast_auto_retry'), 'success');
-                    retryFn();
-                } else {
-                    showToast(translateError('timeout', t), 'error');
-                }
+                showToast(translateError('timeout', t), 'error');
                 return;
             }
 
@@ -363,20 +351,6 @@ export const useGeneration = ({
                 .eq('id', jobId)
                 .maybeSingle();
 
-            // Any Kie job (primary or fallback): server owns the job — upgrade to 4K-equivalent timeouts
-            const kieProvider = (jobData?.request_payload as any)?.provider;
-            const isKieJob = kieProvider === 'kie_primary' || kieProvider === 'kie_fallback';
-            if (isKieJob && !is4K) {
-                stuckAttempts = 36;  // 180s — same as 4K
-                maxAttempts   = 44;  // 220s absolute ceiling
-            }
-            // Google non-4K: Google can take up to 130s — push stuck past that
-            const isGoogleJob = !isKieJob && !is4K;
-            if (isGoogleJob && stuckAttempts < 28) {
-                stuckAttempts = 28;  // 140s — safely above 130s Google timeout
-                maxAttempts   = 36;  // 180s absolute ceiling
-            }
-
             // Show yellow warning toast once when Google AI is retrying due to overload
             if (!googleOverloadWarningShown && (jobData?.request_payload as any)?.current_stage === 'gemini_retry_503') {
                 googleOverloadWarningShown = true;
@@ -385,48 +359,10 @@ export const useGeneration = ({
 
             if (jobData?.status === 'failed') {
                 const jobError = (jobData as any).error || "";
-                const isTransient = jobError.toLowerCase().includes('timeout') || jobError.includes('520');
-                const retryFn = isTransient ? pendingRetryFns.current[jobId] : null;
                 delete pendingRetryFns.current[jobId];
                 setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
-                if (retryFn) {
-                    showToast(t('toast_auto_retry'), 'success');
-                    retryFn();
-                } else {
-                    showToast(translateError(jobError, t), "error");
-                }
-                return;
-            }
-
-            // 2b. Detect stuck "processing" jobs
-            const isKiePrimary = (jobData?.request_payload as any)?.provider === 'kie_primary';
-            if (jobData?.status === 'processing' && attempts >= stuckAttempts) {
-                // For nb2-4k + Kie primary: server owns the job state — never write failed from client.
-                // pg_cron handles refunds after 8 min; Kie status is tracked server-side.
-                // For other modes: write failed so the cron + UI stay consistent.
-                if (!is4K && !isKiePrimary) {
-                    try {
-                        const { data: job } = await supabase
-                            .from('generation_jobs').select('request_payload').eq('id', jobId).maybeSingle();
-                        const lastStage = (job?.request_payload as any)?.current_stage || 'unknown';
-                        await supabase
-                            .from('generation_jobs')
-                            .update({ status: 'failed', error: `Timeout at stage: ${lastStage} - credits refunded` })
-                            .eq('id', jobId);
-                    } catch { /* non-critical */ }
-                }
-
-                const retryFn = pendingRetryFns.current[jobId];
-                delete pendingRetryFns.current[jobId];
-                setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
-                attachedJobIds.current.delete(jobId);
-                if (retryFn) {
-                    showToast(t('toast_auto_retry'), 'success');
-                    retryFn();
-                } else {
-                    showToast(translateError('timeout', t), 'error');
-                }
+                showToast(translateError(jobError, t), "error");
                 return;
             }
 
