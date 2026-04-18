@@ -15,6 +15,10 @@ const corsHeaders = {
     'Access-Control-Allow-Methods': 'POST, OPTIONS'
 };
 
+// Primary image provider. 'kie' = Kie.ai directly (Google skipped).
+// 'google' = Google first, Kie as fallback on error. Flip this line to switch.
+const PRIMARY_PROVIDER: 'kie' | 'google' = 'kie';
+
 /**
  * Logs an error with context for easier debugging
  */
@@ -561,6 +565,16 @@ Deno.serve(async (req) => {
 
                 try {
 
+                // PRIMARY_PROVIDER='kie' → skip Google entirely, jump to Kie fallback path
+                if (PRIMARY_PROVIDER === 'kie') {
+                    if (!kieSupported) {
+                        throw new Error(qualityMode === 'nb2-05k'
+                            ? '0.5K resolution is not supported when Kie.ai is the primary provider'
+                            : 'Kie.ai is primary provider but KIE_API_KEY is missing');
+                    }
+                    throw new Error('PRIMARY_PROVIDER=kie: routing directly to Kie.ai');
+                }
+
                 // Write webhook_data + stage to DB BEFORE calling Gemini
                 // so that even if the function dies mid-call we have full diagnostics
                 updateStage('gemini_call');
@@ -672,10 +686,12 @@ Deno.serve(async (req) => {
                     logInfo('Google Generation Saved', `Job ${newId} completed via Google`);
 
                 } catch (googleErr: any) {
-                    // ── Kie.ai fallback ───────────────────────────────────────────────
+                    // ── Kie.ai fallback (or primary route) ────────────────────────────
                     if (kieSupported && isKieRetryable(googleErr)) {
-                        logInfo('Kie Fallback', `Google failed (${googleErr.message}) — falling back to Kie.ai`);
-                        updateStage('kie_fallback');
+                        const isPrimary = PRIMARY_PROVIDER === 'kie';
+                        logInfo(isPrimary ? 'Kie Primary' : 'Kie Fallback',
+                            isPrimary ? `Routing to Kie.ai as primary provider` : `Google failed (${googleErr.message}) — falling back to Kie.ai`);
+                        updateStage(isPrimary ? 'kie_primary' : 'kie_fallback');
 
                         // Build image URL list for Kie (needs HTTP URLs, not base64)
                         const kieImageUrls: string[] = [];
