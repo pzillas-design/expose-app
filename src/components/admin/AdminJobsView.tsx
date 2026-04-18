@@ -197,7 +197,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const isMultiEdit = (payload.batchSize || 1) > 1 || !!payload.isMultiEdit;
                                                     const hasAnnotation = j.hasMask || j.type === 'Edit';
                                                     const isRepeat = !!payload.isRepeat;
-                                                    const isKie = j.provider === 'kie_fallback';
+                                                    const isKie = typeof j.provider === 'string' && j.provider.startsWith('kie');
 
                                                     // Resolution badge
                                                     const m = j.qualityMode || j.model || '';

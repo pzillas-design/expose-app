@@ -1,5 +1,4 @@
 // Primary image generation provider.
-// 'kie'    → Kie.ai only
+// 'kie'    → Kie.ai first, Google Gemini as fallback on error
 // 'google' → Google Gemini first, Kie.ai as fallback on error
-// 'both'   → Kie + Google race in parallel, first success wins
-export const PRIMARY_PROVIDER: 'kie' | 'google' | 'both' = 'kie';
+export const PRIMARY_PROVIDER: 'kie' | 'google' = 'google';
