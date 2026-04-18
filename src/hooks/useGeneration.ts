@@ -386,20 +386,10 @@ export const useGeneration = ({
 
             // 2b. Detect stuck "processing" jobs
             if (jobData?.status === 'processing' && attempts >= stuckAttempts) {
-                // For nb2-4k: server owns the job state — never write failed from client.
-                // The Edge Function has up to 200s, and pg_cron handles refunds after 8 min.
-                // For other modes: write failed so the cron + UI stay consistent.
-                if (!is4K) {
-                    try {
-                        const { data: job } = await supabase
-                            .from('generation_jobs').select('request_payload').eq('id', jobId).maybeSingle();
-                        const lastStage = (job?.request_payload as any)?.current_stage || 'unknown';
-                        await supabase
-                            .from('generation_jobs')
-                            .update({ status: 'failed', error: `Timeout at stage: ${lastStage} - credits refunded` })
-                            .eq('id', jobId);
-                    } catch { /* non-critical */ }
-                }
+                // Server owns the job state for all modes — never write failed from client.
+                // The Edge Function may still be running Gemini (130s/200s) or the Kie.ai
+                // fallback (additional ~60s). pg_cron handles refunds for truly stuck jobs.
+                // Client only detaches the UI row and shows a timeout toast.
 
                 const retryFn = pendingRetryFns.current[jobId];
                 delete pendingRetryFns.current[jobId];
