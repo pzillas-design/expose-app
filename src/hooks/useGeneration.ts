@@ -363,10 +363,18 @@ export const useGeneration = ({
                 .eq('id', jobId)
                 .maybeSingle();
 
-            // Kie primary: server owns the job — upgrade to 4K-equivalent timeouts once detected
-            if ((jobData?.request_payload as any)?.provider === 'kie_primary' && !is4K) {
+            // Any Kie job (primary or fallback): server owns the job — upgrade to 4K-equivalent timeouts
+            const kieProvider = (jobData?.request_payload as any)?.provider;
+            const isKieJob = kieProvider === 'kie_primary' || kieProvider === 'kie_fallback';
+            if (isKieJob && !is4K) {
                 stuckAttempts = 36;  // 180s — same as 4K
                 maxAttempts   = 44;  // 220s absolute ceiling
+            }
+            // Google non-4K: Google can take up to 130s — push stuck past that
+            const isGoogleJob = !isKieJob && !is4K;
+            if (isGoogleJob && stuckAttempts < 28) {
+                stuckAttempts = 28;  // 140s — safely above 130s Google timeout
+                maxAttempts   = 36;  // 180s absolute ceiling
             }
 
             // Show yellow warning toast once when Google AI is retrying due to overload
