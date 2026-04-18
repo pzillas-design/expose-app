@@ -445,7 +445,15 @@ Deno.serve(async (req) => {
                 // ── PRIMARY_PROVIDER switch ──────────────────────────────────────────
                 // 'kie'    → Kie.ai first, Google as fallback on error
                 // 'google' → Google first, Kie.ai as fallback on error
-                const PRIMARY_PROVIDER = 'google'; // change to 'kie' to switch primary
+                //
+                // NOTE (2026-04-18): temporarily set to 'kie' because Google's streaming
+                // path silently kills the EdgeRuntime.waitUntil task — none of the
+                // in-task timeouts (FIRST_CHUNK 20s, CHUNK_IDLE 25s, outer 60s) fire,
+                // so jobs hang until pg_cron reapers them 8 min later. Kie uses a
+                // webhook pattern so the edge function returns quickly and doesn't
+                // need a long-lived background task. Flip back to 'google' once the
+                // root cause is understood (CPU budget? waitUntil budget?).
+                const PRIMARY_PROVIDER = 'kie'; // change to 'google' to switch primary
 
                 const kieApiKey = Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai');
                 const kieSupported = !!kieApiKey;
