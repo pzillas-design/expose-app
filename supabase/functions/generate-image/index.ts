@@ -559,7 +559,45 @@ Deno.serve(async (req) => {
                 const kieSupported = qualityMode !== 'nb2-05k' && !!kieApiKey;
                 let usedKieFallback = false;
 
-                try {
+                // ── PRIMARY_PROVIDER switch ──────────────────────────────────────────
+                // 'kie'    → go straight to Kie.ai, skip Google entirely
+                // 'google' → Google first, Kie as fallback (default behaviour)
+                const PRIMARY_PROVIDER = 'kie'; // change to 'google' to restore Google-first
+
+                if (PRIMARY_PROVIDER === 'kie' && kieSupported) {
+                    updateStage('kie_primary');
+                    await supabaseAdmin
+                        .from('generation_jobs')
+                        .update({ webhook_data: webhookData, request_payload: { ...apiRequestPayload, current_stage: 'kie_primary' } })
+                        .eq('id', newId);
+
+                    const kieImageUrls: string[] = [];
+                    if (finalSourceBase64) {
+                        const url = await uploadTempForKie(supabaseAdmin, finalSourceBase64, newId, 0);
+                        if (url) kieImageUrls.push(url);
+                    }
+                    if (payloadReferences?.length) {
+                        for (let i = 0; i < Math.min(payloadReferences.length, 4); i++) {
+                            const ref = resolvedReferences[i] || payloadReferences[i];
+                            if (ref?.src?.startsWith('http')) {
+                                kieImageUrls.push(ref.src);
+                            } else if (ref?.src?.startsWith('data:')) {
+                                const b64 = extractBase64FromDataUrl(ref.src);
+                                if (b64) { const u = await uploadTempForKie(supabaseAdmin, b64, newId, i + 1); if (u) kieImageUrls.push(u); }
+                            }
+                        }
+                    }
+                    const kieResolution = qualityMode === 'nb2-4k' ? '4K' : qualityMode === 'nb2-2k' ? '2K' : '1K';
+                    logInfo('Kie Primary', `Model: nano-banana-2, Res: ${kieResolution}, AR: ${bestRatio}, Images: ${kieImageUrls.length}`);
+                    const kieTaskId = await createKieTask(kieApiKey, 'nano-banana-2', { prompt, variables, annotationImage: payloadAnnotationImage }, kieImageUrls, bestRatio, kieResolution);
+                    await supabaseAdmin.from('generation_jobs').update({ request_payload: { ...apiRequestPayload, kie_task_id: kieTaskId, provider: 'kie_primary' } }).eq('id', newId);
+                    const { imageUrl: kieImageUrl } = await pollKieTask(kieApiKey, kieTaskId);
+                    const kieBase64 = await urlToBase64(kieImageUrl);
+                    Object.assign(apiRequestPayload, { provider: 'kie_primary', kieTaskId });
+                    updateStage('save_result');
+                    await saveGeminiResult(supabaseAdmin, newId, { base64: kieBase64, mimeType: 'image/jpeg' }, webhookData);
+                    logInfo('Kie Primary Saved', `Job ${newId} completed via Kie.ai (primary)`);
+                } else { try {
 
                 // Write webhook_data + stage to DB BEFORE calling Gemini
                 // so that even if the function dies mid-call we have full diagnostics
@@ -751,7 +789,7 @@ Deno.serve(async (req) => {
                         throw googleErr;
                     }
                 }
-                // ── end Google + Kie fallback block ──────────────────────────────────
+                } // ── end else (Google + Kie fallback block) ──────────────────────────
 
             } catch (bgErr: any) {
                 const errorMsg = bgErr?.message || (typeof bgErr === 'string' ? bgErr : 'Background task failed');
