@@ -454,93 +454,16 @@ Deno.serve(async (req) => {
                 const kieSupported = !!kieApiKey;
                 let usedKieFallback = false;
 
-                // Count concurrent jobs (shared — used for diagnostics)
-                const { count: concurrentJobCount } = await supabaseAdmin
-                    .from('generation_jobs')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('status', 'processing');
+                // ── SHARED PREP (both pipelines use these) ───────────────────────────
 
-                const generationStartTime = Date.now();
+                // Annotation image → normalized base64 (both paths send it as an image)
+                const annotationBase64 = payloadAnnotationImage
+                    ? (payloadAnnotationImage.startsWith('data:')
+                        ? extractBase64FromDataUrl(payloadAnnotationImage)
+                        : payloadAnnotationImage)
+                    : null;
 
-                // ── Shared webhookData (used by saveGeminiResult in both pipelines) ──
-                const webhookData: any = {
-                    requestType,
-                    qualityMode,
-                    finalModelName,  // overridden to 'nano-banana-2' in Kie path below
-                    prompt,
-                    targetTitle,
-                    userId: user.id,
-                    userEmail: user.email,
-                    parentId: sourceImage?.id || null,
-                    sourceWidth: sourceImage?.width,
-                    sourceHeight: sourceImage?.height,
-                    sourceRealWidth: sourceImage?.realWidth || sourceImage?.width,
-                    sourceRealHeight: sourceImage?.realHeight || sourceImage?.height,
-                    sourceBaseName: sourceImage?.baseName || sourceImage?.title,
-                    sourceVersion: sourceImage?.version,
-                    sourceId: sourceImage?.id || null,
-                    sourceFolderId: sourceFolderId ?? sourceImage?.folderId ?? sourceImage?.id ?? null,
-                    annotations: '[]',
-                    apiRequestPayload,
-                    generationStartTime,
-                    isPro,
-                    cost,
-                    activeTemplateId: activeTemplateId || null,
-                    variableValues: variables || null,
-                    refundCredits: profile.credits
-                };
-
-                if (PRIMARY_PROVIDER === 'kie' && kieSupported) {
-                    // ════════════════════════════════════════════════════════════════
-                    // KIE PIPELINE
-                    // ════════════════════════════════════════════════════════════════
-                    webhookData.finalModelName = 'nano-banana-2';
-                    updateStage('kie_primary');
-                    // Write provider:'kie_primary' immediately so client detects pipeline on first poll
-                    await supabaseAdmin
-                        .from('generation_jobs')
-                        .update({ webhook_data: webhookData, request_payload: { ...apiRequestPayload, current_stage: 'kie_primary', provider: 'kie_primary' } })
-                        .eq('id', newId);
-
-                    const kieImageUrls: string[] = [];
-                    if (finalSourceBase64) {
-                        const url = await uploadTempForKie(supabaseAdmin, finalSourceBase64, newId, 0);
-                        if (url) kieImageUrls.push(url);
-                    }
-                    if (payloadReferences?.length) {
-                        for (let i = 0; i < Math.min(payloadReferences.length, 4); i++) {
-                            const ref = payloadReferences[i];
-                            if (ref?.src?.startsWith('http')) {
-                                kieImageUrls.push(ref.src);
-                            } else if (ref?.src?.startsWith('data:')) {
-                                const b64 = extractBase64FromDataUrl(ref.src);
-                                if (b64) { const u = await uploadTempForKie(supabaseAdmin, b64, newId, i + 1); if (u) kieImageUrls.push(u); }
-                            }
-                        }
-                    }
-                    const kieResolution = qualityMode === 'nb2-4k' ? '4K' : qualityMode === 'nb2-2k' ? '2K' : '1K';
-                    logInfo('Kie Primary', `Model: nano-banana-2, Res: ${kieResolution}, AR: ${bestRatio}, Images: ${kieImageUrls.length}`);
-                    const kieTaskId = await createKieTask(kieApiKey, 'nano-banana-2', { prompt, variables, annotationImage: payloadAnnotationImage }, kieImageUrls, bestRatio, kieResolution);
-                    await supabaseAdmin.from('generation_jobs').update({ request_payload: { ...apiRequestPayload, kie_task_id: kieTaskId, provider: 'kie_primary' } }).eq('id', newId);
-                    const { imageUrl: kieImageUrl } = await pollKieTask(kieApiKey, kieTaskId);
-                    const kieBase64 = await urlToBase64(kieImageUrl);
-                    Object.assign(apiRequestPayload, { provider: 'kie_primary', kieTaskId });
-                    updateStage('save_result');
-                    await saveGeminiResult(supabaseAdmin, newId, { base64: kieBase64, mimeType: 'image/jpeg' }, webhookData);
-                    logInfo('Kie Primary Saved', `Job ${newId} completed via Kie.ai (primary)`);
-                } else { try {
-                // ════════════════════════════════════════════════════════════════
-                // GOOGLE PIPELINE
-                // ════════════════════════════════════════════════════════════════
-
-                const geminiApiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
-                if (!geminiApiKey) throw new Error('Google API key missing');
-
-                // Resolution for Gemini image output
-                const geminiImageSize = qualityMode === 'nb2-4k' ? '4K'
-                    : qualityMode === 'nb2-2k' ? '2K' : '1K';
-
-                // Resolve all reference paths to signed URLs for Gemini
+                // References → resolve storage paths to signed URLs once (reused by both paths)
                 const resolvedReferences: any[] = [];
                 if (payloadReferences?.length) {
                     for (const ref of payloadReferences) {
@@ -556,7 +479,95 @@ Deno.serve(async (req) => {
                     }
                 }
 
-                // Prepare parts array (Multimodal Interleaving for Gemini)
+                const generationStartTime = Date.now();
+
+                const webhookData: any = {
+                    requestType,
+                    qualityMode,
+                    finalModelName,
+                    prompt,
+                    targetTitle,
+                    userId: user.id,
+                    userEmail: user.email,
+                    parentId: sourceImage?.id || null,
+                    sourceWidth: sourceImage?.width,
+                    sourceHeight: sourceImage?.height,
+                    sourceRealWidth: sourceImage?.realWidth || sourceImage?.width,
+                    sourceRealHeight: sourceImage?.realHeight || sourceImage?.height,
+                    sourceBaseName: sourceImage?.baseName || sourceImage?.title,
+                    sourceVersion: sourceImage?.version,
+                    sourceId: sourceImage?.id || null,
+                    sourceFolderId: sourceFolderId ?? sourceImage?.folderId ?? sourceImage?.id ?? null,
+                    annotations: resolvedReferences.length > 0
+                        ? JSON.stringify(resolvedReferences.map((r: any) => ({
+                            id: crypto.randomUUID(),
+                            type: 'reference_image',
+                            referenceImage: r.src,
+                            text: r.instruction || ''
+                          })))
+                        : '[]',
+                    apiRequestPayload,
+                    generationStartTime,
+                    isPro,
+                    cost,
+                    activeTemplateId: activeTemplateId || null,
+                    variableValues: variables || null,
+                    refundCredits: profile.credits
+                };
+
+                const kieResolution = qualityMode === 'nb2-4k' ? '4K' : qualityMode === 'nb2-2k' ? '2K' : '1K';
+
+                if (PRIMARY_PROVIDER === 'kie' && kieSupported) {
+                    // ════════════════════════════════════════════════════════════════
+                    // KIE PIPELINE
+                    // ════════════════════════════════════════════════════════════════
+                    webhookData.finalModelName = 'nano-banana-2';
+                    updateStage('kie_primary');
+                    await supabaseAdmin
+                        .from('generation_jobs')
+                        .update({ webhook_data: webhookData, request_payload: { ...apiRequestPayload, current_stage: 'kie_primary', provider: 'kie_primary' } })
+                        .eq('id', newId);
+
+                    // Build kieImageUrls: source → refs → annotation (all need HTTP URLs)
+                    const kieImageUrls: string[] = [];
+                    if (finalSourceBase64) {
+                        const url = await uploadTempForKie(supabaseAdmin, finalSourceBase64, newId, 0);
+                        if (url) kieImageUrls.push(url);
+                    }
+                    for (let i = 0; i < Math.min(resolvedReferences.length, 4); i++) {
+                        const ref = resolvedReferences[i];
+                        if (ref.src?.startsWith('http')) {
+                            kieImageUrls.push(ref.src);
+                        } else if (ref.src?.startsWith('data:')) {
+                            const b64 = extractBase64FromDataUrl(ref.src);
+                            if (b64) { const u = await uploadTempForKie(supabaseAdmin, b64, newId, i + 1); if (u) kieImageUrls.push(u); }
+                        }
+                    }
+                    if (annotationBase64) {
+                        const annUrl = await uploadTempForKie(supabaseAdmin, annotationBase64, newId, kieImageUrls.length);
+                        if (annUrl) kieImageUrls.push(annUrl);
+                    }
+
+                    logInfo('Kie Primary', `Model: nano-banana-2, Res: ${kieResolution}, AR: ${bestRatio}, Images: ${kieImageUrls.length}, hasAnnotation: ${!!annotationBase64}`);
+                    const kieTaskId = await createKieTask(kieApiKey, 'nano-banana-2', { prompt, variables, annotationImage: annotationBase64 }, kieImageUrls, bestRatio, kieResolution);
+                    await supabaseAdmin.from('generation_jobs').update({ request_payload: { ...apiRequestPayload, kie_task_id: kieTaskId, provider: 'kie_primary' } }).eq('id', newId);
+                    const { imageUrl: kieImageUrl } = await pollKieTask(kieApiKey, kieTaskId);
+                    const kieBase64 = await urlToBase64(kieImageUrl);
+                    Object.assign(apiRequestPayload, { provider: 'kie_primary', kieTaskId });
+                    updateStage('save_result');
+                    await saveGeminiResult(supabaseAdmin, newId, { base64: kieBase64, mimeType: 'image/jpeg' }, webhookData);
+                    logInfo('Kie Primary Saved', `Job ${newId} completed via Kie.ai (primary)`);
+                } else { try {
+                // ════════════════════════════════════════════════════════════════
+                // GOOGLE PIPELINE
+                // ════════════════════════════════════════════════════════════════
+
+                const geminiApiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
+                if (!geminiApiKey) throw new Error('Google API key missing');
+
+                const geminiImageSize = qualityMode === 'nb2-4k' ? '4K' : qualityMode === 'nb2-2k' ? '2K' : '1K';
+
+                // Prepare parts array for Gemini (uses resolvedReferences from shared prep)
                 const { parts, hasMask, hasRefs, allRefs } = await prepareParts(
                     { ...payload, references: resolvedReferences },
                     finalSourceBase64
@@ -576,7 +587,6 @@ Deno.serve(async (req) => {
                     }
                 };
 
-                // Fill apiRequestPayload with Gemini-specific fields
                 apiRequestPayload = {
                     model: finalModelName,
                     userPrompt: prompt,
@@ -591,14 +601,6 @@ Deno.serve(async (req) => {
                     timestamp: new Date().toISOString()
                 };
                 webhookData.apiRequestPayload = apiRequestPayload;
-                webhookData.annotations = resolvedReferences.length > 0
-                    ? JSON.stringify(resolvedReferences.map((r: any) => ({
-                        id: crypto.randomUUID(),
-                        type: 'reference_image',
-                        referenceImage: r.src,
-                        text: r.instruction || ''
-                    })))
-                    : '[]';
 
                 // Write webhook_data + stage to DB BEFORE calling Gemini
                 // so that even if the function dies mid-call we have full diagnostics
