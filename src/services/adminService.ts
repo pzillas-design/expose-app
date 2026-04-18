@@ -115,7 +115,7 @@ export const adminService = {
     async getJobs(page?: number, pageSize?: number): Promise<any[]> {
         let query = supabase
             .from('generation_jobs')
-            .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, downloaded_at, kie_task_id, request_payload->provider::text as provider')
+            .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, downloaded_at, kie_task_id, provider:request_payload->>provider')
             .order('created_at', { ascending: false });
 
         if (page !== undefined && pageSize !== undefined) {
