@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { PRIMARY_PROVIDER } from '@/config/provider';
 import { supabase } from '@/services/supabaseClient';
 import { suppressCreditToast } from '@/services/creditToastGuard';
 import { imageService } from '@/services/imageService';
@@ -253,10 +254,11 @@ export const useGeneration = ({
         const resolvedQuality = quality || jobTimingRef.current[jobId]?.quality || '';
         const is4K = resolvedQuality === 'nb2-4k';
 
-        // nb2-4k: Gemini has up to 200s server-side — client must not give up before that.
-        // Other modes: shorter timeouts are fine.
-        const stuckAttempts = is4K ? 36 : 14;   // 180s vs 70s  (-20%)
-        const maxAttempts   = is4K ? 44 : 19;   // 220s vs 95s absolute ceiling (-20%)
+        // Kie.ai takes up to 300s server-side. Google/Gemini: 130s (200s for 4K).
+        // Client must not give up before the server finishes.
+        const isKiePrimary = PRIMARY_PROVIDER === 'kie' && !is4K;
+        const stuckAttempts = is4K ? 36 : isKiePrimary ? 52 : 14;  // 260s / 180s / 70s
+        const maxAttempts   = is4K ? 44 : isKiePrimary ? 65 : 19;  // 325s / 220s / 95s
 
         let attempts = 0;
         let googleOverloadWarningShown = false; // show yellow toast only once per job
