@@ -566,7 +566,8 @@ Deno.serve(async (req) => {
                         const { parts, hasMask, hasRefs, allRefs } = await prepareParts({ ...payload, references: resolvedReferences }, finalSourceBase64);
                         const needsExplicitRatio = !finalSourceBase64 || payloadReferences?.length > 0;
                         const generationConfig: any = { imageConfig: { ...(needsExplicitRatio ? { aspectRatio: bestRatio } : {}), imageSize: geminiImageSize } };
-                        const GEMINI_TIMEOUT_MS = qualityMode === 'nb2-4k' ? 200_000 : 130_000;
+                        // Fallback path: Kie already consumed some budget, give Google up to 90s
+                        const GEMINI_TIMEOUT_MS = 90_000;
                         const geminiResponse = await Promise.race([
                             geminiGenerateImage(geminiApiKey, finalModelName, parts, generationConfig, !!finalSourceBase64, hasMask, hasRefs, () => updateStage('gemini_retry_503')),
                             new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Gemini timeout after ${GEMINI_TIMEOUT_MS / 1000}s`)), GEMINI_TIMEOUT_MS))
@@ -639,9 +640,11 @@ Deno.serve(async (req) => {
                 logInfo('Google API Call', `Model: ${finalModelName}, Quality: ${qualityMode}, AR: ${bestRatio}, Parts: ${parts.length}`);
                 const providerStartTime = Date.now();
 
-                // 4K needs up to 200s; other modes use 130s. waitUntil budget is ~400s total.
-                // 4K does NOT retry on timeout (200s × 2 = 400s would exceed the budget).
-                const GEMINI_TIMEOUT_MS = qualityMode === 'nb2-4k' ? 200_000 : 130_000;
+                // Timeout budget: Supabase waitUntil is ~150s total.
+                // With Kie fallback available: Google gets 55s max → leaves ~90s for Kie.
+                // Without Kie fallback (no API key): allow up to 120s.
+                // No retry on timeout — a hanging Google call must fail fast so fallback can run.
+                const GEMINI_TIMEOUT_MS = kieSupported ? 55_000 : 120_000;
                 const callGeminiWithTimeout = () => Promise.race([
                     geminiGenerateImage(
                         geminiApiKey,
@@ -662,8 +665,12 @@ Deno.serve(async (req) => {
                 try {
                     geminiResponse = await callGeminiWithTimeout();
                 } catch (firstErr: any) {
-                    if (firstErr?.message?.includes('timeout') && qualityMode !== 'nb2-4k') {
-                        logInfo('Gemini Retry', 'First attempt timed out — retrying once...');
+                    // MALFORMED_FUNCTION_CALL is transient Gemini flakiness — worth one retry.
+                    // Timeout errors are NOT retried: we need to preserve budget for Kie fallback.
+                    const isMalformed = !firstErr?.message?.includes('timeout') &&
+                        geminiResponse?.candidates?.[0]?.finishReason === 'MALFORMED_FUNCTION_CALL';
+                    if (isMalformed) {
+                        logInfo('Gemini Retry', 'MALFORMED_FUNCTION_CALL on first attempt — retrying once...');
                         updateStage('gemini_retry');
                         geminiResponse = await callGeminiWithTimeout();
                     } else {
