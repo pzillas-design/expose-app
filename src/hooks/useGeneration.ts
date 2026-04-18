@@ -340,7 +340,7 @@ export const useGeneration = ({
             // Show yellow warning toast once when Google AI is retrying due to overload
             if (!googleOverloadWarningShown && (jobData?.request_payload as any)?.current_stage === 'gemini_retry_503') {
                 googleOverloadWarningShown = true;
-                showToast(t('warning_google_overload'), 'info');
+                showToast(t('warning_google_overload'), 'error');
             }
 
             if (jobData?.status === 'failed') {

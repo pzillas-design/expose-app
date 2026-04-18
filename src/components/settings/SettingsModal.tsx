@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PRIMARY_PROVIDER } from '@/config/provider';
 import { ChevronDown, Check } from 'lucide-react';
 import { TranslationFunction, GenerationQuality } from '@/types';
 import { LocaleKey } from '@/data/locales';
@@ -66,7 +67,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         { id: '1k', label: '1K', desc: '1024 px' },
         { id: '2k', label: '2K', desc: '2048 px' },
         { id: '4k', label: '4K', desc: '4096 px' },
-    ];
+    ].filter(r => !(PRIMARY_PROVIDER === 'kie' && r.id === '05k'));
     const THEMES = [
         { id: 'light', label: t('mode_light') },
         { id: 'dark', label: t('mode_dark') },

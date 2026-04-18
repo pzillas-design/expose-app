@@ -113,7 +113,9 @@ export const adminService = {
      * Fetch generation jobs with pagination  
      */
     async getJobs(page?: number, pageSize?: number): Promise<any[]> {
-        let query = supabase
+        // Supabase TS type parser can't handle ::text casts + JSONB extraction in the same select.
+        // Cast to `any` here — we hand-map the rows below anyway, so no type safety is lost.
+        let query: any = supabase
             .from('generation_jobs')
             .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, downloaded_at, kie_task_id, request_payload->provider::text as provider, request_payload->firstChunkLatencyMs as first_chunk_latency_ms, request_payload->chunkCount as chunk_count, request_payload->thoughtChunkCount as thought_chunk_count')
             .order('created_at', { ascending: false });
@@ -131,7 +133,7 @@ export const adminService = {
         const jobIds = (data || []).map(j => j.id);
         const userIds = [...new Set((data || []).map(j => j.user_id).filter(Boolean))];
         let imagesMap: Record<string, any> = {};
-        let profilesMap: Record<string, string> = {};
+        let profilesMap: Record<string, { name: string; email: string | null }> = {};
 
         await Promise.all([
             jobIds.length > 0 ? supabase

@@ -297,7 +297,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
     }, [selectedId, currentLang, templates]);
 
     const handleSave = async () => {
-        const results: { id?: string; title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
+        const results: { id?: string; user_id?: string; title: string; prompt: string; tags: string[]; controls: PresetControl[]; lang: 'de' | 'en' }[] = [];
 
         if (currentLang === 'de') {
             if (promptDe.trim()) {
