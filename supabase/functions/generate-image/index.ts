@@ -449,7 +449,7 @@ Deno.serve(async (req) => {
                 // 'kie'    → Kie.ai only
                 // 'google' → Google first, Kie as fallback on error
                 // 'both'   → Kie + Google in parallel, first success wins
-                const PRIMARY_PROVIDER = 'kie'; // change to switch provider
+                const PRIMARY_PROVIDER = 'google'; // change to switch provider
 
                 const kieApiKey = Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai');
                 const kieSupported = !!kieApiKey;
