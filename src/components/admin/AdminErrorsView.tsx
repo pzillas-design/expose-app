@@ -86,6 +86,38 @@ export const AdminErrorsView: React.FC = () => {
 
     const sources = ['all', ...Array.from(new Set(logs.map(l => l.source)))];
 
+    // Group errors by normalized reason to surface the most common causes.
+    // Normalization: strip variable bits (timestamps, ms values, quoted strings,
+    // long IDs) so "Gemini timeout after 55s" and "Gemini timeout after 110s"
+    // collapse into the same bucket.
+    const normalizeMessage = (msg: string): string => {
+        return msg
+            .replace(/\d+(\.\d+)?\s?(ms|s|min)\b/gi, 'Ns')       // "55s", "2.3s" -> "Ns"
+            .replace(/\b\d{3,}\b/g, 'N')                          // long numbers -> N
+            .replace(/"[^"]{0,40}"/g, '"…"')                      // quoted strings
+            .replace(/\b[0-9a-f]{8,}\b/gi, 'ID')                  // hashes / ids
+            .replace(/https?:\/\/\S+/g, 'URL')                    // urls
+            .trim()
+            .slice(0, 120);
+    };
+
+    const stats = (() => {
+        const buckets = new Map<string, { count: number; sample: string; source: string }>();
+        for (const log of logs) {
+            const key = normalizeMessage(log.message);
+            const existing = buckets.get(key);
+            if (existing) {
+                existing.count += 1;
+            } else {
+                buckets.set(key, { count: 1, sample: log.message, source: log.source });
+            }
+        }
+        return Array.from(buckets.entries())
+            .map(([key, v]) => ({ key, ...v }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 8);
+    })();
+
     return (
         <div className="flex flex-col h-full">
             <AdminViewHeader
@@ -111,6 +143,32 @@ export const AdminErrorsView: React.FC = () => {
                     </div>
                 }
             />
+
+            {/* Stats: top reasons grouped by normalized message */}
+            {!loading && stats.length > 0 && (
+                <div className="px-6 py-3 border-b border-zinc-200 dark:border-zinc-800">
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 mb-2">
+                        Top Gründe (letzte {logs.length})
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                        {stats.map(s => (
+                            <button
+                                key={s.key}
+                                onClick={() => setSearch(s.sample.slice(0, 40))}
+                                className="group flex items-center gap-2 px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+                                title={s.sample}
+                            >
+                                <span className="text-[11px] font-mono tabular-nums text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 rounded">
+                                    {s.count}
+                                </span>
+                                <span className="text-xs text-zinc-700 dark:text-zinc-300 max-w-[28ch] truncate">
+                                    {s.sample}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Filters */}
             <div className="px-6 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-3 flex-wrap">

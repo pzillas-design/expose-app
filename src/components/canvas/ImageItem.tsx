@@ -159,45 +159,36 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
     );
 });
 
-/** Small animated progress bar shown inside generating blob tiles */
-export const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDuration?: number; finishing?: boolean }> = ({ startTime, estimatedDuration, finishing }) => {
-    const [progress, setProgress] = useState(0);
-
-    useEffect(() => {
-        // When the image has arrived, snap to 100%
-        if (finishing) {
-            setProgress(1);
-            return;
-        }
-        if (!startTime) return;
-        const duration = estimatedDuration || 60000;
-
-        let rafId: number;
-        const tick = () => {
-            const elapsed = Date.now() - startTime;
-            const raw = elapsed / duration;
-            const capped = 1 - Math.exp(-raw * 1.5);
-            // Cap at 85% — only reaches 100% when the image truly arrives
-            setProgress(Math.min(capped * 0.85, 0.85));
-            rafId = requestAnimationFrame(tick);
-        };
-
-        rafId = requestAnimationFrame(tick);
-        return () => cancelAnimationFrame(rafId);
-    }, [startTime, estimatedDuration, finishing]);
-
+/** Elegant indeterminate shimmer shown inside generating blob tiles.
+ *  No visible track — a single soft-glow pill with a travelling highlight. */
+export const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDuration?: number; finishing?: boolean }> = ({ startTime, finishing }) => {
     if (!startTime && !finishing) return null;
 
     return (
         <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-            {/* Track — half tile width, clearly white */}
-            <div className="w-1/5 h-[3px] rounded-full bg-white/25 overflow-hidden">
-                {/* Fill */}
-                <div
-                    className={`h-full rounded-full bg-white ${finishing ? 'transition-all duration-500 ease-out' : ''}`}
-                    style={{ width: `${progress * 100}%` }}
-                />
+            <div
+                className="relative w-1/5 h-[2px] rounded-full overflow-hidden"
+                style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
+            >
+                {finishing ? (
+                    <div className="absolute inset-0 rounded-full bg-white" />
+                ) : (
+                    <div
+                        className="absolute top-0 bottom-0 rounded-full"
+                        style={{
+                            width: '40%',
+                            background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0) 100%)',
+                            animation: 'shimmer-slide 1.6s ease-in-out infinite',
+                        }}
+                    />
+                )}
             </div>
+            <style>{`
+                @keyframes shimmer-slide {
+                    0%   { transform: translateX(-120%); }
+                    100% { transform: translateX(370%); }
+                }
+            `}</style>
         </div>
     );
 };

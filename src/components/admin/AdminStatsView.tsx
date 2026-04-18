@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     Line, ComposedChart,
@@ -99,16 +99,26 @@ function makeBucketLabel(d: Date, range: TimeRange): string {
 
 function seedBuckets(range: TimeRange, now: Date): Record<string, any> {
     const b: Record<string, any> = {};
+    // Pre-seed numeric fields with 0 so Recharts Line draws continuously
+    // even through buckets without activity (otherwise undefined = gap).
+    const emptyBucket = (label: string) => ({
+        _label: label,
+        _totalJobs: 0,
+        _failedJobs: 0,
+        _voiceSessions: 0,
+        _newInPeriod: 0,
+        _aiCost: 0,
+    });
     if (range === '7d') {
-        for (let i = 6; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate()-i); b[makeBucketKey(d,range)] = { _label: makeBucketLabel(d,range) }; }
+        for (let i = 6; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate()-i); b[makeBucketKey(d,range)] = emptyBucket(makeBucketLabel(d,range)); }
     } else if (range === '14d') {
-        for (let i = 13; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate()-i); b[makeBucketKey(d,range)] = { _label: makeBucketLabel(d,range) }; }
+        for (let i = 13; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate()-i); b[makeBucketKey(d,range)] = emptyBucket(makeBucketLabel(d,range)); }
     } else if (range === '30d') {
-        for (let i = 29; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate()-i); b[makeBucketKey(d,range)] = { _label: makeBucketLabel(d,range) }; }
+        for (let i = 29; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate()-i); b[makeBucketKey(d,range)] = emptyBucket(makeBucketLabel(d,range)); }
     } else if (range === '60d') {
-        for (let i = 8; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate()-i*7); b[makeBucketKey(d,range)] = { _label: makeBucketLabel(d,range) }; }
+        for (let i = 8; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate()-i*7); b[makeBucketKey(d,range)] = emptyBucket(makeBucketLabel(d,range)); }
     } else {
-        for (let i = 17; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth()-i, 1); b[makeBucketKey(d,range)] = { _label: makeBucketLabel(d,range) }; }
+        for (let i = 17; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth()-i, 1); b[makeBucketKey(d,range)] = emptyBucket(makeBucketLabel(d,range)); }
     }
     return b;
 }
@@ -154,6 +164,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     const [stripeMonthly, setStripeMonthly] = useState<Record<string, number>>({});
     const [voiceTotals,   setVoiceTotals]   = useState<{ sessionCount: number; totalMinutes: number; costEur: number }>({ sessionCount: 0, totalMinutes: 0, costEur: 0 });
     const [loading,       setLoading]       = useState(true);
+    const [refreshing,    setRefreshing]    = useState(false);
+    const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
     const [timeRange,     setTimeRange]     = useState<TimeRange>('7d');
     const [visible,       setVisible]       = useState({
         totalUsers:    true,
@@ -169,39 +181,41 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     });
     const toggle = (k: keyof typeof visible) => setVisible(p => ({ ...p, [k]: !p[k] }));
 
-    useEffect(() => {
-        const fetchAll = async () => {
-            setLoading(true);
-            try {
-                const [jobsData, voiceSessions, profilesResult, { data: { session } }] = await Promise.all([
-                    adminService.getJobs(1, 1000),
-                    adminService.getVoiceSessions(200),
-                    supabase.from('profiles').select('id, created_at, email'),
-                    supabase.auth.getSession()
-                ]);
-                const fj = jobsData.filter((j: any) => !EXCLUDED_EMAILS.includes(j.userEmail));
-                const fv = voiceSessions.filter((s: any) => !EXCLUDED_EMAILS.includes(s.userEmail));
-                const fp = (profilesResult.data || []).filter((p: any) => !EXCLUDED_EMAILS.includes(p.email));
-                setJobs(fj); setProfiles(fp); setRawVoice(fv);
-                const mins = fv.reduce((s: number, v: any) => s + (v.durationMs || 0) / 60000, 0);
-                setVoiceTotals({ sessionCount: fv.length, totalMinutes: mins, costEur: mins * 0.043 * USD_TO_EUR });
-                if (session?.access_token) {
-                    const start = new Date(); start.setDate(start.getDate() - 90);
-                    const res = await supabase.functions.invoke('admin-stats', {
-                        headers: { Authorization: `Bearer ${session.access_token}` },
-                        body: { startDate: start.toISOString() },
-                    });
-                    if (!res.error && res.data) {
-                        setStripeRevenue(res.data.totalRevenue ?? 0);
-                        setStripePayCnt(res.data.paymentCount ?? 0);
-                        setStripeMonthly(res.data.monthlyRevenue ?? {});
-                    } else { setStripeRevenue(0); setStripePayCnt(0); setStripeMonthly({}); }
+    const fetchAll = useCallback(async (isRefresh = false) => {
+        if (isRefresh) setRefreshing(true); else setLoading(true);
+        try {
+            const [jobsData, voiceSessions, profilesResult, { data: { session } }] = await Promise.all([
+                adminService.getJobs(1, 1000),
+                adminService.getVoiceSessions(200),
+                supabase.from('profiles').select('id, created_at, email'),
+                supabase.auth.getSession()
+            ]);
+            const fj = jobsData.filter((j: any) => !EXCLUDED_EMAILS.includes(j.userEmail));
+            const fv = voiceSessions.filter((s: any) => !EXCLUDED_EMAILS.includes(s.userEmail));
+            const fp = (profilesResult.data || []).filter((p: any) => !EXCLUDED_EMAILS.includes(p.email));
+            setJobs(fj); setProfiles(fp); setRawVoice(fv);
+            const mins = fv.reduce((s: number, v: any) => s + (v.durationMs || 0) / 60000, 0);
+            setVoiceTotals({ sessionCount: fv.length, totalMinutes: mins, costEur: mins * 0.043 * USD_TO_EUR });
+            if (session?.access_token) {
+                const start = new Date(); start.setDate(start.getDate() - 90);
+                const res = await supabase.functions.invoke('admin-stats', {
+                    headers: { Authorization: `Bearer ${session.access_token}` },
+                    body: { startDate: start.toISOString() },
+                });
+                if (!res.error && res.data) {
+                    setStripeRevenue(res.data.totalRevenue ?? 0);
+                    setStripePayCnt(res.data.paymentCount ?? 0);
+                    setStripeMonthly(res.data.monthlyRevenue ?? {});
                 } else { setStripeRevenue(0); setStripePayCnt(0); setStripeMonthly({}); }
-            } catch (e) { console.error('AdminStatsView fetch error:', e); }
-            finally { setLoading(false); }
-        };
-        fetchAll();
+            } else { setStripeRevenue(0); setStripePayCnt(0); setStripeMonthly({}); }
+            setLastFetchedAt(new Date());
+        } catch (e) { console.error('AdminStatsView fetch error:', e); }
+        finally { setLoading(false); setRefreshing(false); }
     }, []);
+
+    useEffect(() => {
+        fetchAll(false);
+    }, [fetchAll]);
 
     // ── Derived ───────────────────────────────────────────────────────────────
     const completedJobs       = jobs.filter(j => j.status === 'completed');
@@ -251,6 +265,11 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             buckets[key][res]        = (buckets[key][res]||0) + 1;
             buckets[key]._totalJobs  = (buckets[key]._totalJobs||0) + 1;
             buckets[key]._aiCost     = (buckets[key]._aiCost||0) + calculateEstimatedGoogleCostEur(job);
+            // Collect first-chunk latencies (Google streaming only; null on Kie jobs).
+            if (typeof job.firstChunkLatencyMs === 'number') {
+                if (!buckets[key]._firstChunkSamples) buckets[key]._firstChunkSamples = [];
+                buckets[key]._firstChunkSamples.push(job.firstChunkLatencyMs);
+            }
         });
         failedJobs.forEach(job => {
             const key = makeBucketKey(new Date(job.createdAt), timeRange);
@@ -287,6 +306,16 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             // _failedJobs is already set as raw count by the failedJobs loop above — keep it as-is
             if (buckets[key]._revenue != null && buckets[key]._aiCost != null)
                 buckets[key]._profit = buckets[key]._revenue - buckets[key]._aiCost;
+            // Reduce first-chunk samples to p50 + p95 (seconds) for plotting.
+            const samples: number[] | undefined = buckets[key]._firstChunkSamples;
+            if (samples && samples.length > 0) {
+                const sorted = [...samples].sort((a, b) => a - b);
+                const pick = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];
+                buckets[key]._firstChunkP50 = +(pick(0.5) / 1000).toFixed(2);
+                buckets[key]._firstChunkP95 = +(pick(0.95) / 1000).toFixed(2);
+                buckets[key]._firstChunkSampleCount = sorted.length;
+            }
+            delete buckets[key]._firstChunkSamples;
         });
 
         return Object.values(buckets);
@@ -300,7 +329,20 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
     return (
         <div className="flex flex-col h-full bg-zinc-50 dark:bg-zinc-950/20 overflow-y-auto">
-            <AdminViewHeader title="Statistiken" />
+            <AdminViewHeader
+                title="Statistiken"
+                description={lastFetchedAt ? `Aktualisiert ${lastFetchedAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : undefined}
+                actions={
+                    <button
+                        onClick={() => fetchAll(true)}
+                        disabled={refreshing}
+                        className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 transition-colors disabled:opacity-50"
+                        title="Aktualisieren"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                    </button>
+                }
+            />
 
             <div className="flex-1 p-4 md:p-8 flex flex-col gap-8 max-w-[1700px] mx-auto w-full">
 
@@ -360,23 +402,46 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         </div>
                     </div>
 
-                    {/* Box 4: Nutzer-Wachstum */}
+                    {/* Box: Google First-Chunk Latency — erkennt Hangs vs. gesunde Generierung */}
                     <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
                         <div className="flex items-center justify-between mb-1">
-                            <SectionLabel>Nutzer-Wachstum</SectionLabel>
-                            <MiniLegend items={[{ color: '#3b82f6', label: 'Registriert' }, { color: '#10b981', label: 'Aktiv (haben generiert)' }]} />
+                            <SectionLabel>Google Stream-Start</SectionLabel>
+                            <MiniLegend items={[{ color: '#10b981', label: 'P50 (s)' }, { color: '#f59e0b', label: 'P95 (s)' }]} />
                         </div>
-                        <p className="text-[10px] text-zinc-400 mb-5">Kumulierte Registrierungen vs. Nutzer die mindestens 1× generiert haben</p>
+                        <p className="text-[10px] text-zinc-400 mb-5">Zeit bis erster Stream-Chunk. Steigt = Google wird langsam oder hängt. 20s Timeout → Kie-Fallback</p>
                         <div className="h-[200px] w-full mt-auto">
                             <ResponsiveContainer width="100%" height="100%">
                                 <ComposedChart data={chartData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
                                     <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} allowDecimals={false} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={3} width={32} tickFormatter={v => `${v}s`} />
                                     <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                                        formatter={(v: any, n: string) => [v, n === '_totalUsers' ? 'Registriert' : 'Aktiv']} />
-                                    <Line type="monotone" dataKey="_totalUsers" stroke="#3b82f6" strokeWidth={2} dot={false} opacity={0.4} />
-                                    <Line type="monotone" dataKey={(d: any) => Math.round((d._activationRate || 0) * (d._totalUsers || 0) / 100)} stroke="#10b981" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                                        formatter={(v: any, n: string) => [`${v}s`, n === '_firstChunkP50' ? 'P50' : 'P95']} />
+                                    <Line type="monotone" dataKey="_firstChunkP50" stroke="#10b981" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} connectNulls />
+                                    <Line type="monotone" dataKey="_firstChunkP95" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 3" dot={false} activeDot={{ r: 4 }} connectNulls />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Box 4: Nutzer-Wachstum */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
+                        <div className="flex items-center justify-between mb-1">
+                            <SectionLabel>Nutzer-Wachstum</SectionLabel>
+                            <MiniLegend items={[{ color: '#3b82f6', label: 'Neu registriert' }, { color: '#10b981', label: 'Aktiv (%)' }]} />
+                        </div>
+                        <p className="text-[10px] text-zinc-400 mb-5">Neue Registrierungen pro Periode (links) vs. Anteil aller Nutzer der mind. 1× generiert hat (rechts, %)</p>
+                        <div className="h-[200px] w-full mt-auto">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
+                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
+                                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} allowDecimals={false} />
+                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={30} tickFormatter={v => `${v}%`} domain={[0, 100]} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
+                                        formatter={(v: any, n: string) => n === '_activationRate' ? [`${v}%`, 'Aktiv'] : [v, 'Neu registriert']} />
+                                    <Line yAxisId="left" type="monotone" dataKey="_newInPeriod" stroke="#3b82f6" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                                    <Line yAxisId="right" type="monotone" dataKey="_activationRate" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                                 </ComposedChart>
                             </ResponsiveContainer>
                         </div>

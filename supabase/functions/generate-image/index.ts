@@ -641,10 +641,12 @@ Deno.serve(async (req) => {
                 const providerStartTime = Date.now();
 
                 // Timeout budget: Supabase waitUntil is ~150s total.
-                // With Kie fallback available: Google gets 55s max → leaves ~90s for Kie.
-                // Without Kie fallback (no API key): allow up to 120s.
-                // No retry on timeout — a hanging Google call must fail fast so fallback can run.
-                const GEMINI_TIMEOUT_MS = kieSupported ? 55_000 : 120_000;
+                // Hang detection (no first stream chunk) is handled inside generateImage
+                // via FIRST_CHUNK_TIMEOUT_MS=20s — so a stuck request aborts fast for Kie.
+                // Outer ceiling is tighter when Kie is available: legitimate Google generations
+                // complete in 15-40s, so 60s catches mid-stream hangs while leaving Kie
+                // ~80s of the waitUntil budget to actually run + save.
+                const GEMINI_TIMEOUT_MS = kieSupported ? 60_000 : 130_000;
                 const callGeminiWithTimeout = () => Promise.race([
                     geminiGenerateImage(
                         geminiApiKey,
@@ -725,6 +727,11 @@ Deno.serve(async (req) => {
                     hasSourceImage: !!finalSourceBase64,
                     hasMask,
                     referenceCount: allRefs.length,
+                    // Streaming telemetry (time-to-first-chunk = "did Google actually start?")
+                    firstChunkLatencyMs: geminiResponse?.streamStats?.firstChunkLatencyMs ?? null,
+                    totalStreamMs: geminiResponse?.streamStats?.totalStreamMs ?? null,
+                    chunkCount: geminiResponse?.streamStats?.chunkCount ?? null,
+                    thoughtChunkCount: geminiResponse?.streamStats?.thoughtChunkCount ?? null,
                     // Timing
                     providerLatencyMs,
                 };
@@ -746,7 +753,31 @@ Deno.serve(async (req) => {
                 } catch (googleErr: any) {
                     // ── Kie.ai fallback ───────────────────────────────────────────────
                     if (kieSupported && isKieRetryable(googleErr)) {
-                        logInfo('Kie Fallback', `Google failed (${googleErr.message}) — falling back to Kie.ai`);
+                        const googleFailureMs = Date.now() - providerStartTime;
+                        const googleFailureReason =
+                            googleErr?.name === 'GeminiNoStreamError' ? 'stream_hang' :
+                            googleErr?.message?.includes('timeout') ? 'timeout' :
+                            googleErr?.message?.includes('503') ? 'server_busy' :
+                            googleErr?.message?.includes('500') ? 'server_error' :
+                            googleErr?.message?.includes('MALFORMED') ? 'malformed_response' :
+                            googleErr?.message?.includes('did not contain an image') ? 'empty_response' :
+                            'other';
+                        logInfo('Kie Fallback', `Google ${googleFailureReason} after ${googleFailureMs}ms (${googleErr.message}) — falling back to Kie.ai`);
+                        // Persist why Google failed so we can see patterns in the admin panel.
+                        Object.assign(apiRequestPayload, {
+                            googleFailureReason,
+                            googleFailureMs,
+                            googleFailureMessage: String(googleErr?.message || '').slice(0, 300),
+                        });
+                        // Checkpoint: write the Google-failure state to DB NOW. If Supabase
+                        // kills the task mid-Kie, we at least have a real record instead of
+                        // relying on pg_cron's "Server timeout - credits refunded".
+                        try {
+                            await supabaseAdmin
+                                .from('generation_jobs')
+                                .update({ request_payload: { ...apiRequestPayload } })
+                                .eq('id', newId);
+                        } catch { /* best-effort */ }
                         updateStage('kie_fallback');
 
                         // Build image URL list for Kie (needs HTTP URLs, not base64)
@@ -859,14 +890,15 @@ Deno.serve(async (req) => {
                         failPayload.current_stage = bgStage;
                         failPayload.stage_updated_at = new Date().toISOString();
                         failPayload.failed = true;
-                        const failDurationMs = typeof generationStartTime !== 'undefined' ? Date.now() - generationStartTime : null;
+                        // Always record duration — fallback to task start if generation hadn't begun yet.
+                        const failDurationMs = Date.now() - taskStartMs;
                         await supabaseAdmin
                             .from('generation_jobs')
                             .update({
                                 status: 'failed',
                                 error: `[${bgStage}] ${errorMsg}`,
                                 request_payload: failPayload,
-                                ...(failDurationMs !== null ? { duration_ms: failDurationMs } : {})
+                                duration_ms: failDurationMs,
                             })
                             .eq('id', newId);
                     } catch (e) {

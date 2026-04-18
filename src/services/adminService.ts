@@ -115,7 +115,7 @@ export const adminService = {
     async getJobs(page?: number, pageSize?: number): Promise<any[]> {
         let query = supabase
             .from('generation_jobs')
-            .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, downloaded_at, kie_task_id, request_payload->provider::text as provider')
+            .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, downloaded_at, kie_task_id, request_payload->provider::text as provider, request_payload->firstChunkLatencyMs as first_chunk_latency_ms, request_payload->chunkCount as chunk_count, request_payload->thoughtChunkCount as thought_chunk_count')
             .order('created_at', { ascending: false });
 
         if (page !== undefined && pageSize !== undefined) {
@@ -177,6 +177,9 @@ export const adminService = {
             webhookData: null,  // Loaded on-demand via getJobDetail()
             downloadedAt: job.downloaded_at || null,
             provider: (job as any).provider || null,  // 'kie_fallback' or null (Google)
+            firstChunkLatencyMs: (job as any).first_chunk_latency_ms != null ? Number((job as any).first_chunk_latency_ms) : null,
+            chunkCount: (job as any).chunk_count != null ? Number((job as any).chunk_count) : null,
+            thoughtChunkCount: (job as any).thought_chunk_count != null ? Number((job as any).thought_chunk_count) : null,
         }));
     },
 

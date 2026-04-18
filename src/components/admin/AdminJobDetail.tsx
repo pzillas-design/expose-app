@@ -21,12 +21,7 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
    value.startsWith('nb2') ||
    value.includes('nano-banana-2') ||
    value.includes('gemini-3.1-flash-image-preview');
-  const isPro =
-   !isNb2 &&
-   (value.includes('pro') ||
-    value.includes('nano-banana-pro') ||
-    value.includes('gemini-3-pro-image-preview'));
-  const tier = isNb2 ? 'NB2' : isPro ? 'Pro' : m;
+  const tier = isNb2 ? 'NB2' : m;
   const res = value.includes('4k') ? '4K' : value.includes('2k') ? '2K' : value.includes('1k') ? '1K' : null;
   return res ? `${tier} · ${res}` : tier;
  };

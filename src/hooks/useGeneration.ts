@@ -41,17 +41,6 @@ const COSTS: Record<string, number> = {
     'nb2-4k': 0.40,
 };
 
-// Automatic quality downgrade chain — tried once after all retries are exhausted
-const QUALITY_FALLBACK: Record<string, string> = {
-    'nb2-4k': 'nb2-2k',
-    'nb2-2k': 'nb2-1k',
-    'nb2-1k': 'nb2-05k',
-};
-
-const QUALITY_LABEL: Record<string, string> = {
-    'nb2-4k': '4K', 'nb2-2k': '2K', 'nb2-1k': '1K', 'nb2-05k': '0.5K',
-};
-
 const ESTIMATED_DURATIONS: Record<string, number> = {
     'nb2-05k': 10000,  // ~10s fastest option
     'nb2-1k': 18000,   // ~18s observed average
@@ -231,7 +220,6 @@ export const useGeneration = ({
     // Source image ID that was active when each generation was started — used to guard auto-navigate
     const generationSourceIds = React.useRef<Record<string, string | null>>({});
     // One-shot retry functions per jobId — called automatically on timeout, then cleared
-    const pendingRetryFns = React.useRef<Record<string, (() => void) | null>>({});
 
     /**
      * Returns true if we should auto-navigate to the finished image:
@@ -260,7 +248,6 @@ export const useGeneration = ({
             attempts++;
             if (attempts > maxAttempts) {
                 // 10 min ceiling reached — stop polling, server/pg_cron will clean up
-                delete pendingRetryFns.current[jobId];
                 setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
                 showToast(translateError('timeout', t), 'error');
@@ -329,7 +316,6 @@ export const useGeneration = ({
                 })));
 
                         // Job succeeded — clear any pending retry fn
-                delete pendingRetryFns.current[jobId];
 
                 // Increment total image count in settings
                 onImageSaved?.();
@@ -359,7 +345,6 @@ export const useGeneration = ({
 
             if (jobData?.status === 'failed') {
                 const jobError = (jobData as any).error || "";
-                delete pendingRetryFns.current[jobId];
                 setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
                 showToast(translateError(jobError, t), "error");
@@ -427,9 +412,7 @@ export const useGeneration = ({
         activeTemplateId?: string,
         variableValues?: Record<string, string[]>,
         customReferenceInstructions?: Record<string, string>,
-        isRepeat?: boolean,
-        _autoRetryCount = 0,
-        _qualityOverride?: string
+        isRepeat?: boolean
     ) => {
         if (!sourceImage) return;
 
@@ -466,7 +449,7 @@ export const useGeneration = ({
             }
         }
 
-        const effectiveQuality = _qualityOverride ?? qualityMode;
+        const effectiveQuality = qualityMode;
         const cost = COSTS[effectiveQuality];
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
@@ -700,29 +683,14 @@ export const useGeneration = ({
             }
         };
 
-        // Register retry fn: same-quality up to 3×, then auto-downgrade quality once
-        const fallbackQuality = QUALITY_FALLBACK[effectiveQuality];
-        if (_autoRetryCount < 3) {
-            // Same quality retry
-            pendingRetryFns.current[newId] = () => {
-                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, isRepeat, _autoRetryCount + 1, _qualityOverride);
-            };
-        } else if (fallbackQuality && !_qualityOverride) {
-            // All same-quality retries exhausted → try once with lower quality
-            pendingRetryFns.current[newId] = () => {
-                const fromLabel = QUALITY_LABEL[effectiveQuality] || effectiveQuality;
-                const toLabel = QUALITY_LABEL[fallbackQuality] || fallbackQuality;
-                showToast(`${fromLabel} nicht verfügbar — versuche ${toLabel}…`, 'success');
-                void performGeneration(sourceImage, prompt, batchSize, shouldSnap, draftPrompt, activeTemplateId, variableValues, customReferenceInstructions, isRepeat, 0, fallbackQuality);
-            };
-        }
-
+        // No client-side retry or quality-downgrade: server (Edge Function) handles
+        // Google → Kie fallback transparently. If both fail, we surface the error.
         processGenerationAsync();
     }, [rows, setRows, user, userProfile, credits, setCredits, qualityMode, isAuthDisabled, selectAndSnap, setIsSettingsOpen, showToast, t, confirm]);
 
 
-    const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = [], _autoRetryCount = 0, _qualityOverride?: string) => {
-        const effectiveModelId = _qualityOverride ?? modelId;
+    const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
+        const effectiveModelId = modelId;
         const cost = COSTS[effectiveModelId] || 0;
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
@@ -849,21 +817,7 @@ export const useGeneration = ({
             }
         };
 
-        // Register retry fn: same-quality up to 3×, then auto-downgrade quality once
-        const fallbackModelId = QUALITY_FALLBACK[effectiveModelId];
-        if (_autoRetryCount < 3) {
-            pendingRetryFns.current[newId] = () => {
-                void performNewGeneration(prompt, modelId, ratio, attachments, _autoRetryCount + 1, _qualityOverride);
-            };
-        } else if (fallbackModelId && !_qualityOverride) {
-            pendingRetryFns.current[newId] = () => {
-                const fromLabel = QUALITY_LABEL[effectiveModelId] || effectiveModelId;
-                const toLabel = QUALITY_LABEL[fallbackModelId] || fallbackModelId;
-                showToast(`${fromLabel} nicht verfügbar — versuche ${toLabel}…`, 'success');
-                void performNewGeneration(prompt, modelId, ratio, attachments, 0, fallbackModelId);
-            };
-        }
-
+        // No client-side retry or quality-downgrade — server handles Google→Kie fallback.
         processNewSync();
     }, [user, userProfile, credits, setCredits, isAuthDisabled, setRows, selectAndSnap, showToast, t, confirm]);
 
