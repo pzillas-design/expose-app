@@ -520,7 +520,7 @@ Deno.serve(async (req) => {
 
                 if (PRIMARY_PROVIDER === 'kie' && kieSupported) {
                     // ════════════════════════════════════════════════════════════════
-                    // KIE PIPELINE
+                    // KIE PIPELINE  (Google as fallback if Kie rejects or fails)
                     // ════════════════════════════════════════════════════════════════
                     webhookData.finalModelName = 'nano-banana-2';
                     updateStage('kie_primary');
@@ -549,15 +549,41 @@ Deno.serve(async (req) => {
                         if (annUrl) kieImageUrls.push(annUrl);
                     }
 
-                    logInfo('Kie Primary', `Model: nano-banana-2, Res: ${kieResolution}, AR: ${bestRatio}, Images: ${kieImageUrls.length}, hasAnnotation: ${!!annotationBase64}`);
-                    const kieTaskId = await createKieTask(kieApiKey, 'nano-banana-2', { prompt, variables, annotationImage: annotationBase64 }, kieImageUrls, bestRatio, kieResolution);
-                    await supabaseAdmin.from('generation_jobs').update({ request_payload: { ...apiRequestPayload, kie_task_id: kieTaskId, provider: 'kie_primary' } }).eq('id', newId);
-                    const { imageUrl: kieImageUrl } = await pollKieTask(kieApiKey, kieTaskId);
-                    const kieBase64 = await urlToBase64(kieImageUrl);
-                    Object.assign(apiRequestPayload, { provider: 'kie_primary', kieTaskId });
-                    updateStage('save_result');
-                    await saveGeminiResult(supabaseAdmin, newId, { base64: kieBase64, mimeType: 'image/jpeg' }, webhookData);
-                    logInfo('Kie Primary Saved', `Job ${newId} completed via Kie.ai (primary)`);
+                    try {
+                        logInfo('Kie Primary', `Model: nano-banana-2, Res: ${kieResolution}, AR: ${bestRatio}, Images: ${kieImageUrls.length}, hasAnnotation: ${!!annotationBase64}`);
+                        const kieTaskId = await createKieTask(kieApiKey, 'nano-banana-2', { prompt, variables, annotationImage: annotationBase64 }, kieImageUrls, bestRatio, kieResolution);
+                        await supabaseAdmin.from('generation_jobs').update({ request_payload: { ...apiRequestPayload, kie_task_id: kieTaskId, provider: 'kie_primary' } }).eq('id', newId);
+                        const { imageUrl: kieImageUrl } = await pollKieTask(kieApiKey, kieTaskId);
+                        const kieBase64 = await urlToBase64(kieImageUrl);
+                        Object.assign(apiRequestPayload, { provider: 'kie_primary', kieTaskId });
+                        updateStage('save_result');
+                        await saveGeminiResult(supabaseAdmin, newId, { base64: kieBase64, mimeType: 'image/jpeg' }, webhookData);
+                        logInfo('Kie Primary Saved', `Job ${newId} completed via Kie.ai (primary)`);
+                    } catch (kieErr: any) {
+                        // ── Google fallback (symmetric to Google→Kie fallback) ────────
+                        const geminiApiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
+                        if (!geminiApiKey) throw kieErr; // no fallback available
+                        logInfo('Google Fallback', `Kie failed (${kieErr.message}) — falling back to Google`);
+                        updateStage('google_fallback');
+                        webhookData.finalModelName = finalModelName;
+
+                        const geminiImageSize = qualityMode === 'nb2-4k' ? '4K' : qualityMode === 'nb2-2k' ? '2K' : '1K';
+                        const { parts, hasMask, hasRefs, allRefs } = await prepareParts({ ...payload, references: resolvedReferences }, finalSourceBase64);
+                        const needsExplicitRatio = !finalSourceBase64 || payloadReferences?.length > 0;
+                        const generationConfig: any = { imageConfig: { ...(needsExplicitRatio ? { aspectRatio: bestRatio } : {}), imageSize: geminiImageSize } };
+                        const GEMINI_TIMEOUT_MS = qualityMode === 'nb2-4k' ? 200_000 : 130_000;
+                        const geminiResponse = await Promise.race([
+                            geminiGenerateImage(geminiApiKey, finalModelName, parts, generationConfig, !!finalSourceBase64, hasMask, hasRefs, () => updateStage('gemini_retry_503')),
+                            new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Gemini timeout after ${GEMINI_TIMEOUT_MS / 1000}s`)), GEMINI_TIMEOUT_MS))
+                        ]);
+                        const generatedImage = extractGeneratedImage(geminiResponse);
+                        if (!generatedImage) throw new Error('Google fallback: no image in response');
+                        Object.assign(apiRequestPayload, { provider: 'google_fallback', referenceImagesCount: allRefs.length });
+                        webhookData.apiRequestPayload = apiRequestPayload;
+                        updateStage('save_result');
+                        await saveGeminiResult(supabaseAdmin, newId, generatedImage, webhookData, geminiResponse?.usageMetadata);
+                        logInfo('Google Fallback Saved', `Job ${newId} completed via Google (Kie fallback)`);
+                    }
 
                 } else if (PRIMARY_PROVIDER === 'both' && kieSupported) {
                     // ════════════════════════════════════════════════════════════════
