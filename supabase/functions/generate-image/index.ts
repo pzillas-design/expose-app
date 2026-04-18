@@ -446,9 +446,10 @@ Deno.serve(async (req) => {
                 }
 
                 // ── PRIMARY_PROVIDER switch ──────────────────────────────────────────
-                // 'kie'    → go straight to Kie.ai, skip Google entirely
+                // 'kie'    → Kie.ai only
                 // 'google' → Google first, Kie as fallback on error
-                const PRIMARY_PROVIDER = 'kie'; // change to 'google' to restore Google-first
+                // 'both'   → Kie + Google in parallel, first success wins
+                const PRIMARY_PROVIDER = 'kie'; // change to switch provider
 
                 const kieApiKey = Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai');
                 const kieSupported = !!kieApiKey;
@@ -557,6 +558,80 @@ Deno.serve(async (req) => {
                     updateStage('save_result');
                     await saveGeminiResult(supabaseAdmin, newId, { base64: kieBase64, mimeType: 'image/jpeg' }, webhookData);
                     logInfo('Kie Primary Saved', `Job ${newId} completed via Kie.ai (primary)`);
+
+                } else if (PRIMARY_PROVIDER === 'both' && kieSupported) {
+                    // ════════════════════════════════════════════════════════════════
+                    // BOTH PIPELINE — Kie + Google race simultaneously, first wins
+                    // Loser is discarded; claimSave prevents double-save if both finish close together.
+                    // ════════════════════════════════════════════════════════════════
+                    const geminiApiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
+                    updateStage('race_start');
+                    await supabaseAdmin.from('generation_jobs')
+                        .update({ webhook_data: webhookData, request_payload: { ...apiRequestPayload, current_stage: 'race_start', provider: 'racing' } })
+                        .eq('id', newId);
+
+                    // Build Kie image URLs (temp upload)
+                    const raceKieUrls: string[] = [];
+                    if (finalSourceBase64) {
+                        const url = await uploadTempForKie(supabaseAdmin, finalSourceBase64, newId, 0);
+                        if (url) raceKieUrls.push(url);
+                    }
+                    for (let i = 0; i < Math.min(resolvedReferences.length, 4); i++) {
+                        const ref = resolvedReferences[i];
+                        if (ref.src?.startsWith('http')) raceKieUrls.push(ref.src);
+                        else if (ref.src?.startsWith('data:')) {
+                            const b64 = extractBase64FromDataUrl(ref.src);
+                            if (b64) { const u = await uploadTempForKie(supabaseAdmin, b64, newId, i + 1); if (u) raceKieUrls.push(u); }
+                        }
+                    }
+                    if (annotationBase64) {
+                        const annUrl = await uploadTempForKie(supabaseAdmin, annotationBase64, newId, raceKieUrls.length);
+                        if (annUrl) raceKieUrls.push(annUrl);
+                    }
+
+                    // Build Google parts
+                    const { parts: raceParts, hasMask: raceMask, hasRefs: raceHasRefs } = await prepareParts(
+                        { ...payload, references: resolvedReferences }, finalSourceBase64
+                    );
+                    const raceImageSize = qualityMode === 'nb2-4k' ? '4K' : qualityMode === 'nb2-2k' ? '2K' : '1K';
+                    const raceNeedsRatio = !finalSourceBase64 || payloadReferences?.length > 0;
+                    const raceGenConfig: any = { imageConfig: { ...(raceNeedsRatio ? { aspectRatio: bestRatio } : {}), imageSize: raceImageSize } };
+                    const RACE_GEMINI_TIMEOUT = qualityMode === 'nb2-4k' ? 200_000 : 130_000;
+
+                    logInfo('Race Start', `Kie: ${raceKieUrls.length} imgs | Google: ${raceParts.length} parts`);
+
+                    const runKie = async () => {
+                        const taskId = await createKieTask(kieApiKey, 'nano-banana-2', { prompt, variables, annotationImage: annotationBase64 }, raceKieUrls, bestRatio, kieResolution);
+                        const { imageUrl } = await pollKieTask(kieApiKey, taskId);
+                        return { base64: await urlToBase64(imageUrl), mimeType: 'image/jpeg' as const, provider: 'kie_race_winner' as const, kieTaskId: taskId, usageMetadata: null };
+                    };
+
+                    const runGoogle = async () => {
+                        if (!geminiApiKey) throw new Error('Google API key missing');
+                        const resp = await Promise.race([
+                            geminiGenerateImage(geminiApiKey, finalModelName, raceParts, raceGenConfig, !!finalSourceBase64, raceMask, raceHasRefs, () => {}),
+                            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Gemini race timeout')), RACE_GEMINI_TIMEOUT))
+                        ]);
+                        const img = extractGeneratedImage(resp);
+                        if (!img) throw new Error('No image in Google race response');
+                        return { ...img, provider: 'google_race_winner' as const, kieTaskId: null, usageMetadata: resp?.usageMetadata };
+                    };
+
+                    const winner = await Promise.any([
+                        runKie(),
+                        geminiApiKey ? runGoogle() : Promise.reject(new Error('no google key'))
+                    ]);
+
+                    webhookData.finalModelName = winner.provider === 'kie_race_winner' ? 'nano-banana-2' : finalModelName;
+                    Object.assign(apiRequestPayload, { provider: winner.provider, ...(winner.kieTaskId ? { kieTaskId: winner.kieTaskId } : {}) });
+                    updateStage('save_result');
+                    await supabaseAdmin.from('generation_jobs')
+                        .update({ request_payload: { ...apiRequestPayload } })
+                        .eq('id', newId);
+                    const { provider: _p, kieTaskId: _kt, usageMetadata: _um, ...raceImageAsset } = winner;
+                    await saveGeminiResult(supabaseAdmin, newId, raceImageAsset, webhookData, winner.usageMetadata);
+                    logInfo('Race Winner', `Job ${newId} → ${winner.provider}`);
+
                 } else { try {
                 // ════════════════════════════════════════════════════════════════
                 // GOOGLE PIPELINE
