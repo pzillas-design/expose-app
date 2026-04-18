@@ -253,10 +253,11 @@ export const useGeneration = ({
         const resolvedQuality = quality || jobTimingRef.current[jobId]?.quality || '';
         const is4K = resolvedQuality === 'nb2-4k';
 
-        // nb2-4k: Gemini has up to 200s server-side — client must not give up before that.
+        // nb2-4k + Kie primary: server owns job state — client must not give up early.
+        // Kie thresholds are set dynamically once we see provider:'kie_primary' in the job.
         // Other modes: shorter timeouts are fine.
-        const stuckAttempts = is4K ? 36 : 14;   // 180s vs 70s  (-20%)
-        const maxAttempts   = is4K ? 44 : 19;   // 220s vs 95s absolute ceiling (-20%)
+        let stuckAttempts = is4K ? 36 : 14;   // 180s vs 70s
+        let maxAttempts   = is4K ? 44 : 19;   // 220s vs 95s absolute ceiling
 
         let attempts = 0;
         let googleOverloadWarningShown = false; // show yellow toast only once per job
@@ -362,6 +363,12 @@ export const useGeneration = ({
                 .eq('id', jobId)
                 .maybeSingle();
 
+            // Kie primary: server owns the job — upgrade to 4K-equivalent timeouts once detected
+            if ((jobData?.request_payload as any)?.provider === 'kie_primary' && !is4K) {
+                stuckAttempts = 36;  // 180s — same as 4K
+                maxAttempts   = 44;  // 220s absolute ceiling
+            }
+
             // Show yellow warning toast once when Google AI is retrying due to overload
             if (!googleOverloadWarningShown && (jobData?.request_payload as any)?.current_stage === 'gemini_retry_503') {
                 googleOverloadWarningShown = true;
@@ -385,11 +392,12 @@ export const useGeneration = ({
             }
 
             // 2b. Detect stuck "processing" jobs
+            const isKiePrimary = (jobData?.request_payload as any)?.provider === 'kie_primary';
             if (jobData?.status === 'processing' && attempts >= stuckAttempts) {
-                // For nb2-4k: server owns the job state — never write failed from client.
-                // The Edge Function has up to 200s, and pg_cron handles refunds after 8 min.
+                // For nb2-4k + Kie primary: server owns the job state — never write failed from client.
+                // pg_cron handles refunds after 8 min; Kie status is tracked server-side.
                 // For other modes: write failed so the cron + UI stay consistent.
-                if (!is4K) {
+                if (!is4K && !isKiePrimary) {
                     try {
                         const { data: job } = await supabase
                             .from('generation_jobs').select('request_payload').eq('id', jobId).maybeSingle();

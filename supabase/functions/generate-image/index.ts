@@ -333,7 +333,7 @@ Deno.serve(async (req) => {
             logInfo('Profile Creation', `Creating profile for user ${user.id}`);
             const { data: newProfile } = await supabaseAdmin
                 .from('profiles')
-                .insert({ id: user.id, email: user.email, full_name: 'User', credits: 5 })
+                .insert({ id: user.id, email: user.email, full_name: 'User', credits: 3 })
                 .select()
                 .single();
             profile = newProfile;
@@ -562,7 +562,7 @@ Deno.serve(async (req) => {
                 // ── PRIMARY_PROVIDER switch ──────────────────────────────────────────
                 // 'kie'    → go straight to Kie.ai, skip Google entirely
                 // 'google' → Google first, Kie as fallback (default behaviour)
-                const PRIMARY_PROVIDER = 'kie'; // change to 'google' to restore Google-first
+                const PRIMARY_PROVIDER = 'kie'; // change to 'kie' to route all jobs via Kie.ai
 
                 if (PRIMARY_PROVIDER === 'kie' && kieSupported) {
                     updateStage('kie_primary');
