@@ -104,17 +104,16 @@ const claimSave = async (supabaseAdmin: any, jobId: string): Promise<boolean> =>
 
     if (Array.isArray(processing) && processing.length > 0) return true;
 
-    // Also claim if pg_cron already marked it failed with its timeout message
-    // (Kie takes >8min so cron can fire before Kie finishes)
-    const { data: timedOut } = await supabaseAdmin
+    // Also claim if marked failed for any reason — server result wins over client/cron timeouts.
+    // saveGeminiResult is only called when we actually have an image, so this is safe.
+    const { data: failed } = await supabaseAdmin
         .from('generation_jobs')
         .update({ status: 'saving' })
         .eq('id', jobId)
         .eq('status', 'failed')
-        .like('error', '%Server timeout%')
         .select('id');
 
-    return Array.isArray(timedOut) && timedOut.length > 0;
+    return Array.isArray(failed) && failed.length > 0;
 };
 
 const saveGeminiResult = async (
@@ -446,67 +445,16 @@ Deno.serve(async (req) => {
                     logInfo('Aspect Ratio', `Edit mode (Structured) - preserving aspect ratio (1:1 fallback)`);
                 }
 
-                // Resolution for Gemini image output
-                const geminiImageSize = qualityMode === 'nb2-4k' ? '4K'
-                    : qualityMode === 'nb2-2k' ? '2K'
-                    : qualityMode === 'nb2-05k' ? '512' : '1K';
+                // ── PRIMARY_PROVIDER switch ──────────────────────────────────────────
+                // 'kie'    → go straight to Kie.ai, skip Google entirely
+                // 'google' → Google first, Kie as fallback on error
+                const PRIMARY_PROVIDER = 'kie'; // change to 'google' to restore Google-first
 
-                // aspectRatio logic:
-                // - Create mode (no source): always set, otherwise Gemini defaults to 1:1
-                // - Edit with references: always set, otherwise Gemini adopts last reference's ratio
-                // - Edit without references: omit — Gemini preserves original ratio automatically
-                const hasRefImages = payloadReferences?.length > 0;
-                const needsExplicitRatio = !finalSourceBase64 || hasRefImages;
+                const kieApiKey = Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai');
+                const kieSupported = !!kieApiKey;
+                let usedKieFallback = false;
 
-                const generationConfig: any = {
-                    imageConfig: {
-                        ...(needsExplicitRatio ? { aspectRatio: bestRatio } : {}),
-                        imageSize: geminiImageSize
-                    }
-                };
-
-                // (1) Resolve all reference paths to signed URLs for Gemini
-                const resolvedReferences: any[] = [];
-                if (payloadReferences?.length) {
-                    for (const ref of payloadReferences) {
-                        if (resolvedReferences.length >= 8) break;
-                        if (ref.src?.startsWith('http') || ref.src?.startsWith('data:')) {
-                            resolvedReferences.push(ref);
-                        } else if (ref.src) {
-                            const { data: signedData } = await supabaseAdmin.storage
-                                .from('user-content')
-                                .createSignedUrl(ref.src, 3600);
-                            if (signedData?.signedUrl) {
-                                resolvedReferences.push({ ...ref, src: signedData.signedUrl });
-                            }
-                        }
-                    }
-                }
-
-                // (2) Prepare parts array (Multimodal Interleaving for Gemini path)
-                const { parts, hasMask, hasRefs, allRefs } = await prepareParts(
-                    { ...payload, references: resolvedReferences },
-                    finalSourceBase64
-                );
-
-                logInfo('Parts Prepared', `Total: ${parts.length} (source: ${!!finalSourceBase64}, mask: ${hasMask}, refs: ${allRefs.length})`);
-
-                // Store API request for debugging (variable declared above for early updateStage calls)
-                apiRequestPayload = {
-                    model: finalModelName,
-                    userPrompt: prompt,
-                    hasSourceImage: !!finalSourceBase64,
-                    hasMask,
-                    hasReferenceImages: hasRefs,
-                    referenceImagesCount: allRefs.length,
-                    imageSize: geminiImageSize,
-                    references: allRefs,
-                    generationConfig,
-                    variableValues: variables || null,
-                    timestamp: new Date().toISOString()
-                };
-
-                // Count concurrent jobs
+                // Count concurrent jobs (shared — used for diagnostics)
                 const { count: concurrentJobCount } = await supabaseAdmin
                     .from('generation_jobs')
                     .select('*', { count: 'exact', head: true })
@@ -514,10 +462,11 @@ Deno.serve(async (req) => {
 
                 const generationStartTime = Date.now();
 
-                const webhookData = {
+                // ── Shared webhookData (used by saveGeminiResult in both pipelines) ──
+                const webhookData: any = {
                     requestType,
                     qualityMode,
-                    finalModelName,
+                    finalModelName,  // overridden to 'nano-banana-2' in Kie path below
                     prompt,
                     targetTitle,
                     userId: user.id,
@@ -531,44 +480,26 @@ Deno.serve(async (req) => {
                     sourceVersion: sourceImage?.version,
                     sourceId: sourceImage?.id || null,
                     sourceFolderId: sourceFolderId ?? sourceImage?.folderId ?? sourceImage?.id ?? null,
-                    annotations: (resolvedReferences.length > 0) ? JSON.stringify(resolvedReferences.map((r: any) => ({
-                        id: crypto.randomUUID(),
-                        type: 'reference_image',
-                        referenceImage: r.src,
-                        text: r.instruction || ''
-                    }))) : '[]',
+                    annotations: '[]',
                     apiRequestPayload,
                     generationStartTime,
                     isPro,
                     cost,
                     activeTemplateId: activeTemplateId || null,
                     variableValues: variables || null,
-                    refundCredits: profile.credits  // already-decremented credits to restore on failure
+                    refundCredits: profile.credits
                 };
 
-                const geminiApiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
-                if (!geminiApiKey) {
-                    throw new Error('Google API key missing');
-                }
-
-                // ── Kie.ai fallback wraps the entire Google call + save ──────────────
-                // If Google returns a retryable error (timeout/503/MALFORMED/NO_IMAGE)
-                // AND qualityMode is not 0.5K (Kie doesn't support it),
-                // we transparently retry via Kie.ai without failing the job.
-                const kieApiKey = Deno.env.get('KIE_API_KEY') || Deno.env.get('kie.ai');
-                const kieSupported = qualityMode !== 'nb2-05k' && !!kieApiKey;
-                let usedKieFallback = false;
-
-                // ── PRIMARY_PROVIDER switch ──────────────────────────────────────────
-                // 'kie'    → go straight to Kie.ai, skip Google entirely
-                // 'google' → Google first, Kie as fallback (default behaviour)
-                const PRIMARY_PROVIDER = 'kie'; // change to 'kie' to route all jobs via Kie.ai
-
                 if (PRIMARY_PROVIDER === 'kie' && kieSupported) {
+                    // ════════════════════════════════════════════════════════════════
+                    // KIE PIPELINE
+                    // ════════════════════════════════════════════════════════════════
+                    webhookData.finalModelName = 'nano-banana-2';
                     updateStage('kie_primary');
+                    // Write provider:'kie_primary' immediately so client detects pipeline on first poll
                     await supabaseAdmin
                         .from('generation_jobs')
-                        .update({ webhook_data: webhookData, request_payload: { ...apiRequestPayload, current_stage: 'kie_primary' } })
+                        .update({ webhook_data: webhookData, request_payload: { ...apiRequestPayload, current_stage: 'kie_primary', provider: 'kie_primary' } })
                         .eq('id', newId);
 
                     const kieImageUrls: string[] = [];
@@ -578,7 +509,7 @@ Deno.serve(async (req) => {
                     }
                     if (payloadReferences?.length) {
                         for (let i = 0; i < Math.min(payloadReferences.length, 4); i++) {
-                            const ref = resolvedReferences[i] || payloadReferences[i];
+                            const ref = payloadReferences[i];
                             if (ref?.src?.startsWith('http')) {
                                 kieImageUrls.push(ref.src);
                             } else if (ref?.src?.startsWith('data:')) {
@@ -598,6 +529,76 @@ Deno.serve(async (req) => {
                     await saveGeminiResult(supabaseAdmin, newId, { base64: kieBase64, mimeType: 'image/jpeg' }, webhookData);
                     logInfo('Kie Primary Saved', `Job ${newId} completed via Kie.ai (primary)`);
                 } else { try {
+                // ════════════════════════════════════════════════════════════════
+                // GOOGLE PIPELINE
+                // ════════════════════════════════════════════════════════════════
+
+                const geminiApiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
+                if (!geminiApiKey) throw new Error('Google API key missing');
+
+                // Resolution for Gemini image output
+                const geminiImageSize = qualityMode === 'nb2-4k' ? '4K'
+                    : qualityMode === 'nb2-2k' ? '2K' : '1K';
+
+                // Resolve all reference paths to signed URLs for Gemini
+                const resolvedReferences: any[] = [];
+                if (payloadReferences?.length) {
+                    for (const ref of payloadReferences) {
+                        if (resolvedReferences.length >= 8) break;
+                        if (ref.src?.startsWith('http') || ref.src?.startsWith('data:')) {
+                            resolvedReferences.push(ref);
+                        } else if (ref.src) {
+                            const { data: signedData } = await supabaseAdmin.storage
+                                .from('user-content')
+                                .createSignedUrl(ref.src, 3600);
+                            if (signedData?.signedUrl) resolvedReferences.push({ ...ref, src: signedData.signedUrl });
+                        }
+                    }
+                }
+
+                // Prepare parts array (Multimodal Interleaving for Gemini)
+                const { parts, hasMask, hasRefs, allRefs } = await prepareParts(
+                    { ...payload, references: resolvedReferences },
+                    finalSourceBase64
+                );
+                logInfo('Parts Prepared', `Total: ${parts.length} (source: ${!!finalSourceBase64}, mask: ${hasMask}, refs: ${allRefs.length})`);
+
+                // aspectRatio logic:
+                // - Create mode (no source): always set, otherwise Gemini defaults to 1:1
+                // - Edit with references: always set, otherwise Gemini adopts last reference's ratio
+                // - Edit without references: omit — Gemini preserves original ratio automatically
+                const hasRefImages = payloadReferences?.length > 0;
+                const needsExplicitRatio = !finalSourceBase64 || hasRefImages;
+                const generationConfig: any = {
+                    imageConfig: {
+                        ...(needsExplicitRatio ? { aspectRatio: bestRatio } : {}),
+                        imageSize: geminiImageSize
+                    }
+                };
+
+                // Fill apiRequestPayload with Gemini-specific fields
+                apiRequestPayload = {
+                    model: finalModelName,
+                    userPrompt: prompt,
+                    hasSourceImage: !!finalSourceBase64,
+                    hasMask,
+                    hasReferenceImages: hasRefs,
+                    referenceImagesCount: allRefs.length,
+                    imageSize: geminiImageSize,
+                    references: allRefs,
+                    generationConfig,
+                    variableValues: variables || null,
+                    timestamp: new Date().toISOString()
+                };
+                webhookData.apiRequestPayload = apiRequestPayload;
+                webhookData.annotations = resolvedReferences.length > 0
+                    ? JSON.stringify(resolvedReferences.map((r: any) => ({
+                        id: crypto.randomUUID(),
+                        type: 'reference_image',
+                        referenceImage: r.src,
+                        text: r.instruction || ''
+                    })))
+                    : '[]';
 
                 // Write webhook_data + stage to DB BEFORE calling Gemini
                 // so that even if the function dies mid-call we have full diagnostics
