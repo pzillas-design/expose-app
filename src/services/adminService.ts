@@ -113,11 +113,11 @@ export const adminService = {
      * Fetch generation jobs with pagination  
      */
     async getJobs(page?: number, pageSize?: number): Promise<any[]> {
-        // Supabase TS type parser can't handle ::text casts + JSONB extraction in the same select.
-        // Cast to `any` here — we hand-map the rows below anyway, so no type safety is lost.
-        let query: any = supabase
+        // PostgREST aliasing uses `alias:column` with `->>` for text / `->` for JSON.
+        // SQL-style `AS` and inline `::text` are NOT valid here and will blow up the whole fetch.
+        let query = supabase
             .from('generation_jobs')
-            .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, downloaded_at, kie_task_id, request_payload->provider::text as provider, request_payload->firstChunkLatencyMs as first_chunk_latency_ms, request_payload->chunkCount as chunk_count, request_payload->thoughtChunkCount as thought_chunk_count')
+            .select('id, user_id, user_name, user_email, type, model, quality_mode, status, error, prompt_preview, cost, created_at, request_type, has_source_image, has_mask, reference_count, image_size, duration_ms, api_cost, tokens_prompt, tokens_completion, tokens_total, downloaded_at, kie_task_id, provider:request_payload->>provider, first_chunk_latency_ms:request_payload->firstChunkLatencyMs, chunk_count:request_payload->chunkCount, thought_chunk_count:request_payload->thoughtChunkCount')
             .order('created_at', { ascending: false });
 
         if (page !== undefined && pageSize !== undefined) {
