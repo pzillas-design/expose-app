@@ -53,6 +53,7 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
  const kieProvider: string | null = typeof payload.provider === 'string' && payload.provider.startsWith('kie')
   ? payload.provider
   : null;
+ const isGoogleFallback = payload.provider === 'google_fallback';
  const provider = kieProvider
   ? kieProvider
   : lowerModel.includes('gemini') || lowerModel.includes('nb2') || lowerModel.includes('nano-banana')
@@ -65,6 +66,11 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
   : kieProvider
   ? `Kie.ai (${kieProvider})`
   : null;
+ const providerDisplayLabel: React.ReactNode = kieProviderLabel
+  ? <span className="font-semibold text-violet-500">{kieProviderLabel}</span>
+  : isGoogleFallback
+  ? <span className="font-semibold text-blue-500">Google (Fallback)</span>
+  : provider;
  const providerModelVersion = payload.providerModelVersion || img?.model_version || rawModel || '–';
  const generationConfig = payload.generationConfig || {};
  const imageConfig = generationConfig.imageConfig || {};
@@ -91,9 +97,7 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
  };
 
  const providerRows: { label: string; value: React.ReactNode }[] = [
-  { label: 'Provider', value: kieProviderLabel
-   ? <span className="font-semibold text-violet-500">{kieProviderLabel}</span>
-   : provider },
+  { label: 'Provider', value: providerDisplayLabel },
   { label: 'Provider Model', value: formatValue(rawModel) },
   { label: 'Provider Model Version', value: formatValue(providerModelVersion) },
   { label: 'Provider Response ID', value: formatValue(webhookData.providerResponseId || payload.responseId) },
