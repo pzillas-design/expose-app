@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import { PRIMARY_PROVIDER } from '@/config/provider';
 import { supabase } from '@/services/supabaseClient';
 import { suppressCreditToast } from '@/services/creditToastGuard';
 import { imageService } from '@/services/imageService';
@@ -253,10 +254,11 @@ export const useGeneration = ({
         const resolvedQuality = quality || jobTimingRef.current[jobId]?.quality || '';
         const is4K = resolvedQuality === 'nb2-4k';
 
-        // nb2-4k: Gemini has up to 200s server-side — client must not give up before that.
-        // Other modes: shorter timeouts are fine.
-        const stuckAttempts = is4K ? 36 : 14;   // 180s vs 70s  (-20%)
-        const maxAttempts   = is4K ? 44 : 19;   // 220s vs 95s absolute ceiling (-20%)
+        // Kie.ai takes up to 300s server-side. Google/Gemini: 130s (200s for 4K).
+        // Client must not give up before the server finishes.
+        const isKiePrimary = PRIMARY_PROVIDER === 'kie' && !is4K;
+        const stuckAttempts = is4K ? 36 : isKiePrimary ? 52 : 14;  // 260s / 180s / 70s
+        const maxAttempts   = is4K ? 44 : isKiePrimary ? 65 : 19;  // 325s / 220s / 95s
 
         let attempts = 0;
         let googleOverloadWarningShown = false; // show yellow toast only once per job
@@ -386,20 +388,10 @@ export const useGeneration = ({
 
             // 2b. Detect stuck "processing" jobs
             if (jobData?.status === 'processing' && attempts >= stuckAttempts) {
-                // For nb2-4k: server owns the job state — never write failed from client.
-                // The Edge Function has up to 200s, and pg_cron handles refunds after 8 min.
-                // For other modes: write failed so the cron + UI stay consistent.
-                if (!is4K) {
-                    try {
-                        const { data: job } = await supabase
-                            .from('generation_jobs').select('request_payload').eq('id', jobId).maybeSingle();
-                        const lastStage = (job?.request_payload as any)?.current_stage || 'unknown';
-                        await supabase
-                            .from('generation_jobs')
-                            .update({ status: 'failed', error: `Timeout at stage: ${lastStage} - credits refunded` })
-                            .eq('id', jobId);
-                    } catch { /* non-critical */ }
-                }
+                // Server owns the job state for all modes — never write failed from client.
+                // The Edge Function may still be running Gemini (130s/200s) or the Kie.ai
+                // fallback (additional ~60s). pg_cron handles refunds for truly stuck jobs.
+                // Client only detaches the UI row and shows a timeout toast.
 
                 const retryFn = pendingRetryFns.current[jobId];
                 delete pendingRetryFns.current[jobId];

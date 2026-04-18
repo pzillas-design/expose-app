@@ -11,6 +11,7 @@ import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
 import { generateId } from '@/utils/ids';
 import { compressImage } from '@/utils/imageUtils';
+import { PRIMARY_PROVIDER } from '@/config/provider';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { useItemDialog } from '@/components/ui/Dialog';
@@ -963,7 +964,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-2 w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
                                                             <p className="px-2 pt-0.5 pb-1.5 text-[10px] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">Resolution</p>
                                                             {/* Resolution + Price */}
-                                                            {(['05k', '1k', '2k', '4k'] as const).map(res => {
+                                                            {((PRIMARY_PROVIDER === 'kie' ? ['1k', '2k', '4k'] : ['05k', '1k', '2k', '4k']) as readonly ('05k' | '1k' | '2k' | '4k')[]).map(res => {
                                                                 const q = `nb2-${res}` as GenerationQuality;
                                                                 const COSTS: Record<string, number> = { 'nb2-05k': 0.05, 'nb2-1k': 0.10, 'nb2-2k': 0.20, 'nb2-4k': 0.40 };
                                                                 const cost = COSTS[q];

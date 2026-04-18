@@ -11,6 +11,7 @@ import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { useToast } from '@/components/ui/Toast';
 import { Edit2, Check as CheckIcon } from 'lucide-react';
 import { downloadImage } from '@/utils/imageUtils';
+import { PRIMARY_PROVIDER } from '@/config/provider';
 
 interface PromptTabProps {
     prompt: string;
@@ -83,7 +84,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
-        { id: 'nb2-05k', label: 'Nano Banana 2 · 0.5K', desc: `512 px · ${t('quality_faster')}`, price: '0.05 €' },
+        ...(PRIMARY_PROVIDER === 'kie' ? [] : [{ id: 'nb2-05k' as GenerationQuality, label: 'Nano Banana 2 · 0.5K', desc: `512 px · ${t('quality_faster')}`, price: '0.05 €' }]),
         { id: 'nb2-1k', label: 'Nano Banana 2 · 1K', desc: `1024 px · ${t('quality_faster')}`, price: '0.10 €' },
         { id: 'nb2-2k', label: 'Nano Banana 2 · 2K', desc: `2048 px · ${t('quality_faster')}`, price: '0.20 €' },
         { id: 'nb2-4k', label: 'Nano Banana 2 · 4K', desc: `4096 px · ${t('quality_faster')}`, price: '0.40 €' },
