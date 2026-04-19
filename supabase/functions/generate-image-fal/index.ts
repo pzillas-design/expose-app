@@ -274,14 +274,35 @@ Deno.serve(async (req) => {
             throw new Error('A prompt or image is required.');
         }
 
-        // Annotation hint — fal receives multiple image_urls in order:
+        // Image role preamble — fal receives image_urls in a fixed order:
         //   [0] source, [1] annotation (if present), [2..] references.
-        // Without an explicit text hint the model doesn't know the 2nd image is a
-        // mask overlay. Prepend the same guidance we use on the Kie path so red
-        // markers are treated as change-locations and not rendered into the output.
-        if (payloadAnnotationImage) {
-            const annotationHint = 'The second image is an annotation overlay of the first: red markers indicate exactly where changes should be made. Do not render the red marks in the final output. ';
-            prompt = prompt.trim() ? `${annotationHint}${prompt.trim()}` : annotationHint.trim();
+        // Without an explicit text hint the model can't tell source vs. annotation
+        // vs. style-reference apart. Prepend role labels whenever extras are
+        // attached (annotation or refs) so fal treats each image correctly. The
+        // plain "single source + edit" case is left unchanged since fal-edit
+        // already handles that natively.
+        {
+            const hasAnnotation = !!payloadAnnotationImage;
+            const refCount = Array.isArray(payloadReferences) ? payloadReferences.length : 0;
+            const hasSource = !!(sourceStoragePath || payloadOriginalImage || sourceImage?.src);
+
+            if (hasSource && (hasAnnotation || refCount > 0)) {
+                const parts: string[] = [];
+                parts.push('Image 1 is the ORIGINAL photo to edit — preserve its layout, structure, and perspective.');
+                let nextIdx = 2;
+                if (hasAnnotation) {
+                    parts.push(`Image ${nextIdx} is an annotation overlay of the first: red markers indicate exactly where changes should be made. Do not render the red marks in the final output.`);
+                    nextIdx++;
+                }
+                if (refCount > 0) {
+                    const firstRef = nextIdx;
+                    const lastRef = nextIdx + refCount - 1;
+                    const range = firstRef === lastRef ? `Image ${firstRef} is a` : `Images ${firstRef}–${lastRef} are`;
+                    parts.push(`${range} REFERENCE IMAGE${refCount > 1 ? 'S' : ''} for style/content guidance only — do not use as base.`);
+                }
+                const preamble = parts.join(' ') + ' ';
+                prompt = prompt.trim() ? `${preamble}${prompt.trim()}` : preamble.trim();
+            }
         }
 
         // fal nano-banana-2/edit rejects empty prompts with HTTP 422 (string_too_short).
