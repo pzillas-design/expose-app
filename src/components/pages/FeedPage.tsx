@@ -150,6 +150,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                             <GenerationProgressBar
                                 startTime={img.generationStartTime}
                                 estimatedDuration={img.estimatedDuration}
+                                onImage={!!(parentSrc || img.thumbSrc || img.src)}
                             />
                         </>
                     ) : previewSrc ? (

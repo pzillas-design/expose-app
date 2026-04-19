@@ -786,6 +786,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         <GenerationProgressBar
                                             startTime={img.generationStartTime}
                                             estimatedDuration={img.estimatedDuration}
+                                            onImage={!!(prevLoadedSrcRef.current || img.thumbSrc)}
                                         />
                                     )}
 

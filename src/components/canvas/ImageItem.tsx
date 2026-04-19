@@ -162,7 +162,7 @@ const ImageSource = memo(({ path, src, thumbSrc, maskSrc, zoom, isSelected, titl
 /** Minimal, centered progress pill shown inside generating placeholder tiles.
  *  Same subtle white style as before — just actually time-based now:
  *  fills to ~85% by elapsed/estimatedDuration, snaps to 100% on finishing. */
-export const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDuration?: number; finishing?: boolean }> = ({ startTime, estimatedDuration, finishing }) => {
+export const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDuration?: number; finishing?: boolean; onImage?: boolean }> = ({ startTime, estimatedDuration, finishing, onImage }) => {
     const [, setTick] = useState(0);
     const hasActive = !!startTime && !finishing;
 
@@ -195,9 +195,9 @@ export const GenerationProgressBar: React.FC<{ startTime?: number; estimatedDura
 
     return (
         <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-            <div className="relative w-1/5 h-[2px] rounded-full overflow-hidden bg-black/10 dark:bg-white/[0.12]">
+            <div className={`relative w-1/5 h-[2px] rounded-full overflow-hidden ${onImage ? 'bg-white/20' : 'bg-black/10 dark:bg-white/[0.12]'}`}>
                 <div
-                    className={`h-full rounded-full bg-black/60 dark:bg-white/[0.85] ${finishing ? 'transition-all duration-500 ease-out' : 'transition-none'}`}
+                    className={`h-full rounded-full ${onImage ? 'bg-white/90' : 'bg-black/60 dark:bg-white/[0.85]'} ${finishing ? 'transition-all duration-500 ease-out' : 'transition-none'}`}
                     style={{ width: `${progress}%` }}
                 />
             </div>
@@ -426,6 +426,7 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                             startTime={image.generationStartTime}
                             estimatedDuration={image.estimatedDuration}
                             finishing={isFinishing}
+                            onImage={!!(image.thumbSrc || image.src)}
                         />
                     </>
                 )}
