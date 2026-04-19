@@ -255,7 +255,10 @@ export const imageService = {
             )
         } : sourceImage;
 
-        const { data, error } = await supabase.functions.invoke('generate-image', {
+        // Primary provider: fal.ai (synchronous edge function, no provider cascade).
+        // Old route 'generate-image' stays deployed as a fallback — switch back by
+        // changing the name below + `git revert` if `generate-image-fal` misbehaves.
+        const { data, error } = await supabase.functions.invoke('generate-image-fal', {
             headers: {
                 ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
             },
