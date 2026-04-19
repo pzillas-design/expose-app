@@ -265,11 +265,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             buckets[key][res]        = (buckets[key][res]||0) + 1;
             buckets[key]._totalJobs  = (buckets[key]._totalJobs||0) + 1;
             buckets[key]._aiCost     = (buckets[key]._aiCost||0) + calculateEstimatedGoogleCostEur(job);
-            // Collect first-chunk latencies (Google streaming only; null on Kie jobs).
-            if (typeof job.firstChunkLatencyMs === 'number') {
-                if (!buckets[key]._firstChunkSamples) buckets[key]._firstChunkSamples = [];
-                buckets[key]._firstChunkSamples.push(job.firstChunkLatencyMs);
-            }
         });
         failedJobs.forEach(job => {
             const key = makeBucketKey(new Date(job.createdAt), timeRange);
@@ -306,16 +301,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
             // _failedJobs is already set as raw count by the failedJobs loop above — keep it as-is
             if (buckets[key]._revenue != null && buckets[key]._aiCost != null)
                 buckets[key]._profit = buckets[key]._revenue - buckets[key]._aiCost;
-            // Reduce first-chunk samples to p50 + p95 (seconds) for plotting.
-            const samples: number[] | undefined = buckets[key]._firstChunkSamples;
-            if (samples && samples.length > 0) {
-                const sorted = [...samples].sort((a, b) => a - b);
-                const pick = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))];
-                buckets[key]._firstChunkP50 = +(pick(0.5) / 1000).toFixed(2);
-                buckets[key]._firstChunkP95 = +(pick(0.95) / 1000).toFixed(2);
-                buckets[key]._firstChunkSampleCount = sorted.length;
-            }
-            delete buckets[key]._firstChunkSamples;
         });
 
         return Object.values(buckets);
@@ -346,141 +331,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
 
             <div className="flex-1 p-4 md:p-8 flex flex-col gap-8 max-w-[1700px] mx-auto w-full">
 
-                {/* ── 1. 6-BOX GRID ────────────────────────────────────────── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-
-                    {/* Box 1: Überblick */}
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between">
-                        <SectionLabel>Überblick</SectionLabel>
-                        <div className="mt-6 space-y-4">
-                            <EfficiencyRow dot="#3b82f6" label="Nutzer gesamt"       value={String(profiles.length)}                                        sub={`Heute +${newSignupsToday} · 7 Tage +${newSignups7d}`} />
-                            <EfficiencyRow dot="#f97316" label="Generierungen"       value={String(completedJobs.length)}                                   sub={`${uniqueUsersTotal} aktive Nutzer · Ø ${avgGen.toFixed(1)}/User`} />
-                            <EfficiencyRow dot="#10b981" label="Einnahmen (90 Tage)" value={stripeRevenue != null ? `${stripeRevenue.toFixed(0)} €` : '—'}  sub={`${stripePayCnt} Zahlungen`} color="#10b981" />
-                            <EfficiencyRow dot="#059669" label="Gewinn"              value={profit != null ? `${profit.toFixed(0)} €` : '—'}                sub={margin != null ? `Marge ${margin.toFixed(0)} %` : '—'} color="#059669" />
-                        </div>
-                    </div>
-
-                    {/* Box 2: Conversion — Wie viele Nutzer haben tatsächlich generiert? */}
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
-                        <div className="flex items-center justify-between mb-1">
-                            <SectionLabel>Conversion</SectionLabel>
-                            <MiniLegend items={[{ color: '#8b5cf6', label: '% Nutzer mit mind. 1 Bild' }]} />
-                        </div>
-                        <p className="text-[10px] text-zinc-400 mb-5">Anteil registrierter Nutzer, die mindestens einmal generiert haben</p>
-                        <div className="h-[200px] w-full mt-auto">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={chartData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
-                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={30} tickFormatter={v => `${v}%`} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                                        formatter={(v: any) => [`${v}%`, 'Aktivierungsrate']} />
-                                    <Line type="monotone" dataKey="_activationRate" stroke="#8b5cf6" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* Box 3: Fehlerrate — Wie stabil läuft die Generierung? */}
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
-                        <div className="flex items-center justify-between mb-1">
-                            <SectionLabel>Fehlerrate</SectionLabel>
-                            <MiniLegend items={[{ color: '#ef4444', label: 'Fehlgeschlagene Jobs' }]} />
-                        </div>
-                        <p className="text-[10px] text-zinc-400 mb-5">Anzahl Generierungen die mit Fehler abgebrochen sind (Timeout, API-Fehler etc.)</p>
-                        <div className="h-[200px] w-full mt-auto">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={chartData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
-                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} allowDecimals={false} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                                        formatter={(v: any) => [v, 'Fehler']} />
-                                    <Line type="monotone" dataKey="_failedJobs" stroke="#ef4444" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* Box: Google First-Chunk Latency — erkennt Hangs vs. gesunde Generierung */}
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
-                        <div className="flex items-center justify-between mb-1">
-                            <SectionLabel>Google Stream-Start</SectionLabel>
-                            <MiniLegend items={[{ color: '#10b981', label: 'P50 (s)' }, { color: '#f59e0b', label: 'P95 (s)' }]} />
-                        </div>
-                        <p className="text-[10px] text-zinc-400 mb-5">Zeit bis erster Stream-Chunk. Steigt = Google wird langsam oder hängt. 20s Timeout → Kie-Fallback</p>
-                        <div className="h-[200px] w-full mt-auto">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={chartData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
-                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={3} width={32} tickFormatter={v => `${v}s`} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                                        formatter={(v: any, n: string) => [`${v}s`, n === '_firstChunkP50' ? 'P50' : 'P95']} />
-                                    <Line type="monotone" dataKey="_firstChunkP50" stroke="#10b981" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} connectNulls />
-                                    <Line type="monotone" dataKey="_firstChunkP95" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 3" dot={false} activeDot={{ r: 4 }} connectNulls />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* Box 4: Nutzer-Wachstum */}
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
-                        <div className="flex items-center justify-between mb-1">
-                            <SectionLabel>Nutzer-Wachstum</SectionLabel>
-                            <MiniLegend items={[{ color: '#3b82f6', label: 'Neu registriert' }, { color: '#10b981', label: 'Aktiv (%)' }]} />
-                        </div>
-                        <p className="text-[10px] text-zinc-400 mb-5">Neue Registrierungen pro Periode (links) vs. Anteil aller Nutzer der mind. 1× generiert hat (rechts, %)</p>
-                        <div className="h-[200px] w-full mt-auto">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={chartData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
-                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
-                                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} allowDecimals={false} />
-                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={30} tickFormatter={v => `${v}%`} domain={[0, 100]} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                                        formatter={(v: any, n: string) => n === '_activationRate' ? [`${v}%`, 'Aktiv'] : [v, 'Neu registriert']} />
-                                    <Line yAxisId="left" type="monotone" dataKey="_newInPeriod" stroke="#3b82f6" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
-                                    <Line yAxisId="right" type="monotone" dataKey="_activationRate" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* Box 5: Top Nutzer */}
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
-                        <SectionLabel>Aktivste Nutzer</SectionLabel>
-                        <p className="text-[10px] text-zinc-400 mt-1 mb-5">Nutzer mit den meisten abgeschlossenen Generierungen</p>
-                        <div className="space-y-3">
-                            {topUsers.slice(0, 9).map(user => (
-                                <div key={user.name} className="flex flex-col gap-1">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 truncate">{user.name}</span>
-                                        <span className="text-[10px] font-mono font-bold text-zinc-400 shrink-0">{user.count}×</span>
-                                    </div>
-                                    <div className="h-1 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                                        <div className="h-full rounded-full bg-gradient-to-r from-zinc-400 to-zinc-600"
-                                            style={{ width: maxUserCount > 0 ? `${(user.count / maxUserCount) * 100}%` : '0%' }} />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between">
-                        <div>
-                            <SectionLabel>Dienste & Effizienz</SectionLabel>
-                            <div className="mt-6 space-y-4">
-                                <EfficiencyRow label="Voice Kosten" value={`${voiceTotals.costEur.toFixed(2)} €`} sub="ElevenLabs / Google Gemini Live" />
-                                <EfficiencyRow label="Ø Bilder / Nutzer" value={avgGen.toFixed(1)} sub="Durchschnittliche Nutzungstiefe inkl. 4K" />
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* ── 2. MAIN CHART ────────────────────────────────────────── */}
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 md:p-8 shadow-sm mb-12">
+                {/* ── 1. MAIN CHART ────────────────────────────────────────── */}
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 md:p-8 shadow-sm">
                     <div className="flex flex-col gap-5 mb-8">
                         {/* Top row: title + time range */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -563,6 +415,119 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         </ResponsiveContainer>
                     </div>
                 </div>
+
+                {/* ── 2. BOX GRID ────────────────────────────────────────── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+
+                    {/* Box 1: Überblick */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between">
+                        <SectionLabel>Überblick</SectionLabel>
+                        <div className="mt-6 space-y-4">
+                            <EfficiencyRow dot="#3b82f6" label="Nutzer gesamt"       value={String(profiles.length)}                                        sub={`Heute +${newSignupsToday} · 7 Tage +${newSignups7d}`} />
+                            <EfficiencyRow dot="#f97316" label="Generierungen"       value={String(completedJobs.length)}                                   sub={`${uniqueUsersTotal} aktive Nutzer · Ø ${avgGen.toFixed(1)}/User`} />
+                            <EfficiencyRow dot="#10b981" label="Einnahmen (90 Tage)" value={stripeRevenue != null ? `${stripeRevenue.toFixed(0)} €` : '—'}  sub={`${stripePayCnt} Zahlungen`} color="#10b981" />
+                            <EfficiencyRow dot="#059669" label="Gewinn"              value={profit != null ? `${profit.toFixed(0)} €` : '—'}                sub={margin != null ? `Marge ${margin.toFixed(0)} %` : '—'} color="#059669" />
+                        </div>
+                    </div>
+
+                    {/* Box: Fehlerrate — Wie stabil läuft die Generierung? + fal Performance */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
+                        <div className="flex items-center justify-between mb-1">
+                            <SectionLabel>Fehlerrate</SectionLabel>
+                            <MiniLegend items={[{ color: '#ef4444', label: 'Fehlgeschlagene Jobs' }]} />
+                        </div>
+                        <p className="text-[10px] text-zinc-400 mb-3">Anzahl Generierungen die mit Fehler abgebrochen sind (Timeout, API-Fehler etc.)</p>
+                        {/* fal Performance Sub-Stats */}
+                        {(() => {
+                            const falJobs = jobs.filter((j: any) => j.provider === 'fal');
+                            const falCompleted = falJobs.filter((j: any) => j.status === 'completed');
+                            const falFailed = falJobs.filter((j: any) => j.status === 'failed');
+                            const falTotal = falCompleted.length + falFailed.length;
+                            const successRate = falTotal > 0 ? (falCompleted.length / falTotal) * 100 : null;
+                            const durations = falCompleted.map((j: any) => Number(j.durationMs || 0)).filter(v => v > 0);
+                            const avgDuration = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
+                            return (
+                                <div className="flex items-center gap-4 mb-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] text-zinc-400 uppercase tracking-wider">fal Ø Zeit</span>
+                                        <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300">
+                                            {avgDuration != null ? `${(avgDuration / 1000).toFixed(1)}s` : '—'}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] text-zinc-400 uppercase tracking-wider">fal Success-Rate</span>
+                                        <span className="text-sm font-bold font-mono" style={{ color: successRate != null && successRate >= 95 ? '#10b981' : successRate != null && successRate >= 80 ? '#f59e0b' : '#ef4444' }}>
+                                            {successRate != null ? `${successRate.toFixed(1)}%` : '—'}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] text-zinc-400 uppercase tracking-wider">fal Jobs</span>
+                                        <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300">
+                                            {falTotal}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                        <div className="h-[160px] w-full mt-auto">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
+                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} allowDecimals={false} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
+                                        formatter={(v: any) => [v, 'Fehler']} />
+                                    <Line type="monotone" dataKey="_failedJobs" stroke="#ef4444" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Box: Nutzer-Wachstum (inkl. Aktivierungsrate = Conversion) */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
+                        <div className="flex items-center justify-between mb-1">
+                            <SectionLabel>Nutzer-Wachstum</SectionLabel>
+                            <MiniLegend items={[{ color: '#3b82f6', label: 'Neu registriert' }, { color: '#10b981', label: 'Aktiv (%)' }]} />
+                        </div>
+                        <p className="text-[10px] text-zinc-400 mb-5">Neue Registrierungen pro Periode (links) vs. Anteil aller Nutzer der mind. 1× generiert hat (rechts, %)</p>
+                        <div className="h-[200px] w-full mt-auto">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.4} />
+                                    <XAxis dataKey="_label" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} interval="preserveStartEnd" tickCount={2} />
+                                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={26} allowDecimals={false} />
+                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#a1a1aa' }} tickCount={2} width={30} tickFormatter={v => `${v}%`} domain={[0, 100]} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'rgba(255,255,255,0.95)', border: 'none', borderRadius: '12px', fontSize: '10px' }}
+                                        formatter={(v: any, n: string) => n === '_activationRate' ? [`${v}%`, 'Aktiv'] : [v, 'Neu registriert']} />
+                                    <Line yAxisId="left" type="monotone" dataKey="_newInPeriod" stroke="#3b82f6" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                                    <Line yAxisId="right" type="monotone" dataKey="_activationRate" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* Box 5: Top Nutzer */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
+                        <SectionLabel>Aktivste Nutzer</SectionLabel>
+                        <p className="text-[10px] text-zinc-400 mt-1 mb-5">Nutzer mit den meisten abgeschlossenen Generierungen</p>
+                        <div className="space-y-3">
+                            {topUsers.slice(0, 9).map(user => (
+                                <div key={user.name} className="flex flex-col gap-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 truncate">{user.name}</span>
+                                        <span className="text-[10px] font-mono font-bold text-zinc-400 shrink-0">{user.count}×</span>
+                                    </div>
+                                    <div className="h-1 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                                        <div className="h-full rounded-full bg-gradient-to-r from-zinc-400 to-zinc-600"
+                                            style={{ width: maxUserCount > 0 ? `${(user.count / maxUserCount) * 100}%` : '0%' }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                </div>
+
 
             </div>
         </div>

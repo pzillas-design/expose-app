@@ -133,13 +133,20 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
                     {isGen ? (
                         <>
-                            {parentSrc ? (
-                                <div className="absolute inset-0">
-                                    <img src={parentSrc} className="w-full h-full object-cover scale-110 blur-xl brightness-75" alt="" />
-                                </div>
-                            ) : (
-                                <BlobBackground />
-                            )}
+                            {(() => {
+                                // Placeholders inherit src/thumbSrc from the source image (useGeneration.ts),
+                                // so img.thumbSrc / img.src IS the parent image during loading.
+                                // parentSrc (resolved via imageIdMap) wins when available, then fall back
+                                // to the placeholder's own inherited src before showing BlobBackground.
+                                const bgSrc = parentSrc || img.thumbSrc || img.src;
+                                return bgSrc ? (
+                                    <div className="absolute inset-0">
+                                        <img src={bgSrc} className="w-full h-full object-cover scale-110 blur-xl brightness-75" alt="" />
+                                    </div>
+                                ) : (
+                                    <BlobBackground />
+                                );
+                            })()}
                             <GenerationProgressBar
                                 startTime={img.generationStartTime}
                                 estimatedDuration={img.estimatedDuration}
@@ -632,7 +639,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 pt-8 sm:pt-16 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 pt-4 sm:pt-8 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 >
                                     {displayImages.map((img, idx) => {
                                         const gc = (effectiveGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
