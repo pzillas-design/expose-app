@@ -13,7 +13,10 @@ jobs:
         with:
           version: latest
 
-      - name: Deploy generate-image
+      - name: Deploy generate-image-fal
+        run: supabase functions deploy generate-image-fal --project-ref rhocpnetpxficxnrprsq --no-verify-jwt
+
+      - name: Deploy generate-image (legacy shim)
         run: supabase functions deploy generate-image --project-ref rhocpnetpxficxnrprsq --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
