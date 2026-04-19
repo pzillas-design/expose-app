@@ -228,7 +228,23 @@ Deno.serve(async (req) => {
             sourceFolderId,
             sourceStoragePath,
         } = payload;
-        const prompt = rawPrompt ?? '';
+        const basePrompt = rawPrompt ?? '';
+
+        // Append template variables to the prompt (same behavior as old Gemini path:
+        // server-side injection so the client's draft prompt + template variable pills
+        // both reach the model).
+        let prompt = basePrompt;
+        if (variables && typeof variables === 'object' && Object.keys(variables).length > 0) {
+            const varString = Object.entries(variables)
+                .filter(([, vals]) => Array.isArray(vals) && (vals as any[]).length > 0)
+                .map(([key, vals]) => `${key}: ${(vals as string[]).join(', ')}`)
+                .join('; ');
+            if (varString) {
+                prompt = prompt.trim()
+                    ? `${prompt.trim()}\n\n${varString}`
+                    : varString;
+            }
+        }
 
         if (!prompt.trim() && !sourceImage?.src && !payloadOriginalImage && !payloadReferences?.length) {
             throw new Error('A prompt or image is required.');
@@ -237,7 +253,7 @@ Deno.serve(async (req) => {
             throw new Error('Only NB2 quality modes are supported (nb2-0.5k | nb2-1k | nb2-2k | nb2-4k)');
         }
 
-        logInfo('Start', `job=${newId} user=${user.id} quality=${qualityMode} type=${requestType}`);
+        logInfo('Start', `job=${newId} user=${user.id} quality=${qualityMode} type=${requestType} promptLen=${prompt.length}`);
 
         // ── Credits ────────────────────────────────────────────────────────
         const cost = COSTS[qualityMode] || 0;
