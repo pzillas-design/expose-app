@@ -45,11 +45,14 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
  const requestType = job.requestType || (hasSource ? 'edit' : 'create');
  const rawModel = job.model || '';
  const lowerModel = rawModel.toLowerCase();
+ const isFal = payload.provider === 'fal';
  const kieProvider: string | null = typeof payload.provider === 'string' && payload.provider.startsWith('kie')
   ? payload.provider
   : null;
  const isGoogleFallback = payload.provider === 'google_fallback';
- const provider = kieProvider
+ const provider = isFal
+  ? 'fal'
+  : kieProvider
   ? kieProvider
   : lowerModel.includes('gemini') || lowerModel.includes('nb2') || lowerModel.includes('nano-banana')
    ? 'google'
@@ -61,7 +64,9 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
   : kieProvider
   ? `Kie.ai (${kieProvider})`
   : null;
- const providerDisplayLabel: React.ReactNode = kieProviderLabel
+ const providerDisplayLabel: React.ReactNode = isFal
+  ? <span className="font-semibold text-emerald-500">fal.ai</span>
+  : kieProviderLabel
   ? <span className="font-semibold text-violet-500">{kieProviderLabel}</span>
   : isGoogleFallback
   ? <span className="font-semibold text-blue-500">Google (Fallback)</span>
@@ -95,7 +100,9 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
   { label: 'Provider', value: providerDisplayLabel },
   { label: 'Provider Model', value: formatValue(rawModel) },
   { label: 'Provider Model Version', value: formatValue(providerModelVersion) },
-  { label: 'Provider Response ID', value: formatValue(webhookData.providerResponseId || payload.responseId) },
+  ...(isFal && payload.endpoint ? [{ label: 'fal Endpoint', value: <span className="font-mono text-xs">{payload.endpoint}</span> }] : []),
+  ...(isFal && payload.falRequestId ? [{ label: 'fal Request ID', value: <span className="font-mono text-xs">{payload.falRequestId}</span> }] : []),
+  { label: 'Provider Response ID', value: formatValue(webhookData.providerResponseId || payload.responseId || (isFal ? payload.falRequestId : null)) },
   { label: 'Finish Reason', value: formatValue(webhookData.finishReason || payload.finishReason) },
   { label: 'Finish Message', value: formatValue(webhookData.finishMessage || payload.finishMessage) },
   { label: 'Prompt Block Reason', value: formatValue(webhookData.promptBlockReason || payload.promptBlockReason) },
@@ -244,7 +251,7 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
     </div>
 
     <div className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800">
-     <p className="text-[10px] font-medium text-zinc-400 mb-2">Google / Provider</p>
+     <p className="text-[10px] font-medium text-zinc-400 mb-2">Provider</p>
      <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
       {providerRows.map(({ label, value }) => (
        <div key={label} className="flex justify-between items-center py-2.5 text-xs">

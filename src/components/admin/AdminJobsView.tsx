@@ -197,6 +197,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const isMultiEdit = (payload.batchSize || 1) > 1 || !!payload.isMultiEdit;
                                                     const hasAnnotation = j.hasMask || j.type === 'Edit';
                                                     const isRepeat = !!payload.isRepeat;
+                                                    const isFal = j.provider === 'fal';
                                                     const isKie = typeof j.provider === 'string' && j.provider.startsWith('kie');
 
                                                     // Resolution badge
@@ -221,7 +222,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         <td className="px-5 py-3.5">
                                                             <div className="flex items-center gap-1 flex-wrap">
                                                                 {res && <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${resColor}`}>{res}</span>}
-                                                                {isKie
+                                                                {isFal
+                                                                    ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">fal</span>
+                                                                    : isKie
                                                                     ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">Kie</span>
                                                                     : <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Google</span>
                                                                 }
