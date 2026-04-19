@@ -273,6 +273,12 @@ Deno.serve(async (req) => {
         if (!prompt.trim() && !sourceImage?.src && !payloadOriginalImage && !payloadReferences?.length) {
             throw new Error('A prompt or image is required.');
         }
+        // fal nano-banana-2/edit rejects empty prompts with HTTP 422 (string_too_short).
+        // When the user triggers a generation with only an image (no base prompt, no
+        // template variables), fall back to a generic edit instruction so fal accepts it.
+        if (!prompt.trim()) {
+            prompt = 'Subtly enhance this image while preserving its composition and content.';
+        }
         if (!qualityMode?.startsWith('nb2-')) {
             throw new Error('Only NB2 quality modes are supported (nb2-0.5k | nb2-1k | nb2-2k | nb2-4k)');
         }
