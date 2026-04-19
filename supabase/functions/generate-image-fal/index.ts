@@ -230,14 +230,38 @@ Deno.serve(async (req) => {
         } = payload;
         const basePrompt = rawPrompt ?? '';
 
-        // Append template variables to the prompt (same behavior as old Gemini path:
-        // server-side injection so the client's draft prompt + template variable pills
-        // both reach the model).
+        // Append template variables to the prompt, using the template's human-readable
+        // control labels ("Jahreszeit: Herbst") rather than the internal control IDs
+        // ("c-season: Herbst") so fal.ai gets a natural-language instruction.
         let prompt = basePrompt;
         if (variables && typeof variables === 'object' && Object.keys(variables).length > 0) {
+            // Build id → label map from the active template (best-effort; falls back to
+            // the raw control id if the template isn't found).
+            const idToLabel: Record<string, string> = {};
+            if (activeTemplateId) {
+                try {
+                    const { data: tpl } = await supabaseAdmin
+                        .from('global_presets')
+                        .select('controls')
+                        .eq('id', activeTemplateId)
+                        .maybeSingle();
+                    const controls = Array.isArray(tpl?.controls) ? tpl!.controls : [];
+                    for (const c of controls) {
+                        if (c?.id && typeof c.label === 'string' && c.label.trim()) {
+                            idToLabel[c.id] = c.label.trim();
+                        }
+                    }
+                } catch (e) {
+                    logError('Template lookup', e, { activeTemplateId });
+                }
+            }
+
             const varString = Object.entries(variables)
                 .filter(([, vals]) => Array.isArray(vals) && (vals as any[]).length > 0)
-                .map(([key, vals]) => `${key}: ${(vals as string[]).join(', ')}`)
+                .map(([key, vals]) => {
+                    const label = idToLabel[key] || key;
+                    return `${label}: ${(vals as string[]).join(', ')}`;
+                })
                 .join('; ');
             if (varString) {
                 prompt = prompt.trim()
