@@ -273,6 +273,17 @@ Deno.serve(async (req) => {
         if (!prompt.trim() && !sourceImage?.src && !payloadOriginalImage && !payloadReferences?.length) {
             throw new Error('A prompt or image is required.');
         }
+
+        // Annotation hint — fal receives multiple image_urls in order:
+        //   [0] source, [1] annotation (if present), [2..] references.
+        // Without an explicit text hint the model doesn't know the 2nd image is a
+        // mask overlay. Prepend the same guidance we use on the Kie path so red
+        // markers are treated as change-locations and not rendered into the output.
+        if (payloadAnnotationImage) {
+            const annotationHint = 'The second image is an annotation overlay of the first: red markers indicate exactly where changes should be made. Do not render the red marks in the final output. ';
+            prompt = prompt.trim() ? `${annotationHint}${prompt.trim()}` : annotationHint.trim();
+        }
+
         // fal nano-banana-2/edit rejects empty prompts with HTTP 422 (string_too_short).
         // When the user triggers a generation with only an image (no base prompt, no
         // template variables), fall back to a generic edit instruction so fal accepts it.
