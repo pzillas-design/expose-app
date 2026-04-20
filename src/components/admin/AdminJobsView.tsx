@@ -199,6 +199,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const isRepeat = !!payload.isRepeat;
                                                     const isFal = j.provider === 'fal';
                                                     const isKie = typeof j.provider === 'string' && j.provider.startsWith('kie');
+                                                    const isGoogle = typeof j.provider === 'string' && j.provider.startsWith('google');
+                                                    // null provider = failure before provider was recorded. Don't mislabel as Google.
+                                                    const hasKnownProvider = isFal || isKie || isGoogle;
 
                                                     // Resolution badge
                                                     const m = j.qualityMode || j.model || '';
@@ -226,7 +229,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                                     ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">fal</span>
                                                                     : isKie
                                                                     ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">Kie</span>
-                                                                    : <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Google</span>
+                                                                    : isGoogle
+                                                                    ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Google</span>
+                                                                    : <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">—</span>
                                                                 }
                                                                 {isMultiEdit && <span className={badgeClass}>Multi Edit</span>}
                                                                 {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
