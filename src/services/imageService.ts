@@ -258,33 +258,58 @@ export const imageService = {
         // Primary provider: fal.ai (synchronous edge function, no provider cascade).
         // Old route 'generate-image' stays deployed as a fallback — switch back by
         // changing the name below + `git revert` if `generate-image-fal` misbehaves.
-        const { data, error } = await supabase.functions.invoke('generate-image-fal', {
-            headers: {
-                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-            },
-            body: {
-                ...payload,
-                qualityMode,
-                newId,
-                modelName,
-                // attachments intentionally omitted — reference images are already in payload.references
-                aspectRatio,
-                targetTitle,
-                activeTemplateId: activeTemplateId || undefined,
-                sourceImage: sourceImageForEdge,
-                // folder_id of source so edge function can propagate it to the generated image
-                sourceFolderId: sourceImage?.folderId ?? sourceImage?.id ?? undefined,
-                // Pass storage_path when available so the edge function downloads original
-                // bytes directly (no JPEG recompression loss). Falls back to base64 in
-                // payload.originalImage for blob URLs / images without a storage path.
-                sourceStoragePath: sourceImage?.storage_path || undefined,
-                // Tell edge function this is a repeat so it appends a variation ID to break
-                // Gemini's implicit input caching and encourage diverse outputs.
-                isRepeat: isRepeat || undefined,
-                // Provider: 'gemini' for Google AI Studio, undefined/omitted for default (kie.ai)
-                provider: import.meta.env.VITE_IMAGE_PROVIDER || undefined
-            }
-        });
+        const invokeBody = {
+            ...payload,
+            qualityMode,
+            newId,
+            modelName,
+            // attachments intentionally omitted — reference images are already in payload.references
+            aspectRatio,
+            targetTitle,
+            activeTemplateId: activeTemplateId || undefined,
+            sourceImage: sourceImageForEdge,
+            // folder_id of source so edge function can propagate it to the generated image
+            sourceFolderId: sourceImage?.folderId ?? sourceImage?.id ?? undefined,
+            // Pass storage_path when available so the edge function downloads original
+            // bytes directly (no JPEG recompression loss). Falls back to base64 in
+            // payload.originalImage for blob URLs / images without a storage path.
+            sourceStoragePath: sourceImage?.storage_path || undefined,
+            // Tell edge function this is a repeat so it appends a variation ID to break
+            // Gemini's implicit input caching and encourage diverse outputs.
+            isRepeat: isRepeat || undefined,
+            // Provider: 'gemini' for Google AI Studio, undefined/omitted for default (kie.ai)
+            provider: import.meta.env.VITE_IMAGE_PROVIDER || undefined,
+        };
+        const invokeHeaders = {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        };
+
+        // Retry once on transient Supabase gateway blips (502/503/504 or preflight
+        // network errors). We've seen OPTIONS preflights return 502 with null
+        // deployment_id in edge-function logs — the request never reaches our code.
+        // A second attempt ~400ms later almost always succeeds.
+        const isTransientGatewayError = (err: any): boolean => {
+            if (!err) return false;
+            if (err.status && [502, 503, 504].includes(err.status)) return true;
+            const msg = String(err.message || '').toLowerCase();
+            return msg.includes('failed to fetch')
+                || msg.includes('failed to send')
+                || msg.includes('networkerror')
+                || msg.includes('load failed');
+        };
+
+        let data: any, error: any;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            const res = await supabase.functions.invoke('generate-image-fal', {
+                headers: invokeHeaders,
+                body: invokeBody,
+            });
+            data = res.data;
+            error = res.error;
+            if (!error || !isTransientGatewayError(error) || attempt === 1) break;
+            console.warn(`Generation: transient gateway error on attempt ${attempt + 1}, retrying…`, error);
+            await new Promise(r => setTimeout(r, 400));
+        }
 
         if (error || !data?.success) {
             console.error("Edge Generation Failed:");
