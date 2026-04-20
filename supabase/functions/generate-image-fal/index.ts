@@ -374,7 +374,10 @@ Deno.serve(async (req) => {
 
         logInfo('fal request', `endpoint=${endpoint} res=${falResolution} ar=${aspectRatio} imgs=${imageUrls.length}`);
 
-        // Persist pre-call diagnostics so failures are attributable
+        // Persist pre-call diagnostics so failures are attributable.
+        // `variables` + `activeTemplateId` are carried forward from the client payload
+        // so the admin "Variablen" badge / template linkage keeps working after we
+        // overwrite the row's request_payload on completion.
         const apiRequestPayload: any = {
             provider: 'fal',
             endpoint,
@@ -386,6 +389,10 @@ Deno.serve(async (req) => {
             referenceCount: payloadReferences?.length ?? 0,
             current_stage: 'fal_call',
             fal_start: Date.now(),
+            ...(variables && typeof variables === 'object' && Object.keys(variables).length > 0
+                ? { variables }
+                : {}),
+            ...(activeTemplateId ? { activeTemplateId } : {}),
         };
         await supabaseAdmin.from('generation_jobs')
             .update({ request_payload: apiRequestPayload })
@@ -498,12 +505,18 @@ Deno.serve(async (req) => {
         // ── Finalize job row ───────────────────────────────────────────────
         apiRequestPayload.current_stage = 'completed';
         const durationMs = Date.now() - taskStart;
+        const usedVariables = !!(variables && typeof variables === 'object' && Object.keys(variables).length > 0);
         await supabaseAdmin.from('generation_jobs').update({
             status: 'completed',
             model: 'nano-banana-2',
             duration_ms: durationMs,
             quality_mode: qualityMode,
             request_payload: apiRequestPayload,
+            variables_used: usedVariables,
+            // Overwrite prompt_preview with the *resolved* prompt so admin sees the
+            // exact text that went to fal, including appended variable labels like
+            // "Jahreszeit: Frühling". Client originally wrote the raw prompt.
+            prompt_preview: (prompt || '').slice(0, 2000),
         }).eq('id', newId);
 
         logInfo('Done', `job=${newId} total=${durationMs}ms provider=${providerLatencyMs}ms`);
