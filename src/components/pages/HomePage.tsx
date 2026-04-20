@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GlobalFooter } from '../layout/GlobalFooter';
+import { PageSEO } from '@/components/seo/PageSEO';
 import { TranslationFunction } from '@/types';
 import { Button } from '@/components/ui/DesignSystem';
 import { UniversalStage } from './home-modules/UniversalStage';
@@ -25,6 +26,11 @@ export const HomePage: React.FC<HomePageProps> = ({ user, userProfile, credits, 
 
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+            <PageSEO
+                title="AI-Bildbearbeitung mit Präzisions-Kontrolle"
+                description="exposé ist die KI-Bildbearbeitung für Designer, Fotografen und E-Commerce-Teams. Visual Prompting, Referenzbilder, iterative Generierung und Voice-Steuerung — volle Kontrolle über jeden Bildausschnitt."
+                canonical="https://expose.ae/"
+            />
 
             <main className="relative z-10">
                 {/* 1. THE UNIVERSAL STAGE (Sticky Track) */}
