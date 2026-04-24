@@ -18,7 +18,6 @@ export interface BlogPost {
     category: string;
     date: string;
     isoDate: string;
-    readTime: number;
     coverGradient: string;
     coverImage?: string;
     featured?: boolean;
@@ -38,7 +37,6 @@ export const BLOG_POSTS: BlogPost[] = [
         category: 'Guide',
         date: 'April 12, 2026',
         isoDate: '2026-04-12',
-        readTime: 5,
         coverGradient: 'from-stone-950 via-neutral-900 to-zinc-950',
         coverImage: '/blog/multi-cover.jpg',
         featured: true,
@@ -161,7 +159,6 @@ export const BLOG_POSTS: BlogPost[] = [
         category: 'Guide',
         date: 'March 28, 2026',
         isoDate: '2026-03-28',
-        readTime: 5,
         coverGradient: 'from-indigo-950 via-violet-950 to-slate-950',
         coverImage: '/blog/vp-cover.jpeg',
         en: {
@@ -246,112 +243,89 @@ export const BLOG_POSTS: BlogPost[] = [
         category: 'Guide',
         date: 'March 20, 2026',
         isoDate: '2026-03-20',
-        readTime: 4,
         coverGradient: 'from-violet-950 via-indigo-950 to-slate-950',
-        coverImage: '/blog/variables-cover.jpg',
+        coverImage: '/blog/presets-cover.jpg',
         en: {
-            title: 'Variables: Set It Up Once, Generate Forever.',
-            excerpt: "Stop rewriting the same prompt. Build a template once, define your options — and generate new assets with a few clicks.",
+            title: 'Presets: Build Once, Use Forever.',
+            excerpt: 'Less typing, more picking. How presets let you build a prompt setup once and reuse it in seconds on every project.',
             content: [
                 {
                     type: 'p',
-                    text: "Most creative workflows have a rhythm: same type of image, same visual direction, slightly different each time. A new product shot, another social post, a fresh variant for a campaign. Without structure, you end up rewriting the same prompt over and over — tweaking a word here, adjusting a detail there. Variables solve this. You build the prompt once as a template, divide it into topics, and define your own options for each. From then on, generating a new asset is a matter of selecting, not typing.",
-                },
-                { type: 'h2', text: 'How It Works' },
-                {
-                    type: 'p',
-                    text: "Open the Variables panel and start building your template. A variable is a named category — Style, Mood, Audience, Light — with a list of options you define. Write them comma-separated: the model reads each option as a distinct direction. When you generate, you pick one option per variable and the app assembles your prompt automatically. Change one variable, generate again — new result, same visual logic.",
-                },
-                { type: 'image', src: '/blog/variablen.jpeg', alt: 'The Variables panel with custom categories and options.' },
-                { type: 'h2', text: 'What You Can Define' },
-                {
-                    type: 'p',
-                    text: "Variables work best when they reflect how you actually think about your images. Some ideas to get started:",
-                },
-                {
-                    type: 'ul',
-                    items: [
-                        'Style — minimalist, editorial, warm lifestyle, dark luxury, soft Scandinavian',
-                        'Mood / Atmosphere — energetic, calm, melancholic, festive, clinical',
-                        'Target audience — Gen Z, young professionals, families, luxury buyers',
-                        'Persona — name, age, background, visual archetype of the person in the image',
-                        'Color palette — muted earth tones, neon accents, monochrome, pastels',
-                        'Composition — wide shot, close-up, top-down, rule of thirds, centered portrait',
-                        'Lighting — golden hour, studio soft box, dramatic side light, flat daylight',
-                        'Setting / Location — urban rooftop, cozy interior, minimal white studio, nature',
-                    ],
+                    text: "Let's be honest: even in the most creative jobs, certain steps repeat themselves over and over. Same kind of content, different air freshener. Presets turn that routine into a toolbox. You get faster. More consistent.",
                 },
                 {
                     type: 'p',
-                    text: "The more deliberately you define your variables, the more consistent — and reusable — your creative output becomes. Think of it as codifying your taste.",
+                    text: "Whether it's a new product photo or the next social post: we write the same prompts again and again — when we could use that time to actually refine and sharpen them.",
                 },
-                { type: 'h2', text: 'Why It Works' },
+                { type: 'image', src: '/blog/presets-in-use.jpeg', alt: 'A loaded preset: selected options at the top, the generated image on the right.', caption: 'A preset in use — picked options at the top, the three dots for editing at the bottom.' },
                 {
                     type: 'p',
-                    text: "Modern image models like Nano Banana 2 don't need exhaustive prompts to produce great results. Short, structured input often outperforms long, freeform descriptions. Variables take advantage of that: each option is a precise signal, and the combination of several precise signals gives the model exactly the context it needs.",
+                    text: "With presets you build your perfect prompt setup once, cleanly. You define things like style, mood and audience, and save new ideas and trends straight into the tool — instead of letting them vanish into the void after every project. Later you just pick your template and generate. And because everything is just a click, you can compare variants in seconds instead of typing for minutes.",
                 },
-                { type: 'h2', text: 'Visual Identity at Scale' },
+                { type: 'h2', text: 'How to Build One' },
                 {
                     type: 'p',
-                    text: "Once your preset is dialed in, every asset you generate from it shares the same visual DNA. Same style logic, same color range, same compositional thinking — regardless of how many variants you create. That consistency is hard to achieve with freeform prompting. Variables make it the default.",
+                    text: 'At the bottom of the preset area you\'ll find three dots → "Edit Presets". A preset only needs three things:',
                 },
+                {
+                    type: 'p',
+                    text: 'Title. So you can find the preset again quickly.',
+                },
+                {
+                    type: 'p',
+                    text: 'Main prompt. The instruction that always stays the same. E.g. "Style the room as follows" or "Adjust the outfit". Everything you never want to re-type goes in here.',
+                },
+                {
+                    type: 'p',
+                    text: 'Variables. The real game-changer. Ask yourself: what actually changes? The mood? The style? Create variables like "Mood" and feed them with options like calm, energetic, festive.',
+                },
+                { type: 'image', src: '/blog/presets-editor.png', alt: 'The preset editor with title, main prompt, and variables.' },
                 {
                     type: 'tip',
-                    label: 'Tip',
-                    text: "When you're happy with your preset, share it. Tap the share button and Exposé generates a link you can send to colleagues or collaborators. They open it, get your exact template, and can start generating consistent assets immediately — no briefing needed.",
+                    label: 'Pro tip',
+                    text: 'When your preset works, share it. One click, one link — and the whole team delivers the same standard.',
                 },
             ],
         },
         de: {
-            title: 'Variablen: Einmal aufsetzen, immer wieder nutzen.',
-            excerpt: 'Hör auf, denselben Prompt immer neu zu schreiben. Bau einmal eine Vorlage, definiere deine Optionen — und generiere neue Assets mit wenigen Klicks.',
+            title: 'Presets: Einmal bauen, immer nutzen.',
+            excerpt: 'Weniger tippen, mehr auswählen. Wie du dir mit Presets ein Prompt-Setup baust, das du bei jedem Projekt in Sekunden wiederverwendest.',
             content: [
                 {
                     type: 'p',
-                    text: 'Die meisten kreativen Workflows haben einen Rhythmus: gleiche Art Bild, gleiche visuelle Richtung, jedes Mal leicht anders. Ein neues Produktbild, ein weiterer Social Post, eine frische Variante für eine Kampagne. Ohne Struktur schreibst du denselben Prompt immer wieder neu — ein Wort hier, ein Detail dort. Variablen lösen das. Du baust den Prompt einmal als Vorlage, teilst ihn in Themen ein und definierst für jedes Thema eigene Optionen. Ab dann ist ein neuer Asset eine Frage von Auswählen, nicht Tippen.',
-                },
-                { type: 'h2', text: 'So funktioniert es' },
-                {
-                    type: 'p',
-                    text: 'Öffne das Variablen-Panel und baue deine Vorlage. Eine Variable ist eine benannte Kategorie — Stil, Stimmung, Zielgruppe, Licht — mit einer Liste von Optionen, die du selbst festlegst. Schreib sie kommagetrennt: das Modell liest jede Option als eigene Richtung. Beim Generieren wählst du pro Variable eine Option, die App fügt deinen Prompt automatisch zusammen. Andere Variable, neues Ergebnis — gleiche visuelle Logik.',
-                },
-                { type: 'image', src: '/blog/variablen.jpeg', alt: 'Das Variablen-Panel mit eigenen Kategorien und Optionen.' },
-                { type: 'h2', text: 'Was du definieren kannst' },
-                {
-                    type: 'p',
-                    text: 'Variablen funktionieren am besten, wenn sie widerspiegeln, wie du selbst über deine Bilder denkst. Ein paar Ideen zum Einstieg:',
-                },
-                {
-                    type: 'ul',
-                    items: [
-                        'Stil — minimalistisch, editorial, warmes Lifestyle, Dark Luxury, weiches Skandinavisch',
-                        'Stimmung / Atmosphäre — energetisch, ruhig, melancholisch, festlich, klinisch',
-                        'Zielgruppe — Gen Z, junge Berufstätige, Familien, Luxuskäufer',
-                        'Persona — Name, Alter, Hintergrund, visueller Archetyp der abgebildeten Person',
-                        'Farbpalette — gedeckte Erdtöne, Neon-Akzente, Monochrom, Pastelltöne',
-                        'Bildgestaltung — Weitwinkel, Nahaufnahme, Vogelperspektive, Drittel-Regel, zentriertes Portrait',
-                        'Licht — goldene Stunde, Studio-Softbox, dramatisches Seitenlicht, gleichmäßiges Tageslicht',
-                        'Setting / Ort — urbanes Rooftop, gemütliches Interieur, minimales weißes Studio, Natur',
-                    ],
+                    text: 'Seien wir ehrlich: auch in den kreativsten Jobs wiederholen sich bestimmte Arbeitsschritte immer wieder. Ähnlicher Content, anderer Airfresher. Presets machen aus dieser Routine einen Werkzeugkasten. Du wirst schneller. Konsistenter.',
                 },
                 {
                     type: 'p',
-                    text: 'Je bewusster du deine Variablen definierst, desto konsistenter — und wiederverwendbarer — wird dein kreativer Output. Betrachte es als das Festhalten deines eigenen Geschmacks.',
+                    text: 'Egal ob neues Produktfoto oder Social Post: Wir setzen oft dieselben Prompts immer wieder — dabei könnten wir die Zeit nutzen, unsere Prompts zu verfeinern und auszubauen.',
                 },
-                { type: 'h2', text: 'Warum es funktioniert' },
+                { type: 'image', src: '/blog/presets-in-use.jpeg', alt: 'Ein geladenes Preset: gewählte Optionen oben, das generierte Bild rechts.', caption: 'Ein Preset in Nutzung — oben die ausgewählten Optionen, unten die drei Punkte zum Bearbeiten.' },
                 {
                     type: 'p',
-                    text: 'Moderne Bildmodelle wie Nano Banana 2 brauchen keine ausufernden Prompts für gute Ergebnisse. Kurzer, strukturierter Input schlägt lange Freitextbeschreibungen oft. Variablen nutzen das aus: jede Option ist ein präzises Signal, und die Kombination mehrerer präziser Signale gibt dem Modell genau den Kontext, den es braucht.',
+                    text: 'Mit Presets baust du dir dein perfektes Prompt-Setup einmal sauber auf. Du definierst z.B. Stil, Stimmung und Zielgruppe und speicherst neue Ideen und Trends direkt ins Werkzeug ein, statt sie nach jedem Projekt im Nirvana verschwinden zu lassen. Später wählst du nur noch deine Vorlage aus und generierst. Und weil alles nur noch ein Klick ist, kannst du Varianten in Sekunden vergleichen, statt minutenlang zu tippen.',
                 },
-                { type: 'h2', text: 'Visuelle Identität im Maßstab' },
+                { type: 'h2', text: 'So baust du dir eins' },
                 {
                     type: 'p',
-                    text: 'Sobald dein Preset stimmt, teilen alle Assets, die du daraus generierst, dieselbe visuelle DNA. Gleiche Stillogik, gleiche Farbrange, gleiches kompositorisches Denken — egal wie viele Varianten du erstellst. Diese Konsistenz ist mit freiem Prompting schwer zu erreichen. Variablen machen sie zur Grundeinstellung.',
+                    text: 'Unten im Bereich findest du drei Punkte → „Presets bearbeiten". Ein Preset braucht nur drei Dinge:',
                 },
+                {
+                    type: 'p',
+                    text: 'Titel. Damit du das Preset schnell wiederfindest.',
+                },
+                {
+                    type: 'p',
+                    text: 'Haupt-Prompt. Die Anweisung, die immer gleich bleibt. Z.B. „Gestalte das Zimmer wie folgt" oder „Passe das Outfit an". Alles, was du nie wieder tippen willst, kommt hier rein.',
+                },
+                {
+                    type: 'p',
+                    text: 'Variablen. Der eigentliche Gamechanger. Überleg dir: Was ändert sich wirklich? Die Stimmung? Der Stil? Leg Variablen wie „Stimmung" an und füttere sie mit Optionen wie ruhig, energetisch oder festlich.',
+                },
+                { type: 'image', src: '/blog/presets-editor.png', alt: 'Der Preset-Editor mit Titel, Haupt-Prompt und Variablen.' },
                 {
                     type: 'tip',
-                    label: 'Tipp',
-                    text: 'Wenn du mit deinem Preset zufrieden bist, teile es. Tippe auf den Teilen-Button und Exposé erstellt einen Link, den du an Kollegen oder Mitstreiter senden kannst. Sie öffnen ihn, erhalten deine exakte Vorlage und können sofort konsistente Assets generieren — kein Briefing nötig.',
+                    label: 'Pro-Tipp',
+                    text: 'Wenn dein Preset sitzt, teil es mit dem Team. Ein Klick, ein Link — und alle liefern denselben Standard.',
                 },
             ],
         },
@@ -361,7 +335,6 @@ export const BLOG_POSTS: BlogPost[] = [
         category: 'Guide',
         date: 'April 1, 2026',
         isoDate: '2026-04-01',
-        readTime: 3,
         coverGradient: 'from-stone-950 via-zinc-900 to-neutral-950',
         coverImage: '/blog/ref-cover.jpeg',
         en: {
