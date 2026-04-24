@@ -70,9 +70,12 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
             if (isEn) groups[baseId].en = p;
             else groups[baseId].de = p;
         });
-        return Object.values(groups).sort((a, b) =>
-            (a.de?.title || '').localeCompare(b.de?.title || '')
-        );
+        return Object.values(groups).sort((a, b) => {
+            // Oldest first (matches user-facing preset order)
+            const aTime = a.de?.created_at ? new Date(a.de.created_at).getTime() : 0;
+            const bTime = b.de?.created_at ? new Date(b.de.created_at).getTime() : 0;
+            return aTime - bTime;
+        });
     }, [allPresets]);
 
     const filteredGroups = groupedPresets;
