@@ -289,7 +289,7 @@ export const adminService = {
         let query = supabase
             .from('global_presets')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: true });
 
         if (systemOnly) {
             query = query.is('user_id', null);
