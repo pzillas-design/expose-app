@@ -515,35 +515,41 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
         return () => clearInterval(t);
     }, [active]);
 
-    // Magnetic verb animation
+    // Magnetic verb animation — horizontal on sm+, vertical on mobile (stacked layout)
     useEffect(() => {
         const verbEl = verbSpanRefs.current[active];
         const rightEl = rightSpanRef.current;
         if (!verbEl || !rightEl) return;
         const easing = 'cubic-bezier(0.19, 1, 0.22, 1)';
+        const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
+        const axis = isMobile ? 'Y' : 'X';
+        const offStart = isMobile ? -160 : -240;
+        const offMid   = isMobile ? -40  : -60;
+        const bump     = isMobile ? 8    : 10;
 
         verbSpanRefs.current.forEach((el, i) => {
             if (!el) return;
             el.getAnimations().forEach(a => a.cancel());
-            if (i !== active) { el.style.opacity = '0'; el.style.transform = 'translateX(-120px)'; }
+            if (i !== active) { el.style.opacity = '0'; el.style.transform = `translate${axis}(${isMobile ? -90 : -120}px)`; }
         });
         rightEl.getAnimations().forEach(a => a.cancel());
-        rightEl.style.transform = 'translateX(0)';
+        rightEl.style.transform = `translate${axis}(0)`;
 
         const vAnim = verbEl.animate([
-            { transform: 'translateX(-240px)', opacity: 0 },
-            { transform: 'translateX(-60px)',  opacity: 0, offset: 0.5 },
-            { transform: 'translateX(10px)',   opacity: 1, offset: 0.8 },
-            { transform: 'translateX(0)',      opacity: 1 },
+            { transform: `translate${axis}(${offStart}px)`, opacity: 0 },
+            { transform: `translate${axis}(${offMid}px)`,   opacity: 0, offset: 0.5 },
+            { transform: `translate${axis}(${bump}px)`,     opacity: 1, offset: 0.8 },
+            { transform: `translate${axis}(0)`,             opacity: 1 },
         ], { duration: 480, easing, fill: 'none' });
-        vAnim.onfinish = () => { verbEl.style.opacity = '1'; verbEl.style.transform = 'translateX(0)'; };
+        vAnim.onfinish = () => { verbEl.style.opacity = '1'; verbEl.style.transform = `translate${axis}(0)`; };
 
+        // "your image." gets nudged outward (right on desktop, downward on mobile) like it's bumped by the verb
         const sAnim = rightEl.animate([
-            { transform: 'translateX(0)' },
-            { transform: 'translateX(10px)', offset: 0.8 },
-            { transform: 'translateX(0)' },
+            { transform: `translate${axis}(0)` },
+            { transform: `translate${axis}(${bump}px)`, offset: 0.8 },
+            { transform: `translate${axis}(0)` },
         ], { duration: 480, easing, fill: 'none' });
-        sAnim.onfinish = () => { rightEl.style.transform = 'translateX(0)'; };
+        sAnim.onfinish = () => { rightEl.style.transform = `translate${axis}(0)`; };
 
         return () => { vAnim.cancel(); sAnim.cancel(); };
     }, [active]);
@@ -563,9 +569,11 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
     const chips = [
         null,
         <AskChip isActive={active === 1} de={de} />,
-        <div className="hidden sm:flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5">
             {SLOT_OPTIONS.map((opts, i) => (
-                <SlotChip key={i} options={opts} tick={slotTick} delayMs={i * 110} />
+                <div key={i} className={i === 0 ? 'flex' : 'hidden sm:flex'}>
+                    <SlotChip options={opts} tick={slotTick} delayMs={i * 110} />
+                </div>
             ))}
         </div>,
         <div className="flex items-center gap-2.5 bg-zinc-900/80 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 lg:px-5 lg:py-3.5 whitespace-nowrap">
@@ -587,11 +595,14 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
             onTouchEnd={handleTouchEnd}
         >
             <style>{`
+                .verb-title { font-size: clamp(3rem, 13vw, 5rem); }
                 @media (min-width: 640px) {
                     .verb-slide { top: 12% !important; height: 66% !important; }
                     .verb-cta  { position: absolute !important; top: 78% !important; height: 22% !important; left: 0; right: 0; }
                     .verb-typo { position: absolute !important; top: 12% !important; height: 66% !important; left: 0; right: 0; }
                     .verb-wave { top: 12% !important; bottom: 22% !important; }
+                    .verb-doodles { top: 12% !important; bottom: 22% !important; }
+                    .verb-title { font-size: clamp(2.5rem, 9vw, 9rem) !important; }
                 }
             `}</style>
             {/* Image slides — flush with page grid (px-5 sm:px-8 lg:px-12) */}
@@ -626,18 +637,24 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                 );
             })}
 
-            {/* Annotate SVG overlay — hidden on mobile (positions designed for 1440px) */}
-            <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"
-                className="hidden sm:block absolute inset-0 w-full h-full pointer-events-none"
-                style={{ zIndex: 5, opacity: active === 0 ? 1 : 0, transition: 'opacity 0.6s ease' }}>
-                <g transform="translate(155, 185) scale(0.44, 0.44)">
+            {/* Annotate doodles (scene 0) — each doodle is its own SVG, positioned relative to the image frame as a 3×3 grid: top-left, center, bottom-right. */}
+            <div className="verb-doodles absolute left-5 right-5 sm:left-8 sm:right-8 lg:left-12 lg:right-12 pointer-events-none"
+                style={{ top: '16.67%', bottom: '33.33%', zIndex: 5, opacity: active === 0 ? 1 : 0, transition: 'opacity 0.6s ease' }}>
+                {/* Top-left: circle */}
+                <svg viewBox="-10 -10 530 510" preserveAspectRatio="xMidYMid meet"
+                    className="absolute"
+                    style={{ top: '16.67%', left: '16.67%', transform: 'translate(-50%, -50%)', width: 'clamp(110px, 22%, 240px)' }}>
                     <path d="M1 227.453C11.501 121.453 78.9989 21.4536 213.499 2.95358C347.999 -15.5464 523.499 98.9538 504.457 278.547C485.414 458.141 353.921 507.02 230.999 476.953C108.077 446.887 24.9739 321.216 65.6044 161.469"
                         fill="none" stroke="rgba(249,115,22,1)" strokeWidth="6.5" strokeLinecap="round"
                         vectorEffect="non-scaling-stroke" strokeDasharray="1700"
                         strokeDashoffset={active === 0 ? 0 : 1700}
                         style={{ transition: 'stroke-dashoffset 0.95s cubic-bezier(0.4,0,0.2,1) 0s' }} />
-                </g>
-                <g transform="translate(480, 390) scale(0.58, 0.58)">
+                </svg>
+
+                {/* Center: arrow */}
+                <svg viewBox="-10 -10 670 235" preserveAspectRatio="xMidYMid meet"
+                    className="absolute"
+                    style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'clamp(180px, 36%, 400px)' }}>
                     <path d="M56.9023 176.427C63.6897 174.425 70.477 172.423 159.23 150.451C247.984 128.479 418.498 86.5974 597.958 42.9766"
                         fill="none" stroke="rgba(249,115,22,1)" strokeWidth="6.5" strokeLinecap="round"
                         vectorEffect="non-scaling-stroke" strokeDasharray="700"
@@ -653,31 +670,35 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                         vectorEffect="non-scaling-stroke" strokeDasharray="280"
                         strokeDashoffset={active === 0 ? 0 : 280}
                         style={{ transition: 'stroke-dashoffset 0.38s cubic-bezier(0.4,0,0.2,1) 1.38s' }} />
-                </g>
-                <g transform="translate(940, 545) scale(0.50, 0.50)">
+                </svg>
+
+                {/* Bottom-right: squiggle */}
+                <svg viewBox="-10 -20 540 380" preserveAspectRatio="xMidYMid meet"
+                    className="absolute"
+                    style={{ top: '83.33%', left: '83.33%', transform: 'translate(-50%, -50%)', width: 'clamp(130px, 28%, 300px)' }}>
                     <path d="M1 223.9C1 224.053 1 224.205 15.1792 189.673C29.3584 155.14 57.7169 85.918 76.8559 44.8579C95.995 3.79786 105.055 -7.00251 108.629 6.513C112.202 20.0285 110.013 58.1871 98.0596 139.023C86.1057 219.859 64.4526 342.216 72.1269 347.804C79.8011 353.392 117.459 238.503 141.365 169.909C165.272 101.315 174.286 82.4976 183 67.2496C191.713 52.0016 199.852 40.8938 204.109 38.8611C208.366 36.8283 208.493 44.2073 202.456 87.6164C196.419 131.026 184.215 210.241 177.927 256.236C171.64 302.23 171.64 312.602 205.232 268.948C238.825 225.294 306.01 127.3 343.366 74.6997C380.721 22.0998 386.212 17.8637 389.196 17.5381C393.52 17.0662 392.812 34.0458 390.093 70.8513C388.055 98.4467 373.948 260.493 371.149 288.32C368.35 316.147 368.354 324.98 369.83 328.403C371.306 331.827 374.253 329.575 393.375 303.382C412.498 277.19 447.706 227.124 471.23 195.307C494.754 163.491 505.527 151.439 517.012 139.023"
                         fill="none" stroke="rgba(249,115,22,1)" strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round"
                         vectorEffect="non-scaling-stroke" strokeDasharray="2200"
                         strokeDashoffset={active === 0 ? 0 : 2200}
                         style={{ transition: 'stroke-dashoffset 1.1s cubic-bezier(0.4,0,0.2,1) 1.0s' }} />
-                </g>
-            </svg>
+                </svg>
+            </div>
 
-            {/* Waveform overlay (scene 1) */}
-            <div className="verb-wave absolute inset-0 pointer-events-none"
-                style={{ zIndex: 5, opacity: active === 1 ? 1 : 0, transition: 'opacity 0.6s ease' }}>
+            {/* Waveform overlay (scene 1) — bounds match image slide so it stays inside the frame */}
+            <div className="verb-wave absolute left-5 right-5 sm:left-8 sm:right-8 lg:left-12 lg:right-12 pointer-events-none"
+                style={{ top: '16.67%', bottom: '33.33%', zIndex: 5, opacity: active === 1 ? 1 : 0, transition: 'opacity 0.6s ease' }}>
                 <BarWaveform isActive={active === 1} />
             </div>
 
 
             {/* 1st sixth — navbar spacer */}
             <div style={{ height: '16.67%', flexShrink: 0 }} />
-            {/* 2nd sixth — blank */}
-            <div style={{ height: '16.67%', flexShrink: 0 }} />
-            {/* 3rd sixth — verb typography */}
-            <div className="verb-typo relative z-10 select-none" style={{ height: '16.67%', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '0 3%' }}>
-                <div className="relative flex items-baseline justify-center"
-                    style={{ fontSize: 'clamp(2.5rem, 9vw, 9rem)', lineHeight: 1, gap: '0.22em' }}>
+            {/* 2nd sixth — blank (mobile shrunk to keep verb-typo centered on image slide; sm+ absolute layout overrides this anyway) */}
+            <div style={{ height: '12.5%', flexShrink: 0 }} />
+            {/* 3rd sixth — verb typography (mobile needs extra room for stacked headline + chip) */}
+            <div className="verb-typo relative z-10 select-none px-5 sm:px-[3%]" style={{ height: '25%', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                <div className="verb-title relative flex flex-col sm:flex-row items-center sm:items-baseline justify-center"
+                    style={{ lineHeight: 1, gap: '0.22em' }}>
                     <div className="relative">
                         <span className="font-kumbh font-bold tracking-tighter lowercase whitespace-nowrap invisible" aria-hidden>
                             {VERB_SCENES[active].verb}
@@ -698,8 +719,8 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                     </span>
                 </div>
 
-                {/* Chips — hidden on mobile */}
-                <div className="hidden sm:flex relative h-12 lg:h-14 items-center justify-center mt-2 lg:mt-4" style={{ minWidth: 260 }}>
+                {/* Chips */}
+                <div className="flex relative h-11 sm:h-12 lg:h-14 items-center justify-center mt-2 lg:mt-4 w-full" style={{ minWidth: 260 }}>
                     {chips.map((chip, i) => (
                         <div key={i} className="absolute inset-0 flex items-center justify-center pointer-events-none"
                             style={{ opacity: active === i ? 1 : 0, transition: 'opacity 0.4s ease' }}>
@@ -709,8 +730,8 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                 </div>
             </div>
 
-            {/* 4th sixth — blank */}
-            <div style={{ height: '16.67%', flexShrink: 0 }} />
+            {/* 4th sixth — blank (mobile shrunk to balance the 2nd sixth so verb-typo stays centered on image; sm+ absolute layout overrides) */}
+            <div style={{ height: '12.5%', flexShrink: 0 }} />
 
             {/* 5th+6th — CTA, aligned with image edges */}
             <div className="verb-cta relative z-10 px-5 sm:px-8 lg:px-12" style={{ height: '33.33%', flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
