@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { Theme, Typo } from '@/components/ui/DesignSystem';
+import { PageSEO } from '@/components/seo/PageSEO';
 
 interface ImpressumPageProps {
     user: any;
@@ -24,6 +25,11 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
 
     return (
         <div className="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col">
+            <PageSEO
+                title="Impressum"
+                description="Impressum und rechtliche Hinweise zu exposé."
+                canonical="https://expose.ae/impressum"
+            />
 
             <main className="flex-1 w-full max-w-3xl mx-auto px-6 pt-12 sm:pt-44 pb-12 sm:pb-24">
                 <article className="prose prose-zinc dark:prose-invert max-w-none prose-p:leading-7 prose-p:mb-5 prose-h1:mb-8">

@@ -7,22 +7,16 @@
   <title>exposé — AI-Bildbearbeitung mit Präzisions-Kontrolle</title>
   <meta name="description"
     content="exposé is a powerful AI image generation and editing workspace. Use visual prompting, iterative parallel generations, and precision control to bring your vision to life." />
-  <link rel="canonical" href="https://expose.ae/" />
-
-  <!-- Open Graph / Facebook -->
+  <!--
+    Per-route canonical, og:url, og:title, og:description, twitter tags are set at runtime by
+    PageSEO (react-helmet-async) on every page. We deliberately do NOT ship a static canonical or
+    og:url here: this is a SPA so the same index.html is served for every route, and a static
+    canonical would falsely point all routes at "/" — which is exactly what tripped Search Console
+    into marking blog posts and /about as "Alternative Seite mit richtigem kanonischen Tag".
+  -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://expose.ae/" />
-  <meta property="og:title" content="exposé — Precision AI Creation" />
-  <meta property="og:description"
-    content="Generate and edit AI images with unprecedented control. The workspace for designers who need more than just a prompt." />
   <meta property="og:image" content="https://expose.ae/og_image.png" />
-
-  <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="https://expose.ae/" />
-  <meta property="twitter:title" content="exposé — Precision AI Creation" />
-  <meta property="twitter:description"
-    content="Generate and edit AI images with unprecedented control. The workspace for designers." />
   <meta property="twitter:image" content="https://expose.ae/og_image.png" />
 
   <link rel="icon" type="image/png" href="/favicon.png">

@@ -3,6 +3,7 @@ import { GlobalFooter } from '../layout/GlobalFooter';
 import { TranslationFunction } from '@/types';
 import { Theme, Typo, SectionHeader, Button } from '@/components/ui/DesignSystem';
 import { Mail, MapPin, Phone, Send, Loader2, Check } from 'lucide-react';
+import { PageSEO } from '@/components/seo/PageSEO';
 
 interface ContactPageProps {
     user: any;
@@ -35,6 +36,13 @@ export const ContactPage: React.FC<ContactPageProps> = ({ user, userProfile, cre
 
     return (
         <div className="bg-white dark:bg-black text-zinc-900 dark:text-zinc-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+            <PageSEO
+                title={currentLang === 'de' ? 'Kontakt' : 'Contact'}
+                description={currentLang === 'de'
+                    ? 'Schreib uns — wir freuen uns von dir zu hören.'
+                    : 'Get in touch — we\'d love to hear from you.'}
+                canonical="https://expose.ae/contact"
+            />
 
             <main className="flex-1 flex flex-col justify-center relative overflow-hidden">
                 {/* Visual Background Elements */}

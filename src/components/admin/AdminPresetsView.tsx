@@ -72,9 +72,11 @@ export const AdminPresetsView: React.FC<AdminPresetsViewProps> = ({ t }) => {
         });
         return Object.values(groups).sort((a, b) => {
             // Oldest first (matches user-facing preset order)
-            const aTime = a.de?.created_at ? new Date(a.de.created_at).getTime() : 0;
-            const bTime = b.de?.created_at ? new Date(b.de.created_at).getTime() : 0;
-            return aTime - bTime;
+            const aTime = (a.de as any)?.createdAt ?? (a.de as any)?.created_at ?? 0;
+            const bTime = (b.de as any)?.createdAt ?? (b.de as any)?.created_at ?? 0;
+            const aMs = typeof aTime === 'string' ? new Date(aTime).getTime() : aTime;
+            const bMs = typeof bTime === 'string' ? new Date(bTime).getTime() : bTime;
+            return aMs - bMs;
         });
     }, [allPresets]);
 

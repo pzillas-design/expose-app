@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/DesignSystem';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { BarWaveform } from './BarWaveform';
 import { Logo } from '@/components/ui/Logo';
+import { PageSEO } from '@/components/seo/PageSEO';
 
 interface AboutV2PageProps {
     user: any;
@@ -774,6 +775,13 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
 
     return (
         <div className="bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-orange-500 selection:text-white overflow-x-hidden">
+            <PageSEO
+                title={de ? 'AI-Bildbearbeitung mit Präzisions-Kontrolle' : 'Precision AI image creation'}
+                description={de
+                    ? 'Erstelle und bearbeite Bilder mit visuellem Prompting, Iteration in parallelen Generationen und Sprachsteuerung. Der Workspace für Designer, Fotografen und kreative Profis.'
+                    : 'Generate and edit AI images with visual prompting, iterative parallel generations and voice control. The workspace for designers, photographers and creative pros.'}
+                canonical="https://expose.ae/"
+            />
 
             {/* 1. HERO */}
             <VerbSection de={de} onGetStarted={onGetStarted} />
