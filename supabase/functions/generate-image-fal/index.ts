@@ -207,11 +207,12 @@ const callFal = async (
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(input),
-        // Bumped to 200s for the staging A/B — gpt-image-2 high-quality edits can
-        // run 90–180s. Supabase Pro plans permit up to 400s edge-function wall-clock,
-        // so we still leave headroom for post-call download + storage upload (~5–10s).
-        // If the function dies above this with a hard 504, raise this further.
-        signal: AbortSignal.timeout(200_000),
+        // Generous fetch timeout for the staging A/B with gpt-image-2: auto-sized
+        // 4:3 edits at quality:'high' have been observed at ~155s; pushing to 4K-ish
+        // dimensions can exceed 200s. Supabase Pro caps edge-function wall-clock at
+        // ~400s, so 350s here still leaves ~50s for the post-call download +
+        // Supabase Storage upload + DB writes.
+        signal: AbortSignal.timeout(350_000),
     });
 
     const latencyMs = Date.now() - startedAt;
