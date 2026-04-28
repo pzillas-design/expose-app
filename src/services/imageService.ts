@@ -4,6 +4,19 @@ import { CanvasImage, ImageRow } from '../types';
 import { slugify } from '../utils/stringUtils';
 import { generateId } from '../utils/ids';
 
+/**
+ * A/B provider routing for the generate-image edge function.
+ * - On expose.ae (production) → undefined → edge function defaults to NB2.
+ * - On staging / preview / localhost → 'openai' → edge function uses gpt-image-2.
+ * - VITE_IMAGE_PROVIDER overrides everything ('fal-nb2' | 'openai').
+ */
+const detectImageProvider = (): 'fal-nb2' | 'openai' | undefined => {
+    const override = (import.meta.env.VITE_IMAGE_PROVIDER as string | undefined)?.toLowerCase();
+    if (override === 'openai' || override === 'fal-nb2') return override;
+    if (typeof window === 'undefined') return undefined;
+    return window.location.hostname === 'expose.ae' ? undefined : 'openai';
+};
+
 const buildUploadSubfolder = () => {
     const now = new Date();
     const dd = String(now.getDate()).padStart(2, '0');
@@ -277,8 +290,11 @@ export const imageService = {
             // Tell edge function this is a repeat so it appends a variation ID to break
             // Gemini's implicit input caching and encourage diverse outputs.
             isRepeat: isRepeat || undefined,
-            // Provider: 'gemini' for Google AI Studio, undefined/omitted for default (kie.ai)
-            provider: import.meta.env.VITE_IMAGE_PROVIDER || undefined,
+            // Provider A/B routing — see detectImageProvider() above.
+            // - production (expose.ae) → 'fal-nb2' (Nano Banana 2, undefined to keep edge default)
+            // - everything else (staging/preview/localhost) → 'openai' (gpt-image-2)
+            // Override either with VITE_IMAGE_PROVIDER=fal-nb2 | openai.
+            provider: detectImageProvider(),
         };
         const invokeHeaders = {
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),

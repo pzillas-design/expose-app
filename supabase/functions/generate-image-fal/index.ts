@@ -27,6 +27,65 @@ const FAL_BASE = 'https://fal.run';
 const FAL_ENDPOINT_CREATE = 'fal-ai/nano-banana-2';
 const FAL_ENDPOINT_EDIT = 'fal-ai/nano-banana-2/edit';
 
+// A/B provider parallel rollout. Default = NB2 (production). Staging passes
+// `provider: 'openai'` to route to OpenAI's gpt-image-2 via fal.
+const OPENAI_ENDPOINT_CREATE = 'fal-ai/gpt-image-2';
+const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2/edit';
+
+type Provider = 'fal-nb2' | 'openai';
+
+/** Map a 'W:H' aspect-ratio string into a coarse bucket the OpenAI sizer can consume. */
+const aspectBucket = (ar: string): 'sq' | 'land43' | 'port43' | 'wide' | 'tall' => {
+    const [w, h] = ar.split(':').map(Number);
+    if (!w || !h) return 'sq';
+    const r = w / h;
+    if (Math.abs(r - 1) < 0.05) return 'sq';
+    if (r > 1.5) return 'wide';   // 16:9, 21:9 → landscape
+    if (r < 0.67) return 'tall';  // 9:16 → portrait
+    return r > 1 ? 'land43' : 'port43';
+};
+
+/**
+ * Map our internal `nb2-*` quality mode + aspect ratio to GPT-Image-2's
+ * (quality, image_size) pair. Sizes documented as priced tiers on
+ * https://fal.ai/models/openai/gpt-image-2/edit are preferred; smaller tiers fall
+ * back to fal's named presets (square_hd, landscape_16_9, …).
+ */
+const qualityModeToOpenAIInput = (
+    q: string,
+    ar: string,
+): { quality: 'low' | 'medium' | 'high'; image_size: string | { width: number; height: number } } => {
+    const k = aspectBucket(ar);
+    if (q === 'nb2-4k') {
+        const sizes: Record<typeof k, { width: number; height: number }> = {
+            sq:     { width: 2560, height: 2560 },
+            land43: { width: 2560, height: 1920 },
+            port43: { width: 1920, height: 2560 },
+            wide:   { width: 3840, height: 2160 },
+            tall:   { width: 2160, height: 3840 },
+        };
+        return { quality: 'high', image_size: sizes[k] };
+    }
+    if (q === 'nb2-2k') {
+        const sizes: Record<typeof k, { width: number; height: number }> = {
+            sq:     { width: 1536, height: 1536 },
+            land43: { width: 1536, height: 1152 },
+            port43: { width: 1152, height: 1536 },
+            wide:   { width: 1920, height: 1080 },
+            tall:   { width: 1080, height: 1920 },
+        };
+        return { quality: 'high', image_size: sizes[k] };
+    }
+    const presets: Record<typeof k, string> = {
+        sq:     'square_hd',
+        land43: 'landscape_4_3',
+        port43: 'portrait_4_3',
+        wide:   'landscape_16_9',
+        tall:   'portrait_16_9',
+    };
+    return { quality: q === 'nb2-1k' ? 'medium' : 'low', image_size: presets[k] };
+};
+
 const logInfo = (ctx: string, msg: string, data?: any) => {
     console.log(`[INFO] ${ctx}: ${msg}`);
     if (data) console.log(`[INFO] ${ctx} data:`, JSON.stringify(data));
@@ -35,6 +94,29 @@ const logError = (ctx: string, err: any, meta?: any) => {
     console.error(`[ERROR] ${ctx}:`, err?.message || err);
     if (meta) console.error(`[ERROR] ${ctx} meta:`, JSON.stringify(meta));
     if (err?.stack) console.error(`[ERROR] ${ctx} stack:`, err.stack);
+};
+
+/**
+ * Persist a silent-swallow diagnostic into `error_logs` so admins can see why a
+ * request returned 200 but produced no DB row (duplicate key, 0-row UPDATE, …).
+ * Best-effort — never throws, never blocks the main response path.
+ */
+const logSilentSwallow = async (
+    supabaseAdmin: any,
+    opts: { jobId: string | null; userId?: string | null; userEmail?: string | null; message: string; context?: any },
+) => {
+    try {
+        await supabaseAdmin.from('error_logs').insert({
+            user_id: opts.userId ?? null,
+            user_email: opts.userEmail ?? null,
+            message: opts.message.slice(0, 1000),
+            context: opts.context ? JSON.stringify(opts.context).slice(0, 2000) : null,
+            source: 'edge-silent-skip',
+            url: opts.jobId,
+        });
+    } catch (e) {
+        console.error('[ERROR] logSilentSwallow failed:', (e as any)?.message || e);
+    }
 };
 
 const sanitizeEmailForPath = (email?: string | null) =>
@@ -227,7 +309,9 @@ Deno.serve(async (req) => {
             sourceImage,
             sourceFolderId,
             sourceStoragePath,
+            provider: rawProvider,
         } = payload;
+        const provider: Provider = rawProvider === 'openai' ? 'openai' : 'fal-nb2';
         const basePrompt = rawPrompt ?? '';
 
         // Append template variables to the prompt, using the template's human-readable
@@ -361,25 +445,41 @@ Deno.serve(async (req) => {
         });
 
         const hasSource = imageUrls.length > 0;
-        const endpoint = hasSource ? FAL_ENDPOINT_EDIT : FAL_ENDPOINT_CREATE;
 
-        const falInput: Record<string, any> = {
-            prompt,
-            resolution: falResolution,
-            aspect_ratio: aspectRatio,
-            output_format: 'jpeg',
-            num_images: 1,
-        };
-        if (hasSource) falInput.image_urls = imageUrls;
+        // Provider dispatch — same callFal() works for both since fal proxies OpenAI.
+        let endpoint: string;
+        let falInput: Record<string, any>;
+        if (provider === 'openai') {
+            endpoint = hasSource ? OPENAI_ENDPOINT_EDIT : OPENAI_ENDPOINT_CREATE;
+            const oa = qualityModeToOpenAIInput(qualityMode, aspectRatio);
+            falInput = {
+                prompt,
+                quality: oa.quality,
+                image_size: oa.image_size,
+                output_format: 'jpeg',
+                num_images: 1,
+            };
+            if (hasSource) falInput.image_urls = imageUrls;
+        } else {
+            endpoint = hasSource ? FAL_ENDPOINT_EDIT : FAL_ENDPOINT_CREATE;
+            falInput = {
+                prompt,
+                resolution: falResolution,
+                aspect_ratio: aspectRatio,
+                output_format: 'jpeg',
+                num_images: 1,
+            };
+            if (hasSource) falInput.image_urls = imageUrls;
+        }
 
-        logInfo('fal request', `endpoint=${endpoint} res=${falResolution} ar=${aspectRatio} imgs=${imageUrls.length}`);
+        logInfo('fal request', `provider=${provider} endpoint=${endpoint} res=${falResolution} ar=${aspectRatio} imgs=${imageUrls.length}`);
 
         // Persist pre-call diagnostics so failures are attributable.
         // `variables` + `activeTemplateId` are carried forward from the client payload
         // so the admin "Variablen" badge / template linkage keeps working after we
         // overwrite the row's request_payload on completion.
         const apiRequestPayload: any = {
-            provider: 'fal',
+            provider,
             endpoint,
             resolution: falResolution,
             aspectRatio,
@@ -394,9 +494,25 @@ Deno.serve(async (req) => {
                 : {}),
             ...(activeTemplateId ? { activeTemplateId } : {}),
         };
-        await supabaseAdmin.from('generation_jobs')
+        const preUpdateRes = await supabaseAdmin.from('generation_jobs')
             .update({ request_payload: apiRequestPayload })
-            .eq('id', newId);
+            .eq('id', newId)
+            .select('id');
+        if (!preUpdateRes.error && Array.isArray(preUpdateRes.data) && preUpdateRes.data.length === 0) {
+            // CRITICAL: client-side INSERT into generation_jobs never landed.
+            // The job will not appear in the admin panel even though generation
+            // may still succeed and images may still be inserted. Diagnose the
+            // client-side INSERT (RLS? network? stale session?).
+            await logSilentSwallow(supabaseAdmin, {
+                jobId: newId,
+                userId: user.id,
+                userEmail: user.email,
+                message: `generation_jobs UPDATE matched 0 rows — client INSERT is missing for job ${newId}`,
+                context: { stage: 'pre_fal_update', qualityMode, requestType, hasSource },
+            });
+        } else if (preUpdateRes.error) {
+            logError('pre-fal UPDATE error', preUpdateRes.error, { jobId: newId });
+        }
 
         // ── Call fal ───────────────────────────────────────────────────────
         const falApiKey = Deno.env.get('FAL_API_KEY');
@@ -484,7 +600,7 @@ Deno.serve(async (req) => {
             height: displayH,
             real_width: realW,
             real_height: realH,
-            model_version: 'nano-banana-2',
+            model_version: provider === 'openai' ? 'gpt-image-2' : 'nano-banana-2',
             title: dbTitle,
             base_name: dbBaseName,
             version: currentVersion,
@@ -496,19 +612,32 @@ Deno.serve(async (req) => {
                 quality: qualityMode,
                 ...(activeTemplateId ? { activeTemplateId } : {}),
                 ...(variables ? { variableValues: variables } : {}),
-                provider: 'fal',
+                provider,
             },
         };
         const { error: dbErr } = await supabaseAdmin.from('images').insert(newImage);
-        if (dbErr && dbErr.code !== '23505') throw dbErr;
+        if (dbErr?.code === '23505') {
+            // Duplicate key — another request already inserted this id.
+            // We swallow this to stay idempotent, but surface it so we can see
+            // if retries / double-submits are the reason a user's image is missing.
+            await logSilentSwallow(supabaseAdmin, {
+                jobId: newId,
+                userId: user.id,
+                userEmail: user.email,
+                message: `images INSERT swallowed 23505 duplicate key — possible double-submit/retry for job ${newId}`,
+                context: { stage: 'images_insert', dbErrMsg: dbErr.message, dbErrDetails: (dbErr as any).details },
+            });
+        } else if (dbErr) {
+            throw dbErr;
+        }
 
         // ── Finalize job row ───────────────────────────────────────────────
         apiRequestPayload.current_stage = 'completed';
         const durationMs = Date.now() - taskStart;
         const usedVariables = !!(variables && typeof variables === 'object' && Object.keys(variables).length > 0);
-        await supabaseAdmin.from('generation_jobs').update({
+        const finalUpdateRes = await supabaseAdmin.from('generation_jobs').update({
             status: 'completed',
-            model: 'nano-banana-2',
+            model: provider === 'openai' ? 'gpt-image-2' : 'nano-banana-2',
             duration_ms: durationMs,
             quality_mode: qualityMode,
             request_payload: apiRequestPayload,
@@ -517,7 +646,18 @@ Deno.serve(async (req) => {
             // exact text that went to fal, including appended variable labels like
             // "Jahreszeit: Frühling". Client originally wrote the raw prompt.
             prompt_preview: (prompt || '').slice(0, 2000),
-        }).eq('id', newId);
+        }).eq('id', newId).select('id');
+        if (!finalUpdateRes.error && Array.isArray(finalUpdateRes.data) && finalUpdateRes.data.length === 0) {
+            await logSilentSwallow(supabaseAdmin, {
+                jobId: newId,
+                userId: user.id,
+                userEmail: user.email,
+                message: `generation_jobs final UPDATE matched 0 rows — job row missing at completion (id=${newId})`,
+                context: { stage: 'final_update', durationMs, providerLatencyMs },
+            });
+        } else if (finalUpdateRes.error) {
+            logError('final UPDATE error', finalUpdateRes.error, { jobId: newId });
+        }
 
         logInfo('Done', `job=${newId} total=${durationMs}ms provider=${providerLatencyMs}ms`);
 
