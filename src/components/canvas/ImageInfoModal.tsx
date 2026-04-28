@@ -12,6 +12,8 @@ interface ImageInfoModalProps {
     onGenerateMore?: (id: string) => void;
     t: TranslationFunction;
     currentLang?: 'de' | 'en';
+    /** Templates list — used to resolve variableValues control IDs back to human labels. */
+    templates?: Array<{ id?: string; controls?: Array<{ id: string; label: string }> }>;
 }
 
 export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
@@ -19,7 +21,8 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     onClose,
     onUpdateImageTitle,
     t,
-    currentLang = 'de'
+    currentLang = 'de',
+    templates = [],
 }) => {
     const { showToast } = useToast();
     const [actualDimensions, setActualDimensions] = useState<{ width: number; height: number } | null>(null);
@@ -64,9 +67,20 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
     const labelClass = `${Typo.Body} text-zinc-400 text-xs`;
     const valueClass = `${Typo.Mono} text-zinc-500 dark:text-zinc-400 text-xs`;
 
-    // Build variable display: { season: ['winter'] } → "Jahreszeit: Winter"
-    const variableEntries = image.variableValues
-        ? Object.entries(image.variableValues).filter(([, vals]) => vals && (vals as string[]).length > 0)
+    // Build variable display: { <controlId>: ['winter'] } → "Jahreszeit: Winter".
+    // variableValues is keyed by the control's UUID, so we resolve each key against the templates'
+    // controls to surface a human label. Falls back to the raw key only if the control no longer exists
+    // (e.g. preset deleted after generation).
+    const controlIdToLabel = React.useMemo(() => {
+        const map: Record<string, string> = {};
+        templates.forEach(tpl => tpl.controls?.forEach(c => { if (c.id) map[c.id] = c.label; }));
+        return map;
+    }, [templates]);
+
+    const variableEntries: Array<[string, string[]]> = image.variableValues
+        ? Object.entries(image.variableValues)
+            .filter(([, vals]) => vals && (vals as string[]).length > 0)
+            .map(([k, v]) => [controlIdToLabel[k] || k, v as string[]])
         : [];
 
     return (
@@ -171,7 +185,7 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                                     {image.generationPrompt}
                                     {variableEntries.length > 0 && (
                                         <span className="text-zinc-400 dark:text-zinc-500">
-                                            {' · '}{variableEntries.map(([k, v]) => `${k}: ${(v as string[]).join(', ')}`).join(' · ')}
+                                            {' · '}{variableEntries.map(([k, v]) => `${k}: ${v.join(', ')}`).join(' · ')}
                                         </span>
                                     )}
                                 </span>

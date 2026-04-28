@@ -1482,6 +1482,7 @@ export function App() {
                                 onGenerateMore={(id) => { actions.handleGenerateMore(id); setInfoImageId(null); }}
                                 t={t}
                                 currentLang={langSetting as 'de' | 'en'}
+                                templates={state.templates}
                             />
                         ) : null;
                     })()}
