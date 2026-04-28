@@ -34,22 +34,67 @@ const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2/edit';
 
 type Provider = 'fal-nb2' | 'openai';
 
+/** Map a 'W:H' aspect-ratio string into a coarse bucket the OpenAI sizer can consume. */
+const aspectBucket = (ar: string): 'sq' | 'land43' | 'port43' | 'wide' | 'tall' => {
+    const [w, h] = ar.split(':').map(Number);
+    if (!w || !h) return 'sq';
+    const r = w / h;
+    if (Math.abs(r - 1) < 0.05) return 'sq';
+    if (r > 1.5) return 'wide';
+    if (r < 0.67) return 'tall';
+    return r > 1 ? 'land43' : 'port43';
+};
+
 /**
- * Map our internal `nb2-*` quality mode to GPT-Image-2's `quality` parameter.
+ * Map our internal `nb2-*` quality mode + aspect ratio to GPT-Image-2's
+ * (quality, image_size) pair.
  *
- * We keep `image_size: 'auto'` for every tier on purpose — fal's docs explicitly
- * recommend `auto` for the /edit endpoint because gpt-image-2 then derives the
- * output dimensions from the input image. Custom {width, height} at high quality
- * + 2K/4K was tripping our 120s sync-fetch ceiling, so during the staging A/B we
- * trade fixed resolution for stable latency. (Refine later once we know typical
- * per-tier latency.)
+ * Quality is hardcoded to 'medium' across all tiers — that's our sweet spot for
+ * price (~$0.04–0.11/image cost vs ~$0.16–0.41 at high) and latency (30–60s vs
+ * 90–155s), and keeps the user-visible tier purely about *output resolution*.
+ * The user picks 0.5K / 1K / 2K / 4K → we pick the matching pixel dimensions.
+ *
+ * 0.5K and 1K both land at gpt-image-2's smallest priced tier (1024-area), so
+ * users pay slightly more for 0.5K than the actual API cost — that's fine
+ * during the test, we can refine later.
  */
 const qualityModeToOpenAIInput = (
     q: string,
-): { quality: 'low' | 'medium' | 'high'; image_size: 'auto' } => {
-    if (q === 'nb2-4k' || q === 'nb2-2k') return { quality: 'high', image_size: 'auto' };
-    if (q === 'nb2-1k') return { quality: 'medium', image_size: 'auto' };
-    return { quality: 'low', image_size: 'auto' };
+    ar: string,
+): { quality: 'low' | 'medium' | 'high'; image_size: string | { width: number; height: number } } => {
+    const k = aspectBucket(ar);
+
+    if (q === 'nb2-4k') {
+        const sizes: Record<typeof k, { width: number; height: number }> = {
+            sq:     { width: 2560, height: 2560 },
+            land43: { width: 2560, height: 1920 },
+            port43: { width: 1920, height: 2560 },
+            wide:   { width: 3840, height: 2160 },
+            tall:   { width: 2160, height: 3840 },
+        };
+        return { quality: 'medium', image_size: sizes[k] };
+    }
+
+    if (q === 'nb2-2k') {
+        const sizes: Record<typeof k, { width: number; height: number }> = {
+            sq:     { width: 1536, height: 1536 },
+            land43: { width: 1536, height: 1152 },
+            port43: { width: 1152, height: 1536 },
+            wide:   { width: 1920, height: 1080 },
+            tall:   { width: 1080, height: 1920 },
+        };
+        return { quality: 'medium', image_size: sizes[k] };
+    }
+
+    // nb2-0.5k and nb2-1k both use gpt-image-2's named 1024-area presets.
+    const presets: Record<typeof k, string> = {
+        sq:     'square_hd',
+        land43: 'landscape_4_3',
+        port43: 'portrait_4_3',
+        wide:   'landscape_16_9',
+        tall:   'portrait_16_9',
+    };
+    return { quality: 'medium', image_size: presets[k] };
 };
 
 const logInfo = (ctx: string, msg: string, data?: any) => {
@@ -421,7 +466,7 @@ Deno.serve(async (req) => {
         let falInput: Record<string, any>;
         if (provider === 'openai') {
             endpoint = hasSource ? OPENAI_ENDPOINT_EDIT : OPENAI_ENDPOINT_CREATE;
-            const oa = qualityModeToOpenAIInput(qualityMode);
+            const oa = qualityModeToOpenAIInput(qualityMode, aspectRatio);
             falInput = {
                 prompt,
                 quality: oa.quality,
