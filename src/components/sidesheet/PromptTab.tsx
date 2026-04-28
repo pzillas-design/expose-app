@@ -8,6 +8,7 @@ import { Button, SectionHeader, Theme, Typo, IconButton, Tooltip } from '@/compo
 import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
+import { getCurrentProviderTierLabel } from '@/utils/modelLabels';
 import { useToast } from '@/components/ui/Toast';
 import { Edit2, Check as CheckIcon } from 'lucide-react';
 import { downloadImage } from '@/utils/imageUtils';
@@ -84,10 +85,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
-        ...(PRIMARY_PROVIDER === 'kie' ? [] : [{ id: 'nb2-05k' as GenerationQuality, label: 'Nano Banana 2 · 0.5K', desc: `512 px · ${t('quality_faster')}`, price: '0.05 €' }]),
-        { id: 'nb2-1k', label: 'Nano Banana 2 · 1K', desc: `1024 px · ${t('quality_faster')}`, price: '0.10 €' },
-        { id: 'nb2-2k', label: 'Nano Banana 2 · 2K', desc: `2048 px · ${t('quality_faster')}`, price: '0.20 €' },
-        { id: 'nb2-4k', label: 'Nano Banana 2 · 4K', desc: `4096 px · ${t('quality_faster')}`, price: '0.40 €' },
+        ...(PRIMARY_PROVIDER === 'kie' ? [] : [{ id: 'nb2-05k' as GenerationQuality, label: getCurrentProviderTierLabel('nb2-05k'), desc: `512 px · ${t('quality_faster')}`, price: '0.05 €' }]),
+        { id: 'nb2-1k', label: getCurrentProviderTierLabel('nb2-1k'), desc: `1024 px · ${t('quality_faster')}`, price: '0.10 €' },
+        { id: 'nb2-2k', label: getCurrentProviderTierLabel('nb2-2k'), desc: `2048 px · ${t('quality_faster')}`, price: '0.20 €' },
+        { id: 'nb2-4k', label: getCurrentProviderTierLabel('nb2-4k'), desc: `4096 px · ${t('quality_faster')}`, price: '0.40 €' },
     ];
 
     const currentResolution = (qualityMode.split('-')[1] ?? '2k') as '05k' | '1k' | '2k' | '4k';

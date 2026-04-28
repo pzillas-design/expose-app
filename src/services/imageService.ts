@@ -4,17 +4,16 @@ import { CanvasImage, ImageRow } from '../types';
 import { slugify } from '../utils/stringUtils';
 import { generateId } from '../utils/ids';
 
+import { detectImageProvider as detectImageProviderShared } from '../utils/modelLabels';
+
 /**
- * A/B provider routing for the generate-image edge function.
- * - On expose.ae (production) → undefined → edge function defaults to NB2.
- * - On staging / preview / localhost → 'openai' → edge function uses gpt-image-2.
- * - VITE_IMAGE_PROVIDER overrides everything ('fal-nb2' | 'openai').
+ * A/B provider routing for the generate-image edge function. Wraps the shared
+ * detector — returns `undefined` on prod so the edge function uses its NB2
+ * default unchanged.
  */
 const detectImageProvider = (): 'fal-nb2' | 'openai' | undefined => {
-    const override = (import.meta.env.VITE_IMAGE_PROVIDER as string | undefined)?.toLowerCase();
-    if (override === 'openai' || override === 'fal-nb2') return override;
-    if (typeof window === 'undefined') return undefined;
-    return window.location.hostname === 'expose.ae' ? undefined : 'openai';
+    const p = detectImageProviderShared();
+    return p === 'fal-nb2' ? undefined : p;
 };
 
 const buildUploadSubfolder = () => {

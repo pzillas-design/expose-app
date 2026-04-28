@@ -4,6 +4,7 @@ import { Edit2, Check as CheckIcon } from 'lucide-react';
 import { Typo, IconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
+import { getStoredImageLabel } from '@/utils/modelLabels';
 
 interface ImageInfoModalProps {
     image: CanvasImage;
@@ -147,16 +148,17 @@ export const ImageInfoModal: React.FC<ImageInfoModalProps> = ({
                         })() : '-'}
                     </span>
 
-                    {/* Model - only show for generated images */}
+                    {/* Model - only show for generated images. Reads model_version from
+                        the DB so old NB2 images stay labelled NB2 even if the host now runs
+                        gpt-image-2; falls back to NB2 when model_version is missing. */}
                     {image.generationPrompt && (
                         <>
                             <span className={labelClass}>{t('model')}</span>
                             <span className={valueClass}>
-                                {image.quality === 'nb2-4k' ? 'Nano Banana 2 · 4K' :
-                                    image.quality === 'nb2-2k' ? 'Nano Banana 2 · 2K' :
-                                        image.quality === 'nb2-1k' ? 'Nano Banana 2 · 1K' :
-                                            image.quality === 'fast' ? 'Nano Banana (Fast)' :
-                                                (image.modelVersion || 'Nano Banana')}
+                                {image.quality === 'fast' ? 'Nano Banana (Fast)' :
+                                    (image.quality?.startsWith('nb2-')
+                                        ? getStoredImageLabel(image.quality, image.modelVersion)
+                                        : (image.modelVersion || 'Nano Banana'))}
                             </span>
                         </>
                     )}

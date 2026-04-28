@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button, Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { TranslationFunction, PromptTemplate } from '@/types';
 import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip, Trash, Camera } from 'lucide-react';
+import { getCurrentProviderTierLabel } from '@/utils/modelLabels';
 
 interface CreationModalProps {
     isOpen: boolean;
@@ -42,9 +43,9 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     initialTemplate
 }) => {
     const MODELS = [
-        { id: 'nb2-1k', name: 'Nano Banana 2 · 1K', price: '0.10 €', res: '1024 px · schnell' },
-        { id: 'nb2-2k', name: 'Nano Banana 2 · 2K', price: '0.20 €', res: '2048 px · schnell' },
-        { id: 'nb2-4k', name: 'Nano Banana 2 · 4K', price: '0.40 €', res: '4096 px · schnell' },
+        { id: 'nb2-1k', name: getCurrentProviderTierLabel('nb2-1k'), price: '0.10 €', res: '1024 px · schnell' },
+        { id: 'nb2-2k', name: getCurrentProviderTierLabel('nb2-2k'), price: '0.20 €', res: '2048 px · schnell' },
+        { id: 'nb2-4k', name: getCurrentProviderTierLabel('nb2-4k'), price: '0.40 €', res: '4096 px · schnell' },
     ];
 
     const [prompt, setPrompt] = useState('');
