@@ -386,18 +386,23 @@ Deno.serve(async (req) => {
             const hasSource = !!(sourceStoragePath || payloadOriginalImage || sourceImage?.src);
 
             if (hasSource && (hasAnnotation || refCount > 0)) {
+                // Shortened role preamble (~58% shorter than before).
+                // The dropped "preserve layout, structure, and perspective" phrase
+                // was redundant — edit-mode models already preserve by default — and
+                // appeared to make the model over-conservative in some cases (real-
+                // estate users reported edits silently shifting framing/perspective).
                 const parts: string[] = [];
-                parts.push('Image 1 is the ORIGINAL photo to edit — preserve its layout, structure, and perspective.');
+                parts.push('Image 1: original.');
                 let nextIdx = 2;
                 if (hasAnnotation) {
-                    parts.push(`Image ${nextIdx} is an annotation overlay of the first: red markers indicate exactly where changes should be made. Do not render the red marks in the final output.`);
+                    parts.push(`Image ${nextIdx}: annotation overlay — red marks indicate edit zones; do not render them.`);
                     nextIdx++;
                 }
                 if (refCount > 0) {
                     const firstRef = nextIdx;
                     const lastRef = nextIdx + refCount - 1;
-                    const range = firstRef === lastRef ? `Image ${firstRef} is a` : `Images ${firstRef}–${lastRef} are`;
-                    parts.push(`${range} REFERENCE IMAGE${refCount > 1 ? 'S' : ''} for style/content guidance only — do not use as base.`);
+                    const label = firstRef === lastRef ? `Image ${firstRef}` : `Images ${firstRef}–${lastRef}`;
+                    parts.push(`${label}: style reference, not a base.`);
                 }
                 const preamble = parts.join(' ') + ' ';
                 prompt = prompt.trim() ? `${preamble}${prompt.trim()}` : preamble.trim();
