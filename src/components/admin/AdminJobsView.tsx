@@ -197,11 +197,14 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const isMultiEdit = (payload.batchSize || 1) > 1 || !!payload.isMultiEdit;
                                                     const hasAnnotation = j.hasMask || j.type === 'Edit';
                                                     const isRepeat = !!payload.isRepeat;
-                                                    const isFal = j.provider === 'fal';
+                                                    // 'fal' (legacy) and 'fal-nb2' both = Nano Banana 2 via fal.
+                                                    // 'openai' = gpt-image-2 via fal.
+                                                    const isFalNb2 = j.provider === 'fal' || j.provider === 'fal-nb2';
+                                                    const isOpenAI = j.provider === 'openai';
                                                     const isKie = typeof j.provider === 'string' && j.provider.startsWith('kie');
                                                     const isGoogle = typeof j.provider === 'string' && j.provider.startsWith('google');
                                                     // null provider = failure before provider was recorded. Don't mislabel as Google.
-                                                    const hasKnownProvider = isFal || isKie || isGoogle;
+                                                    const hasKnownProvider = isFalNb2 || isOpenAI || isKie || isGoogle;
 
                                                     // Resolution badge
                                                     const m = j.qualityMode || j.model || '';
@@ -225,8 +228,10 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         <td className="px-5 py-3.5">
                                                             <div className="flex items-center gap-1 flex-wrap">
                                                                 {res && <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${resColor}`}>{res}</span>}
-                                                                {isFal
-                                                                    ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">fal</span>
+                                                                {isFalNb2
+                                                                    ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200" title="Nano Banana 2 via fal">NB2</span>
+                                                                    : isOpenAI
+                                                                    ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" title="GPT Image 2 via fal">GPT-2</span>
                                                                     : isKie
                                                                     ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">Kie</span>
                                                                     : isGoogle

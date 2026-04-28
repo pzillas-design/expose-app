@@ -45,13 +45,18 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
  const requestType = job.requestType || (hasSource ? 'edit' : 'create');
  const rawModel = job.model || '';
  const lowerModel = rawModel.toLowerCase();
- const isFal = payload.provider === 'fal';
+ // 'fal' (legacy) and 'fal-nb2' both = Nano Banana 2 via fal.
+ // 'openai' = gpt-image-2 via fal.
+ const isFalNb2 = payload.provider === 'fal' || payload.provider === 'fal-nb2';
+ const isOpenAI = payload.provider === 'openai';
  const kieProvider: string | null = typeof payload.provider === 'string' && payload.provider.startsWith('kie')
   ? payload.provider
   : null;
  const isGoogleFallback = payload.provider === 'google_fallback';
- const provider = isFal
-  ? 'fal'
+ const provider = isFalNb2
+  ? 'fal-nb2'
+  : isOpenAI
+  ? 'openai'
   : kieProvider
   ? kieProvider
   : lowerModel.includes('gemini') || lowerModel.includes('nb2') || lowerModel.includes('nano-banana')
@@ -64,8 +69,10 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
   : kieProvider
   ? `Kie.ai (${kieProvider})`
   : null;
- const providerDisplayLabel: React.ReactNode = isFal
-  ? <span className="font-semibold text-emerald-500">fal.ai</span>
+ const providerDisplayLabel: React.ReactNode = isFalNb2
+  ? <span className="font-semibold text-yellow-600 dark:text-yellow-400">fal.ai · Nano Banana 2</span>
+  : isOpenAI
+  ? <span className="font-semibold text-emerald-500">fal.ai · GPT Image 2</span>
   : kieProviderLabel
   ? <span className="font-semibold text-violet-500">{kieProviderLabel}</span>
   : isGoogleFallback
