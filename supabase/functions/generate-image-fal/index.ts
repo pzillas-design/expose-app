@@ -34,67 +34,48 @@ const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2/edit';
 
 type Provider = 'fal-nb2' | 'openai';
 
-/** Map a 'W:H' aspect-ratio string into a coarse bucket the OpenAI sizer can consume. */
-const aspectBucket = (ar: string): 'sq' | 'land43' | 'port43' | 'wide' | 'tall' => {
-    const [w, h] = ar.split(':').map(Number);
-    if (!w || !h) return 'sq';
-    const r = w / h;
-    if (Math.abs(r - 1) < 0.05) return 'sq';
-    if (r > 1.5) return 'wide';
-    if (r < 0.67) return 'tall';
-    return r > 1 ? 'land43' : 'port43';
-};
-
 /**
  * Map our internal `nb2-*` quality mode + aspect ratio to GPT-Image-2's
  * (quality, image_size) pair.
  *
  * Quality is hardcoded to 'medium' across all tiers — that's our sweet spot for
- * price (~$0.04–0.11/image cost vs ~$0.16–0.41 at high) and latency (30–60s vs
- * 90–155s), and keeps the user-visible tier purely about *output resolution*.
- * The user picks 0.5K / 1K / 2K / 4K → we pick the matching pixel dimensions.
- *
- * 0.5K and 1K both land at gpt-image-2's smallest priced tier (1024-area), so
- * users pay slightly more for 0.5K than the actual API cost — that's fine
- * during the test, we can refine later.
+ * price ($0.04–0.11/image vs $0.16–0.41 at high) and latency (30–60s vs 90–155s).
+ * The user-visible tier purely controls *output resolution*: we pick the long
+ * edge per tier, then derive the short edge from the actual aspect ratio (rounded
+ * down to a multiple of 16, gpt-image-2's hard requirement). This preserves the
+ * source aspect exactly — earlier coarse 5-bucket mapping was forcing e.g. 3:2
+ * inputs into 4:3 outputs, which users noticed as silent crops/distortion.
  */
 const qualityModeToOpenAIInput = (
     q: string,
     ar: string,
 ): { quality: 'low' | 'medium' | 'high'; image_size: string | { width: number; height: number } } => {
-    const k = aspectBucket(ar);
+    const [arW, arH] = ar.split(':').map(Number);
+    const ratio = (arW && arH) ? arW / arH : 1;
 
-    if (q === 'nb2-4k') {
-        const sizes: Record<typeof k, { width: number; height: number }> = {
-            sq:     { width: 2560, height: 2560 },
-            land43: { width: 2560, height: 1920 },
-            port43: { width: 1920, height: 2560 },
-            wide:   { width: 3840, height: 2160 },
-            tall:   { width: 2160, height: 3840 },
-        };
-        return { quality: 'medium', image_size: sizes[k] };
+    // Long-edge target per tier. gpt-image-2's priced tiers max out around 3840
+    // on the long side; medium quality is fine well above that, just slower.
+    const longEdge = q === 'nb2-4k' ? 3840
+                   : q === 'nb2-2k' ? 1920
+                   : 1024; // nb2-0.5k + nb2-1k both land here
+
+    // Round DOWN to the nearest multiple of 16 — gpt-image-2 rejects sizes that
+    // aren't multiples of 16. floor() avoids edge cases where rounding up would
+    // push past a priced tier ceiling.
+    const round16 = (n: number) => Math.max(16, Math.floor(n / 16) * 16);
+
+    let width: number, height: number;
+    if (ratio >= 1) {
+        // landscape (or square) — long edge is the width
+        width  = longEdge;
+        height = round16(longEdge / ratio);
+    } else {
+        // portrait — long edge is the height
+        height = longEdge;
+        width  = round16(longEdge * ratio);
     }
 
-    if (q === 'nb2-2k') {
-        const sizes: Record<typeof k, { width: number; height: number }> = {
-            sq:     { width: 1536, height: 1536 },
-            land43: { width: 1536, height: 1152 },
-            port43: { width: 1152, height: 1536 },
-            wide:   { width: 1920, height: 1080 },
-            tall:   { width: 1080, height: 1920 },
-        };
-        return { quality: 'medium', image_size: sizes[k] };
-    }
-
-    // nb2-0.5k and nb2-1k both use gpt-image-2's named 1024-area presets.
-    const presets: Record<typeof k, string> = {
-        sq:     'square_hd',
-        land43: 'landscape_4_3',
-        port43: 'portrait_4_3',
-        wide:   'landscape_16_9',
-        tall:   'portrait_16_9',
-    };
-    return { quality: 'medium', image_size: presets[k] };
+    return { quality: 'medium', image_size: { width, height } };
 };
 
 const logInfo = (ctx: string, msg: string, data?: any) => {
