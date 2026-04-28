@@ -34,56 +34,22 @@ const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2/edit';
 
 type Provider = 'fal-nb2' | 'openai';
 
-/** Map a 'W:H' aspect-ratio string into a coarse bucket the OpenAI sizer can consume. */
-const aspectBucket = (ar: string): 'sq' | 'land43' | 'port43' | 'wide' | 'tall' => {
-    const [w, h] = ar.split(':').map(Number);
-    if (!w || !h) return 'sq';
-    const r = w / h;
-    if (Math.abs(r - 1) < 0.05) return 'sq';
-    if (r > 1.5) return 'wide';   // 16:9, 21:9 → landscape
-    if (r < 0.67) return 'tall';  // 9:16 → portrait
-    return r > 1 ? 'land43' : 'port43';
-};
-
 /**
- * Map our internal `nb2-*` quality mode + aspect ratio to GPT-Image-2's
- * (quality, image_size) pair. Sizes documented as priced tiers on
- * https://fal.ai/models/openai/gpt-image-2/edit are preferred; smaller tiers fall
- * back to fal's named presets (square_hd, landscape_16_9, …).
+ * Map our internal `nb2-*` quality mode to GPT-Image-2's `quality` parameter.
+ *
+ * We keep `image_size: 'auto'` for every tier on purpose — fal's docs explicitly
+ * recommend `auto` for the /edit endpoint because gpt-image-2 then derives the
+ * output dimensions from the input image. Custom {width, height} at high quality
+ * + 2K/4K was tripping our 120s sync-fetch ceiling, so during the staging A/B we
+ * trade fixed resolution for stable latency. (Refine later once we know typical
+ * per-tier latency.)
  */
 const qualityModeToOpenAIInput = (
     q: string,
-    ar: string,
-): { quality: 'low' | 'medium' | 'high'; image_size: string | { width: number; height: number } } => {
-    const k = aspectBucket(ar);
-    if (q === 'nb2-4k') {
-        const sizes: Record<typeof k, { width: number; height: number }> = {
-            sq:     { width: 2560, height: 2560 },
-            land43: { width: 2560, height: 1920 },
-            port43: { width: 1920, height: 2560 },
-            wide:   { width: 3840, height: 2160 },
-            tall:   { width: 2160, height: 3840 },
-        };
-        return { quality: 'high', image_size: sizes[k] };
-    }
-    if (q === 'nb2-2k') {
-        const sizes: Record<typeof k, { width: number; height: number }> = {
-            sq:     { width: 1536, height: 1536 },
-            land43: { width: 1536, height: 1152 },
-            port43: { width: 1152, height: 1536 },
-            wide:   { width: 1920, height: 1080 },
-            tall:   { width: 1080, height: 1920 },
-        };
-        return { quality: 'high', image_size: sizes[k] };
-    }
-    const presets: Record<typeof k, string> = {
-        sq:     'square_hd',
-        land43: 'landscape_4_3',
-        port43: 'portrait_4_3',
-        wide:   'landscape_16_9',
-        tall:   'portrait_16_9',
-    };
-    return { quality: q === 'nb2-1k' ? 'medium' : 'low', image_size: presets[k] };
+): { quality: 'low' | 'medium' | 'high'; image_size: 'auto' } => {
+    if (q === 'nb2-4k' || q === 'nb2-2k') return { quality: 'high', image_size: 'auto' };
+    if (q === 'nb2-1k') return { quality: 'medium', image_size: 'auto' };
+    return { quality: 'low', image_size: 'auto' };
 };
 
 const logInfo = (ctx: string, msg: string, data?: any) => {
@@ -241,8 +207,11 @@ const callFal = async (
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(input),
-        // Supabase total budget is 150s; fal sync endpoint answers in ~30–45s for NB2.
-        signal: AbortSignal.timeout(120_000),
+        // Bumped to 200s for the staging A/B — gpt-image-2 high-quality edits can
+        // run 90–180s. Supabase Pro plans permit up to 400s edge-function wall-clock,
+        // so we still leave headroom for post-call download + storage upload (~5–10s).
+        // If the function dies above this with a hard 504, raise this further.
+        signal: AbortSignal.timeout(200_000),
     });
 
     const latencyMs = Date.now() - startedAt;
@@ -451,7 +420,7 @@ Deno.serve(async (req) => {
         let falInput: Record<string, any>;
         if (provider === 'openai') {
             endpoint = hasSource ? OPENAI_ENDPOINT_EDIT : OPENAI_ENDPOINT_CREATE;
-            const oa = qualityModeToOpenAIInput(qualityMode, aspectRatio);
+            const oa = qualityModeToOpenAIInput(qualityMode);
             falInput = {
                 prompt,
                 quality: oa.quality,
