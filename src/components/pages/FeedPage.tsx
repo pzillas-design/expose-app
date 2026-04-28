@@ -169,17 +169,13 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         <div className={`absolute inset-0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/[0.12]' : 'bg-black/0 group-hover:bg-black/[0.09]'}`} />
                     )}
 
-                    {/* Selection circle — shown on pointer hover (isKeyboardActive) or in select mode */}
+                    {/* Selection circle — shown on pointer hover (isKeyboardActive) or in select mode.
+                        Outer wrapper provides a generous 44×44px hit target (the visible circle
+                        is only 20px, which previously caused stray taps to bubble to the parent and
+                        open the image instead of toggling selection). */}
                     {!isGen && (
                         <div
-                            className={`absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center z-20 cursor-pointer transition-all duration-200 ${isSelectMode && isSelected
-                                ? 'opacity-100 scale-100 hover:scale-110 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
-                                : isSelectMode
-                                    ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-white/90 dark:bg-zinc-800/90'
-                                    : (isKeyboardActive && !isMobile)
-                                        ? 'opacity-80 scale-100 hover:opacity-100 hover:scale-110 bg-white/90 dark:bg-zinc-800/90'
-                                        : 'opacity-0 scale-75 pointer-events-none'
-                                }`}
+                            className={`absolute top-0 left-0 p-3 z-20 cursor-pointer ${isSelectMode || (isKeyboardActive && !isMobile) ? '' : 'pointer-events-none'}`}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
@@ -187,11 +183,22 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                 if (onToggleSelect) onToggleSelect(img.id, e.shiftKey);
                             }}
                         >
-                            {isSelectMode && isSelected && (
-                                <svg className="w-2.5 h-2.5 text-white dark:text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                            )}
+                            <div
+                                className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200 ${isSelectMode && isSelected
+                                    ? 'opacity-100 scale-100 hover:scale-110 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
+                                    : isSelectMode
+                                        ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-white/90 dark:bg-zinc-800/90'
+                                        : (isKeyboardActive && !isMobile)
+                                            ? 'opacity-80 scale-100 hover:opacity-100 hover:scale-110 bg-white/90 dark:bg-zinc-800/90'
+                                            : 'opacity-0 scale-75'
+                                    }`}
+                            >
+                                {isSelectMode && isSelected && (
+                                    <svg className="w-2.5 h-2.5 text-white dark:text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                )}
+                            </div>
                         </div>
                     )}
 
