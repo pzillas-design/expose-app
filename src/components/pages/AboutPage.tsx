@@ -858,7 +858,7 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
                     <div className="flex flex-col gap-5 font-kumbh font-semibold tracking-tighter lowercase" style={{ fontSize: 'clamp(1.8rem, 4.5vw, 5rem)', lineHeight: 1.05 }}>
                         {de ? (<>
                             <p className="text-zinc-900 dark:text-white">
-                                die kraft der form, farbe und ästhetik, einst ein privileg, gehört sie nun uns allen.
+                                die kraft der form, farbe und ästhetik, einst ein privileg, gehört nun uns allen.
                             </p>
                             <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
                                 alles was du brauchst, liegt in deiner hand. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
