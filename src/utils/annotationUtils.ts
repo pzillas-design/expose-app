@@ -54,11 +54,11 @@ export async function generateAnnotationImage(
     dimensions: { width: number; height: number },
     canvasDimensions: { width: number; height: number }
 ): Promise<string> {
-    // Cap the annotation canvas at 2048 px on the long edge. The annotation only
-    // needs to convey *where* the markers are; full source-pixel resolution would
-    // produce a 30–50 MB PNG/JPEG that fal rejects with HTTP 422 (>25 MB limit).
-    // Strokes still scale via strokeScale so they read at the same relative size.
-    const MAX_LONG_EDGE = 2048;
+    // Cap the annotation canvas at 1024 px on the long edge. The annotation only
+    // conveys *where* the markers are, not full image detail — 1K is plenty and
+    // keeps the JPEG well under fal's 25 MB image_urls ceiling. Strokes still
+    // scale via strokeScale so markers read at the same relative size.
+    const MAX_LONG_EDGE = 1024;
     const longSide = Math.max(dimensions.width, dimensions.height);
     const downscale = longSide > MAX_LONG_EDGE ? MAX_LONG_EDGE / longSide : 1;
     const targetW = Math.round(dimensions.width * downscale);
