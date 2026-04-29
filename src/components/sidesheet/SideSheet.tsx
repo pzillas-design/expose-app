@@ -5,7 +5,7 @@ import {
 } from '@/types';
 import {
     Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Play, Plus, Check,
-    Undo2, Redo2, Layers, MoreHorizontal
+    Undo2, Redo2, Layers, MoreHorizontal, Settings2
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
@@ -977,15 +977,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
                                         {/* Quality Dropdown + Generate */}
                                         <div className="ml-auto flex items-center gap-3">
-                                            {/* Settings pill — opens GenerationSettingsModal (pill-grid layout). */}
+                                            {/* Settings — round icon button, mirrors the existing brush/edit icon style. */}
                                             <div className="relative shrink-0">
                                                 <button
                                                     onClick={() => setIsSettingsModalOpen(true)}
                                                     title="Einstellungen"
-                                                    className="h-10 flex items-center gap-1.5 px-3 rounded-full text-[12px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
+                                                    aria-label="Einstellungen"
+                                                    className="h-10 w-10 flex items-center justify-center rounded-full text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
                                                 >
-                                                    <span aria-hidden className="text-zinc-400 dark:text-zinc-500">⚙</span>
-                                                    {qualityMode.split('-')[1] === '05k' ? '0.5K' : qualityMode.split('-')[1].toUpperCase()}
+                                                    <Settings2 className="w-4 h-4" />
                                                 </button>
                                             </div>
 

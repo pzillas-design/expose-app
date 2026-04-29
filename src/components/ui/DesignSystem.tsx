@@ -171,6 +171,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
  bg-white dark:bg-black
  text-zinc-900 dark:text-zinc-100
  border border-zinc-200 dark:border-zinc-800
+ max-w-[260px]
  `}
                     style={{
                         top: coords.top,
@@ -178,9 +179,9 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
                         transform: `translate(-50%, ${side === 'bottom' ? '0' : '-100%'})`
                     }}
                 >
-                    <div className="text-[10px] font-medium whitespace-nowrap tracking-wide flex items-center gap-1.5">
-                        <span>{text}</span>
-                        {shortcut && <kbd className="font-mono text-zinc-400 dark:text-zinc-500">{shortcut}</kbd>}
+                    <div className="text-[10px] font-medium tracking-wide flex items-start gap-1.5 leading-snug">
+                        <span className="break-words">{text}</span>
+                        {shortcut && <kbd className="font-mono text-zinc-400 dark:text-zinc-500 whitespace-nowrap">{shortcut}</kbd>}
                     </div>
                 </div>,
                 document.body

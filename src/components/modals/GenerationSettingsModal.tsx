@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/DesignSystem';
-import { ChevronDown, Check } from 'lucide-react';
+import { Button, Tooltip } from '@/components/ui/DesignSystem';
+import { ChevronDown, Check, Info } from 'lucide-react';
 import {
     GenerationSettings,
     DEFAULT_GENERATION_SETTINGS,
@@ -38,9 +38,9 @@ const PROVIDER_OPTIONS: { value: ImageModelProvider; label: string }[] = [
 ];
 
 const RES_OPTIONS: { value: GenerationQuality; label: string }[] = [
-    { value: 'nb2-1k', label: '1K' },
-    { value: 'nb2-2k', label: '2K' },
-    { value: 'nb2-4k', label: '4K' },
+    { value: 'nb2-1k', label: '1K · 1024 px' },
+    { value: 'nb2-2k', label: '2K · 2560 px' },
+    { value: 'nb2-4k', label: '4K · 3840 px' },
 ];
 
 const QUALITY_OPTIONS_DE: { value: ImageQualityLevel; label: string }[] = [
@@ -160,7 +160,9 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
                 <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
             </button>
             {open && (
-                <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-100">
+                // Bumped to z-[200] so the panel layers above the Modal's body
+                // shadow + scroll clip (Modal uses z-[60-100] internally).
+                <div className="absolute top-full left-0 right-0 mt-1.5 z-[200] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-100">
                     {options.map(opt => {
                         const active = opt.value === value;
                         return (
@@ -209,6 +211,16 @@ const AspectThumb: React.FC<{ ratio: ImageAspectRatio; active: boolean }> = ({ r
 };
 
 // ── Building blocks ────────────────────────────────────────────────────────
+
+/** Heading with a small info icon that surfaces a tooltip on hover. */
+const HeadingWithInfo: React.FC<{ heading: string; info: string }> = ({ heading, info }) => (
+    <div className="flex items-center gap-1.5">
+        <span className="text-sm font-semibold text-zinc-900 dark:text-white">{heading}</span>
+        <Tooltip text={info} side="top">
+            <Info className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-help shrink-0" />
+        </Tooltip>
+    </div>
+);
 
 const Section: React.FC<{ heading: string; subtitle: string; children: React.ReactNode }> = ({ heading, subtitle, children }) => (
     <div className="flex flex-col gap-2">
@@ -277,7 +289,13 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
         <Modal isOpen={isOpen} onClose={onClose} title={isDe ? 'Bild-Einstellungen' : 'Image settings'} maxWidth="lg">
             <div className="px-6 pb-6 pt-2 flex flex-col gap-5">
                 {/* Model */}
-                <Section heading={isDe ? 'Modell' : 'Model'} subtitle={providerDesc}>
+                <div className="flex flex-col gap-2">
+                    <HeadingWithInfo
+                        heading={isDe ? 'Modell' : 'Model'}
+                        info={isDe
+                            ? 'GPT Image 2 (OpenAI) folgt Prompts präziser. Nano Banana 2 (Google) ist kreativer und schneller.'
+                            : 'GPT Image 2 (OpenAI) follows prompts more precisely. Nano Banana 2 (Google) is more creative and faster.'}
+                    />
                     <div className="grid grid-cols-2 gap-1.5">
                         {PROVIDER_OPTIONS.map(opt => (
                             <PillButton
@@ -289,43 +307,9 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                             </PillButton>
                         ))}
                     </div>
-                </Section>
+                </div>
 
-                {/* Resolution */}
-                <Section heading={isDe ? 'Auflösung' : 'Resolution'} subtitle={resDesc}>
-                    <div className="grid grid-cols-3 gap-1.5">
-                        {RES_OPTIONS.map(opt => (
-                            <PillButton
-                                key={opt.value}
-                                active={local.resolution === opt.value}
-                                onClick={() => update('resolution', opt.value)}
-                            >
-                                {opt.label}
-                            </PillButton>
-                        ))}
-                    </div>
-                </Section>
-
-                {/* Quality — only meaningful for gpt-image-2; Nano Banana 2 has no
-                    user-facing quality knob, so we hide the entire section there. */}
-                {local.provider === 'openai' && (
-                    <Section heading={isDe ? 'Qualität' : 'Quality'} subtitle={qualityDesc}>
-                        <div className="grid grid-cols-3 gap-1.5">
-                            {qualityOptions.map(opt => (
-                                <PillButton
-                                    key={opt.value}
-                                    active={local.quality === opt.value}
-                                    onClick={() => update('quality', opt.value)}
-                                >
-                                    {opt.label}
-                                </PillButton>
-                            ))}
-                        </div>
-                    </Section>
-                )}
-
-                {/* Aspect ratio — dropdown. Subtitle dropped: the dropdown labels
-                    already carry the description (e.g. "16:9 — Breitbild"). */}
+                {/* Aspect ratio — placed directly under Model. Dropdown labels carry the description. */}
                 <div className="flex flex-col gap-2">
                     <span className="text-sm font-semibold text-zinc-900 dark:text-white">
                         {isDe ? 'Seitenverhältnis' : 'Aspect ratio'}
@@ -337,16 +321,48 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                     />
                 </div>
 
-                {/* Price subtitle above the Done button — same subtle font as section sublines. */}
-                <div className="flex flex-col items-stretch gap-4 mt-4">
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400 text-center">
-                        {isDe ? 'Kosten pro Bild · ' : 'Cost per image · '}
-                        <span className="tabular-nums">{priceFormatted}</span>
-                    </div>
-                    <Button variant="primary" size="l" onClick={onClose} className="w-full">
-                        {isDe ? 'Fertig' : 'Done'}
-                    </Button>
+                {/* Resolution — its own row. */}
+                <div className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                        {isDe ? 'Auflösung' : 'Resolution'}
+                    </span>
+                    <Dropdown
+                        value={local.resolution}
+                        options={RES_OPTIONS}
+                        onChange={v => update('resolution', v)}
+                    />
                 </div>
+
+                {/* Quality — only for gpt-image-2; hidden when Nano Banana 2 is active. */}
+                {local.provider === 'openai' && (
+                    <div className="flex flex-col gap-2">
+                        <HeadingWithInfo
+                            heading={isDe ? 'Qualität' : 'Quality'}
+                            info={isDe
+                                ? 'Wie viel Detailreichtum und kreativen Stil das Modell investiert. Höher = präziser, langsamer, teurer.'
+                                : 'How much detail and creative style the model invests. Higher = more precise, slower, more expensive.'}
+                        />
+                        <Dropdown
+                            value={local.quality}
+                            options={qualityOptions}
+                            onChange={v => update('quality', v)}
+                        />
+                    </div>
+                )}
+
+                {/* Cost per image — same heading + subline pattern as other sections, left-aligned. */}
+                <div className="flex flex-col gap-1">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                        {isDe ? 'Kosten pro Bild' : 'Cost per image'}
+                    </span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+                        {priceFormatted}
+                    </span>
+                </div>
+
+                <Button variant="primary" size="l" onClick={onClose} className="w-full mt-2">
+                    {isDe ? 'Fertig' : 'Done'}
+                </Button>
             </div>
         </Modal>
     );

@@ -688,7 +688,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                 isNew={isNew}
                                                 daysRemaining={daysLeft}
                                                 currentLang={state?.currentLang}
-                                                isSource={!!effectiveGroupId && !img.parentId && !img.isGenerating}
+                                                isSource={!img.parentId && !img.isGenerating && (!!effectiveGroupId || isSelectMode)}
                                             />
                                         );
                                     })}

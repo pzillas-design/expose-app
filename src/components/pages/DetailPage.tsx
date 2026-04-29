@@ -80,6 +80,7 @@ const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: b
                     width: wrapperWidth,
                     marginRight: wrapperMargin,
                     transition: leaving ? `width 300ms ${collapseEase}, margin 300ms ${collapseEase}` : 'none',
+                    scrollSnapAlign: 'center',
                 }}
             >
                 <button
@@ -127,6 +128,7 @@ const GeneratingThumb = memo<{ id: string; pSrc?: string; isActive: boolean; thu
                     width: '36px',
                     marginRight: '8px',
                     transition: 'none',
+                    scrollSnapAlign: 'center',
                 }}
             >
                 <button
@@ -340,6 +342,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const thumbStripInnerRef = useRef<HTMLDivElement>(null);
     // First-mount flag: use instant scroll on entry, smooth on subsequent navigation
     const isFirstStripScrollRef = useRef(true);
+    // Suppress the scroll-end → handleSelectWithin reaction while we're programmatically
+    // scrolling the strip to recenter (otherwise the centering effect fights itself).
+    const isProgrammaticScrollRef = useRef(false);
+    // Marks selectedId changes that came from the user's own horizontal scroll —
+    // those don't need the centering effect to reposition the strip (the user is
+    // already mid-scroll, snapping it back would jerk).
+    const userScrollSelectionRef = useRef(false);
 
     // Update padding on mount + resize — re-run when combinedStrip changes so refs are attached.
     // Never depends on selectedId to avoid layout reflows that interrupt opacity transitions.
@@ -358,24 +367,34 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => obs.disconnect();
     }, [combinedStrip.length]);
 
-    // Scroll active thumb to center. Uses getBoundingClientRect so the result is correct
-    // even at the start/end of the list (no dependency on padding math).
-    // Load more images when near the end of the loaded list.
+    // Scroll active thumb to center on selectedId change / resize / sidesheet toggle.
+    // Uses getBoundingClientRect so the result is correct even at the start/end of the
+    // list (no dependency on padding math). Skips when the change came from the user's
+    // own scroll (already centered by snap) so the strip doesn't jerk back.
     useEffect(() => {
+        // User-driven scroll selection? Just consume the flag and skip — the thumb is
+        // already at center thanks to scroll-snap, no recentering needed.
+        if (userScrollSelectionRef.current) {
+            userScrollSelectionRef.current = false;
+            return;
+        }
+
         const centerActiveThumb = () => {
             const strip = thumbStripRef.current;
             if (!strip) return;
             const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
             if (!activeThumb) return;
 
-            // Center using BoundingClientRect — accurate regardless of scroll position / padding
             const stripRect = strip.getBoundingClientRect();
             const thumbRect = activeThumb.getBoundingClientRect();
             const thumbCenterInContent = thumbRect.left - stripRect.left + strip.scrollLeft + thumbRect.width / 2;
             const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
             isFirstStripScrollRef.current = false;
             const scrollTarget = thumbCenterInContent - strip.clientWidth / 2;
+            if (Math.abs(strip.scrollLeft - scrollTarget) < 1) return;
+            isProgrammaticScrollRef.current = true;
             strip.scrollTo({ left: scrollTarget, behavior });
+            window.setTimeout(() => { isProgrammaticScrollRef.current = false; }, behavior === 'smooth' ? 600 : 50);
         };
 
         let raf1: number, raf2: number;
@@ -383,7 +402,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             raf2 = requestAnimationFrame(centerActiveThumb);
         });
 
-        // Ensure centering on resize/Sidesheet toggle
         window.addEventListener('resize', centerActiveThumb);
 
         return () => {
@@ -393,13 +411,70 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         };
     }, [selectedId, combinedStrip, isSideSheetVisible]);
 
-    // Lazy-load more images when the active image is near the end of the loaded list
+    // Scroll-driven selection: continuously update selectedId to whichever thumb is
+    // closest to viewport center. Reactive (RAF-throttled), not debounced — so the
+    // orange selection ring tracks the user's scroll smoothly without springing back.
+    // Detail image loading is handled separately downstream — that one can take its
+    // time, the strip itself stays snappy.
+    useEffect(() => {
+        const strip = thumbStripRef.current;
+        if (!strip) return;
+
+        const findCenterThumbId = (): string | null => {
+            const stripRect = strip.getBoundingClientRect();
+            const centerX = stripRect.left + stripRect.width / 2;
+            const thumbs = strip.querySelectorAll<HTMLElement>('[data-thumb-id]');
+            if (thumbs.length === 0) return null;
+            let closest: HTMLElement | null = null;
+            let bestDist = Infinity;
+            thumbs.forEach((t) => {
+                const r = t.getBoundingClientRect();
+                const d = Math.abs((r.left + r.width / 2) - centerX);
+                if (d < bestDist) { bestDist = d; closest = t; }
+            });
+            return closest ? (closest as HTMLElement).getAttribute('data-thumb-id') : null;
+        };
+
+        let rafId: number | null = null;
+        let pending = false;
+
+        const tick = () => {
+            rafId = null;
+            pending = false;
+            if (isProgrammaticScrollRef.current) return;
+            const id = findCenterThumbId();
+            if (id && id !== selectedId) {
+                userScrollSelectionRef.current = true;
+                handleSelectWithin(id);
+            }
+        };
+
+        const onScroll = () => {
+            // Lazy-load near the end of the strip.
+            if (hasMore && onLoadMore) {
+                const remaining = strip.scrollWidth - strip.clientWidth - strip.scrollLeft;
+                if (remaining < 3 * 44) onLoadMore();
+            }
+            // RAF-coalesce: at most one update per frame.
+            if (pending) return;
+            pending = true;
+            rafId = requestAnimationFrame(tick);
+        };
+
+        strip.addEventListener('scroll', onScroll, { passive: true });
+        return () => {
+            strip.removeEventListener('scroll', onScroll);
+            if (rafId !== null) cancelAnimationFrame(rafId);
+        };
+    }, [selectedId, handleSelectWithin, hasMore, onLoadMore]);
+
+    // Fallback: also load more when active image (via thumb click / arrow keys) is near
+    // the end of the loaded list, so non-scroll navigation still triggers paging.
     useEffect(() => {
         if (!hasMore || !onLoadMore) return;
         const displayable = images.filter(i => i.isGenerating || i.thumbSrc || i.src);
         const idx = displayable.findIndex(i => i.id === selectedId);
         if (idx === -1) return;
-        // Trigger load when within 20 images of the end
         if (displayable.length - idx <= 20) onLoadMore();
     }, [selectedId, images, hasMore, onLoadMore]);
 
@@ -850,6 +925,9 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             style={{
                                 maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
                                 WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+                                // Carousel-style snap so horizontal scrolling lands on a thumb
+                                // and the closest-to-center thumb becomes the new selectedId.
+                                scrollSnapType: 'x mandatory',
                             }}
                         >
                             <div ref={thumbStripInnerRef} className="flex items-center">

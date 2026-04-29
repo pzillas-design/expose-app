@@ -10,6 +10,7 @@ import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, 
 import { sendGenerationCompleteNotification } from '@/utils/notifications';
 import { trackImageGenerated } from '@/utils/analytics';
 import { logError } from '@/services/errorLogger';
+import { loadGenerationSettings } from '@/utils/generationSettings';
 
 interface UseGenerationProps {
     rows: ImageRow[];
@@ -42,11 +43,56 @@ const COSTS: Record<string, number> = {
     'nb2-4k': 0.40,
 };
 
+// ETA matrix — drives the progress bar's fill speed. Calibrated against the last
+// 7 days of completed jobs (p50). NB2 has no quality dimension; gpt-image-2 has
+// 3 quality levels. Numbers are slightly above p50 so the bar doesn't routinely
+// stall at 98% waiting for the API to actually return.
+//
+// Measurements (p50 / avg / p90) over the last 7 days:
+//   gpt-image-2  1K medium:  ~43s / 45s / 51s
+//   gpt-image-2  2K medium:  ~68s / 84s / 142s
+//   gpt-image-2  4K medium:  ~78s (n=1, extrapolated)
+//   nano-banana-2 1K:        ~32s / 38s / 75s
+//   nano-banana-2 2K:        ~42s / 45s / 62s
+//   nano-banana-2 4K:        ~69s / 69s / 86s
+// gpt-image-2 high/low values are extrapolated from medium (~+40% high, ~−65% low).
+type EtaProvider = 'fal-nb2' | 'openai';
+type EtaQuality  = 'low' | 'medium' | 'high';
+
+const ETA_MATRIX_MS: Record<EtaProvider, Partial<Record<string, Partial<Record<EtaQuality, number>> & { default?: number }>>> = {
+    'fal-nb2': {
+        // NB2 has no quality knob — same value applies regardless of `quality`.
+        'nb2-05k': { default: 16000 },
+        'nb2-1k':  { default: 35000 },
+        'nb2-2k':  { default: 45000 },
+        'nb2-4k':  { default: 75000 },
+    },
+    'openai': {
+        // gpt-image-2 — quality scales latency strongly.
+        'nb2-05k': { low: 8000,  medium: 16000, high: 22000, default: 16000 },
+        'nb2-1k':  { low: 18000, medium: 45000, high: 60000, default: 45000 },
+        'nb2-2k':  { low: 30000, medium: 70000, high: 95000, default: 70000 },
+        'nb2-4k':  { low: 45000, medium: 80000, high: 130000, default: 110000 },
+    },
+};
+
+const FALLBACK_ETA_MS = 45000;
+
+const getEtaMs = (provider: EtaProvider | undefined, qualityMode: string, quality: EtaQuality | undefined): number => {
+    const p = (provider as EtaProvider) || 'openai';
+    const cell = ETA_MATRIX_MS[p]?.[qualityMode];
+    if (!cell) return FALLBACK_ETA_MS;
+    if (quality && cell[quality] !== undefined) return cell[quality]!;
+    return cell.default ?? FALLBACK_ETA_MS;
+};
+
+// Legacy lookup for code paths that don't yet thread provider/quality through.
+// Picks the openai-medium row since that's the current default.
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'nb2-05k': 16000,  // ~16s (measured avg/p50 over last 14d)
-    'nb2-1k': 32000,   // ~32s (measured avg 34s, p50 31s)
-    'nb2-2k': 40000,   // ~40s (measured avg 39s, p75 45s)
-    'nb2-4k': 55000,   // ~55s (measured avg 54s, p50 48s)
+    'nb2-05k': ETA_MATRIX_MS['openai']['nb2-05k']!.medium!,
+    'nb2-1k':  ETA_MATRIX_MS['openai']['nb2-1k']!.medium!,
+    'nb2-2k':  ETA_MATRIX_MS['openai']['nb2-2k']!.medium!,
+    'nb2-4k':  ETA_MATRIX_MS['openai']['nb2-4k']!.medium!,
 };
 
 const resolveTargetModel = (_quality: string): string | undefined => {
@@ -359,7 +405,11 @@ export const useGeneration = ({
         const currentAnnotations = sourceImage.annotations || [];
 
         // 2. CONCURRENCY & DURATION — simple hardcoded values per quality
-        const estimatedDuration = ESTIMATED_DURATIONS[effectiveQuality] || 25000;
+        // ETA uses the user's current settings (provider × resolution × quality) so
+        // the progress bar reflects the actual speed of *this* model+config, not
+        // just a rough resolution-based guess.
+        const settings = loadGenerationSettings();
+        const estimatedDuration = getEtaMs(settings.provider, effectiveQuality, settings.quality);
 
         // 3. SHOW PLACEHOLDER IMMEDIATELY
         const placeholder: CanvasImage = {
@@ -623,7 +673,7 @@ export const useGeneration = ({
             title: baseName, baseName: baseName, version: 1, isGenerating: true, generationStartTime: Date.now(),
             quality: modelId as any, createdAt: Date.now(), updatedAt: Date.now(), generationPrompt: prompt, userDraftPrompt: '',
             annotations: creationAnns, userId: user?.id,
-            estimatedDuration: ESTIMATED_DURATIONS[modelId] || 25000,
+            estimatedDuration: getEtaMs(loadGenerationSettings().provider, modelId, loadGenerationSettings().quality),
         };
         setRows(prev => [{ id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }, ...prev]);
         // Track start time so we can record actual duration on completion
