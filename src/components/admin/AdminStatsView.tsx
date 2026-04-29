@@ -437,35 +437,58 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             <MiniLegend items={[{ color: '#ef4444', label: 'Fehlgeschlagene Jobs' }]} />
                         </div>
                         <p className="text-[10px] text-zinc-400 mb-3">Anzahl Generierungen die mit Fehler abgebrochen sind (Timeout, API-Fehler etc.)</p>
-                        {/* fal Performance Sub-Stats */}
+                        {/* Provider performance sub-stats — per-provider Ø-time, success-rate,
+                            job count, and download-conversion (downloads / completed). */}
                         {(() => {
-                            const falJobs = jobs.filter((j: any) => j.provider === 'fal');
-                            const falCompleted = falJobs.filter((j: any) => j.status === 'completed');
-                            const falFailed = falJobs.filter((j: any) => j.status === 'failed');
-                            const falTotal = falCompleted.length + falFailed.length;
-                            const successRate = falTotal > 0 ? (falCompleted.length / falTotal) * 100 : null;
-                            const durations = falCompleted.map((j: any) => Number(j.durationMs || 0)).filter(v => v > 0);
-                            const avgDuration = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
+                            type ProviderRow = { key: string; label: string; matcher: (p: any) => boolean };
+                            const providerRows: ProviderRow[] = [
+                                { key: 'nb2',    label: 'NB2',    matcher: (p) => p === 'fal' || p === 'fal-nb2' },
+                                { key: 'gpt2',   label: 'GPT-2',  matcher: (p) => p === 'openai' },
+                            ];
+                            const stats = providerRows.map(row => {
+                                const matching = jobs.filter((j: any) => row.matcher(j.provider));
+                                const completed = matching.filter((j: any) => j.status === 'completed');
+                                const failed    = matching.filter((j: any) => j.status === 'failed');
+                                const total     = completed.length + failed.length;
+                                const success   = total > 0 ? (completed.length / total) * 100 : null;
+                                const durations = completed.map((j: any) => Number(j.durationMs || 0)).filter(v => v > 0);
+                                const avgDur    = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
+                                const downloads = completed.filter((j: any) => !!j.downloadedAt).length;
+                                const dlRate    = completed.length > 0 ? (downloads / completed.length) * 100 : null;
+                                return { ...row, total, success, avgDur, downloads, dlRate };
+                            }).filter(s => s.total > 0);
+                            if (stats.length === 0) return null;
                             return (
-                                <div className="flex items-center gap-4 mb-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
-                                    <div className="flex flex-col">
-                                        <span className="text-[9px] text-zinc-400 uppercase tracking-wider">fal Ø Zeit</span>
-                                        <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300">
-                                            {avgDuration != null ? `${(avgDuration / 1000).toFixed(1)}s` : '—'}
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[9px] text-zinc-400 uppercase tracking-wider">fal Success-Rate</span>
-                                        <span className="text-sm font-bold font-mono" style={{ color: successRate != null && successRate >= 95 ? '#10b981' : successRate != null && successRate >= 80 ? '#f59e0b' : '#ef4444' }}>
-                                            {successRate != null ? `${successRate.toFixed(1)}%` : '—'}
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[9px] text-zinc-400 uppercase tracking-wider">fal Jobs</span>
-                                        <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300">
-                                            {falTotal}
-                                        </span>
-                                    </div>
+                                <div className="flex flex-col gap-2 mb-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                                    {stats.map(s => (
+                                        <div key={s.key} className="flex items-center gap-4 flex-wrap">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 min-w-[40px]">{s.label}</span>
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] text-zinc-400 uppercase tracking-wider">Ø Zeit</span>
+                                                <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300">
+                                                    {s.avgDur != null ? `${(s.avgDur / 1000).toFixed(1)}s` : '—'}
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] text-zinc-400 uppercase tracking-wider">Success</span>
+                                                <span className="text-sm font-bold font-mono" style={{ color: s.success != null && s.success >= 95 ? '#10b981' : s.success != null && s.success >= 80 ? '#f59e0b' : '#ef4444' }}>
+                                                    {s.success != null ? `${s.success.toFixed(1)}%` : '—'}
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] text-zinc-400 uppercase tracking-wider">Jobs</span>
+                                                <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300">
+                                                    {s.total}
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] text-zinc-400 uppercase tracking-wider">Downloads</span>
+                                                <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300">
+                                                    {s.downloads}{s.dlRate != null ? <span className="text-zinc-400 font-normal"> · {s.dlRate.toFixed(0)}%</span> : null}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             );
                         })()}

@@ -215,6 +215,17 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         : res === '0.5K' ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700/50 dark:text-zinc-300'
                                                         : '';
 
+                                                    // GPT Image 2 quality badge — only meaningful for openai jobs.
+                                                    const rawQuality = (payload as any).quality as string | undefined;
+                                                    const qualityLabel = rawQuality === 'high' ? 'HIGH'
+                                                        : rawQuality === 'medium' ? 'MED'
+                                                        : rawQuality === 'low' ? 'LOW'
+                                                        : '';
+                                                    const qualityColor = rawQuality === 'high' ? 'bg-violet-200 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200'
+                                                        : rawQuality === 'medium' ? 'bg-sky-200 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200'
+                                                        : rawQuality === 'low' ? 'bg-zinc-200 text-zinc-700 dark:bg-zinc-700/50 dark:text-zinc-300'
+                                                        : '';
+
                                                     return (
                                                     <tr
                                                         key={j.id}
@@ -228,6 +239,14 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                         <td className="px-5 py-3.5">
                                                             <div className="flex items-center gap-1 flex-wrap">
                                                                 {res && <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${resColor}`}>{res}</span>}
+                                                                {qualityLabel && isOpenAI && (
+                                                                    <span
+                                                                        className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${qualityColor}`}
+                                                                        title={`gpt-image-2 quality: ${rawQuality}`}
+                                                                    >
+                                                                        {qualityLabel}
+                                                                    </span>
+                                                                )}
                                                                 {isFalNb2
                                                                     ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200" title="Nano Banana 2 via fal">NB2</span>
                                                                     : isOpenAI
