@@ -54,15 +54,25 @@ export async function generateAnnotationImage(
     dimensions: { width: number; height: number },
     canvasDimensions: { width: number; height: number }
 ): Promise<string> {
+    // Cap the annotation canvas at 2048 px on the long edge. The annotation only
+    // needs to convey *where* the markers are; full source-pixel resolution would
+    // produce a 30–50 MB PNG/JPEG that fal rejects with HTTP 422 (>25 MB limit).
+    // Strokes still scale via strokeScale so they read at the same relative size.
+    const MAX_LONG_EDGE = 2048;
+    const longSide = Math.max(dimensions.width, dimensions.height);
+    const downscale = longSide > MAX_LONG_EDGE ? MAX_LONG_EDGE / longSide : 1;
+    const targetW = Math.round(dimensions.width * downscale);
+    const targetH = Math.round(dimensions.height * downscale);
+
     const canvas = document.createElement('canvas');
-    canvas.width = dimensions.width;
-    canvas.height = dimensions.height;
+    canvas.width = targetW;
+    canvas.height = targetH;
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
 
-    // Calculate scaling factors from canvas dimensions to real dimensions
-    const scaleX = dimensions.width / canvasDimensions.width;
-    const scaleY = dimensions.height / canvasDimensions.height;
+    // Calculate scaling factors from canvas dimensions to (capped) real dimensions
+    const scaleX = targetW / canvasDimensions.width;
+    const scaleY = targetH / canvasDimensions.height;
     const strokeScale = (scaleX + scaleY) / 2;
 
     console.log('[AnnotationUtils] Scaling coordinates:', {
@@ -228,7 +238,10 @@ export async function generateAnnotationImage(
         }
     }
 
-    return canvas.toDataURL('image/png');
+    // JPEG @ 0.85 quality keeps the file well under fal's 25 MB ceiling even at
+    // 2048 px long edge. PNG was lossless but ballooned to 30+ MB on real-estate
+    // photos, tripping HTTP 422 on the openai/gpt-image-2/edit endpoint.
+    return canvas.toDataURL('image/jpeg', 0.85);
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
