@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { trackSignup } from '@/utils/analytics';
+// trackSignup is now centralized in useAuth's onAuthStateChange — fires for both
+// email (after confirmation click) and Google OAuth (after return). The previous
+// inline call here only caught email signups, which is why Google Ads showed
+// 0 conversions despite paid traffic clicking through.
 import { X, Mail, Lock, ArrowRight, Loader2, Fingerprint, LogIn } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { Button, Theme, Typo, IconButton, Input } from '@/components/ui/DesignSystem';
@@ -52,7 +55,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, t, initia
             if (mode === 'signup') {
                 const { error } = await supabase.auth.signUp({ email, password });
                 if (error) throw error;
-                trackSignup();
                 setSuccessMsg(t('auth_check_email_conf'));
             } else if (mode === 'signin') {
                 const { error } = await supabase.auth.signInWithPassword({ email, password });

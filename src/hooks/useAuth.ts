@@ -5,6 +5,32 @@ import { ImageRow } from '../types';
 import { LocaleKey } from '../data/locales';
 import { useToast } from '../components/ui/Toast';
 import { isCreditToastSuppressed } from '../services/creditToastGuard';
+import { trackSignup } from '../utils/analytics';
+
+/**
+ * Fire the Google Ads signup conversion the *first* time we observe a session
+ * for a user whose auth.users.created_at is recent (≤ 5 min ago). Catches both
+ * email signups (after the confirmation click) AND OAuth signups (return from
+ * provider). Per-userId dedup via localStorage so re-logins on the same device
+ * don't double-count.
+ */
+const FRESH_SIGNUP_WINDOW_MS = 5 * 60 * 1000;
+const trackedSignupKey = (userId: string) => `expose:signup-tracked:${userId}`;
+const maybeTrackSignup = (user: any | null | undefined): void => {
+    if (!user?.id || !user?.created_at) return;
+    if (typeof window === 'undefined') return;
+    try {
+        if (window.localStorage.getItem(trackedSignupKey(user.id))) return;
+        const ageMs = Date.now() - new Date(user.created_at).getTime();
+        if (ageMs > FRESH_SIGNUP_WINDOW_MS) {
+            // Existing user logging in again — mark tracked so we never fire for them.
+            window.localStorage.setItem(trackedSignupKey(user.id), 'pre-existing');
+            return;
+        }
+        trackSignup();
+        window.localStorage.setItem(trackedSignupKey(user.id), String(Date.now()));
+    } catch (_) { /* localStorage disabled / quota — fail silent */ }
+};
 
 interface UseAuthProps {
     isAuthDisabled: boolean;
@@ -112,6 +138,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             const newUserId = session?.user?.id;
 
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                maybeTrackSignup(session?.user);
                 if (isRecoveryFlowRef.current) {
                     // Recovery flow active — don't silently log user in, wait for password update
                     setIsAuthLoading(false);
