@@ -137,6 +137,54 @@ export interface LibraryCategory {
 
 export type GenerationQuality = 'nb2-05k' | 'nb2-1k' | 'nb2-2k' | 'nb2-4k';
 
+// --- Generation settings (modal) ---
+// Resolution piggybacks the legacy GenerationQuality enum so backend cost
+// tables and existing image rows keep working. Fields beyond resolution
+// (quality / aspectRatio / outputFormat) are new and only meaningful when
+// the active provider supports them (gpt-image-2 currently).
+export type ImageQualityLevel = 'low' | 'medium' | 'high';
+export type ImageAspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '3:2' | '2:3';
+export type ImageOutputFormat = 'jpeg' | 'png' | 'webp';
+
+export type ImageModelProvider = 'fal-nb2' | 'openai';
+
+export interface GenerationSettings {
+  provider: ImageModelProvider;        // 'openai' (gpt-image-2) | 'fal-nb2' (Google Nano Banana 2)
+  resolution: GenerationQuality;       // 'nb2-1k' | 'nb2-2k' | 'nb2-4k' — drives our COSTS table + tier label
+  quality: ImageQualityLevel;          // gpt-image-2 detail/adherence knob (ignored on NB2)
+  aspectRatio: ImageAspectRatio;       // 'auto' lets the model infer from source
+  outputFormat: ImageOutputFormat;     // jpeg = small/photo, png = lossless, webp = small + modern
+}
+
+export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
+  provider:     'openai',
+  resolution:   'nb2-2k',
+  quality:      'high',
+  aspectRatio:  'auto',
+  outputFormat: 'jpeg',
+};
+
+// USD price matrix per (resolution × quality). Quality affects price now —
+// higher quality = more model compute = more cost, passed on transparently.
+// Margins target ~40–60% across the matrix.
+export const PRICES_USD: Record<string, Record<ImageQualityLevel, number>> = {
+  'nb2-1k': { low: 0.10, medium: 0.20, high: 0.30 },
+  'nb2-2k': { low: 0.15, medium: 0.30, high: 0.40 },
+  'nb2-4k': { low: 0.25, medium: 0.50, high: 0.60 },
+};
+
+/** Convenience getter for the matrix above. Defaults to 0 if unknown. */
+export const getGenerationPriceUsd = (resolution: string, quality: ImageQualityLevel): number =>
+  PRICES_USD[resolution]?.[quality] ?? 0;
+
+// Legacy export — keeps callers that only know "high quality" pricing working.
+// Prefer getGenerationPriceUsd() in new code.
+export const RESOLUTION_PRICES_USD: Record<string, number> = {
+  'nb2-1k': PRICES_USD['nb2-1k'].high,
+  'nb2-2k': PRICES_USD['nb2-2k'].high,
+  'nb2-4k': PRICES_USD['nb2-4k'].high,
+};
+
 // --- ADMIN TYPES ---
 
 export interface AdminUser {

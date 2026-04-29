@@ -18,7 +18,7 @@ export const PricingSection: React.FC = () => (
                     Pay only for<br />what you use.
                 </h2>
                 <p className="text-zinc-400 dark:text-zinc-500 text-sm leading-relaxed mt-1">
-                    No subscription. 5 € starter credits on sign-up.
+                    No subscription. Free to try — starter credits on sign-up.
                 </p>
             </div>
 

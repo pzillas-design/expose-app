@@ -9,6 +9,7 @@ import { generateId } from '@/utils/ids';
 import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, StructuredReference } from '@/types';
 import { sendGenerationCompleteNotification } from '@/utils/notifications';
 import { trackImageGenerated } from '@/utils/analytics';
+import { logError } from '@/services/errorLogger';
 
 interface UseGenerationProps {
     rows: ImageRow[];
@@ -42,10 +43,10 @@ const COSTS: Record<string, number> = {
 };
 
 const ESTIMATED_DURATIONS: Record<string, number> = {
-    'nb2-05k': 10000,  // ~10s fastest option
-    'nb2-1k': 18000,   // ~18s observed average
-    'nb2-2k': 30000,   // ~30s observed average
-    'nb2-4k': 55000,   // ~55s observed average
+    'nb2-05k': 16000,  // ~16s (measured avg/p50 over last 14d)
+    'nb2-1k': 32000,   // ~32s (measured avg 34s, p50 31s)
+    'nb2-2k': 40000,   // ~40s (measured avg 39s, p75 45s)
+    'nb2-4k': 55000,   // ~55s (measured avg 54s, p50 48s)
 };
 
 const resolveTargetModel = (_quality: string): string | undefined => {
@@ -107,100 +108,6 @@ const translateError = (errorMsg: string, t: (key: any) => string): string => {
     return `${t('error_generation_failed')}: ${errorMsg.substring(0, 120)}`;
 };
 
-// Cache for smart estimates (simple in-memory cache)
-let smartEstimatesCache: Record<string, {
-    baseDurationMs: number;
-    concurrencyFactor: number;
-    sampleCount: number;
-}> | null = null;
-let cacheTimestamp: number = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-// ── Local timing learning ─────────────────────────────────────────────────────
-// Persists rolling averages of actual generation durations in localStorage.
-// After ≥2 samples the stored average is used instead of the hardcoded fallback.
-const LS_TIMING_KEY = 'expose_gen_timing_v2';
-interface TimingBucket { sum: number; count: number; }
-
-const getImageSizeFromQuality = (quality: string): string => {
-    if (quality.includes('4k')) return '4K';
-    if (quality.includes('2k')) return '2K';
-    return '1K';
-};
-
-const buildEstimateKey = ({
-    qualityMode,
-    requestType,
-    hasSourceImage,
-    hasMask,
-    referenceCount,
-    imageSize,
-}: {
-    qualityMode: string;
-    requestType: 'create' | 'edit';
-    hasSourceImage: boolean;
-    hasMask: boolean;
-    referenceCount: number;
-    imageSize?: string;
-}) => {
-    const resolvedSize = imageSize || getImageSizeFromQuality(qualityMode);
-    const hasReferences = referenceCount > 0;
-    return [qualityMode, requestType, String(hasSourceImage), String(hasMask), String(hasReferences), resolvedSize].join('|');
-};
-
-const loadTimingStore = (): Record<string, TimingBucket> => {
-    try { return JSON.parse(localStorage.getItem(LS_TIMING_KEY) || '{}'); } catch { return {}; }
-};
-const recordActualDuration = (keys: string[], ms: number) => {
-    // Ignore hard limits (< 3s or > 5 min)
-    if (ms < 3000 || ms > 300000) return;
-    try {
-        const store = loadTimingStore();
-        for (const key of keys) {
-            const prev = store[key] || { sum: 0, count: 0 };
-            if (prev.count >= 3) {
-                const currentAvg = prev.sum / prev.count;
-                if (ms > currentAvg * 2.5 || ms < currentAvg * 0.4) continue;
-            }
-            const count = Math.min(prev.count + 1, 20);
-            const sum = prev.count >= 20
-                ? (prev.sum / prev.count) * 19 + ms
-                : prev.sum + ms;
-            store[key] = { sum, count };
-        }
-        localStorage.setItem(LS_TIMING_KEY, JSON.stringify(store));
-    } catch { /* storage full or unavailable */ }
-};
-const getLearnedDuration = (keys: string[]): number | null => {
-    try {
-        const store = loadTimingStore();
-        for (const key of keys) {
-            const bucket = store[key];
-            if (bucket && bucket.count >= 2) return Math.round(bucket.sum / bucket.count);
-        }
-    } catch { /* */ }
-    return null;
-};
-
-// Debug helper: call window.__etaDebug() in browser console to inspect learned timings
-if (typeof window !== 'undefined') {
-    (window as any).__etaDebug = () => {
-        const store = loadTimingStore();
-        const hardcoded = ESTIMATED_DURATIONS;
-        console.group('📊 ETA Timing Store');
-        Object.entries(hardcoded).forEach(([quality, hardMs]) => {
-            const bucket = store[quality];
-            const learnedMs = bucket && bucket.count >= 2 ? Math.round(bucket.sum / bucket.count) : null;
-            const diff = learnedMs ? Math.round((learnedMs - hardMs) / 1000) : null;
-            console.log(
-                `${quality.padEnd(8)} | hardcoded: ${(hardMs/1000).toFixed(0)}s` +
-                (learnedMs ? ` | learned: ${(learnedMs/1000).toFixed(0)}s (${diff! > 0 ? '+' : ''}${diff}s) [n=${bucket!.count}]` : ' | learned: — (not enough data)')
-            );
-        });
-        console.groupEnd();
-        return store;
-    };
-}
 
 
 export const useGeneration = ({
@@ -208,8 +115,8 @@ export const useGeneration = ({
     qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, showToast, t, confirm, onImageSaved, onGenerationComplete, onSignIn
 }: UseGenerationProps) => {
     const attachedJobIds = React.useRef<Set<string>>(new Set());
-    // Track { startTime, quality } per jobId so we can record actual duration on completion
-    const jobTimingRef = React.useRef<Record<string, { startTime: number; quality: string; estimateKey: string }>>({});
+    // Track startTime per jobId so we can record actual duration on completion
+    const jobTimingRef = React.useRef<Record<string, { startTime: number }>>({});
     // Always-current ref to selectAndSnap — prevents stale closure in completion callbacks
     const selectAndSnapRef = React.useRef(selectAndSnap);
     React.useEffect(() => { selectAndSnapRef.current = selectAndSnap; }, [selectAndSnap]);
@@ -262,16 +169,21 @@ export const useGeneration = ({
                 .maybeSingle();
 
             if (imgData) {
-                // Record actual duration — locally and write back to DB for global stats
+                // Write actual duration_ms to generation_jobs for analytics
                 const timing = jobTimingRef.current[jobId];
                 if (timing) {
                     const actualMs = Date.now() - timing.startTime;
-                    recordActualDuration([timing.estimateKey, `quality:${timing.quality}`], actualMs);
-                    // Write duration_ms to generation_jobs so get_smart_generation_estimates has real data
                     supabase.from('generation_jobs')
                         .update({ duration_ms: Math.round(actualMs) })
                         .eq('id', jobId)
-                        .then(() => {});
+                        .then(({ error }) => {
+                            if (error) {
+                                logError(`generation_jobs duration UPDATE failed: ${error.message}`, {
+                                    source: 'silent',
+                                    context: `poll-complete:${jobId}`,
+                                });
+                            }
+                        });
                     delete jobTimingRef.current[jobId];
                 }
 
@@ -357,33 +269,6 @@ export const useGeneration = ({
 
         poll();
     }, [setRows, user, t, showToast]);
-
-    // Re-attach to orphaned jobs on load/change
-    // Pre-fetch smart estimates on mount
-    React.useEffect(() => {
-        const fetchEstimates = async () => {
-            try {
-                const { data } = await supabase.rpc('get_smart_generation_estimates');
-                if (data && data.length > 0) {
-                    const estimates: Record<string, any> = {};
-                    data.forEach((row: any) => {
-                        if (row.estimate_key) {
-                            estimates[row.estimate_key] = {
-                                baseDurationMs: Math.round(row.base_duration_ms || 0),
-                                concurrencyFactor: row.concurrency_factor || 0.3,
-                                sampleCount: row.sample_count || 0
-                            };
-                        }
-                    });
-                    smartEstimatesCache = estimates;
-                    cacheTimestamp = Date.now();
-                }
-            } catch (err) {
-                console.warn('Failed to fetch smart estimates:', err);
-            }
-        };
-        fetchEstimates();
-    }, []);
 
     React.useEffect(() => {
         const generatingIds = rows.flatMap(r => r.items)
@@ -472,14 +357,6 @@ export const useGeneration = ({
         const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
         const newVersion = maxVersion + 1;
         const currentAnnotations = sourceImage.annotations || [];
-        const currentRefs = currentAnnotations.filter(a => a.type === 'reference_image');
-        const estimateKey = buildEstimateKey({
-            qualityMode: effectiveQuality,
-            requestType: 'edit',
-            hasSourceImage: true,
-            hasMask: currentAnnotations.some(a => ['mask_path', 'stamp', 'shape'].includes(a.type)),
-            referenceCount: currentRefs.length,
-        });
 
         // 2. CONCURRENCY & DURATION — simple hardcoded values per quality
         const estimatedDuration = ESTIMATED_DURATIONS[effectiveQuality] || 25000;
@@ -519,7 +396,7 @@ export const useGeneration = ({
         });
 
         // Track start time so pollForJob can record actual duration
-        jobTimingRef.current[newId] = { startTime: Date.now(), quality: effectiveQuality, estimateKey };
+        jobTimingRef.current[newId] = { startTime: Date.now() };
 
         // Record which image was active when generate was pressed — used to guard auto-navigate
         generationSourceIds.current[newId] = activeIdRef.current;
@@ -612,7 +489,18 @@ export const useGeneration = ({
                             isRepeat: !!isRepeat,
                             variables: variableValues || {},
                         }
-                    }).then(() => {});
+                    }).then(({ error }) => {
+                        if (error) {
+                            // CRITICAL: if this INSERT fails, the edge function's
+                            // UPDATE will match 0 rows and the job will be invisible
+                            // in the admin panel even if generation succeeds.
+                            logError(`generation_jobs INSERT failed (edit): ${error.message} [code=${error.code ?? '?'}]`, {
+                                source: 'silent',
+                                context: `edit:${newId}:user=${currentUser.id}`,
+                            });
+                            showToast(`Job-Tracking fehlgeschlagen (${error.code ?? 'unknown'}) — generiere trotzdem, kontaktiere Admin`, 'error', 8000);
+                        }
+                    });
                 }
 
                 const finalImage = await imageService.processGeneration({
@@ -674,7 +562,15 @@ export const useGeneration = ({
                 })).filter(row => row.items.length > 0));
 
                 if (currentUser && !isAuthDisabled) {
-                    supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', currentUser.id);
+                    supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', currentUser.id)
+                        .then(({ error }) => {
+                            if (error) {
+                                logError(`generation_jobs cleanup DELETE failed: ${error.message}`, {
+                                    source: 'silent',
+                                    context: `edit-cleanup:${newId}`,
+                                });
+                            }
+                        });
                 }
 
                 const translated = translateError(error.message || String(error), t);
@@ -729,17 +625,9 @@ export const useGeneration = ({
             annotations: creationAnns, userId: user?.id,
             estimatedDuration: ESTIMATED_DURATIONS[modelId] || 25000,
         };
-        const estimateKey = buildEstimateKey({
-            qualityMode: modelId,
-            requestType: 'create',
-            hasSourceImage: false,
-            hasMask: false,
-            referenceCount: attachments.length,
-        });
-
         setRows(prev => [{ id: generateId(), title: baseName, items: [placeholder], createdAt: Date.now() }, ...prev]);
         // Track start time so we can record actual duration on completion
-        jobTimingRef.current[newId] = { startTime: Date.now(), quality: modelId, estimateKey };
+        jobTimingRef.current[newId] = { startTime: Date.now() };
         // Record source ID (null for create — no "source" image to stay on)
         generationSourceIds.current[newId] = activeIdRef.current;
         // Navigate to the placeholder immediately (user sees blob animation on detail page).
@@ -759,7 +647,15 @@ export const useGeneration = ({
                         prompt_preview: prompt,
                         quality_mode: modelId,
                         model: modelId
-                    }).then(() => {});
+                    }).then(({ error }) => {
+                        if (error) {
+                            logError(`generation_jobs INSERT failed (create): ${error.message} [code=${error.code ?? '?'}]`, {
+                                source: 'silent',
+                                context: `create:${newId}:user=${user.id}`,
+                            });
+                            showToast(`Job-Tracking fehlgeschlagen (${error.code ?? 'unknown'}) — generiere trotzdem, kontaktiere Admin`, 'error', 8000);
+                        }
+                    });
                 }
 
                 const structuredRequest: StructuredGenerationRequest = {
@@ -773,10 +669,21 @@ export const useGeneration = ({
                 });
 
                 if (finalImage) {
-                    // Synchronous completion (legacy path) — record actual duration
+                    // Synchronous completion (legacy path) — write actual duration to DB
                     const t0 = jobTimingRef.current[newId];
                     if (t0) {
-                        recordActualDuration([t0.estimateKey, `quality:${t0.quality}`], Date.now() - t0.startTime);
+                        const actualMs = Date.now() - t0.startTime;
+                        supabase.from('generation_jobs')
+                            .update({ duration_ms: Math.round(actualMs) })
+                            .eq('id', newId)
+                            .then(({ error }) => {
+                                if (error) {
+                                    logError(`generation_jobs duration UPDATE failed (create): ${error.message}`, {
+                                        source: 'silent',
+                                        context: `create-complete:${newId}`,
+                                    });
+                                }
+                            });
                         delete jobTimingRef.current[newId];
                     }
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
@@ -808,7 +715,15 @@ export const useGeneration = ({
                 setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
 
                 if (user && !isAuthDisabled) {
-                    supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', user.id);
+                    supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', user.id)
+                        .then(({ error }) => {
+                            if (error) {
+                                logError(`generation_jobs cleanup DELETE failed (create): ${error.message}`, {
+                                    source: 'silent',
+                                    context: `create-cleanup:${newId}`,
+                                });
+                            }
+                        });
                 }
 
                 const translated = translateError(error.message || "", t);

@@ -35,47 +35,37 @@ const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2/edit';
 type Provider = 'fal-nb2' | 'openai';
 
 /**
- * Map our internal `nb2-*` quality mode + aspect ratio to GPT-Image-2's
- * (quality, image_size) pair.
+ * Build GPT-Image-2's `image_size` from our nb2-* tier + aspect ratio.
  *
- * Quality is hardcoded to 'medium' across all tiers — that's our sweet spot for
- * price ($0.04–0.11/image vs $0.16–0.41 at high) and latency (30–60s vs 90–155s).
- * The user-visible tier purely controls *output resolution*: we pick the long
- * edge per tier, then derive the short edge from the actual aspect ratio (rounded
- * down to a multiple of 16, gpt-image-2's hard requirement). This preserves the
- * source aspect exactly — earlier coarse 5-bucket mapping was forcing e.g. 3:2
- * inputs into 4:3 outputs, which users noticed as silent crops/distortion.
+ * - `aspect === 'auto'` → return `'auto'`, gpt-image-2 infers from the input.
+ * - Otherwise: pick the long edge per tier, derive the short edge from the
+ *   actual aspect, round DOWN to a multiple of 16 (gpt-image-2's hard requirement).
+ *   This preserves the source aspect exactly.
  */
-const qualityModeToOpenAIInput = (
+const resolveOpenAIImageSize = (
     q: string,
     ar: string,
-): { quality: 'low' | 'medium' | 'high'; image_size: string | { width: number; height: number } } => {
+): string | { width: number; height: number } => {
+    if (ar === 'auto' || !ar) return 'auto';
+
     const [arW, arH] = ar.split(':').map(Number);
     const ratio = (arW && arH) ? arW / arH : 1;
 
-    // Long-edge target per tier. gpt-image-2's priced tiers max out around 3840
-    // on the long side; medium quality is fine well above that, just slower.
     const longEdge = q === 'nb2-4k' ? 3840
                    : q === 'nb2-2k' ? 1920
-                   : 1024; // nb2-0.5k + nb2-1k both land here
+                   : 1024;
 
-    // Round DOWN to the nearest multiple of 16 — gpt-image-2 rejects sizes that
-    // aren't multiples of 16. floor() avoids edge cases where rounding up would
-    // push past a priced tier ceiling.
     const round16 = (n: number) => Math.max(16, Math.floor(n / 16) * 16);
 
     let width: number, height: number;
     if (ratio >= 1) {
-        // landscape (or square) — long edge is the width
         width  = longEdge;
         height = round16(longEdge / ratio);
     } else {
-        // portrait — long edge is the height
         height = longEdge;
         width  = round16(longEdge * ratio);
     }
-
-    return { quality: 'medium', image_size: { width, height } };
+    return { width, height };
 };
 
 const logInfo = (ctx: string, msg: string, data?: any) => {
@@ -299,6 +289,7 @@ Deno.serve(async (req) => {
             annotationImage: payloadAnnotationImage,
             references: payloadReferences,
             qualityMode,
+            quality: rawQuality,
             aspectRatio: explicitRatio,
             targetTitle,
             activeTemplateId,
@@ -308,6 +299,10 @@ Deno.serve(async (req) => {
             provider: rawProvider,
         } = payload;
         const provider: Provider = rawProvider === 'openai' ? 'openai' : 'fal-nb2';
+        // gpt-image-2 'quality' from the new settings modal. Falls back to 'high'
+        // (sweet-spot detail/adherence) if the client didn't send it.
+        const userQuality: 'low' | 'medium' | 'high' =
+            rawQuality === 'low' || rawQuality === 'medium' || rawQuality === 'high' ? rawQuality : 'high';
         const basePrompt = rawPrompt ?? '';
 
         // Append template variables to the prompt, using the template's human-readable
@@ -426,8 +421,20 @@ Deno.serve(async (req) => {
         }
 
         // ── Resolve aspect ratio ───────────────────────────────────────────
-        let aspectRatio = '1:1';
-        if (explicitRatio) {
+        // 'auto' is a sentinel from the settings modal: skip the validity-clamp
+        // and pass it straight through to the OpenAI branch (which uses
+        // image_size: 'auto' so the model infers from the input). NB2 has no
+        // 'auto' equivalent — fall back to the source-derived ratio there.
+        let aspectRatio: string = '1:1';
+        if (explicitRatio === 'auto') {
+            if (provider === 'openai') {
+                aspectRatio = 'auto';
+            } else if (sourceImage && (sourceImage.realWidth || sourceImage.width)) {
+                const w = sourceImage.realWidth || sourceImage.width || 1024;
+                const h = sourceImage.realHeight || sourceImage.height || 1024;
+                aspectRatio = getClosestAspectRatioFromDims(w, h);
+            }
+        } else if (explicitRatio) {
             aspectRatio = findClosestValidRatio(explicitRatio);
         } else if (sourceImage && (sourceImage.realWidth || sourceImage.width)) {
             const w = sourceImage.realWidth || sourceImage.width || 1024;
@@ -452,11 +459,13 @@ Deno.serve(async (req) => {
         let falInput: Record<string, any>;
         if (provider === 'openai') {
             endpoint = hasSource ? OPENAI_ENDPOINT_EDIT : OPENAI_ENDPOINT_CREATE;
-            const oa = qualityModeToOpenAIInput(qualityMode, aspectRatio);
+            // Quality from the user's settings modal (low/medium/high). Falls back
+            // to 'high' since that's the documented default for the new settings UI.
+            const imageSize = resolveOpenAIImageSize(qualityMode, aspectRatio);
             falInput = {
                 prompt,
-                quality: oa.quality,
-                image_size: oa.image_size,
+                quality: userQuality,
+                image_size: imageSize,
                 output_format: 'jpeg',
                 num_images: 1,
             };

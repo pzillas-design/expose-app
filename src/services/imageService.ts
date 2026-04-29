@@ -4,17 +4,7 @@ import { CanvasImage, ImageRow } from '../types';
 import { slugify } from '../utils/stringUtils';
 import { generateId } from '../utils/ids';
 
-import { detectImageProvider as detectImageProviderShared } from '../utils/modelLabels';
-
-/**
- * A/B provider routing for the generate-image edge function. Wraps the shared
- * detector — returns `undefined` on prod so the edge function uses its NB2
- * default unchanged.
- */
-const detectImageProvider = (): 'fal-nb2' | 'openai' | undefined => {
-    const p = detectImageProviderShared();
-    return p === 'fal-nb2' ? undefined : p;
-};
+import { loadGenerationSettings } from '../utils/generationSettings';
 
 const buildUploadSubfolder = () => {
     const now = new Date();
@@ -270,13 +260,24 @@ export const imageService = {
         // Primary provider: fal.ai (synchronous edge function, no provider cascade).
         // Old route 'generate-image' stays deployed as a fallback — switch back by
         // changing the name below + `git revert` if `generate-image-fal` misbehaves.
+        // GenerationSettings are persisted by the SideSheet's settings modal and
+        // read here so they propagate to the edge function without a full prop-
+        // chain refactor through onGenerate → useNanoController → performGeneration.
+        const settings = loadGenerationSettings();
+
+        // 'auto' aspect-ratio means: let gpt-image-2 infer dimensions from the
+        // input image. We pass it as-is; the edge function handles the auto branch.
+        // For non-auto values the user picked an explicit ratio that overrides
+        // whatever the source-dimensions detector had derived.
+        const finalAspectRatio = settings.aspectRatio === 'auto' ? 'auto' : settings.aspectRatio;
+
         const invokeBody = {
             ...payload,
-            qualityMode,
+            qualityMode: settings.resolution || qualityMode,
             newId,
             modelName,
             // attachments intentionally omitted — reference images are already in payload.references
-            aspectRatio,
+            aspectRatio: finalAspectRatio || aspectRatio,
             targetTitle,
             activeTemplateId: activeTemplateId || undefined,
             sourceImage: sourceImageForEdge,
@@ -289,11 +290,9 @@ export const imageService = {
             // Tell edge function this is a repeat so it appends a variation ID to break
             // Gemini's implicit input caching and encourage diverse outputs.
             isRepeat: isRepeat || undefined,
-            // Provider A/B routing — see detectImageProvider() above.
-            // - production (expose.ae) → 'fal-nb2' (Nano Banana 2, undefined to keep edge default)
-            // - everything else (staging/preview/localhost) → 'openai' (gpt-image-2)
-            // Override either with VITE_IMAGE_PROVIDER=fal-nb2 | openai.
-            provider: detectImageProvider(),
+            // Per-generation settings — provider, quality. (resolution = qualityMode above.)
+            provider: settings.provider,
+            quality: settings.quality,
         };
         const invokeHeaders = {
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),

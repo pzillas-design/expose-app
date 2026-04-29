@@ -14,6 +14,9 @@ import { compressImage } from '@/utils/imageUtils';
 import { PRIMARY_PROVIDER } from '@/config/provider';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
+import { GenerationSettingsModal } from '@/components/modals/GenerationSettingsModal';
+import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from '@/types';
+import { saveGenerationSettings, loadGenerationSettings } from '@/utils/generationSettings';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
@@ -112,6 +115,25 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
     const [isQualityOpen, setIsQualityOpen] = useState(false);
+    // PREVIEW: settings modal that replaces the resolution dropdown. Pure UI; only the
+    // resolution part is wired back to the existing onQualityModeChange flow. Quality
+    // and aspectRatio fields are tracked locally until the backend wiring lands.
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    // Hydrate from localStorage on mount, then mirror resolution into qualityMode.
+    const [previewSettings, setPreviewSettings] = useState<GenerationSettings>(() => {
+        const saved = loadGenerationSettings();
+        return { ...saved, resolution: qualityMode || saved.resolution };
+    });
+    // Keep local resolution in sync if qualityMode changes from outside (e.g. preset).
+    React.useEffect(() => {
+        setPreviewSettings(prev => prev.resolution === qualityMode ? prev : { ...prev, resolution: qualityMode });
+    }, [qualityMode]);
+    const handleSettingsChange = (next: GenerationSettings) => {
+        setPreviewSettings(next);
+        // Persist so imageService.generateImage can read at invoke time.
+        saveGenerationSettings(next);
+        if (next.resolution !== qualityMode) onQualityModeChange(next.resolution);
+    };
 
     // Preset Menu State
     const [isPresetsMenuOpen, setIsPresetsMenuOpen] = useState(false);
@@ -682,6 +704,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 t={t}
                 lang={lang}
             />
+            <GenerationSettingsModal
+                isOpen={isSettingsModalOpen}
+                onClose={() => setIsSettingsModalOpen(false)}
+                value={previewSettings}
+                onChange={handleSettingsChange}
+                lang={lang}
+            />
             {/* Drop overlay now lives inside the prompt card — see below */}
 
             <div className="flex flex-col h-full overflow-hidden text-zinc-900 dark:text-zinc-100">
@@ -948,42 +977,16 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
                                         {/* Quality Dropdown + Generate */}
                                         <div className="ml-auto flex items-center gap-3">
-                                            {/* Quality Dropdown */}
+                                            {/* Settings pill — opens GenerationSettingsModal (pill-grid layout). */}
                                             <div className="relative shrink-0">
                                                 <button
-                                                    onClick={() => setIsQualityOpen(p => !p)}
-                                                    title="Resolution"
+                                                    onClick={() => setIsSettingsModalOpen(true)}
+                                                    title="Einstellungen"
                                                     className="h-10 flex items-center gap-1.5 px-3 rounded-full text-[12px] font-medium text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
                                                 >
+                                                    <span aria-hidden className="text-zinc-400 dark:text-zinc-500">⚙</span>
                                                     {qualityMode.split('-')[1] === '05k' ? '0.5K' : qualityMode.split('-')[1].toUpperCase()}
-                                                    <ChevronDown className={`w-4 h-4 transition-transform ${isQualityOpen ? 'rotate-180' : ''}`} />
                                                 </button>
-                                                {isQualityOpen && (
-                                                    <>
-                                                        <div className="fixed inset-0 z-40" onClick={() => setIsQualityOpen(false)} />
-                                                        <div className="absolute top-full mt-2 right-0 z-50 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-2 w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
-                                                            <p className="px-2 pt-0.5 pb-1.5 text-[10px] font-medium text-zinc-400 dark:text-zinc-500 tracking-wide">Resolution</p>
-                                                            {/* Resolution + Price */}
-                                                            {((PRIMARY_PROVIDER === 'kie' ? ['1k', '2k', '4k'] : ['05k', '1k', '2k', '4k']) as readonly ('05k' | '1k' | '2k' | '4k')[]).map(res => {
-                                                                const q = `nb2-${res}` as GenerationQuality;
-                                                                const COSTS: Record<string, number> = { 'nb2-05k': 0.05, 'nb2-1k': 0.10, 'nb2-2k': 0.20, 'nb2-4k': 0.40 };
-                                                                const cost = COSTS[q];
-                                                                const isActive = qualityMode === q;
-                                                                const label = res === '05k' ? '0.5K' : res.toUpperCase();
-                                                                return (
-                                                                    <button
-                                                                        key={res}
-                                                                        onClick={() => { onQualityModeChange(q); setIsQualityOpen(false); }}
-                                                                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[12px] transition-colors ${isActive ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium' : 'text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-white'}`}
-                                                                    >
-                                                                        {label}
-                                                                        <span className="text-[11px] text-zinc-400">{`${cost.toFixed(2)} €`}</span>
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </>
-                                                )}
                                             </div>
 
                                             {/* Generate Button — collapses progressively as the sidesheet gets narrow */}

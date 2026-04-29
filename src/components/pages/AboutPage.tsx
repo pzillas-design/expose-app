@@ -184,8 +184,10 @@ const MarqueeCard: React.FC<{ card: CardDef; de: boolean; h: number; w?: number;
 // ── Feature Marquee ───────────────────────────────────────
 const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
     const { ref, visible } = useCardWallReveal();
-    const LINE1 = de ? 'ein prompt ist' : 'one prompt is';
-    const LINE2 = de ? 'nie genug.'     : 'never enough.';
+    // Headline stays English in both locales — the punchy "one prompt is never enough"
+    // beat reads cleaner than the German literal translation.
+    const LINE1 = 'one prompt is';
+    const LINE2 = 'never enough.';
     const [shown, setShown] = useState(false);
     const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
     useEffect(() => {
@@ -598,12 +600,22 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
             <style>{`
                 .verb-title { font-size: clamp(3rem, 13vw, 5rem); }
                 @media (min-width: 640px) {
-                    .verb-slide { top: 12% !important; height: 66% !important; }
+                    /* Navbar height: 88px mobile, 148px md+. Top floor must clear that
+                       AND leave a visible gap. Bottom-anchored at 22% (CTA's height).
+                       sm (640–767px) floor 120px; md+ floor 180px. */
+                    .verb-slide { top: max(100px, 12%) !important; bottom: 22% !important; height: auto !important; }
                     .verb-cta  { position: absolute !important; top: 78% !important; height: 22% !important; left: 0; right: 0; }
-                    .verb-typo { position: absolute !important; top: 12% !important; height: 66% !important; left: 0; right: 0; }
-                    .verb-wave { top: 12% !important; bottom: 22% !important; }
-                    .verb-doodles { top: 12% !important; bottom: 22% !important; }
+                    .verb-typo { position: absolute !important; top: max(100px, 12%) !important; bottom: 22% !important; height: auto !important; left: 0; right: 0; }
+                    .verb-wave { top: max(100px, 12%) !important; bottom: 22% !important; }
+                    .verb-doodles { top: max(100px, 12%) !important; bottom: 22% !important; }
                     .verb-title { font-size: clamp(2.5rem, 9vw, 9rem) !important; }
+                }
+                @media (min-width: 768px) {
+                    /* md+: bigger navbar (148px), need a beefier top floor. */
+                    .verb-slide { top: max(160px, 13%) !important; }
+                    .verb-typo { top: max(160px, 13%) !important; }
+                    .verb-wave { top: max(160px, 13%) !important; }
+                    .verb-doodles { top: max(160px, 13%) !important; }
                 }
             `}</style>
             {/* Image slides — flush with page grid (px-5 sm:px-8 lg:px-12) */}
@@ -633,7 +645,10 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                                 transition: 'transform 8s cubic-bezier(0.25,0.46,0.45,0.94)',
                             } : undefined}
                         />
-                        <div className="absolute inset-0 bg-black/20" />
+                        {/* Dark overlay for legibility — skipped on the "own" scene
+                            (i === 4) since the underwater shot stands on its own and
+                            the chip is null there anyway. */}
+                        {i !== 4 && <div className="absolute inset-0 bg-black/20" />}
                     </div>
                 );
             })}
@@ -746,7 +761,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                         <ul className="flex flex-wrap items-center gap-y-1">
                             {[
                                 de ? 'Kein Abo' : 'No subscription',
-                                de ? '5 € Startguthaben' : '€5 starter credits',
+                                de ? 'Kostenlos testen' : 'Free to try',
                                 de ? '4K Auflösung' : '4K resolution',
                             ].map((label, i) => (
                                 <li key={i} className="flex items-center text-sm text-zinc-600 dark:text-zinc-300">
@@ -827,7 +842,7 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
                             {de ? <>nur zahlen<br />was du nutzt.</> : <>pay only for<br />what you use.</>}
                         </h2>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed mt-1">
-                            {de ? 'Kein Abo. 5 € Startguthaben bei Registrierung.' : 'No subscription. 5 € starter credits on sign-up.'}
+                            {de ? 'Kein Abo. Kostenlos testen — Startguthaben bei Registrierung.' : 'No subscription. Free to try — starter credits on sign-up.'}
                         </p>
                     </div>
                     <div className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800/60">

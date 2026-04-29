@@ -9,6 +9,8 @@ import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { getCurrentProviderTierLabel } from '@/utils/modelLabels';
+import { GenerationSettingsModal } from '@/components/modals/GenerationSettingsModal';
+import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from '@/types';
 import { useToast } from '@/components/ui/Toast';
 import { Edit2, Check as CheckIcon } from 'lucide-react';
 import { downloadImage } from '@/utils/imageUtils';
@@ -83,6 +85,11 @@ export const PromptTab: React.FC<PromptTabProps> = ({
 
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+
+    // PREVIEW: local state for the new GenerationSettingsModal — pure UI, not yet
+    // wired to the actual generation pipeline. Lets us iterate on the design first.
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [previewSettings, setPreviewSettings] = useState<GenerationSettings>(DEFAULT_GENERATION_SETTINGS);
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
         ...(PRIMARY_PROVIDER === 'kie' ? [] : [{ id: 'nb2-05k' as GenerationQuality, label: getCurrentProviderTierLabel('nb2-05k'), desc: `512 px · ${t('quality_faster')}`, price: '0.05 €' }]),
@@ -725,6 +732,33 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                             onChange={handleFileChange}
                         />
                     </div>
+
+                    {/* DESIGN PREVIEW: settings-modal trigger pill. Shows current
+                        preview settings as a one-line summary; click → opens modal.
+                        Not wired to actual generation yet. */}
+                    <button
+                        type="button"
+                        onClick={() => setIsSettingsModalOpen(true)}
+                        className="flex items-center justify-between gap-2 px-3 py-2 mb-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-600 text-xs text-zinc-600 dark:text-zinc-300 transition-colors"
+                    >
+                        <span className="flex items-center gap-2">
+                            <span className="text-zinc-400 dark:text-zinc-500">⚙</span>
+                            <span className="font-medium">{previewSettings.resolution.replace('nb2-', '').toUpperCase()}</span>
+                            <span className="text-zinc-400">·</span>
+                            <span>{previewSettings.quality === 'low' ? 'Niedrig' : previewSettings.quality === 'medium' ? 'Mittel' : 'Hoch'}</span>
+                            <span className="text-zinc-400">·</span>
+                            <span>{previewSettings.aspectRatio}</span>
+                        </span>
+                        <span className="text-zinc-400 dark:text-zinc-500">›</span>
+                    </button>
+
+                    <GenerationSettingsModal
+                        isOpen={isSettingsModalOpen}
+                        onClose={() => setIsSettingsModalOpen(false)}
+                        value={previewSettings}
+                        onChange={setPreviewSettings}
+                        lang={currentLang as 'de' | 'en'}
+                    />
 
                     {/* Generate Button with Integrated Settings */}
                     <div className="relative z-20">
