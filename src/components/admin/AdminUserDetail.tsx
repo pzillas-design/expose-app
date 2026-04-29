@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Shield, Clock, Lock, ArrowRight, Trash, Plus, Loader2, CreditCard, RotateCcw, ExternalLink } from 'lucide-react';
+import { X, Shield, Clock, Lock, ArrowRight, Trash, Pencil, Loader2, CreditCard, RotateCcw, ExternalLink } from 'lucide-react';
 import { AdminUser, TranslationFunction } from '@/types';
 import { Typo, IconButton, Button, Input, SectionHeader } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
@@ -37,21 +37,30 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
          .finally(() => setLoadingPayments(false));
  }, [user.stripeCustomerId]);
 
- const handleAddCredits = async () => {
- const result = await prompt({
- title: t('admin_add_funds'),
- placeholder: '0.00',
- confirmLabel: t('admin_add_funds'),
- suffix: '€'
- });
+ const handleAdjustCredits = async () => {
+     // Accept a signed number: positive = add, negative = deduct.
+     // Result is clamped to >= 0 server-side equivalent (we floor at 0 here too).
+     const result = await prompt({
+         title: `${t('admin_add_funds')} (±)`,
+         description: `${t('admin_balance')}: ${user.credits.toFixed(2)} €. + addiert, − zieht ab.`,
+         placeholder: '+1.00 / -1.00',
+         confirmLabel: 'Anwenden',
+         suffix: '€',
+     });
 
- if (result) {
- const amount = parseFloat(result);
- if (!isNaN(amount) && amount > 0) {
- onUpdateUser(user.id, { credits: user.credits + amount });
- showToast(t('admin_add_credits_success').replace('{{amount}}', amount.toFixed(2)), 'success');
- }
- }
+     if (!result) return;
+     const delta = parseFloat(result.replace(',', '.'));
+     if (isNaN(delta) || delta === 0) return;
+
+     const next = Math.max(0, Math.round((user.credits + delta) * 100) / 100);
+     onUpdateUser(user.id, { credits: next });
+
+     if (delta > 0) {
+         showToast(t('admin_add_credits_success').replace('{{amount}}', delta.toFixed(2)), 'success');
+     } else {
+         const removed = Math.abs(delta);
+         showToast(`${removed.toFixed(2)} € abgezogen — neuer Saldo ${next.toFixed(2)} €`, 'success');
+     }
  };
 
  const handleDelete = async () => {
@@ -162,10 +171,11 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
               <div className="flex items-center justify-between">
                 <span className={`text-xl font-mono ${user.credits === 0 ? 'text-zinc-400 dark:text-zinc-600' : 'text-black dark:text-white'}`}>{user.credits.toFixed(2)} €</span>
  <button
- onClick={handleAddCredits}
- className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-emerald-500 transition-colors"
+     onClick={handleAdjustCredits}
+     title="Credits anpassen (+ oder −)"
+     className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-emerald-500 transition-colors"
  >
- <Plus className="w-4 h-4" />
+     <Pencil className="w-4 h-4" />
  </button>
  </div>
  </div>
