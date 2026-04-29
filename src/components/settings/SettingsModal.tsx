@@ -175,34 +175,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <section className="py-7">
                     <div className="space-y-5">
 
-                        <div>
-                            <p className={fieldLabel}>{t('settings_quality_label')}</p>
-                            <div className="relative">
-                                <button onClick={() => { closeAll(); setIsResDropdownOpen(v => !v); }} className={trigger}>
-                                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                                        {RESOLUTIONS.find(r => r.id === currentRes)?.label}
-                                    </span>
-                                    <ChevronDown className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isResDropdownOpen ? 'rotate-180' : ''}`} />
-                                </button>
-                                {isResDropdownOpen && (
-                                    <>
-                                        <div className="fixed inset-0 z-30" onClick={closeAll} />
-                                        <div className={menu}>
-                                            {RESOLUTIONS.map(r => (
-                                                <button key={r.id} onClick={() => setRes(r.id)}
-                                                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg transition-all ${currentRes === r.id ? 'bg-zinc-100 dark:bg-zinc-800' : 'hover:bg-zinc-50 dark:hover:bg-white/5'}`}>
-                                                    <div className="flex flex-col items-start gap-0.5">
-                                                        <span className="text-sm text-zinc-700 dark:text-zinc-300">{r.label}</span>
-                                                        <span className="text-xs text-zinc-400">{r.desc}</span>
-                                                    </div>
-                                                    {currentRes === r.id && <Check className="w-3.5 h-3.5 text-zinc-500 shrink-0" />}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </div>
+                        {/* Quality / resolution removed — now lives in the per-generation
+                            settings modal (gear icon next to the prompt's Generate button). */}
 
                         <div>
                             <p className={fieldLabel}>{t('app_section')}</p>

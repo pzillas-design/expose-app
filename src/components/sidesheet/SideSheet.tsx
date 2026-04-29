@@ -977,16 +977,17 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
                                         {/* Quality Dropdown + Generate */}
                                         <div className="ml-auto flex items-center gap-3">
-                                            {/* Settings — round icon button, mirrors the existing brush/edit icon style. */}
+                                            {/* Settings — round icon button with Tooltip, same pattern as the reference-image button. */}
                                             <div className="relative shrink-0">
-                                                <button
-                                                    onClick={() => setIsSettingsModalOpen(true)}
-                                                    title="Einstellungen"
-                                                    aria-label="Einstellungen"
-                                                    className="h-10 w-10 flex items-center justify-center rounded-full text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
-                                                >
-                                                    <Settings2 className="w-4 h-4" />
-                                                </button>
+                                                <Tooltip text={lang === 'de' ? 'Bild-Einstellungen' : 'Image settings'} side="top">
+                                                    <button
+                                                        onClick={() => setIsSettingsModalOpen(true)}
+                                                        aria-label={lang === 'de' ? 'Bild-Einstellungen' : 'Image settings'}
+                                                        className="h-10 w-10 flex items-center justify-center rounded-full text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
+                                                    >
+                                                        <Settings2 className="w-4 h-4" />
+                                                    </button>
+                                                </Tooltip>
                                             </div>
 
                                             {/* Generate Button — collapses progressively as the sidesheet gets narrow */}

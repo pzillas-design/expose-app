@@ -202,10 +202,10 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         </div>
                     )}
 
-                    {/* Source image badge */}
+                    {/* Source image badge — same weight + size as the Euro icon in the navbar. */}
                     {isSource && (
-                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center z-20 bg-white/80 dark:bg-zinc-800/80 shadow-sm pointer-events-none">
-                            <Upload className="w-2.5 h-2.5 text-zinc-500 dark:text-zinc-400" />
+                        <div className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center z-20 bg-white/85 dark:bg-zinc-800/85 shadow-sm pointer-events-none">
+                            <Upload className="w-[14px] h-[14px] text-zinc-700 dark:text-zinc-200" strokeWidth={2} />
                         </div>
                     )}
 

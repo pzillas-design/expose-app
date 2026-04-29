@@ -64,6 +64,9 @@ const ASPECT_OPTIONS_DE: { value: ImageAspectRatio; label: string }[] = [
     { value: '3:4',  label: '3:4 — Hochformat'      },
     { value: '3:2',  label: '3:2 — DSLR Querformat' },
     { value: '2:3',  label: '2:3 — DSLR Hochformat' },
+    { value: '5:4',  label: '5:4 — Print Querformat'},
+    { value: '4:5',  label: '4:5 — Social Hochformat'},
+    { value: '21:9', label: '21:9 — Cinematic'      },
 ];
 const ASPECT_OPTIONS_EN: { value: ImageAspectRatio; label: string }[] = [
     { value: 'auto', label: 'Auto (from source)' },
@@ -74,6 +77,9 @@ const ASPECT_OPTIONS_EN: { value: ImageAspectRatio; label: string }[] = [
     { value: '3:4',  label: '3:4 — portrait'        },
     { value: '3:2',  label: '3:2 — DSLR landscape'  },
     { value: '2:3',  label: '2:3 — DSLR portrait'   },
+    { value: '5:4',  label: '5:4 — print landscape' },
+    { value: '4:5',  label: '4:5 — social portrait' },
+    { value: '21:9', label: '21:9 — cinematic'      },
 ];
 
 // ── Dynamic subtitles (current-selection descriptions) ─────────────────────
@@ -118,6 +124,9 @@ const ASPECT_DESC_DE: Record<ImageAspectRatio, string> = {
     '3:4': 'Hochformat · Porträt-Standard.',
     '3:2': 'DSLR-Querformat.',
     '2:3': 'DSLR-Hochformat.',
+    '5:4': 'Print-Querformat.',
+    '4:5': 'Social-Hochformat.',
+    '21:9': 'Cinematic · ultrabreit.',
 };
 const ASPECT_DESC_EN: Record<ImageAspectRatio, string> = {
     auto:  'Inherits the ratio of the source image.',
@@ -128,6 +137,9 @@ const ASPECT_DESC_EN: Record<ImageAspectRatio, string> = {
     '3:4': 'Portrait · classic.',
     '3:2': 'DSLR landscape.',
     '2:3': 'DSLR portrait.',
+    '5:4': 'Print landscape.',
+    '4:5': 'Social portrait.',
+    '21:9': 'Cinematic · ultrawide.',
 };
 
 // ── Dropdown (used for aspect-ratio field only) ────────────────────────────
@@ -206,6 +218,9 @@ const AspectThumb: React.FC<{ ratio: ImageAspectRatio; active: boolean }> = ({ r
         '3:2':  'w-5 h-[13px]',
         '2:3':  'w-[13px] h-5',
         '1:1':  'w-4 h-4',
+        '5:4':  'w-5 h-4',
+        '4:5':  'w-4 h-5',
+        '21:9': 'w-5 h-[9px]',
     };
     return <div className={`${base} ${dims[ratio]}`} />;
 };

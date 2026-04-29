@@ -143,7 +143,7 @@ export type GenerationQuality = 'nb2-05k' | 'nb2-1k' | 'nb2-2k' | 'nb2-4k';
 // (quality / aspectRatio / outputFormat) are new and only meaningful when
 // the active provider supports them (gpt-image-2 currently).
 export type ImageQualityLevel = 'low' | 'medium' | 'high';
-export type ImageAspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '3:2' | '2:3';
+export type ImageAspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '3:2' | '2:3' | '21:9' | '5:4' | '4:5';
 export type ImageOutputFormat = 'jpeg' | 'png' | 'webp';
 
 export type ImageModelProvider = 'fal-nb2' | 'openai';
