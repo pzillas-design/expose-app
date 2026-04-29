@@ -437,8 +437,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                             <MiniLegend items={[{ color: '#ef4444', label: 'Fehlgeschlagene Jobs' }]} />
                         </div>
                         <p className="text-[10px] text-zinc-400 mb-3">Anzahl Generierungen die mit Fehler abgebrochen sind (Timeout, API-Fehler etc.)</p>
-                        {/* Provider performance sub-stats — per-provider Ø-time, success-rate,
-                            job count, and download-conversion (downloads / completed). */}
+                        {/* Provider performance sub-stats — per-provider Ø-time, success-rate, jobs. */}
                         {(() => {
                             type ProviderRow = { key: string; label: string; matcher: (p: any) => boolean };
                             const providerRows: ProviderRow[] = [
@@ -453,9 +452,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                 const success   = total > 0 ? (completed.length / total) * 100 : null;
                                 const durations = completed.map((j: any) => Number(j.durationMs || 0)).filter(v => v > 0);
                                 const avgDur    = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
-                                const downloads = completed.filter((j: any) => !!j.downloadedAt).length;
-                                const dlRate    = completed.length > 0 ? (downloads / completed.length) * 100 : null;
-                                return { ...row, total, success, avgDur, downloads, dlRate };
+                                return { ...row, total, success, avgDur };
                             }).filter(s => s.total > 0);
                             if (stats.length === 0) return null;
                             return (
@@ -481,12 +478,6 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                                     {s.total}
                                                 </span>
                                             </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[9px] text-zinc-400 uppercase tracking-wider">Downloads</span>
-                                                <span className="text-sm font-bold font-mono text-zinc-700 dark:text-zinc-300">
-                                                    {s.downloads}{s.dlRate != null ? <span className="text-zinc-400 font-normal"> · {s.dlRate.toFixed(0)}%</span> : null}
-                                                </span>
-                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -504,6 +495,67 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                                 </ComposedChart>
                             </ResponsiveContainer>
                         </div>
+                    </div>
+
+                    {/* Box: Beliebtheit — Download-Quote pro Modell. Hoch = User behält das Ergebnis,
+                        niedrig = User wirft die meisten Generierungen weg. */}
+                    <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col">
+                        <div className="flex items-center justify-between mb-1">
+                            <SectionLabel>Beliebtheit pro Modell</SectionLabel>
+                        </div>
+                        <p className="text-[10px] text-zinc-400 mb-4">Wie oft generierte Bilder tatsächlich heruntergeladen werden — Indikator für Output-Zufriedenheit.</p>
+                        {(() => {
+                            type ProviderRow = { key: string; label: string; matcher: (p: any) => boolean };
+                            const providerRows: ProviderRow[] = [
+                                { key: 'nb2',  label: 'Nano Banana 2', matcher: (p) => p === 'fal' || p === 'fal-nb2' },
+                                { key: 'gpt2', label: 'GPT Image 2',   matcher: (p) => p === 'openai' },
+                            ];
+                            const rows = providerRows.map(row => {
+                                const completed = jobs.filter((j: any) => j.status === 'completed' && row.matcher(j.provider));
+                                const downloads = completed.filter((j: any) => !!j.downloadedAt).length;
+                                const dlRate    = completed.length > 0 ? (downloads / completed.length) * 100 : null;
+                                return { ...row, completed: completed.length, downloads, dlRate };
+                            }).filter(r => r.completed > 0);
+
+                            if (rows.length === 0) {
+                                return <p className="text-xs text-zinc-400">Noch keine abgeschlossenen Generierungen.</p>;
+                            }
+
+                            // Find leader for the visual highlight
+                            const max = Math.max(...rows.map(r => r.dlRate ?? 0));
+
+                            return (
+                                <div className="flex flex-col gap-3">
+                                    {rows.map(r => {
+                                        const isLeader = r.dlRate != null && r.dlRate === max && rows.length > 1;
+                                        const barWidth = r.dlRate != null ? Math.max(2, r.dlRate) : 0;
+                                        return (
+                                            <div key={r.key}>
+                                                <div className="flex items-baseline justify-between mb-1.5">
+                                                    <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                                        {r.label}
+                                                        {isLeader && <span className="ml-2 text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Top</span>}
+                                                    </span>
+                                                    <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400 tabular-nums">
+                                                        {r.dlRate != null ? `${r.dlRate.toFixed(0)}%` : '—'}
+                                                        <span className="text-zinc-400 ml-1">· {r.downloads}/{r.completed}</span>
+                                                    </span>
+                                                </div>
+                                                <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full rounded-full transition-all"
+                                                        style={{
+                                                            width: `${barWidth}%`,
+                                                            background: isLeader ? '#10b981' : '#3b82f6',
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     {/* Box: Nutzer-Wachstum (inkl. Aktivierungsrate = Conversion) */}
