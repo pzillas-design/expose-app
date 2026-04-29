@@ -421,25 +421,27 @@ Deno.serve(async (req) => {
         }
 
         // ── Resolve aspect ratio ───────────────────────────────────────────
-        // 'auto' is a sentinel from the settings modal: skip the validity-clamp
-        // and pass it straight through to the OpenAI branch (which uses
-        // image_size: 'auto' so the model infers from the input). NB2 has no
-        // 'auto' equivalent — fall back to the source-derived ratio there.
+        // 'auto' from the settings modal: derive aspect from the source image so
+        // the user's tier-long-edge is honored on gpt-image-2. (Sending image_size:
+        // 'auto' to OpenAI made it pick its own ~1024-1600 long edge regardless of
+        // our 2K/4K tier — users paid for 2K and got ~1.5K.) Only fall back to the
+        // 'auto' sentinel when there's no source image (text-to-image).
         let aspectRatio: string = '1:1';
-        if (explicitRatio === 'auto') {
-            if (provider === 'openai') {
-                aspectRatio = 'auto';
-            } else if (sourceImage && (sourceImage.realWidth || sourceImage.width)) {
-                const w = sourceImage.realWidth || sourceImage.width || 1024;
-                const h = sourceImage.realHeight || sourceImage.height || 1024;
-                aspectRatio = getClosestAspectRatioFromDims(w, h);
-            }
-        } else if (explicitRatio) {
-            aspectRatio = findClosestValidRatio(explicitRatio);
-        } else if (sourceImage && (sourceImage.realWidth || sourceImage.width)) {
+        const hasSourceDims = sourceImage && (sourceImage.realWidth || sourceImage.width);
+        if (hasSourceDims) {
             const w = sourceImage.realWidth || sourceImage.width || 1024;
             const h = sourceImage.realHeight || sourceImage.height || 1024;
-            aspectRatio = getClosestAspectRatioFromDims(w, h);
+            if (explicitRatio === 'auto' || !explicitRatio) {
+                aspectRatio = getClosestAspectRatioFromDims(w, h);
+            } else {
+                aspectRatio = findClosestValidRatio(explicitRatio);
+            }
+        } else if (explicitRatio === 'auto') {
+            // Pure generate (no source) — gpt-image-2 has nothing to infer from,
+            // pass 'auto' through; NB2 has no 'auto' equivalent so default to 1:1.
+            aspectRatio = provider === 'openai' ? 'auto' : '1:1';
+        } else if (explicitRatio) {
+            aspectRatio = findClosestValidRatio(explicitRatio);
         }
         const falResolution = qualityToFalResolution(qualityMode);
 
