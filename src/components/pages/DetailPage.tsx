@@ -257,21 +257,21 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         onSelectImage(id);
     }, [onSelectImage]);
 
-    // Right-click on the canvas overlay (brush mode) → re-dispatch contextmenu to the
-    // underlying <img> so the native browser menu ("Copy Image", "Save As…") appears.
-    const handleOverlayContextMenu = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        const currentImg = imgRef.current;
-        if (!currentImg) return;
-        const domImg = document.getElementById(`detail-img-${currentImg.id}`);
-        if (!domImg) return;
-        // Synthetic contextmenu on the real <img> — browser shows native "Copy Image" menu
-        domImg.dispatchEvent(new MouseEvent('contextmenu', {
-            bubbles: true,
-            cancelable: true,
-            clientX: e.clientX,
-            clientY: e.clientY,
-        }));
+    // Right-click on the canvas overlay → briefly disable the overlay's pointer-events
+    // so the contextmenu event lands on the underlying <img>, which makes the browser
+    // show its native image menu ("Copy Image", "Save As…", "Open in New Tab").
+    //
+    // Synthesizing a contextmenu via dispatchEvent doesn't work in modern browsers —
+    // they only show the native menu for *trusted* user-initiated events. So instead
+    // we sidestep the overlay just-in-time using mousedown (button===2 = right click,
+    // fires synchronously *before* contextmenu).
+    const handleOverlayMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.button !== 2) return;
+        const overlay = e.currentTarget;
+        const prev = overlay.style.pointerEvents;
+        overlay.style.pointerEvents = 'none';
+        // Restore after the contextmenu has fired (a few ms is plenty).
+        window.setTimeout(() => { overlay.style.pointerEvents = prev; }, 80);
     }, []);
 
     const img = imageMap.get(selectedId);
@@ -890,7 +890,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     />
 
                                     {!showBlob && isMainLoaded && logicalDims.width > 0 && logicalDims.height > 0 && (
-                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' || state.activeShape ? 'pointer-events-auto' : 'pointer-events-none'}`} onContextMenu={handleOverlayContextMenu}>
+                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' || state.activeShape ? 'pointer-events-auto' : 'pointer-events-none'}`} onMouseDown={handleOverlayMouseDown}>
                                             <EditorCanvas
                                                 width={logicalDims.width}
                                                 height={logicalDims.height}

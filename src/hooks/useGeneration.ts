@@ -200,6 +200,17 @@ export const useGeneration = ({
         const poll = async () => {
             attempts++;
             if (attempts > maxAttempts) {
+                // Same race-guard as the failed-status path: maybe the image landed
+                // *just* as we were giving up — don't show a refund toast then.
+                const { data: lateImg } = await supabase
+                    .from('images')
+                    .select('id')
+                    .eq('id', jobId)
+                    .maybeSingle();
+                if (lateImg) {
+                    setTimeout(poll, 200);
+                    return;
+                }
                 // 10 min ceiling reached — stop polling, server/pg_cron will clean up
                 setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
@@ -302,6 +313,23 @@ export const useGeneration = ({
             }
 
             if (jobData?.status === 'failed') {
+                // Race-condition guard: edge function may have *just* finished and inserted
+                // into images while the watchdog (or another cleanup) had already flipped the
+                // job row to failed. Do a final image-existence check before showing the
+                // user a refund toast — if the image is there, it's a success, not a failure.
+                const { data: lateImg } = await supabase
+                    .from('images')
+                    .select('id')
+                    .eq('id', jobId)
+                    .maybeSingle();
+                if (lateImg) {
+                    // Bail out of the failure path — the next poll iteration (or the next
+                    // useEffect tick) will pick up the image and switch the placeholder to
+                    // the real result. Just stop attaching to this job here.
+                    setTimeout(poll, 200);
+                    return;
+                }
+
                 const jobError = (jobData as any).error || "";
                 setRows(prev => prev.map(row => ({ ...row, items: row.items.filter(i => i.id !== jobId) })).filter(r => r.items.length > 0));
                 attachedJobIds.current.delete(jobId);
