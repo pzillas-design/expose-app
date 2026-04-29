@@ -51,8 +51,11 @@ const resolveOpenAIImageSize = (
     const [arW, arH] = ar.split(':').map(Number);
     const ratio = (arW && arH) ? arW / arH : 1;
 
-    const longEdge = q === 'nb2-4k' ? 3840
-                   : q === 'nb2-2k' ? 1920
+    // Match NB2's effective output size at the same tier so users get comparable
+    // resolutions across providers. NB2 'nb2-2k' delivers ~2528-2560 long edge;
+    // gpt-image-2 documents a 2560x1440 priced tier we can hit cleanly.
+    const longEdge = q === 'nb2-4k' ? 3840   // UHD, matches NB2 4K
+                   : q === 'nb2-2k' ? 2560   // QHD, matches NB2 ~2528
                    : 1024;
 
     const round16 = (n: number) => Math.max(16, Math.floor(n / 16) * 16);
