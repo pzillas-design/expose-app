@@ -890,7 +890,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     />
 
                                     {!showBlob && isMainLoaded && logicalDims.width > 0 && logicalDims.height > 0 && (
-                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' || state.activeShape ? 'pointer-events-auto' : 'pointer-events-none'}`} onMouseDown={handleOverlayMouseDown}>
+                                        // Overlay only captures clicks while the user is actively drawing
+                                        // (sideSheetMode === 'brush'). state.activeShape stays set even after
+                                        // the user leaves brush mode, so checking it here would needlessly block
+                                        // the native image context menu in prompt-mode (no Copy Image / Save As).
+                                        <div className={`absolute inset-0 z-20 ${state.sideSheetMode === 'brush' ? 'pointer-events-auto' : 'pointer-events-none'}`} onMouseDown={handleOverlayMouseDown}>
                                             <EditorCanvas
                                                 width={logicalDims.width}
                                                 height={logicalDims.height}
