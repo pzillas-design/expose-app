@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Modal } from '@/components/ui/Modal';
 import { Button, Tooltip } from '@/components/ui/DesignSystem';
 import { ChevronDown, Check, Info } from 'lucide-react';
@@ -151,19 +152,58 @@ interface DropdownProps<V extends string> {
 }
 function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<V>) {
     const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
+    // Panel is rendered via portal into document.body so it's not clipped by the
+    // Modal's overflow boundary. Position is computed from the trigger button's
+    // bounding rect — and flipped above the trigger when there isn't enough room
+    // below the viewport edge.
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const [panelPos, setPanelPos] = useState<{ top: number; left: number; width: number; placement: 'down' | 'up' } | null>(null);
+
+    const updatePos = () => {
+        const t = triggerRef.current;
+        if (!t) return;
+        const r = t.getBoundingClientRect();
+        const PANEL_MAX_H = 320; // soft estimate for placement decision
+        const spaceBelow = window.innerHeight - r.bottom;
+        const placement: 'down' | 'up' = spaceBelow >= PANEL_MAX_H || spaceBelow >= window.innerHeight - r.top
+            ? 'down'
+            : 'up';
+        setPanelPos({
+            top: placement === 'down' ? r.bottom + 6 : r.top - 6,
+            left: r.left,
+            width: r.width,
+            placement,
+        });
+    };
+
     useEffect(() => {
         if (!open) return;
-        const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        updatePos();
+        const onClickOutside = (e: MouseEvent) => {
+            const t = e.target as Node;
+            if (triggerRef.current?.contains(t)) return;
+            if (panelRef.current?.contains(t)) return;
+            setOpen(false);
         };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        const onScrollOrResize = () => updatePos();
+        document.addEventListener('mousedown', onClickOutside);
+        window.addEventListener('resize', onScrollOrResize);
+        // Capture phase so we react to inner scroll containers too (e.g. Modal body).
+        window.addEventListener('scroll', onScrollOrResize, true);
+        return () => {
+            document.removeEventListener('mousedown', onClickOutside);
+            window.removeEventListener('resize', onScrollOrResize);
+            window.removeEventListener('scroll', onScrollOrResize, true);
+        };
     }, [open]);
+
     const current = options.find(o => o.value === value);
+
     return (
-        <div className="relative" ref={ref}>
+        <div className="relative">
             <button
+                ref={triggerRef}
                 type="button"
                 onClick={() => setOpen(o => !o)}
                 className="w-full flex items-center justify-between gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
@@ -171,10 +211,20 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
                 <span className="truncate">{current?.label}</span>
                 <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
             </button>
-            {open && (
-                // Bumped to z-[200] so the panel layers above the Modal's body
-                // shadow + scroll clip (Modal uses z-[60-100] internally).
-                <div className="absolute top-full left-0 right-0 mt-1.5 z-[200] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-100">
+            {open && panelPos && createPortal(
+                <div
+                    ref={panelRef}
+                    style={{
+                        position: 'fixed',
+                        top: panelPos.placement === 'down' ? panelPos.top : undefined,
+                        bottom: panelPos.placement === 'up' ? window.innerHeight - panelPos.top : undefined,
+                        left: panelPos.left,
+                        width: panelPos.width,
+                        maxHeight: 'min(60vh, 360px)',
+                        zIndex: 9999,
+                    }}
+                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xl overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-100"
+                >
                     {options.map(opt => {
                         const active = opt.value === value;
                         return (
@@ -193,7 +243,8 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
                             </button>
                         );
                     })}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
