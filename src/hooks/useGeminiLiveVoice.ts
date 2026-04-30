@@ -60,6 +60,10 @@ interface VoiceCommandHandlers {
     createVariables: (controls: Array<{ label: string; options: string[] }>) => Promise<VoiceActionResult> | VoiceActionResult;
     selectVariableOption: (label: string, option: string) => Promise<VoiceActionResult> | VoiceActionResult;
     setQuality: (quality: string) => Promise<VoiceActionResult> | VoiceActionResult;
+    /** Set the per-generation gpt-image-2 quality level (creativity / detail). NB2 has no quality knob — call is a no-op there. */
+    setImageQuality?: (level: 'low' | 'medium' | 'high') => Promise<VoiceActionResult> | VoiceActionResult;
+    /** Switch the active model provider for the next generation. */
+    setProvider?: (provider: 'fal-nb2' | 'openai') => Promise<VoiceActionResult> | VoiceActionResult;
     selectImageByIndex: (index: number) => Promise<VoiceActionResult> | VoiceActionResult;
     selectImageByPosition: (row: number, column: number) => Promise<VoiceActionResult> | VoiceActionResult;
     applyPreset: (title: string) => Promise<VoiceActionResult> | VoiceActionResult;
@@ -190,13 +194,13 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'set_aspect_ratio',
-        description: 'Set the aspect ratio for a new image on the create page. Available ratios: 16:9, 4:3, 1:1, 3:4, 9:16.',
+        description: 'Set the aspect ratio for the next generation. Use "auto" by default (inherits the source image\'s ratio when editing). Other options: "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "5:4", "4:5", "21:9".',
         parameters: {
             type: Type.OBJECT,
             properties: {
                 ratio: {
                     type: Type.STRING,
-                    description: 'The aspect ratio to select, e.g. "16:9", "4:3", "1:1", "3:4", "9:16"'
+                    description: 'Aspect ratio. Allowed: "auto", "1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3", "5:4", "4:5", "21:9".'
                 }
             },
             required: ['ratio']
@@ -239,13 +243,35 @@ const toolDeclarations: FunctionDeclaration[] = [
     },
     {
         name: 'set_quality',
-        description: 'Set the generation quality/resolution. Available: "0.5k" (512px, fastest, 0.05€), "1k" (1024px, fast, 0.10€), "2k" (2048px, fast, 0.20€), "4k" (4096px, fast, 0.40€).',
+        description: 'Set the OUTPUT RESOLUTION tier for the next generation. Pricing: "1k" = 1024px / 0.30€, "2k" = 2560px / 0.40€ (default, recommended), "4k" = 3840px / 0.60€. Use "1k" for fast iteration, "2k" for balanced output, "4k" only when the user explicitly wants maximum size.',
         parameters: {
             type: Type.OBJECT,
             properties: {
-                quality: { type: Type.STRING, description: 'Quality level: "0.5k", "1k", "2k", or "4k"' }
+                quality: { type: Type.STRING, description: 'Resolution tier: "1k", "2k", or "4k". (Legacy: "0.5k" still accepted but discouraged.)' }
             },
             required: ['quality']
+        }
+    },
+    {
+        name: 'set_image_quality',
+        description: 'Set the gpt-image-2 quality/creativity level. Higher = more detail and stylistic richness, but slower and more expensive. Default is "high". Has no effect on Nano Banana 2 (NB2 has no quality dimension).',
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                level: { type: Type.STRING, description: 'Quality level: "low" (fast, sketchy), "medium" (balanced), "high" (creative, detail-rich, slowest).' }
+            },
+            required: ['level']
+        }
+    },
+    {
+        name: 'set_provider',
+        description: 'Switch the AI model used for the next generation. Use "openai" (GPT Image 2) for precise prompt-following — best for detailed edit instructions. Use "fal-nb2" (Nano Banana 2 by Google) for creative, faster results. Default is "openai".',
+        parameters: {
+            type: Type.OBJECT,
+            properties: {
+                provider: { type: Type.STRING, description: 'Model provider: "openai" or "fal-nb2".' }
+            },
+            required: ['provider']
         }
     },
     {
@@ -415,6 +441,8 @@ export function useGeminiLiveVoice({
     createVariables,
     selectVariableOption,
     setQuality,
+    setImageQuality,
+    setProvider,
     selectImageByIndex,
     selectImageByPosition,
     applyPreset,
@@ -766,8 +794,8 @@ export function useGeminiLiveVoice({
                     setTimeout(() => stop(), 50);
                     return { ok: true, message: 'Voice mode ended.' };
                 case 'set_aspect_ratio': {
-                    const ratio = str('ratio', '4:3');
-                    const allowed = ['16:9', '4:3', '1:1', '3:4', '9:16'];
+                    const ratio = str('ratio', 'auto');
+                    const allowed = ['auto', '1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '5:4', '4:5', '21:9'];
                     return allowed.includes(ratio) ? setAspectRatio(ratio) : { ok: false, message: `Invalid ratio: ${ratio}. Allowed: ${allowed.join(', ')}` };
                 }
                 case 'open_stack': return goBack(); // consolidated into go_back
@@ -778,6 +806,27 @@ export function useGeminiLiveVoice({
                 case 'select_variable_option':
                     return selectVariableOption(str('label'), str('option'));
                 case 'set_quality': return setQuality(str('quality', '2k'));
+                case 'set_image_quality': {
+                    const level = str('level', 'high').toLowerCase();
+                    if (level !== 'low' && level !== 'medium' && level !== 'high') {
+                        return { ok: false, message: `Invalid quality level: ${level}. Allowed: low, medium, high.` };
+                    }
+                    return setImageQuality
+                        ? setImageQuality(level as 'low' | 'medium' | 'high')
+                        : { ok: false, message: 'set_image_quality is not wired up in this build.' };
+                }
+                case 'set_provider': {
+                    const raw = str('provider', 'openai').toLowerCase();
+                    const provider = raw === 'fal-nb2' || raw === 'nb2' || raw === 'nano-banana-2' || raw === 'google' ? 'fal-nb2'
+                        : raw === 'openai' || raw === 'gpt-image-2' || raw === 'gpt2' ? 'openai'
+                        : null;
+                    if (!provider) {
+                        return { ok: false, message: `Invalid provider: ${raw}. Allowed: "openai", "fal-nb2".` };
+                    }
+                    return setProvider
+                        ? setProvider(provider)
+                        : { ok: false, message: 'set_provider is not wired up in this build.' };
+                }
                 case 'select_image':
                 case 'select_image_by_index':
                 case 'select_image_by_position': {
@@ -818,7 +867,7 @@ export function useGeminiLiveVoice({
         nextImage, openCreate, openCreateNew, openGallery,
         openPresets, openReferenceImagePicker, openSettings, openStack, openUpload,
         previousImage, repeatCurrentImage, selectVariableOption, setAspectRatio,
-        setPromptText, setQuality, startAnnotationMode,
+        setPromptText, setQuality, setImageQuality, setProvider, startAnnotationMode,
         stopVoiceMode, triggerGeneration, selectImageByIndex, selectImageByPosition,
         applyPreset, goToSourceImage, onToolCall
     ]);

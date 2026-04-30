@@ -101,6 +101,8 @@ export const DEFAULT_VOICE_TOOL_NAMES = [
     'create_variables',
     'select_variable_option',
     'set_quality',
+    'set_image_quality',
+    'set_provider',
     'select_image',
     'apply_preset',
     'go_to_source_image',

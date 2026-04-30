@@ -33,6 +33,7 @@ const AboutPage = React.lazy(() => import('@/components/pages/AboutPage').then(m
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage, persistToolCallLog, persistTranscriptLog } from '@/services/voiceAdminService';
+import { loadGenerationSettings, saveGenerationSettings } from '@/utils/generationSettings';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
     // React 19 ships no .d.ts — declare props explicitly so TS finds it
@@ -803,10 +804,35 @@ export function App() {
             const map: Record<string, string> = { '0.5k': 'nb2-05k', '05k': 'nb2-05k', '1k': 'nb2-1k', '2k': 'nb2-2k', '4k': 'nb2-4k' };
             const mode = map[quality.toLowerCase()];
             if (!mode) {
-                return { ok: false, message: state.currentLang === 'de' ? 'Ungültige Qualität. Verfügbar: 0.5K, 1K, 2K, 4K.' : 'Invalid quality. Available: 0.5K, 1K, 2K, 4K.' };
+                return { ok: false, message: state.currentLang === 'de' ? 'Ungültige Qualität. Verfügbar: 1K, 2K, 4K.' : 'Invalid quality. Available: 1K, 2K, 4K.' };
             }
             actions.setQualityMode(mode as any);
-            return { ok: true, message: state.currentLang === 'de' ? `Qualität auf ${quality.toUpperCase()} gesetzt.` : `Quality set to ${quality.toUpperCase()}.` };
+            // Mirror into the new GenerationSettings so the next gen actually uses it.
+            const current = loadGenerationSettings();
+            saveGenerationSettings({ ...current, resolution: mode as any });
+            return { ok: true, message: state.currentLang === 'de' ? `Auflösung auf ${quality.toUpperCase()} gesetzt.` : `Resolution set to ${quality.toUpperCase()}.` };
+        },
+        setImageQuality: async (level: 'low' | 'medium' | 'high') => {
+            const current = loadGenerationSettings();
+            saveGenerationSettings({ ...current, quality: level });
+            const labels: Record<string, string> = level === 'low'
+                ? { de: 'niedrig', en: 'low' }
+                : level === 'medium' ? { de: 'mittel', en: 'medium' } : { de: 'hoch', en: 'high' };
+            return {
+                ok: true,
+                message: state.currentLang === 'de'
+                    ? `Bild-Qualität auf ${labels.de} gesetzt. Wirkt nur bei GPT Image 2.`
+                    : `Image quality set to ${labels.en}. Only affects GPT Image 2.`,
+            };
+        },
+        setProvider: async (provider: 'fal-nb2' | 'openai') => {
+            const current = loadGenerationSettings();
+            saveGenerationSettings({ ...current, provider });
+            const name = provider === 'openai' ? 'GPT Image 2' : 'Nano Banana 2';
+            return {
+                ok: true,
+                message: state.currentLang === 'de' ? `Modell auf ${name} umgestellt.` : `Switched model to ${name}.`,
+            };
         },
         selectImageByIndex: async (index: number) => {
             const idx = index - 1; // 1-based to 0-based
