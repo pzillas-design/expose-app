@@ -30,3 +30,30 @@ export const loadGenerationSettings = (): GenerationSettings => {
         return DEFAULT_GENERATION_SETTINGS;
     }
 };
+
+/**
+ * One-shot migration that flips legacy `provider: 'fal-nb2'` localStorage entries
+ * to `'openai'` so existing users land on the new default the next time they
+ * open the app. Persists a migration flag so a user who later *consciously*
+ * picks NB2 in the settings modal won't get auto-migrated again on next reload.
+ *
+ * Call once from the top-level App mount.
+ */
+const PROVIDER_MIGRATION_KEY = 'expose:provider-migration:openai-default-v1';
+export const migrateProviderToOpenAIOnce = (): { ran: boolean; migrated: boolean } => {
+    try {
+        if (typeof window === 'undefined') return { ran: false, migrated: false };
+        if (window.localStorage.getItem(PROVIDER_MIGRATION_KEY)) return { ran: false, migrated: false };
+
+        const current = loadGenerationSettings();
+        let migrated = false;
+        if (current.provider === 'fal-nb2') {
+            saveGenerationSettings({ ...current, provider: 'openai' });
+            migrated = true;
+        }
+        window.localStorage.setItem(PROVIDER_MIGRATION_KEY, new Date().toISOString());
+        return { ran: true, migrated };
+    } catch (_) {
+        return { ran: false, migrated: false };
+    }
+};
