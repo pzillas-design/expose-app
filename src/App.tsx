@@ -33,7 +33,7 @@ const AboutPage = React.lazy(() => import('@/components/pages/AboutPage').then(m
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage, persistToolCallLog, persistTranscriptLog } from '@/services/voiceAdminService';
-import { loadGenerationSettings, saveGenerationSettings, migrateProviderToOpenAIOnce } from '@/utils/generationSettings';
+import { loadGenerationSettings, saveGenerationSettings, revertProviderToNB2Once } from '@/utils/generationSettings';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
     // React 19 ships no .d.ts — declare props explicitly so TS finds it
@@ -164,11 +164,11 @@ export function App() {
         if (state.activeId) activeIdEverSetRef.current = true;
     }, [state.activeId]);
 
-    // One-shot: migrate legacy fal-nb2 localStorage entries to openai so
-    // existing users land on the new default. Power users who consciously
-    // re-pick NB2 after migration won't be re-migrated thanks to the flag.
+    // One-shot: revert everyone to NB2 + 1K (the new default) after the
+    // brief gpt-image-2 default experiment. Users who consciously pick
+    // GPT Image 2 after this runs are safe — the flag prevents re-revert.
     useEffect(() => {
-        migrateProviderToOpenAIOnce();
+        revertProviderToNB2Once();
     }, []);
 
     useEffect(() => {

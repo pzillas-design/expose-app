@@ -32,28 +32,49 @@ export const loadGenerationSettings = (): GenerationSettings => {
 };
 
 /**
- * One-shot migration that flips legacy `provider: 'fal-nb2'` localStorage entries
- * to `'openai'` so existing users land on the new default the next time they
- * open the app. Persists a migration flag so a user who later *consciously*
- * picks NB2 in the settings modal won't get auto-migrated again on next reload.
+ * Earlier one-shot migration that flipped fal-nb2 → openai. Kept around as a
+ * no-op marker so future migration logic can inspect the flag if needed.
+ */
+const PROVIDER_MIGRATION_KEY = 'expose:provider-migration:openai-default-v1';
+
+/**
+ * REVERT migration: flip everyone back to Nano Banana 2 + 1K resolution after
+ * gpt-image-2 quality didn't hold up in production. Users who consciously pick
+ * GPT Image 2 *after* this migration ran won't be auto-reverted again on next
+ * reload — the flag's already set.
  *
  * Call once from the top-level App mount.
  */
-const PROVIDER_MIGRATION_KEY = 'expose:provider-migration:openai-default-v1';
-export const migrateProviderToOpenAIOnce = (): { ran: boolean; migrated: boolean } => {
+const PROVIDER_REVERT_KEY = 'expose:provider-migration:nb2-revert-v1';
+export const revertProviderToNB2Once = (): { ran: boolean; migrated: boolean } => {
     try {
         if (typeof window === 'undefined') return { ran: false, migrated: false };
-        if (window.localStorage.getItem(PROVIDER_MIGRATION_KEY)) return { ran: false, migrated: false };
+        if (window.localStorage.getItem(PROVIDER_REVERT_KEY)) return { ran: false, migrated: false };
 
         const current = loadGenerationSettings();
-        let migrated = false;
-        if (current.provider === 'fal-nb2') {
-            saveGenerationSettings({ ...current, provider: 'openai' });
-            migrated = true;
-        }
-        window.localStorage.setItem(PROVIDER_MIGRATION_KEY, new Date().toISOString());
-        return { ran: true, migrated };
+        const next: GenerationSettings = {
+            ...current,
+            provider: 'fal-nb2',
+            resolution: 'nb2-1k',
+        };
+        const changed = current.provider !== 'fal-nb2' || current.resolution !== 'nb2-1k';
+        if (changed) saveGenerationSettings(next);
+        window.localStorage.setItem(PROVIDER_REVERT_KEY, new Date().toISOString());
+        return { ran: true, migrated: changed };
     } catch (_) {
         return { ran: false, migrated: false };
     }
+};
+
+/** @deprecated Use revertProviderToNB2Once. Kept for older callers / no-op safety. */
+export const migrateProviderToOpenAIOnce = (): { ran: boolean; migrated: boolean } => {
+    // The original openai migration is intentionally a no-op now — we reverted
+    // the default. Setting the flag so the legacy code path stays idempotent
+    // even if some build still references it.
+    try {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(PROVIDER_MIGRATION_KEY, new Date().toISOString());
+        }
+    } catch (_) { /* ignore */ }
+    return { ran: false, migrated: false };
 };

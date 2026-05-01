@@ -157,8 +157,12 @@ export interface GenerationSettings {
 }
 
 export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
-  provider:     'openai',
-  resolution:   'nb2-2k',
+  // Reverted to NB2 + 1K after gpt-image-2 quality felt off in real use —
+  // NB2 is faster, cheaper, and produces consistently usable real-estate edits.
+  // Users who prefer GPT Image 2 can switch in the settings modal; once they do,
+  // the migration flag prevents auto-revert on next reload.
+  provider:     'fal-nb2',
+  resolution:   'nb2-1k',
   quality:      'high',
   aspectRatio:  'auto',
   outputFormat: 'jpeg',

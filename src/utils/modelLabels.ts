@@ -2,10 +2,10 @@
  * Single source of truth for image-model labels — keep UI honest about which
  * provider actually generated (or will generate) an image.
  *
- * Default provider is now **OpenAI gpt-image-2** (via fal) for every host,
- * including production (expose.ae). Set VITE_IMAGE_PROVIDER=fal-nb2 (Vercel
- * env var or .env.local) to fall back to Nano Banana 2 — useful for one-off
- * comparisons or as an emergency rollback.
+ * Default provider is **Nano Banana 2 (fal-nb2)**. We tried gpt-image-2 as the
+ * default for a few days but quality didn't hold up against NB2 in real-estate
+ * editing, so we're back. Set VITE_IMAGE_PROVIDER=openai (Vercel env var or
+ * .env.local) to force gpt-image-2 — useful for A/B comparisons.
  */
 
 export type ImageProviderKey = 'fal-nb2' | 'openai';
@@ -13,7 +13,7 @@ export type ImageProviderKey = 'fal-nb2' | 'openai';
 export const detectImageProvider = (): ImageProviderKey => {
     const override = (import.meta.env?.VITE_IMAGE_PROVIDER as string | undefined)?.toLowerCase();
     if (override === 'openai' || override === 'fal-nb2') return override;
-    return 'openai';
+    return 'fal-nb2';
 };
 
 const TIER_LABELS: Record<string, string> = {
