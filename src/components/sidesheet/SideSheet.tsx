@@ -18,6 +18,7 @@ import { GenerationSettingsModal } from '@/components/modals/GenerationSettingsM
 import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from '@/types';
 import { saveGenerationSettings, loadGenerationSettings } from '@/utils/generationSettings';
 import { useItemDialog } from '@/components/ui/Dialog';
+import { useToast } from '@/components/ui/Toast';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { ManagePresetsModal } from '@/components/modals/ManagePresetsModal';
@@ -280,6 +281,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const selectedImageRef = useRef(selectedImage);
     useEffect(() => { selectedImageRef.current = selectedImage; }, [selectedImage]);
     const { confirm } = useItemDialog();
+    const { showToast } = useToast();
 
     // Inspiration / Reference Image
     const [isInspirationOpen, setIsInspirationOpen] = useState(false);
@@ -496,6 +498,17 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     };
 
     const handleGenerate = () => {
+        // Same upload-still-running guard as PromptTab — without storage_path
+        // the edge function can't pull the source bytes, so silently failing is
+        // worse than telling the user to wait one or two seconds.
+        const stillUploading = !!selectedImage
+            && !selectedImage.storage_path
+            && typeof selectedImage.src === 'string'
+            && selectedImage.src.startsWith('blob:');
+        if (stillUploading) {
+            showToast(t('image_still_uploading'), 'error');
+            return;
+        }
         let finalPrompt = prompt.trim();
         // Append standalone controls (voice-created) to prompt
         if (!activeTemplate && standaloneControls.length > 0) {

@@ -477,6 +477,7 @@ export const translations = {
     // PromptTab
     select_model: "Select model",
     please_enter_prompt: "Please enter a prompt.",
+    image_still_uploading: "Image is still uploading — try again in a moment.",
     reference_image_btn: "Reference Image",
     annotation_instruction: "Interpret the visual annotations. They show what and where to change in the original image ..",
     reference_image_instruction: "Use this image as inspiration ..",
@@ -1028,6 +1029,7 @@ export const translations = {
     // PromptTab
     select_model: "Modell auswählen",
     please_enter_prompt: "Bitte gib einen Prompt ein.",
+    image_still_uploading: "Bild wird noch hochgeladen — gleich nochmal probieren.",
     reference_image_btn: "Referenzbild",
     annotation_instruction: "Setze die Anmerkungen im Bild fotorealistisch um.",
     reference_image_instruction: "Nutze dieses Bild als Inspiration ..",

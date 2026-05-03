@@ -395,6 +395,17 @@ export const PromptTab: React.FC<PromptTabProps> = ({
             showToast(t('please_enter_prompt'), 'error');
             return;
         }
+        // On a slow connection the user can hit Generate before the source has
+        // finished uploading to Supabase. Without storage_path the edge function
+        // can't fetch the bytes, so we'd silently fail. Tell the user to wait.
+        const stillUploading = !!selectedImage
+            && !selectedImage.storage_path
+            && typeof selectedImage.src === 'string'
+            && selectedImage.src.startsWith('blob:');
+        if (stillUploading) {
+            showToast(t('image_still_uploading'), 'error');
+            return;
+        }
         onGenerate(getFinalPrompt(), prompt, activeTemplate?.id, controlValues);
     };
 

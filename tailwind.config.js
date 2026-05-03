@@ -5,6 +5,15 @@ export default {
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
     darkMode: 'class',
+    future: {
+        // Scope `hover:*` utilities to devices that actually support hover.
+        // Without this, the first tap on a touch device shows the hover state
+        // (the tap "sticks") so the user has to tap a second time to fire
+        // onClick — feels broken on mobile, especially for variable-option
+        // buttons. With this flag, `hover:` only applies under
+        // @media (hover: hover) so taps fire onClick immediately.
+        hoverOnlyWhenSupported: true,
+    },
     theme: {
         extend: {
             fontFamily: {
