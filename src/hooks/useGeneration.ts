@@ -630,22 +630,52 @@ export const useGeneration = ({
             } catch (error: any) {
                 console.error("Generation failed:", error);
 
-                // Stop poller from showing a duplicate error toast
-                attachedJobIds.current.delete(newId);
+                // Race-guard: gpt-image-2 high-quality edits routinely run 150–180 s,
+                // which is right at Supabase's gateway response timeout. The
+                // edge function keeps running server-side and successfully writes
+                // the image to the `images` table even after the client gateway
+                // gives up — so before showing an error, check whether the image
+                // actually arrived. Re-check up to 4× with a short delay so we
+                // catch the case where the image lands a beat after the throw.
+                let lateImageLanded = false;
+                if (currentUser) {
+                    for (let attempt = 0; attempt < 4 && !lateImageLanded; attempt++) {
+                        if (attempt > 0) await new Promise(r => setTimeout(r, 1500));
+                        const { data: lateImg } = await supabase
+                            .from('images')
+                            .select('id')
+                            .eq('id', newId)
+                            .eq('user_id', currentUser.id)
+                            .maybeSingle();
+                        if (lateImg) { lateImageLanded = true; break; }
+                    }
+                }
 
-                // Remove placeholder tile
+                if (lateImageLanded) {
+                    // Image is in the DB — pretend success. Polling effect will
+                    // pick it up on its next tick and replace the placeholder.
+                    return;
+                }
+
+                // Real failure — stop the poller, drop the placeholder.
+                attachedJobIds.current.delete(newId);
                 setRows(prev => prev.map(row => ({
                     ...row,
                     items: row.items.filter(i => i.id !== newId)
                 })).filter(row => row.items.length > 0));
 
+                // B: don't DELETE the row, MARK it failed instead. Keeps audit
+                // trail in the admin Jobs view + lets us debug post-hoc.
                 if (currentUser && !isAuthDisabled) {
-                    supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', currentUser.id)
-                        .then(({ error }) => {
-                            if (error) {
-                                logError(`generation_jobs cleanup DELETE failed: ${error.message}`, {
+                    supabase.from('generation_jobs')
+                        .update({ status: 'failed', error: (error?.message || String(error)).slice(0, 500) })
+                        .eq('id', newId)
+                        .eq('user_id', currentUser.id)
+                        .then(({ error: updErr }) => {
+                            if (updErr) {
+                                logError(`generation_jobs failure UPDATE failed: ${updErr.message}`, {
                                     source: 'silent',
-                                    context: `edit-cleanup:${newId}`,
+                                    context: `edit-fail:${newId}`,
                                 });
                             }
                         });
@@ -787,18 +817,37 @@ export const useGeneration = ({
                     }
                 }
             } catch (error: any) {
-                // Stop poller from showing a duplicate error toast
-                attachedJobIds.current.delete(newId);
+                // Same race-guard as the edit path — gateway timeout doesn't
+                // mean the edge function failed, the image may still land.
+                let lateImageLanded = false;
+                if (user) {
+                    for (let attempt = 0; attempt < 4 && !lateImageLanded; attempt++) {
+                        if (attempt > 0) await new Promise(r => setTimeout(r, 1500));
+                        const { data: lateImg } = await supabase
+                            .from('images')
+                            .select('id')
+                            .eq('id', newId)
+                            .eq('user_id', user.id)
+                            .maybeSingle();
+                        if (lateImg) { lateImageLanded = true; break; }
+                    }
+                }
+                if (lateImageLanded) return;
 
+                attachedJobIds.current.delete(newId);
                 setRows(prev => prev.filter(r => !r.items.some(i => i.id === newId)));
 
                 if (user && !isAuthDisabled) {
-                    supabase.from('generation_jobs').delete().eq('id', newId).eq('user_id', user.id)
-                        .then(({ error }) => {
-                            if (error) {
-                                logError(`generation_jobs cleanup DELETE failed (create): ${error.message}`, {
+                    // B: mark failed instead of delete — audit trail in Jobs view.
+                    supabase.from('generation_jobs')
+                        .update({ status: 'failed', error: (error?.message || String(error)).slice(0, 500) })
+                        .eq('id', newId)
+                        .eq('user_id', user.id)
+                        .then(({ error: updErr }) => {
+                            if (updErr) {
+                                logError(`generation_jobs failure UPDATE failed (create): ${updErr.message}`, {
                                     source: 'silent',
-                                    context: `create-cleanup:${newId}`,
+                                    context: `create-fail:${newId}`,
                                 });
                             }
                         });
