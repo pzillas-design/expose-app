@@ -14,14 +14,14 @@ const safeGtag = (...args: any[]) => {
 /** Registrierung abgeschlossen */
 export const trackSignup = () => {
     safeGtag('event', 'conversion', {
-        send_to: `${AW_ID}/7576705149`,
+        send_to: `${AW_ID}/ljknCP2w7ZwcEJrRuasC`,
     });
 };
 
 /** Bild erfolgreich generiert */
 export const trackImageGenerated = () => {
     safeGtag('event', 'conversion', {
-        send_to: `${AW_ID}/7576705152`,
+        send_to: `${AW_ID}/hSS0CICx7ZwcEJrRuasC`,
         value: 0.2,
         currency: 'EUR',
     });
@@ -30,7 +30,7 @@ export const trackImageGenerated = () => {
 /** Credits gekauft */
 export const trackCreditsPurchased = (value: number) => {
     safeGtag('event', 'conversion', {
-        send_to: `${AW_ID}/7576705155`,
+        send_to: `${AW_ID}/p1RRCIOx7ZwcEJrRuasC`,
         value,
         currency: 'EUR',
     });

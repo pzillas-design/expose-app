@@ -195,7 +195,8 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     const payload = j.requestPayload || {};
                                                     const hasVars = payload.variables && Object.keys(payload.variables).length > 0;
                                                     const isMultiEdit = (payload.batchSize || 1) > 1 || !!payload.isMultiEdit;
-                                                    const hasAnnotation = j.hasMask || j.type === 'Edit';
+                                                    const hasAnnotation = j.hasMask === true;
+                                                    const hasRef = (j.referenceCount ?? 0) > 0;
                                                     const isRepeat = !!payload.isRepeat;
                                                     // 'fal' (legacy) and 'fal-nb2' both = Nano Banana 2 via fal.
                                                     // 'openai' = gpt-image-2 via fal.
@@ -259,6 +260,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                                 }
                                                                 {isMultiEdit && <span className={badgeClass}>Multi Edit</span>}
                                                                 {hasAnnotation && <span className={badgeClass}>Anmerkung</span>}
+                                                                {hasRef && <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Ref</span>}
                                                                 {hasVars      && <span className={badgeClass}>Variablen</span>}
                                                                 {isRepeat     && <span className={badgeClass}>Mehr</span>}
                                                                 {j.downloadedAt && <Download className="w-3.5 h-3.5 text-zinc-400 shrink-0 mx-1" />}

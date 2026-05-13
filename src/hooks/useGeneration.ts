@@ -558,6 +558,9 @@ export const useGeneration = ({
                         cost: cost,
                         prompt_preview: prompt,
                         parent_id: sourceImage.id,
+                        has_source_image: !!sourceImage.src,
+                        has_mask: !!maskDataUrl,
+                        reference_count: refs.length,
                         request_payload: {
                             hasSourceImage: !!sourceImage.src,
                             hasMask: !!maskDataUrl,
