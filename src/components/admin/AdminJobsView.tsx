@@ -44,7 +44,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
         try {
             const [data, sessions] = await Promise.all([
                 adminService.getJobs(pageNum, PAGE_SIZE),
-                isInitial ? adminService.getVoiceSessions(30) : Promise.resolve([]),
+                isInitial ? adminService.getVoiceSessions(200) : Promise.resolve([]),
             ]);
             if (isInitial) {
                 setJobs(data);
@@ -80,7 +80,9 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
         const q = search.toLowerCase();
         return merged.filter(r =>
             (r.userName || '').toLowerCase().includes(q) ||
+            (r.userEmail || '').toLowerCase().includes(q) ||
             (r.id || '').toLowerCase().includes(q) ||
+            (r.promptPreview || '').toLowerCase().includes(q) ||
             (r.firstUserMessage || '').toLowerCase().includes(q)
         );
     }, [jobs, voiceSessions, search]);
@@ -133,6 +135,17 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                     </div>
                                 ) : (
                                     <>
+                                        {/* Count indicator */}
+                                        <div className="px-5 py-2 border-b border-zinc-100 dark:border-zinc-800 text-xs text-zinc-400 flex items-center gap-2">
+                                            {search
+                                                ? <span>{allRows.length} Treffer</span>
+                                                : <>
+                                                    <span>{jobs.length} Generierungen</span>
+                                                    {voiceSessions.length > 0 && <span>· {voiceSessions.length} Voice-Sessions</span>}
+                                                    {hasMore && <span className="text-amber-500">· weitere verfügbar ↓</span>}
+                                                  </>
+                                            }
+                                        </div>
                                         <table className="w-full text-left text-sm">
                                             <thead className="sticky top-0 z-20 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60">
                                                 <tr>
