@@ -410,7 +410,7 @@ Deno.serve(async (req) => {
         if (!profile) {
             const { data: newProfile } = await supabaseAdmin
                 .from('profiles')
-                .insert({ id: user.id, email: user.email, full_name: 'User', credits: 3 })
+                .insert({ id: user.id, email: user.email, full_name: 'User', credits: 2 })
                 .select()
                 .single();
             profile = newProfile;
