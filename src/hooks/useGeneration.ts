@@ -422,11 +422,13 @@ export const useGeneration = ({
         const baseName = rawBaseName.replace(/_v\d+$/, '');
 
         // 1. VERSION CALCULATION (Sync)
+        // Use folderId to scope siblings — avoids counting versions from *other* stacks
+        // that happen to share the same base name (e.g. two different "Wohnzimmer" uploads).
+        const sourceFolderId = sourceImage.folderId ?? sourceImage.id;
         const allImages = rows.flatMap(r => r.items);
         const siblings = allImages.filter(i => {
             if (!i) return false;
-            const itemBaseName = (i.baseName || i.title || '').replace(/_v\d+$/, '');
-            return itemBaseName === baseName;
+            return (i.folderId ?? i.id) === sourceFolderId;
         });
         const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
         const newVersion = maxVersion + 1;
