@@ -20,6 +20,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [search, setSearch] = useState('');
+    const [typeFilter, setTypeFilter] = useState<'all' | 'job' | 'voice'>('all');
     const [selectedJob, setSelectedJob] = useState<any | null>(null);
 
     const handleSelectJob = useCallback(async (job: any) => {
@@ -75,7 +76,10 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
     const allRows = React.useMemo(() => {
         const genRows = jobs.map(j => ({ ...j, _type: 'job' as const }));
         const voiceRows = voiceSessions;
-        const merged = [...genRows, ...voiceRows].sort((a, b) => b.createdAt - a.createdAt);
+        // Explicit Number() cast guards against bigint-as-string from Supabase
+        let merged = [...genRows, ...voiceRows].sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+        if (typeFilter === 'job')   merged = merged.filter(r => r._type === 'job');
+        if (typeFilter === 'voice') merged = merged.filter(r => r._type === 'voice');
         if (!search) return merged;
         const q = search.toLowerCase();
         return merged.filter(r =>
@@ -85,7 +89,7 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
             (r.promptPreview || '').toLowerCase().includes(q) ||
             (r.firstUserMessage || '').toLowerCase().includes(q)
         );
-    }, [jobs, voiceSessions, search]);
+    }, [jobs, voiceSessions, search, typeFilter]);
 
     const maxDurationMs = 100_000; // fixed 100s cap for duration bar
 
@@ -135,16 +139,29 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                     </div>
                                 ) : (
                                     <>
-                                        {/* Count indicator */}
-                                        <div className="px-5 py-2 border-b border-zinc-100 dark:border-zinc-800 text-xs text-zinc-400 flex items-center gap-2">
-                                            {search
-                                                ? <span>{allRows.length} Treffer</span>
-                                                : <>
-                                                    <span>{jobs.length} Generierungen</span>
-                                                    {voiceSessions.length > 0 && <span>· {voiceSessions.length} Voice-Sessions</span>}
-                                                    {hasMore && <span className="text-amber-500">· weitere verfügbar ↓</span>}
-                                                  </>
-                                            }
+                                        {/* Type filter tabs + count */}
+                                        <div className="px-5 py-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-4">
+                                            <div className="flex items-center gap-1">
+                                                {(['all', 'job', 'voice'] as const).map(f => (
+                                                    <button
+                                                        key={f}
+                                                        onClick={() => setTypeFilter(f)}
+                                                        className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${typeFilter === f ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
+                                                    >
+                                                        {f === 'all' ? 'Alle' : f === 'job' ? 'Generierungen' : 'Voice'}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="text-xs text-zinc-400 flex items-center gap-2">
+                                                {search
+                                                    ? <span>{allRows.length} Treffer</span>
+                                                    : <>
+                                                        <span>{jobs.length} Gen.</span>
+                                                        {voiceSessions.length > 0 && <span>· {voiceSessions.length} Voice</span>}
+                                                        {hasMore && <span className="text-amber-500">· mehr ↓</span>}
+                                                      </>
+                                                }
+                                            </div>
                                         </div>
                                         <table className="w-full text-left text-sm">
                                             <thead className="sticky top-0 z-20 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800/60">

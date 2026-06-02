@@ -240,8 +240,10 @@ export const adminService = {
                 const hadGeneration = toolCalls.some((l: any) => l.tool_name === 'trigger_generation' && l.tool_status === 'ok');
                 const cleanExit = toolCalls.some((l: any) => l.tool_name === 'stop_voice_mode' && l.tool_status === 'ok');
                 const hadError = toolCalls.some((l: any) => l.tool_status === 'error');
-                const startedAt = sorted[0]?.ts || 0;
-                const endedAt = sorted[sorted.length - 1]?.ts || 0;
+                // bigint ts comes back from Supabase as either number or string —
+                // always coerce to Number so the sort in AdminJobsView works correctly.
+                const startedAt = Number(sorted[0]?.ts || 0);
+                const endedAt = Number(sorted[sorted.length - 1]?.ts || 0);
 
                 return {
                     id: `voice-${sessionId}`,
