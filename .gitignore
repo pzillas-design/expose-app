@@ -31,3 +31,4 @@ stripe
 .vercel
 *.backup
 .worktrees/
+.superpowers/
