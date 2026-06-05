@@ -533,6 +533,76 @@ Deno.serve(async (req) => {
         const falApiKey = Deno.env.get('FAL_API_KEY');
         if (!falApiKey) throw new Error('FAL_API_KEY missing in edge function environment');
 
+        // ── ASYNC PATH (queue + webhook) ─────────────────────────────────────
+        // Gated by env so production keeps the proven sync path until this is
+        // validated on staging. Eliminates the gateway-timeout root cause:
+        // submit to fal's queue and return immediately; fal-webhook finalizes
+        // (download → storage → images insert → job complete / refund on error).
+        //
+        // staging and production share ONE Supabase project, so a global env flag
+        // can't isolate them — the gate is therefore client-driven (`useAsync`,
+        // set only by the staging frontend build). The env var is a global
+        // override for when we promote async to all clients.
+        const asyncEnabled = payload.useAsync === true || Deno.env.get('FAL_ASYNC_ENABLED') === 'true';
+        if (asyncEnabled) {
+            const fnBase = `${Deno.env.get('SUPABASE_URL')}/functions/v1`;
+            const webhookUrl = `${fnBase}/fal-webhook?job=${encodeURIComponent(newId)}`;
+            const queueUrl = `https://queue.fal.run/${endpoint}?fal_webhook=${encodeURIComponent(webhookUrl)}`;
+
+            const submitRes = await fetch(queueUrl, {
+                method: 'POST',
+                headers: { 'Authorization': `Key ${falApiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(falInput),
+                signal: AbortSignal.timeout(30_000),
+            });
+            if (!submitRes.ok) {
+                const t = await submitRes.text().catch(() => '');
+                throw new Error(`fal queue submit failed: HTTP ${submitRes.status} — ${t.slice(0, 300)}`);
+            }
+            const submitData = await submitRes.json().catch(() => ({}));
+
+            // Persist everything the webhook needs to build the final image — it
+            // only receives fal's output, none of our app context.
+            const asyncCtx = {
+                userId: user.id,
+                userEmail: user.email,
+                requestType,
+                prompt,
+                qualityMode,
+                provider,
+                cost,
+                submitAt: taskStart,
+                sourceImage: sourceImage ? {
+                    id: sourceImage.id,
+                    baseName: sourceImage.baseName,
+                    title: sourceImage.title,
+                    version: sourceImage.version,
+                    width: sourceImage.width,
+                    height: sourceImage.height,
+                    realWidth: sourceImage.realWidth,
+                    realHeight: sourceImage.realHeight,
+                } : null,
+                sourceFolderId: sourceFolderId ?? sourceImage?.id ?? null,
+                targetTitle: targetTitle ?? null,
+                activeTemplateId: activeTemplateId ?? null,
+                variables: (variables && typeof variables === 'object' && Object.keys(variables).length > 0) ? variables : null,
+                falRequestId: submitData?.request_id ?? null,
+            };
+            Object.assign(apiRequestPayload, {
+                current_stage: 'queued',
+                falRequestId: submitData?.request_id,
+                async: asyncCtx,
+            });
+            await supabaseAdmin.from('generation_jobs')
+                .update({ status: 'processing', request_payload: apiRequestPayload })
+                .eq('id', newId);
+
+            logInfo('Queued', `job=${newId} falRequestId=${submitData?.request_id} endpoint=${endpoint}`);
+            return new Response(JSON.stringify({ success: true, status: 'processing', jobId: newId }), {
+                status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+
         const providerStart = Date.now();
         const falResult = await callFal(falApiKey, endpoint, falInput);
         const providerLatencyMs = Date.now() - providerStart;
