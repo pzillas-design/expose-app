@@ -6,6 +6,23 @@ import { generateId } from '../utils/ids';
 
 import { loadGenerationSettings } from '../utils/generationSettings';
 
+/**
+ * Whether this client should request the async queue+webhook generation path.
+ * staging + production share one Supabase project, so we isolate by frontend
+ * build: staging hosts (and local dev) opt in; production stays on the proven
+ * sync path until async is validated. `VITE_FAL_ASYNC=true` forces it on.
+ */
+const shouldUseAsyncGeneration = (): boolean => {
+    try {
+        // @ts-ignore - vite env
+        if (import.meta.env?.VITE_FAL_ASYNC === 'true') return true;
+        const host = typeof window !== 'undefined' ? window.location.hostname : '';
+        return host.includes('staging') || host.includes('git-staging') || host === 'localhost' || host === '127.0.0.1';
+    } catch {
+        return false;
+    }
+};
+
 const buildUploadSubfolder = () => {
     const now = new Date();
     const dd = String(now.getDate()).padStart(2, '0');
@@ -293,6 +310,11 @@ export const imageService = {
             // Per-generation settings — provider, quality. (resolution = qualityMode above.)
             provider: settings.provider,
             quality: settings.quality,
+            // Opt into the async queue+webhook path. staging and production share
+            // one Supabase project, so isolation is by frontend build: only staging
+            // (or an explicit VITE flag) requests async; production stays sync until
+            // the path is proven. The edge function also honors a global env override.
+            useAsync: shouldUseAsyncGeneration(),
         };
         const invokeHeaders = {
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
