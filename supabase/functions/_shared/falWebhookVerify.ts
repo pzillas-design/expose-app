@@ -28,6 +28,21 @@ const hexToBytes = (hex: string): Uint8Array => {
     return out;
 };
 
+/**
+ * Decode base64url → bytes, tolerating both `-_` and `+/` alphabets AND optional
+ * `=` padding. fal's JWKS publishes the Ed25519 `x` as PADDED base64url
+ * (e.g. "…Q6zuY="), which a strict JWK import rejects — so we decode it
+ * ourselves and import the raw 32-byte key instead.
+ */
+const b64urlToBytes = (s: string): Uint8Array => {
+    let b64 = s.trim().replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4 !== 0) b64 += '=';
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+};
+
 const bytesToHex = (bytes: Uint8Array): string =>
     Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 
@@ -41,10 +56,12 @@ async function loadKeys(): Promise<CryptoKey[]> {
     const keys: CryptoKey[] = [];
     for (const jwk of jwks?.keys ?? []) {
         try {
-            // fal publishes OKP/Ed25519 keys with base64url `x`.
+            // fal's `x` is PADDED base64url, which strict JWK import rejects.
+            // Decode it ourselves and import the raw 32-byte Ed25519 public key.
+            const raw = b64urlToBytes(jwk.x);
             const key = await crypto.subtle.importKey(
-                'jwk',
-                { kty: 'OKP', crv: 'Ed25519', x: jwk.x, ext: true },
+                'raw',
+                raw,
                 { name: 'Ed25519' },
                 false,
                 ['verify'],
