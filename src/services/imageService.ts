@@ -8,18 +8,19 @@ import { loadGenerationSettings } from '../utils/generationSettings';
 
 /**
  * Whether this client should request the async queue+webhook generation path.
- * staging + production share one Supabase project, so we isolate by frontend
- * build: staging hosts (and local dev) opt in; production stays on the proven
- * sync path until async is validated. `VITE_FAL_ASYNC=true` forces it on.
+ * Validated on staging (incl. 6000×4000 jobs) and now the default everywhere —
+ * it eliminates the gateway-timeout root cause of long generations. The sync
+ * path remains in the edge function as a fallback; set `VITE_FAL_ASYNC=false`
+ * (kill-switch) to force this client back onto it without a redeploy of the
+ * edge function.
  */
 const shouldUseAsyncGeneration = (): boolean => {
     try {
         // @ts-ignore - vite env
-        if (import.meta.env?.VITE_FAL_ASYNC === 'true') return true;
-        const host = typeof window !== 'undefined' ? window.location.hostname : '';
-        return host.includes('staging') || host.includes('git-staging') || host === 'localhost' || host === '127.0.0.1';
+        if (import.meta.env?.VITE_FAL_ASYNC === 'false') return false;
+        return true;
     } catch {
-        return false;
+        return true;
     }
 };
 
