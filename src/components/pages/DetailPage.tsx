@@ -1,8 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
-import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat, Layers } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
-import { LayerComposer } from '@/components/composer/LayerComposer';
 import { useMobile } from '@/hooks/useMobile';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
 import { useItemDialog } from '@/components/ui/Dialog';
@@ -277,16 +276,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const img = imageMap.get(selectedId);
     const idx = imageIndexMap.get(selectedId) ?? -1;
-
-    // --- Layer Composer ---
-    const [showComposer, setShowComposer] = useState(false);
-    // The current stack = all images sharing this image's folderId (immutable stack root).
-    const composerStack = useMemo(() => {
-        if (!img) return [];
-        const folderId = img.folderId ?? img.id;
-        return images.filter(i => (i.folderId ?? i.id) === folderId && !i.isGenerating);
-    }, [images, img]);
-    const canCompose = composerStack.length >= 2;
 
     // Keep a live ref so the debounced onBack guard can re-check after a tick.
     const imgRef = useRef(img);
@@ -982,19 +971,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     />
                                 );
                             })}
-                            {/* Entry tile: open the stack as layers and composite the best parts */}
-                            {canCompose && (
-                                <div className="shrink-0 overflow-visible h-9 flex items-center ml-1">
-                                    <Tooltip text={state.lang === 'de' ? 'Als Ebenen öffnen — beste Teile kombinieren' : 'Open as layers — combine the best parts'} side="top">
-                                        <button
-                                            onClick={() => setShowComposer(true)}
-                                            className="relative h-9 w-9 rounded-[3px] flex items-center justify-center border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                                        >
-                                            <Layers className="w-4 h-4" />
-                                        </button>
-                                    </Tooltip>
-                                </div>
-                            )}
                             </div>
                         </div>
 
@@ -1200,20 +1176,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     />
                 </aside>
             </main >
-
-            {showComposer && img && (
-                <LayerComposer
-                    stack={composerStack}
-                    initialBaseId={selectedId}
-                    onClose={() => setShowComposer(false)}
-                    onSave={async (base, dataUrl, w, h) => {
-                        const newId = await actions.handleSaveComposite(base, dataUrl, w, h);
-                        if (newId) handleSelectWithin(newId);
-                    }}
-                    t={t}
-                    isDe={state.lang === 'de'}
-                />
-            )}
         </div >
     );
 };

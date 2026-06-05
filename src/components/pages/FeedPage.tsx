@@ -10,6 +10,7 @@ import { Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { GenerationProgressBar } from '@/components/canvas/ImageItem';
 import { FeedHeroSection } from '../layout/FeedHeroSection';
+import { LayerComposer } from '@/components/composer/LayerComposer';
 
 /* ── TTL helpers ── */
 const TTL_DAYS = 30;
@@ -275,6 +276,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const scrollRef = React.useRef<HTMLDivElement>(null);
     const scrollRafRef = React.useRef<number>(0);
     const { confirm } = useItemDialog();
+    // Layer Composer — opened from the entry tile inside an expanded stack grid
+    const [showComposer, setShowComposer] = React.useState(false);
 
     // Report scroll progress to parent (drives hero navbar collapse animation).
     // Depends on images.length so the listener is re-registered after the loading
@@ -692,6 +695,21 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                             />
                                         );
                                     })}
+
+                                    {/* Layer Composer entry — only inside an expanded stack with 2+ variants */}
+                                    {effectiveGroupId && !isSelectMode && displayImages.length >= 2 && (
+                                        <Tooltip text={state?.currentLang === 'de' ? 'Als Ebenen öffnen — beste Teile kombinieren' : 'Open as layers — combine the best parts'} side="top">
+                                            <button
+                                                onClick={() => setShowComposer(true)}
+                                                className="group/comp relative aspect-square rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center gap-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors"
+                                            >
+                                                <Layers className="w-6 h-6" />
+                                                <span className="text-[11px] font-medium px-2 text-center leading-tight">
+                                                    {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
+                                                </span>
+                                            </button>
+                                        </Tooltip>
+                                    )}
                                 </div>
                             </>
                         ) : !isLoading && (
@@ -840,6 +858,19 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                         </div>
                     )}
                 </div>
+            )}
+
+            {showComposer && effectiveGroupId && displayImages.length >= 2 && (
+                <LayerComposer
+                    stack={displayImages}
+                    initialBaseId={displayImages[0].id}
+                    onClose={() => setShowComposer(false)}
+                    onSave={async (base, dataUrl, w, h) => {
+                        await actions?.handleSaveComposite?.(base, dataUrl, w, h);
+                    }}
+                    t={t}
+                    isDe={state?.currentLang === 'de'}
+                />
             )}
         </div>
     );
