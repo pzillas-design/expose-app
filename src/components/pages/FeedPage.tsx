@@ -864,6 +864,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 <LayerComposer
                     stack={displayImages}
                     initialBaseId={displayImages[0].id}
+                    title={rows.find(r => r.id === effectiveGroupId)?.title || ''}
                     onClose={() => setShowComposer(false)}
                     onSave={async (base, dataUrl, w, h) => {
                         await actions?.handleSaveComposite?.(base, dataUrl, w, h);

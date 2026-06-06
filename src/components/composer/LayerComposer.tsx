@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { X, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, CircleDotDashed } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, CircleDotDashed, Download } from 'lucide-react';
 import { CanvasImage } from '@/types';
-import { Theme, Tooltip, Button } from '@/components/ui/DesignSystem';
+import { Theme, Tooltip, Button, RoundIconButton } from '@/components/ui/DesignSystem';
 import { useLayerCompositing } from './useLayerCompositing';
 import type { ComposerLayer } from './useLayerCompositing';
 
 interface LayerComposerProps {
     stack: CanvasImage[];
     initialBaseId: string;
+    title?: string;
     onClose: () => void;
     onSave: (baseImage: CanvasImage, compositeDataUrl: string, refW: number, refH: number) => Promise<string | null> | void;
     t: (key: any) => string;
@@ -17,7 +18,7 @@ interface LayerComposerProps {
 const MIN_W = 300;
 const MAX_W = 600;
 
-export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBaseId, onClose, onSave, isDe }) => {
+export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBaseId, title, onClose, onSave, isDe }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [saving, setSaving] = useState(false);
     const [panelWidth, setPanelWidth] = useState(360);
@@ -96,6 +97,17 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
         finally { setSaving(false); }
     }, [comp, stack, onSave, onClose]);
 
+    const handleDownload = useCallback(() => {
+        const out = comp.exportComposite();
+        if (!out) return;
+        const a = document.createElement('a');
+        a.href = out.dataUrl;
+        a.download = `${(title || 'composite').replace(/[^a-z0-9_-]+/gi, '_')}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    }, [comp, title]);
+
     const displayBrush = useMemo(() => {
         const canvas = canvasRef.current;
         if (!canvas || !comp.refDims.w) return comp.brushSize;
@@ -106,19 +118,35 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     const panelOrder = useMemo(() => [...comp.order].reverse(), [comp.order]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex overflow-hidden bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
+
+            {/* Standard header: back · title · download · save */}
+            <header className="relative shrink-0 h-14 flex items-center px-3 border-b border-zinc-100 dark:border-zinc-900">
+                <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onClose} variant="ghost" />
+                <h2 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-black dark:text-white truncate max-w-[40%]">
+                    {title || (isDe ? 'Ebenen' : 'Layers')}
+                </h2>
+                <div className="ml-auto flex items-center gap-1.5">
+                    <Tooltip text={isDe ? 'Herunterladen' : 'Download'} side="bottom">
+                        <RoundIconButton icon={<Download className="w-5 h-5" />} onClick={handleDownload} variant="ghost" disabled={!comp.ready} />
+                    </Tooltip>
+                    <Button
+                        onClick={handleSave}
+                        disabled={saving || !comp.ready}
+                        variant="primary-mono"
+                        size="m"
+                        icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
+                    >
+                        {isDe ? 'Speichern' : 'Save'}
+                    </Button>
+                </div>
+            </header>
+
+            {/* Body */}
+            <div className="flex-1 flex min-h-0 overflow-hidden">
 
             {/* Canvas area */}
             <div className="relative flex-1 min-w-0 min-h-0 flex items-center justify-center p-4 md:p-8">
-                <Tooltip text={isDe ? 'Schließen' : 'Close'} side="right">
-                    <button
-                        onClick={onClose}
-                        className={`absolute top-4 left-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/10 ${Theme.Effects.Shadow} text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors`}
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </Tooltip>
-
                 {!comp.ready && (
                     <div className="absolute inset-0 flex items-center justify-center">
                         <Loader2 className="w-7 h-7 animate-spin text-zinc-300" />
@@ -177,10 +205,6 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 className="shrink-0 h-full flex flex-col border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
                 style={{ width: `${panelWidth}px` }}
             >
-                <div className="flex items-center px-4 h-14 shrink-0 border-b border-zinc-100 dark:border-zinc-900">
-                    <h2 className="text-sm font-semibold text-black dark:text-white">{isDe ? 'Ebenen' : 'Layers'}</h2>
-                </div>
-
                 <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4 flex flex-col gap-5">
                     {panelOrder.map((id) => {
                         const img = imageById.get(id);
@@ -208,9 +232,9 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                     })}
                 </div>
 
-                {/* Footer: feather + save */}
-                <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-900 px-4 pt-4 pb-4 flex flex-col gap-3">
-                    <div className="flex items-center gap-3 py-3">
+                {/* Footer: global feather */}
+                <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-900 px-4 py-5">
+                    <div className="flex items-center gap-3">
                         <Tooltip text={isDe ? 'Weiche Kante (global)' : 'Feather (global)'} side="top">
                             <CircleDotDashed className="w-4 h-4 text-zinc-400 shrink-0" />
                         </Tooltip>
@@ -220,18 +244,10 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                             className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500"
                         />
                     </div>
-                    <Button
-                        onClick={handleSave}
-                        disabled={saving || !comp.ready}
-                        variant="primary-mono"
-                        size="l"
-                        className="w-full !h-[44px] !rounded-full"
-                        icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
-                    >
-                        {isDe ? 'Speichern' : 'Save'}
-                    </Button>
                 </div>
             </div>
+
+            </div>{/* /body */}
         </div>
     );
 };
