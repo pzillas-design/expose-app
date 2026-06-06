@@ -160,29 +160,8 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                             <Tooltip text={isDe ? 'Pinselgröße' : 'Brush size'} side="top"><Circle className="w-4 h-4 text-zinc-400 shrink-0" /></Tooltip>
                             <input type="range" min={20} max={Math.max(200, Math.round((comp.refDims.w || 1024) / 4))}
                                 value={comp.brushSize} onChange={(e) => comp.setBrushSize(Number(e.target.value))}
-                                className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
+                                className="w-28 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
                         </div>
-
-                        {/* Feather */}
-                        <div className="flex items-center gap-2 px-2">
-                            <Tooltip text={isDe ? 'Weiche Kante (global)' : 'Feather (global)'} side="top"><Droplet className="w-4 h-4 text-zinc-400 shrink-0" /></Tooltip>
-                            <input type="range" min={0} max={Math.max(40, Math.round((comp.refDims.w || 1024) / 16))}
-                                value={comp.feather} onChange={(e) => comp.setFeather(Number(e.target.value))}
-                                className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
-                        </div>
-
-                        <div className="w-[1px] h-8 bg-zinc-200 dark:bg-zinc-800 mx-1" />
-
-                        <Button
-                            onClick={handleSave}
-                            disabled={saving || !comp.ready}
-                            variant="primary-mono"
-                            size="l"
-                            className={`!h-[44px] !rounded-full ${Theme.Effects.ShadowSm}`}
-                            icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
-                        >
-                            {isDe ? 'Speichern' : 'Save'}
-                        </Button>
                     </div>
                 )}
             </div>
@@ -226,6 +205,30 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                             />
                         );
                     })}
+                </div>
+
+                {/* Footer: feather + save */}
+                <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-900 px-4 py-4 flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                        <Tooltip text={isDe ? 'Weiche Kante (global)' : 'Feather (global)'} side="top">
+                            <Droplet className="w-4 h-4 text-zinc-400 shrink-0" />
+                        </Tooltip>
+                        <input
+                            type="range" min={0} max={Math.max(40, Math.round((comp.refDims.w || 1024) / 16))}
+                            value={comp.feather} onChange={(e) => comp.setFeather(Number(e.target.value))}
+                            className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500"
+                        />
+                    </div>
+                    <Button
+                        onClick={handleSave}
+                        disabled={saving || !comp.ready}
+                        variant="primary-mono"
+                        size="l"
+                        className="w-full !h-[44px] !rounded-full"
+                        icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
+                    >
+                        {isDe ? 'Speichern' : 'Save'}
+                    </Button>
                 </div>
             </div>
         </div>
