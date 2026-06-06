@@ -265,7 +265,7 @@ const LayerCard: React.FC<{
 
     return (
         <div className="flex flex-col gap-2">
-            {/* Controls above the thumbnail — left-aligned */}
+            {/* Controls above the thumbnail — visibility left, reorder right */}
             <div className="flex items-center gap-1.5">
                 <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="top">
                     <button onClick={onToggle} className={`${ctlBtn} ${isVisible ? '' : 'ring-1 ring-zinc-300 dark:ring-zinc-600'}`}>
@@ -273,16 +273,11 @@ const LayerCard: React.FC<{
                     </button>
                 </Tooltip>
                 <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="top">
-                    <button onClick={() => onMove(1)} disabled={isTop} className={ctlBtn}><ChevronUp className="w-4 h-4" /></button>
+                    <button onClick={() => onMove(1)} disabled={isTop} className={`${ctlBtn} ml-auto`}><ChevronUp className="w-4 h-4" /></button>
                 </Tooltip>
                 <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="top">
                     <button onClick={() => onMove(-1)} disabled={isBottom} className={ctlBtn}><ChevronDown className="w-4 h-4" /></button>
                 </Tooltip>
-                {isActive && (
-                    <span className="ml-auto text-[11px] font-medium text-orange-500">
-                        {isDe ? 'Aktiv' : 'Active'}
-                    </span>
-                )}
             </div>
 
             {/* Masked thumbnail (transparent where erased → panel bg shows through) */}
