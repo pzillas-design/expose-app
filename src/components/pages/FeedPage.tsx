@@ -698,7 +698,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
                                     {/* Layer Composer entry — only inside an expanded stack with 2+ variants */}
                                     {effectiveGroupId && !isSelectMode && displayImages.length >= 2 && (
-                                        <Tooltip text={state?.currentLang === 'de' ? 'Als Ebenen öffnen — beste Teile kombinieren' : 'Open as layers — combine the best parts'} side="top">
+                                        <Tooltip text={state?.currentLang === 'de' ? 'Als Ebenen öffnen' : 'Open as layers'} side="top">
                                             <button
                                                 onClick={() => setShowComposer(true)}
                                                 className="relative aspect-square rounded-lg bg-zinc-100 dark:bg-zinc-900/50 flex flex-col items-center justify-center gap-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60 transition-colors"
