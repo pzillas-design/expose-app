@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { X, Check, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, Droplet } from 'lucide-react';
+import { X, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, Droplet } from 'lucide-react';
 import { CanvasImage } from '@/types';
-import { Theme, Tooltip } from '@/components/ui/DesignSystem';
-import { useLayerCompositing, ComposerLayer } from './useLayerCompositing';
+import { Theme, Tooltip, Button } from '@/components/ui/DesignSystem';
+import { useLayerCompositing } from './useLayerCompositing';
+import type { ComposerLayer } from './useLayerCompositing';
 
 interface LayerComposerProps {
     stack: CanvasImage[];
@@ -13,9 +14,14 @@ interface LayerComposerProps {
     isDe: boolean;
 }
 
+const MIN_W = 300;
+const MAX_W = 600;
+
 export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBaseId, onClose, onSave, isDe }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [saving, setSaving] = useState(false);
+    const [panelWidth, setPanelWidth] = useState(360);
+    const [isResizing, setIsResizing] = useState(false);
 
     const layers: ComposerLayer[] = useMemo(() => {
         const ordered = [...stack];
@@ -28,6 +34,22 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     const comp = useLayerCompositing(layers, canvasRef);
     const imageById = useMemo(() => new Map(stack.map(i => [i.id, i])), [stack]);
 
+    // --- Panel resize (mirrors the edit-mode SideSheet) ---
+    useEffect(() => {
+        if (!isResizing) return;
+        const onMove = (e: MouseEvent) => {
+            const w = Math.min(Math.max(window.innerWidth - e.clientX, MIN_W), MAX_W);
+            setPanelWidth(w);
+        };
+        const onUp = () => { setIsResizing(false); document.body.style.cursor = ''; document.body.style.userSelect = ''; };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    }, [isResizing]);
+
+    // --- Pointer painting ---
     const drawingRef = useRef(false);
     const lastPtRef = useRef<{ x: number; y: number } | null>(null);
     const toRefCoords = useCallback((clientX: number, clientY: number) => {
@@ -82,7 +104,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     }, [comp.brushSize, comp.refDims.w, comp.ready]);
 
     const aspect = comp.refDims.w && comp.refDims.h ? `${comp.refDims.w} / ${comp.refDims.h}` : '1 / 1';
-    const panelOrder = useMemo(() => [...comp.order].reverse(), [comp.order]); // top first
+    const panelOrder = useMemo(() => [...comp.order].reverse(), [comp.order]);
 
     return (
         <div className="fixed inset-0 z-[100] flex bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
@@ -92,9 +114,9 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 <Tooltip text={isDe ? 'Schließen' : 'Close'} side="right">
                     <button
                         onClick={onClose}
-                        className={`absolute top-4 left-4 z-20 w-9 h-9 rounded-full flex items-center justify-center bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-black/5 dark:border-white/10 ${Theme.Effects.Shadow} text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors`}
+                        className={`absolute top-4 left-4 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/10 ${Theme.Effects.Shadow} text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors`}
                     >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                     </button>
                 </Tooltip>
 
@@ -114,67 +136,74 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                         className="block w-full h-full rounded-lg shadow-sm touch-none bg-white dark:bg-zinc-900"
                         style={{ cursor: comp.activeId ? 'none' : 'default', objectFit: 'contain' }}
                     />
-                    <BrushCursor canvasRef={canvasRef} size={displayBrush} mode={comp.mode} enabled={!!comp.activeId} />
+                    <BrushCursor canvasRef={canvasRef} size={displayBrush} enabled={!!comp.activeId} />
                 </div>
 
-                {/* Brush pill — icon only */}
-                {comp.ready && comp.activeId && (
-                    <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/10 ${Theme.Effects.Shadow} rounded-full px-3 py-1.5`}>
-                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-full p-0.5">
+                {/* Bottom toolbar — styled like the annotation toolbar */}
+                {comp.ready && (
+                    <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full pointer-events-auto`}>
+                        {/* Add / Remove */}
+                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-full p-1">
                             <Tooltip text={isDe ? 'Hinzufügen' : 'Add'} side="top">
-                                <button onClick={() => comp.setMode('add')} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${comp.mode === 'add' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}>
-                                    <Plus className="w-4 h-4" />
+                                <button onClick={() => comp.setMode('add')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'add' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'}`}>
+                                    <Plus className="w-5 h-5" />
                                 </button>
                             </Tooltip>
                             <Tooltip text={isDe ? 'Entfernen' : 'Remove'} side="top">
-                                <button onClick={() => comp.setMode('remove')} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${comp.mode === 'remove' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}>
-                                    <Minus className="w-4 h-4" />
+                                <button onClick={() => comp.setMode('remove')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'remove' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'}`}>
+                                    <Minus className="w-5 h-5" />
                                 </button>
                             </Tooltip>
                         </div>
 
                         {/* Brush size */}
-                        <Tooltip text={isDe ? 'Pinselgröße' : 'Brush size'} side="top">
-                            <Circle className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                        </Tooltip>
-                        <input
-                            type="range" min={20} max={Math.max(200, Math.round((comp.refDims.w || 1024) / 4))}
-                            value={comp.brushSize}
-                            onChange={(e) => comp.setBrushSize(Number(e.target.value))}
-                            className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500"
-                        />
+                        <div className="flex items-center gap-2 px-2">
+                            <Tooltip text={isDe ? 'Pinselgröße' : 'Brush size'} side="top"><Circle className="w-4 h-4 text-zinc-400 shrink-0" /></Tooltip>
+                            <input type="range" min={20} max={Math.max(200, Math.round((comp.refDims.w || 1024) / 4))}
+                                value={comp.brushSize} onChange={(e) => comp.setBrushSize(Number(e.target.value))}
+                                className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
+                        </div>
 
-                        <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700" />
+                        {/* Feather */}
+                        <div className="flex items-center gap-2 px-2">
+                            <Tooltip text={isDe ? 'Weiche Kante (global)' : 'Feather (global)'} side="top"><Droplet className="w-4 h-4 text-zinc-400 shrink-0" /></Tooltip>
+                            <input type="range" min={0} max={Math.max(40, Math.round((comp.refDims.w || 1024) / 16))}
+                                value={comp.feather} onChange={(e) => comp.setFeather(Number(e.target.value))}
+                                className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
+                        </div>
 
-                        {/* Global feather (soft edge) */}
-                        <Tooltip text={isDe ? 'Weiche Kante (global)' : 'Feather (global)'} side="top">
-                            <Droplet className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                        </Tooltip>
-                        <input
-                            type="range" min={0} max={Math.max(40, Math.round((comp.refDims.w || 1024) / 16))}
-                            value={comp.feather}
-                            onChange={(e) => comp.setFeather(Number(e.target.value))}
-                            className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500"
-                        />
+                        <div className="w-[1px] h-8 bg-zinc-200 dark:bg-zinc-800 mx-1" />
+
+                        <Button
+                            onClick={handleSave}
+                            disabled={saving || !comp.ready}
+                            variant="primary-mono"
+                            size="l"
+                            className={`!h-[44px] !rounded-full ${Theme.Effects.ShadowSm}`}
+                            icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
+                        >
+                            {isDe ? 'Speichern' : 'Save'}
+                        </Button>
                     </div>
                 )}
             </div>
 
-            {/* Right layer panel */}
-            <div className="w-[188px] shrink-0 h-full flex flex-col border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
-                <div className="flex items-center justify-end px-3 h-14 shrink-0 border-b border-zinc-100 dark:border-zinc-900">
-                    <Tooltip text={isDe ? 'Als neues Bild speichern' : 'Save as new image'} side="left">
-                        <button
-                            onClick={handleSave}
-                            disabled={saving || !comp.ready}
-                            className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 disabled:opacity-40 transition-opacity"
-                        >
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                        </button>
-                    </Tooltip>
+            {/* Resize handle */}
+            <div
+                onMouseDown={() => setIsResizing(true)}
+                className="w-1.5 shrink-0 cursor-col-resize bg-transparent hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+            />
+
+            {/* Right layer panel — resizable, SideSheet-like */}
+            <div
+                className="shrink-0 h-full flex flex-col border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
+                style={{ width: `${panelWidth}px` }}
+            >
+                <div className="flex items-center px-4 h-14 shrink-0 border-b border-zinc-100 dark:border-zinc-900">
+                    <h2 className="text-sm font-semibold text-black dark:text-white">{isDe ? 'Ebenen' : 'Layers'}</h2>
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-3 py-3 flex flex-col gap-3">
+                <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4 flex flex-col gap-5">
                     {panelOrder.map((id) => {
                         const img = imageById.get(id);
                         if (!img) return null;
@@ -204,7 +233,9 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     );
 };
 
-/** One layer card — its thumbnail reflects the current mask (erased = checker). */
+const ctlBtn = 'w-8 h-8 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-white transition-colors disabled:opacity-30 disabled:pointer-events-none';
+
+/** One layer: controls row on top, masked thumbnail below. */
 const LayerCard: React.FC<{
     id: string;
     img: CanvasImage;
@@ -227,52 +258,41 @@ const LayerCard: React.FC<{
     useEffect(() => {
         const c = thumbRef.current;
         if (!c) return;
-        const w = 160;
-        const h = Math.max(40, Math.round(w / (ar || 1)));
+        const w = 320;
+        const h = Math.max(60, Math.round(w / (ar || 1)));
         if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
         drawThumb(id, c);
     }, [id, revision, ready, ar, drawThumb]);
 
     return (
-        <button
-            onClick={onSelect}
-            className={`relative w-full rounded-lg overflow-hidden transition-all ${
-                isActive ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950'
-                : 'ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
-            } ${isVisible ? '' : 'opacity-40'}`}
-            style={{ aspectRatio: `${ar}` }}
-        >
-            <canvas ref={thumbRef} className="block w-full h-full" />
-
-            {/* Visibility */}
-            <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
-                <span
-                    role="button"
-                    onClick={(e) => { e.stopPropagation(); onToggle(); }}
-                    className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 transition-colors"
-                >
-                    {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                </span>
-            </Tooltip>
-
-            {/* Reorder */}
-            <div className="absolute top-1.5 right-1.5 flex flex-col gap-1">
-                <span
-                    role="button"
-                    onClick={(e) => { e.stopPropagation(); if (!isTop) onMove(1); }}
-                    className={`w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 transition-all ${isTop ? 'opacity-0 pointer-events-none' : ''}`}
-                >
-                    <ChevronUp className="w-3.5 h-3.5" />
-                </span>
-                <span
-                    role="button"
-                    onClick={(e) => { e.stopPropagation(); if (!isBottom) onMove(-1); }}
-                    className={`w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 transition-all ${isBottom ? 'opacity-0 pointer-events-none' : ''}`}
-                >
-                    <ChevronDown className="w-3.5 h-3.5" />
-                </span>
+        <div className="flex flex-col gap-2">
+            {/* Controls above the thumbnail */}
+            <div className="flex items-center justify-center gap-2">
+                <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="top">
+                    <button onClick={onToggle} className={ctlBtn}>
+                        {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                </Tooltip>
+                <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="top">
+                    <button onClick={() => onMove(1)} disabled={isTop} className={ctlBtn}><ChevronUp className="w-4 h-4" /></button>
+                </Tooltip>
+                <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="top">
+                    <button onClick={() => onMove(-1)} disabled={isBottom} className={ctlBtn}><ChevronDown className="w-4 h-4" /></button>
+                </Tooltip>
             </div>
-        </button>
+
+            {/* Masked thumbnail (transparent where erased → panel bg shows through) */}
+            <button
+                onClick={onSelect}
+                className={`relative w-full rounded-lg overflow-hidden transition-all ${
+                    isActive ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950'
+                    : 'ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
+                } ${isVisible ? '' : 'opacity-40'}`}
+                style={{ aspectRatio: `${ar}` }}
+            >
+                <canvas ref={thumbRef} className="block w-full h-full" />
+            </button>
+        </div>
     );
 };
 
@@ -280,9 +300,8 @@ const LayerCard: React.FC<{
 const BrushCursor: React.FC<{
     canvasRef: React.RefObject<HTMLCanvasElement>;
     size: number;
-    mode: 'add' | 'remove';
     enabled: boolean;
-}> = ({ canvasRef, size, mode, enabled }) => {
+}> = ({ canvasRef, size, enabled }) => {
     const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
     useEffect(() => {
         const canvas = canvasRef.current;

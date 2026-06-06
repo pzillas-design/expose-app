@@ -227,22 +227,15 @@ export const useLayerCompositing = (
         });
     }, []);
 
-    /** Draw a layer's *current masked state* into a target canvas, over a
-     *  checkerboard so erased (removed) areas read as transparent. */
+    /** Draw a layer's *current masked state* into a target canvas. Erased
+     *  (removed) areas are left transparent so the panel background (black or
+     *  white depending on theme) shows through. */
     const drawLayerThumb = useCallback((id: string, target: HTMLCanvasElement) => {
         const loaded = loadedRef.current.get(id);
         const ctx = target.getContext('2d');
         if (!ctx) return;
         const w = target.width, h = target.height;
-        ctx.clearRect(0, 0, w, h);
-        // checkerboard
-        const cell = 8;
-        for (let y = 0; y < h; y += cell) {
-            for (let x = 0; x < w; x += cell) {
-                ctx.fillStyle = ((x / cell + y / cell) % 2 === 0) ? '#e5e7eb' : '#f8fafc';
-                ctx.fillRect(x, y, cell, cell);
-            }
-        }
+        ctx.clearRect(0, 0, w, h); // transparent where the layer is erased
         if (!loaded) return;
         const tmp = document.createElement('canvas');
         tmp.width = w; tmp.height = h;
