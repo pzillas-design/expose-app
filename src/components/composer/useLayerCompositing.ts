@@ -11,15 +11,12 @@ import { storageService } from '@/services/storageService';
  * pixel-perfectly even when source dimensions differ slightly.
  *
  * Model (Photoshop-like):
- *   - Layers are an ORDERED list. order[0] = bottom, order[last] = top.
- *   - Each layer has a VISIBILITY flag (the checkmark) and a reveal MASK.
- *   - The lowest visible layer is the base: drawn fully.
- *   - Every visible layer above the base is drawn through its mask (white =
- *     shown). Masks start empty, so the default view is just the base.
- *   - The brush paints the ACTIVE layer (the top-most visible non-base layer):
- *     "+" reveals (adds), "−" erases (removes) → the layer below shows through.
- *   - Layers can be reordered to choose which one the brush targets / which
- *     wins where reveals overlap.
+ *   - Ordered list: order[0] = bottom, order[last] = top. Top overlays below.
+ *   - Each layer has a VISIBILITY flag (eye) and a reveal MASK (default fully
+ *     opaque, so a layer covers everything beneath it until erased).
+ *   - One layer is ACTIVE (user-selected, framed). The brush paints the ACTIVE
+ *     layer's mask: "−" erases (reveals layers below), "+" paints back.
+ *   - Layers can be toggled and reordered freely.
  */
 
 export interface ComposerLayer {
@@ -29,8 +26,8 @@ export interface ComposerLayer {
 
 interface LoadedLayer {
     id: string;
-    canvas: HTMLCanvasElement;       // source pixels normalized to ref dims
-    mask: HTMLCanvasElement | null;  // reveal mask (white = show)
+    canvas: HTMLCanvasElement;
+    mask: HTMLCanvasElement | null; // reveal mask (white = show). null = fully opaque.
 }
 
 export type BrushMode = 'add' | 'remove';
@@ -59,16 +56,14 @@ export const useLayerCompositing = (
     canvasRef: React.RefObject<HTMLCanvasElement>,
 ) => {
     const [ready, setReady] = useState(false);
-    // Order: index 0 = bottom (base), last = top. Default = passed order reversed
-    // so the user's current image (passed first) sits on top.
     const [order, setOrder] = useState<string[]>(() => layers.map(l => l.id).reverse());
     const [visible, setVisible] = useState<Set<string>>(() => new Set(layers.map(l => l.id)));
-    // Default = remove: layers start fully opaque, so the first natural action is
-    // erasing the top layer to reveal what's underneath.
+    // Active paint layer — defaults to the top-most layer.
+    const [activeId, setActiveId] = useState<string>(() => (layers[0]?.id ?? ''));
     const [mode, setMode] = useState<BrushMode>('remove');
     const [brushSize, setBrushSize] = useState(120);
     const [refDims, setRefDims] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
-    const [revision, setRevision] = useState(0);
+    const [revision, setRevision] = useState(0); // bumps when masks change → thumbs refresh
 
     const loadedRef = useRef<Map<string, LoadedLayer>>(new Map());
     const refWRef = useRef(0);
@@ -79,10 +74,8 @@ export const useLayerCompositing = (
     useEffect(() => { orderRef.current = order; }, [order]);
     useEffect(() => { visibleRef.current = visible; }, [visible]);
 
-    // The base = lowest visible layer; active paint target = top-most visible
-    // layer that isn't the base.
+    // Lowest visible layer = base (used for save metadata / ref dims).
     const baseId = order.find(id => visible.has(id)) ?? order[0] ?? '';
-    const activeId = [...order].reverse().find(id => visible.has(id) && id !== baseId) ?? '';
 
     // --- Load + normalize all layers to the base's reference dimensions ---
     useEffect(() => {
@@ -128,6 +121,7 @@ export const useLayerCompositing = (
             if (cancelled) return;
             setRefDims({ w: refW, h: refH });
             setReady(true);
+            setRevision(r => r + 1);
             requestComposite();
         })();
         return () => { cancelled = true; };
@@ -140,11 +134,9 @@ export const useLayerCompositing = (
             const m = document.createElement('canvas');
             m.width = refWRef.current;
             m.height = refHRef.current;
-            // Default = fully opaque: a layer covers everything below it until the
-            // user erases (−) holes to reveal lower layers ("top overlays below").
             const mctx = m.getContext('2d')!;
             mctx.fillStyle = '#fff';
-            mctx.fillRect(0, 0, m.width, m.height);
+            mctx.fillRect(0, 0, m.width, m.height); // default fully opaque
             loaded.mask = m;
         }
         return loaded.mask;
@@ -162,30 +154,15 @@ export const useLayerCompositing = (
         const ctx = canvas.getContext('2d')!;
         ctx.clearRect(0, 0, refW, refH);
 
-        const ord = orderRef.current;
-        const vis = visibleRef.current;
-        const firstVisible = ord.find(id => vis.has(id));
-        if (!firstVisible) return;
-
-        // base
-        const base = loadedRef.current.get(firstVisible);
-        if (base) ctx.drawImage(base.canvas, 0, 0);
-
-        // layers above base, in stack order, through their masks
         const tmp = document.createElement('canvas');
         tmp.width = refW; tmp.height = refH;
         const tctx = tmp.getContext('2d')!;
-        let started = false;
-        for (const id of ord) {
-            if (id === firstVisible) { started = true; continue; }
-            if (!started || !vis.has(id)) continue;
+
+        for (const id of orderRef.current) {           // bottom → top
+            if (!visibleRef.current.has(id)) continue;
             const layer = loadedRef.current.get(id);
             if (!layer) continue;
-            if (!layer.mask) {
-                // No mask yet = fully opaque → this layer overlays everything below.
-                ctx.drawImage(layer.canvas, 0, 0);
-                continue;
-            }
+            if (!layer.mask) { ctx.drawImage(layer.canvas, 0, 0); continue; }
             tctx.clearRect(0, 0, refW, refH);
             tctx.globalCompositeOperation = 'source-over';
             tctx.drawImage(layer.canvas, 0, 0);
@@ -197,15 +174,12 @@ export const useLayerCompositing = (
 
     const requestComposite = useCallback(() => {
         if (rafRef.current != null) return;
-        rafRef.current = requestAnimationFrame(() => {
-            rafRef.current = null;
-            composite();
-        });
+        rafRef.current = requestAnimationFrame(() => { rafRef.current = null; composite(); });
     }, [composite]);
 
     useEffect(() => { if (ready) requestComposite(); }, [order, visible, ready, requestComposite]);
 
-    // --- Painting (always targets the active layer) ---
+    // --- Painting (targets the active layer) ---
     const paintDab = useCallback((x: number, y: number, prevX?: number, prevY?: number) => {
         if (!activeId) return;
         const mask = ensureMask(activeId);
@@ -217,16 +191,14 @@ export const useLayerCompositing = (
         mctx.lineJoin = 'round';
         mctx.lineWidth = brushSize;
         if (prevX != null && prevY != null) {
-            mctx.beginPath();
-            mctx.moveTo(prevX, prevY);
-            mctx.lineTo(x, y);
-            mctx.stroke();
+            mctx.beginPath(); mctx.moveTo(prevX, prevY); mctx.lineTo(x, y); mctx.stroke();
         }
-        mctx.beginPath();
-        mctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
-        mctx.fill();
+        mctx.beginPath(); mctx.arc(x, y, brushSize / 2, 0, Math.PI * 2); mctx.fill();
         requestComposite();
     }, [activeId, mode, brushSize, ensureMask, requestComposite]);
+
+    /** Bump after a stroke so layer thumbnails refresh. */
+    const commitStroke = useCallback(() => setRevision(r => r + 1), []);
 
     const toggleVisible = useCallback((id: string) => {
         setVisible(prev => {
@@ -247,6 +219,34 @@ export const useLayerCompositing = (
         });
     }, []);
 
+    /** Draw a layer's *current masked state* into a target canvas, over a
+     *  checkerboard so erased (removed) areas read as transparent. */
+    const drawLayerThumb = useCallback((id: string, target: HTMLCanvasElement) => {
+        const loaded = loadedRef.current.get(id);
+        const ctx = target.getContext('2d');
+        if (!ctx) return;
+        const w = target.width, h = target.height;
+        ctx.clearRect(0, 0, w, h);
+        // checkerboard
+        const cell = 8;
+        for (let y = 0; y < h; y += cell) {
+            for (let x = 0; x < w; x += cell) {
+                ctx.fillStyle = ((x / cell + y / cell) % 2 === 0) ? '#e5e7eb' : '#f8fafc';
+                ctx.fillRect(x, y, cell, cell);
+            }
+        }
+        if (!loaded) return;
+        const tmp = document.createElement('canvas');
+        tmp.width = w; tmp.height = h;
+        const x = tmp.getContext('2d')!;
+        x.drawImage(loaded.canvas, 0, 0, w, h);
+        if (loaded.mask) {
+            x.globalCompositeOperation = 'destination-in';
+            x.drawImage(loaded.mask, 0, 0, w, h);
+        }
+        ctx.drawImage(tmp, 0, 0);
+    }, []);
+
     const exportComposite = useCallback((): { dataUrl: string; w: number; h: number } | null => {
         composite();
         const canvas = canvasRef.current;
@@ -258,14 +258,17 @@ export const useLayerCompositing = (
 
     return {
         ready,
-        order, baseId, activeId,
+        order, baseId,
+        activeId, setActiveId,
         visible, toggleVisible,
         moveLayer,
         mode, setMode,
         brushSize, setBrushSize,
         refDims,
-        revision, setRevision,
+        revision,
         paintDab,
+        commitStroke,
+        drawLayerThumb,
         exportComposite,
     };
 };

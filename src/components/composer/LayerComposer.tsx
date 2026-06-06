@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { X, Check, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { Theme, Tooltip } from '@/components/ui/DesignSystem';
@@ -59,7 +59,11 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
         lastPtRef.current = p;
     }, [toRefCoords, comp]);
 
-    const onPointerUp = useCallback(() => { drawingRef.current = false; lastPtRef.current = null; }, []);
+    const onPointerUp = useCallback(() => {
+        if (drawingRef.current) comp.commitStroke();
+        drawingRef.current = false;
+        lastPtRef.current = null;
+    }, [comp]);
 
     const handleSave = useCallback(async () => {
         const out = comp.exportComposite();
@@ -78,8 +82,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     }, [comp.brushSize, comp.refDims.w, comp.ready]);
 
     const aspect = comp.refDims.w && comp.refDims.h ? `${comp.refDims.w} / ${comp.refDims.h}` : '1 / 1';
-    // Panel shows top of stack first.
-    const panelOrder = useMemo(() => [...comp.order].reverse(), [comp.order]);
+    const panelOrder = useMemo(() => [...comp.order].reverse(), [comp.order]); // top first
 
     return (
         <div className="fixed inset-0 z-[100] flex bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
@@ -140,7 +143,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
             </div>
 
             {/* Right layer panel */}
-            <div className="w-[180px] shrink-0 h-full flex flex-col border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+            <div className="w-[188px] shrink-0 h-full flex flex-col border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
                 <div className="flex items-center justify-end px-3 h-14 shrink-0 border-b border-zinc-100 dark:border-zinc-900">
                     <Tooltip text={isDe ? 'Als neues Bild speichern' : 'Save as new image'} side="left">
                         <button
@@ -157,59 +160,101 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                     {panelOrder.map((id) => {
                         const img = imageById.get(id);
                         if (!img) return null;
-                        const isVisible = comp.visible.has(id);
-                        const pos = comp.order.indexOf(id);          // 0 = bottom
-                        const isTop = pos === comp.order.length - 1;
-                        const isBottom = pos === 0;
-                        const ar = (img.realWidth && img.realHeight)
-                            ? `${img.realWidth} / ${img.realHeight}`
-                            : (img.width && img.height ? `${img.width} / ${img.height}` : '1 / 1');
+                        const pos = comp.order.indexOf(id);
                         return (
-                            <div key={id} className="relative group/layer">
-                                <div
-                                    className={`relative w-full rounded-lg overflow-hidden ring-1 ring-zinc-200 dark:ring-zinc-800 ${isVisible ? '' : 'opacity-30 grayscale'}`}
-                                    style={{ aspectRatio: ar }}
-                                >
-                                    <img src={img.thumbSrc || img.src} alt="" className="w-full h-full object-cover" />
-
-                                    {/* Visibility toggle */}
-                                    <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
-                                        <button
-                                            onClick={() => comp.toggleVisible(id)}
-                                            className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 transition-colors"
-                                        >
-                                            {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                        </button>
-                                    </Tooltip>
-
-                                    {/* Reorder — appear on hover */}
-                                    <div className="absolute top-1.5 right-1.5 flex flex-col gap-1 opacity-0 group-hover/layer:opacity-100 transition-opacity">
-                                        <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
-                                            <button
-                                                onClick={() => comp.moveLayer(id, 1)}
-                                                disabled={isTop}
-                                                className="w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 disabled:opacity-0 transition-all"
-                                            >
-                                                <ChevronUp className="w-3.5 h-3.5" />
-                                            </button>
-                                        </Tooltip>
-                                        <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="left">
-                                            <button
-                                                onClick={() => comp.moveLayer(id, -1)}
-                                                disabled={isBottom}
-                                                className="w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 disabled:opacity-0 transition-all"
-                                            >
-                                                <ChevronDown className="w-3.5 h-3.5" />
-                                            </button>
-                                        </Tooltip>
-                                    </div>
-                                </div>
-                            </div>
+                            <LayerCard
+                                key={id}
+                                id={id}
+                                img={img}
+                                isActive={id === comp.activeId}
+                                isVisible={comp.visible.has(id)}
+                                isTop={pos === comp.order.length - 1}
+                                isBottom={pos === 0}
+                                revision={comp.revision}
+                                ready={comp.ready}
+                                drawThumb={comp.drawLayerThumb}
+                                onSelect={() => comp.setActiveId(id)}
+                                onToggle={() => comp.toggleVisible(id)}
+                                onMove={(d) => comp.moveLayer(id, d)}
+                                isDe={isDe}
+                            />
                         );
                     })}
                 </div>
             </div>
         </div>
+    );
+};
+
+/** One layer card — its thumbnail reflects the current mask (erased = checker). */
+const LayerCard: React.FC<{
+    id: string;
+    img: CanvasImage;
+    isActive: boolean;
+    isVisible: boolean;
+    isTop: boolean;
+    isBottom: boolean;
+    revision: number;
+    ready: boolean;
+    drawThumb: (id: string, target: HTMLCanvasElement) => void;
+    onSelect: () => void;
+    onToggle: () => void;
+    onMove: (dir: -1 | 1) => void;
+    isDe: boolean;
+}> = ({ id, img, isActive, isVisible, isTop, isBottom, revision, ready, drawThumb, onSelect, onToggle, onMove, isDe }) => {
+    const thumbRef = useRef<HTMLCanvasElement>(null);
+    const ar = (img.realWidth && img.realHeight) ? img.realWidth / img.realHeight
+        : (img.width && img.height ? img.width / img.height : 1);
+
+    useEffect(() => {
+        const c = thumbRef.current;
+        if (!c) return;
+        const w = 160;
+        const h = Math.max(40, Math.round(w / (ar || 1)));
+        if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+        drawThumb(id, c);
+    }, [id, revision, ready, ar, drawThumb]);
+
+    return (
+        <button
+            onClick={onSelect}
+            className={`relative w-full rounded-lg overflow-hidden transition-all ${
+                isActive ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950'
+                : 'ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
+            } ${isVisible ? '' : 'opacity-40'}`}
+            style={{ aspectRatio: `${ar}` }}
+        >
+            <canvas ref={thumbRef} className="block w-full h-full" />
+
+            {/* Visibility */}
+            <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
+                <span
+                    role="button"
+                    onClick={(e) => { e.stopPropagation(); onToggle(); }}
+                    className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 transition-colors"
+                >
+                    {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                </span>
+            </Tooltip>
+
+            {/* Reorder */}
+            <div className="absolute top-1.5 right-1.5 flex flex-col gap-1">
+                <span
+                    role="button"
+                    onClick={(e) => { e.stopPropagation(); if (!isTop) onMove(1); }}
+                    className={`w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 transition-all ${isTop ? 'opacity-0 pointer-events-none' : ''}`}
+                >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                </span>
+                <span
+                    role="button"
+                    onClick={(e) => { e.stopPropagation(); if (!isBottom) onMove(-1); }}
+                    className={`w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 transition-all ${isBottom ? 'opacity-0 pointer-events-none' : ''}`}
+                >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                </span>
+            </div>
+        </button>
     );
 };
 
@@ -221,7 +266,7 @@ const BrushCursor: React.FC<{
     enabled: boolean;
 }> = ({ canvasRef, size, mode, enabled }) => {
     const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
-    React.useEffect(() => {
+    useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas || !enabled) { setPos(null); return; }
         const move = (e: PointerEvent) => {
