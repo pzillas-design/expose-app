@@ -63,7 +63,9 @@ export const useLayerCompositing = (
     // so the user's current image (passed first) sits on top.
     const [order, setOrder] = useState<string[]>(() => layers.map(l => l.id).reverse());
     const [visible, setVisible] = useState<Set<string>>(() => new Set(layers.map(l => l.id)));
-    const [mode, setMode] = useState<BrushMode>('add');
+    // Default = remove: layers start fully opaque, so the first natural action is
+    // erasing the top layer to reveal what's underneath.
+    const [mode, setMode] = useState<BrushMode>('remove');
     const [brushSize, setBrushSize] = useState(120);
     const [refDims, setRefDims] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
     const [revision, setRevision] = useState(0);
@@ -138,6 +140,11 @@ export const useLayerCompositing = (
             const m = document.createElement('canvas');
             m.width = refWRef.current;
             m.height = refHRef.current;
+            // Default = fully opaque: a layer covers everything below it until the
+            // user erases (−) holes to reveal lower layers ("top overlays below").
+            const mctx = m.getContext('2d')!;
+            mctx.fillStyle = '#fff';
+            mctx.fillRect(0, 0, m.width, m.height);
             loaded.mask = m;
         }
         return loaded.mask;
@@ -173,7 +180,12 @@ export const useLayerCompositing = (
             if (id === firstVisible) { started = true; continue; }
             if (!started || !vis.has(id)) continue;
             const layer = loadedRef.current.get(id);
-            if (!layer || !layer.mask) continue;
+            if (!layer) continue;
+            if (!layer.mask) {
+                // No mask yet = fully opaque → this layer overlays everything below.
+                ctx.drawImage(layer.canvas, 0, 0);
+                continue;
+            }
             tctx.clearRect(0, 0, refW, refH);
             tctx.globalCompositeOperation = 'source-over';
             tctx.drawImage(layer.canvas, 0, 0);

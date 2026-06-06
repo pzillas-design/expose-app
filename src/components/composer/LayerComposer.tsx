@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { X, Check, Plus, Minus, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { X, Check, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { CanvasImage } from '@/types';
-import { Theme, Button, Tooltip } from '@/components/ui/DesignSystem';
+import { Theme, Tooltip } from '@/components/ui/DesignSystem';
 import { useLayerCompositing, ComposerLayer } from './useLayerCompositing';
 
 interface LayerComposerProps {
@@ -19,7 +19,6 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
 
     const layers: ComposerLayer[] = useMemo(() => {
         const ordered = [...stack];
-        // The image the user opened sits first → it ends up on top (engine reverses).
         ordered.sort((a, b) => (a.id === initialBaseId ? -1 : b.id === initialBaseId ? 1 : 0));
         return ordered
             .filter(i => !i.isGenerating && (i.src || i.thumbSrc || i.storage_path))
@@ -29,7 +28,6 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     const comp = useLayerCompositing(layers, canvasRef);
     const imageById = useMemo(() => new Map(stack.map(i => [i.id, i])), [stack]);
 
-    // --- Pointer → reference-space coords ---
     const drawingRef = useRef(false);
     const lastPtRef = useRef<{ x: number; y: number } | null>(null);
     const toRefCoords = useCallback((clientX: number, clientY: number) => {
@@ -80,31 +78,29 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     }, [comp.brushSize, comp.refDims.w, comp.ready]);
 
     const aspect = comp.refDims.w && comp.refDims.h ? `${comp.refDims.w} / ${comp.refDims.h}` : '1 / 1';
+    // Panel shows top of stack first.
+    const panelOrder = useMemo(() => [...comp.order].reverse(), [comp.order]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[100] flex bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
 
-            {/* Top bar */}
-            <div className="flex items-center justify-between px-4 h-14 shrink-0">
-                <button
-                    onClick={onClose}
-                    className="flex items-center gap-1.5 px-3 h-9 rounded-full text-sm text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
-                >
-                    <X className="w-4 h-4" />
-                    <span>{isDe ? 'Schließen' : 'Close'}</span>
-                </button>
-                <Button variant="primary" size="m" onClick={handleSave} disabled={saving || !comp.ready} icon={saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}>
-                    {isDe ? 'Speichern' : 'Save'}
-                </Button>
-            </div>
+            {/* Canvas area */}
+            <div className="relative flex-1 min-h-0 flex items-center justify-center p-4 md:p-8">
+                <Tooltip text={isDe ? 'Schließen' : 'Close'} side="right">
+                    <button
+                        onClick={onClose}
+                        className={`absolute top-4 left-4 z-20 w-9 h-9 rounded-full flex items-center justify-center bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-black/5 dark:border-white/10 ${Theme.Effects.Shadow} text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors`}
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </Tooltip>
 
-            {/* Canvas */}
-            <div className="relative flex-1 min-h-0 flex items-center justify-center px-4 pb-2">
                 {!comp.ready && (
                     <div className="absolute inset-0 flex items-center justify-center">
                         <Loader2 className="w-7 h-7 animate-spin text-zinc-300" />
                     </div>
                 )}
+
                 <div className="relative max-w-full max-h-full" style={{ aspectRatio: aspect, height: '100%' }}>
                     <canvas
                         ref={canvasRef}
@@ -118,23 +114,17 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                     <BrushCursor canvasRef={canvasRef} size={displayBrush} mode={comp.mode} enabled={!!comp.activeId} />
                 </div>
 
-                {/* Brush pill — centered above the layer strip */}
+                {/* Brush pill — icon only */}
                 {comp.ready && comp.activeId && (
-                    <div className={`absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/10 ${Theme.Effects.Shadow} rounded-full px-3 py-1.5`}>
+                    <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/10 ${Theme.Effects.Shadow} rounded-full px-3 py-1.5`}>
                         <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-full p-0.5">
                             <Tooltip text={isDe ? 'Hinzufügen' : 'Add'} side="top">
-                                <button
-                                    onClick={() => comp.setMode('add')}
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${comp.mode === 'add' ? 'bg-white dark:bg-zinc-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
-                                >
+                                <button onClick={() => comp.setMode('add')} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${comp.mode === 'add' ? 'bg-white dark:bg-zinc-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}>
                                     <Plus className="w-4 h-4" />
                                 </button>
                             </Tooltip>
                             <Tooltip text={isDe ? 'Entfernen' : 'Remove'} side="top">
-                                <button
-                                    onClick={() => comp.setMode('remove')}
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${comp.mode === 'remove' ? 'bg-white dark:bg-zinc-700 text-red-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}
-                                >
+                                <button onClick={() => comp.setMode('remove')} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${comp.mode === 'remove' ? 'bg-white dark:bg-zinc-700 text-red-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}>
                                     <Minus className="w-4 h-4" />
                                 </button>
                             </Tooltip>
@@ -149,66 +139,75 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 )}
             </div>
 
-            {/* Layer strip — centered */}
-            <div className="shrink-0 px-4 py-4">
-                <div className="flex items-end justify-center gap-3 overflow-x-auto no-scrollbar">
-                    {comp.order.map((id) => {
+            {/* Right layer panel */}
+            <div className="w-[180px] shrink-0 h-full flex flex-col border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+                <div className="flex items-center justify-end px-3 h-14 shrink-0 border-b border-zinc-100 dark:border-zinc-900">
+                    <Tooltip text={isDe ? 'Als neues Bild speichern' : 'Save as new image'} side="left">
+                        <button
+                            onClick={handleSave}
+                            disabled={saving || !comp.ready}
+                            className="w-9 h-9 rounded-full flex items-center justify-center bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 disabled:opacity-40 transition-opacity"
+                        >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        </button>
+                    </Tooltip>
+                </div>
+
+                <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-3 py-3 flex flex-col gap-3">
+                    {panelOrder.map((id) => {
                         const img = imageById.get(id);
                         if (!img) return null;
                         const isVisible = comp.visible.has(id);
-                        const isActive = id === comp.activeId;
-                        const isBase = id === comp.baseId;
-                        const pos = comp.order.indexOf(id);
+                        const pos = comp.order.indexOf(id);          // 0 = bottom
+                        const isTop = pos === comp.order.length - 1;
+                        const isBottom = pos === 0;
+                        const ar = (img.realWidth && img.realHeight)
+                            ? `${img.realWidth} / ${img.realHeight}`
+                            : (img.width && img.height ? `${img.width} / ${img.height}` : '1 / 1');
                         return (
-                            <div key={id} className="shrink-0 flex flex-col items-center gap-1.5">
-                                {/* Reorder */}
-                                <div className="flex items-center gap-0.5 h-5">
-                                    <button
-                                        onClick={() => comp.moveLayer(id, -1)}
-                                        disabled={pos === 0}
-                                        className="w-5 h-5 flex items-center justify-center rounded text-zinc-300 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-300 disabled:opacity-0 transition-colors"
-                                    >
-                                        <ChevronLeft className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => comp.moveLayer(id, 1)}
-                                        disabled={pos === comp.order.length - 1}
-                                        className="w-5 h-5 flex items-center justify-center rounded text-zinc-300 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-300 disabled:opacity-0 transition-colors"
-                                    >
-                                        <ChevronRight className="w-4 h-4" />
-                                    </button>
-                                </div>
-
-                                {/* Thumbnail = visibility toggle */}
-                                <button
-                                    onClick={() => comp.toggleVisible(id)}
-                                    className={`relative w-16 h-16 rounded-lg overflow-hidden transition-all ${
-                                        isActive ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-zinc-50 dark:ring-offset-black'
-                                        : 'ring-1 ring-zinc-200 dark:ring-zinc-800'
-                                    } ${isVisible ? '' : 'opacity-40 grayscale'}`}
+                            <div key={id} className="relative group/layer">
+                                <div
+                                    className={`relative w-full rounded-lg overflow-hidden ring-1 ring-zinc-200 dark:ring-zinc-800 ${isVisible ? '' : 'opacity-30 grayscale'}`}
+                                    style={{ aspectRatio: ar }}
                                 >
                                     <img src={img.thumbSrc || img.src} alt="" className="w-full h-full object-cover" />
-                                    {/* Checkmark / visibility badge */}
-                                    <span className={`absolute top-1 left-1 w-4 h-4 rounded-[4px] flex items-center justify-center ${isVisible ? 'bg-zinc-900/85 dark:bg-white/90' : 'bg-black/30 border border-white/50'}`}>
-                                        {isVisible && <Check className="w-3 h-3 text-white dark:text-zinc-900" strokeWidth={3} />}
-                                    </span>
-                                </button>
 
-                                {/* Active-layer hint */}
-                                <span className={`text-[10px] font-medium h-3 ${isActive ? 'text-orange-500' : 'text-transparent'}`}>
-                                    {isDe ? 'Pinsel' : 'Brush'}
-                                </span>
+                                    {/* Visibility toggle */}
+                                    <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
+                                        <button
+                                            onClick={() => comp.toggleVisible(id)}
+                                            className="absolute top-1.5 left-1.5 w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 transition-colors"
+                                        >
+                                            {isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                        </button>
+                                    </Tooltip>
+
+                                    {/* Reorder — appear on hover */}
+                                    <div className="absolute top-1.5 right-1.5 flex flex-col gap-1 opacity-0 group-hover/layer:opacity-100 transition-opacity">
+                                        <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
+                                            <button
+                                                onClick={() => comp.moveLayer(id, 1)}
+                                                disabled={isTop}
+                                                className="w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 disabled:opacity-0 transition-all"
+                                            >
+                                                <ChevronUp className="w-3.5 h-3.5" />
+                                            </button>
+                                        </Tooltip>
+                                        <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="left">
+                                            <button
+                                                onClick={() => comp.moveLayer(id, -1)}
+                                                disabled={isBottom}
+                                                className="w-6 h-6 rounded-md flex items-center justify-center bg-black/45 backdrop-blur-sm text-white hover:bg-black/65 disabled:opacity-0 transition-all"
+                                            >
+                                                <ChevronDown className="w-3.5 h-3.5" />
+                                            </button>
+                                        </Tooltip>
+                                    </div>
+                                </div>
                             </div>
                         );
                     })}
                 </div>
-                <p className="text-center text-[11px] text-zinc-400 mt-1">
-                    {comp.activeId
-                        ? (isDe ? 'Auf das aktive Bild (orange) malen — + hinzufügen, − entfernen. Pfeile sortieren, Häkchen blendet ein/aus.'
-                               : 'Paint on the active image (orange) — + add, − remove. Arrows reorder, checkmark toggles.')
-                        : (isDe ? 'Mindestens zwei Ebenen einblenden, um Teile zu kombinieren.'
-                               : 'Show at least two layers to combine parts.')}
-                </p>
             </div>
         </div>
     );
