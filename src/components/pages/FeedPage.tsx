@@ -650,7 +650,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 pt-4 sm:pt-8 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${effectiveGroupId ? 'pt-24 sm:pt-28' : 'pt-4 sm:pt-8'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 >
                                     {displayImages.map((img, idx) => {
                                         const gc = (effectiveGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
@@ -701,10 +701,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         <Tooltip text={state?.currentLang === 'de' ? 'Als Ebenen öffnen — beste Teile kombinieren' : 'Open as layers — combine the best parts'} side="top">
                                             <button
                                                 onClick={() => setShowComposer(true)}
-                                                className="group/comp relative aspect-square rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center gap-2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors"
+                                                className="relative aspect-square rounded-lg bg-zinc-100 dark:bg-zinc-900/50 flex flex-col items-center justify-center gap-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60 transition-colors"
                                             >
-                                                <Layers className="w-6 h-6" />
-                                                <span className="text-[11px] font-medium px-2 text-center leading-tight">
+                                                <Layers className="w-7 h-7" strokeWidth={1.5} />
+                                                <span className="text-xs font-medium px-2 text-center leading-tight">
                                                     {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
                                                 </span>
                                             </button>

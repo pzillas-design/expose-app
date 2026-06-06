@@ -187,6 +187,16 @@ export const useLayerCompositing = (
 
     useEffect(() => { if (ready) requestComposite(); }, [order, visible, ready, requestComposite]);
 
+    // Default the brush to ~50% of its range once dimensions are known.
+    const brushInitedRef = useRef(false);
+    useEffect(() => {
+        if (ready && !brushInitedRef.current && refWRef.current) {
+            brushInitedRef.current = true;
+            const max = Math.max(200, Math.round(refWRef.current / 4));
+            setBrushSize(Math.round(20 + 0.5 * (max - 20)));
+        }
+    }, [ready]);
+
     // --- Painting (targets the active layer) ---
     const paintDab = useCallback((x: number, y: number, prevX?: number, prevY?: number) => {
         if (!activeId) return;
