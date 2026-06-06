@@ -196,6 +196,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                                 isTop={pos === comp.order.length - 1}
                                 isBottom={pos === 0}
                                 revision={comp.revision}
+                                feather={comp.feather}
                                 ready={comp.ready}
                                 drawThumb={comp.drawLayerThumb}
                                 onSelect={() => comp.setActiveId(id)}
@@ -246,13 +247,14 @@ const LayerCard: React.FC<{
     isTop: boolean;
     isBottom: boolean;
     revision: number;
+    feather: number;
     ready: boolean;
     drawThumb: (id: string, target: HTMLCanvasElement) => void;
     onSelect: () => void;
     onToggle: () => void;
     onMove: (dir: -1 | 1) => void;
     isDe: boolean;
-}> = ({ id, img, isActive, isVisible, isTop, isBottom, revision, ready, drawThumb, onSelect, onToggle, onMove, isDe }) => {
+}> = ({ id, img, isActive, isVisible, isTop, isBottom, revision, feather, ready, drawThumb, onSelect, onToggle, onMove, isDe }) => {
     const thumbRef = useRef<HTMLCanvasElement>(null);
     const ar = (img.realWidth && img.realHeight) ? img.realWidth / img.realHeight
         : (img.width && img.height ? img.width / img.height : 1);
@@ -264,7 +266,7 @@ const LayerCard: React.FC<{
         const h = Math.max(60, Math.round(w / (ar || 1)));
         if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
         drawThumb(id, c);
-    }, [id, revision, ready, ar, drawThumb]);
+    }, [id, revision, feather, ready, ar, drawThumb]);
 
     return (
         <div className="flex flex-col gap-2">
