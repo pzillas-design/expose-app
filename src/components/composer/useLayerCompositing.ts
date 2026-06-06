@@ -187,6 +187,16 @@ export const useLayerCompositing = (
 
     useEffect(() => { if (ready) requestComposite(); }, [order, visible, ready, requestComposite]);
 
+    // Default feather to ~25% of its range once dimensions are known.
+    const featherInitedRef = useRef(false);
+    useEffect(() => {
+        if (ready && !featherInitedRef.current && refWRef.current) {
+            featherInitedRef.current = true;
+            const max = Math.max(40, Math.round(refWRef.current / 16));
+            setFeather(Math.round(max * 0.25));
+        }
+    }, [ready]);
+
     // --- Painting (targets the active layer) ---
     const paintDab = useCallback((x: number, y: number, prevX?: number, prevY?: number) => {
         if (!activeId) return;

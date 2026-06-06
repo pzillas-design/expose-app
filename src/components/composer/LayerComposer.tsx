@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { X, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, Droplet } from 'lucide-react';
+import { X, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, CircleDotDashed } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { Theme, Tooltip, Button } from '@/components/ui/DesignSystem';
 import { useLayerCompositing } from './useLayerCompositing';
@@ -136,7 +136,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                     className="block max-w-full max-h-full rounded-lg shadow-sm touch-none bg-white dark:bg-zinc-900"
                     style={{ cursor: comp.activeId ? 'none' : 'default' }}
                 />
-                <BrushCursor canvasRef={canvasRef} size={displayBrush} enabled={!!comp.activeId} />
+                <BrushCursor canvasRef={canvasRef} size={displayBrush} mode={comp.mode} enabled={!!comp.activeId} />
 
                 {/* Bottom toolbar — styled like the annotation toolbar */}
                 {comp.ready && (
@@ -208,10 +208,10 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 </div>
 
                 {/* Footer: feather + save */}
-                <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-900 px-4 py-4 flex flex-col gap-3">
-                    <div className="flex items-center gap-3">
+                <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-900 px-4 pt-4 pb-4 flex flex-col gap-3">
+                    <div className="flex items-center gap-3 py-3">
                         <Tooltip text={isDe ? 'Weiche Kante (global)' : 'Feather (global)'} side="top">
-                            <Droplet className="w-4 h-4 text-zinc-400 shrink-0" />
+                            <CircleDotDashed className="w-4 h-4 text-zinc-400 shrink-0" />
                         </Tooltip>
                         <input
                             type="range" min={0} max={Math.max(40, Math.round((comp.refDims.w || 1024) / 16))}
@@ -298,12 +298,13 @@ const LayerCard: React.FC<{
     );
 };
 
-/** Brush ring that follows the pointer over the canvas. */
+/** Dashed brush ring with a centered +/− glyph showing the active mode. */
 const BrushCursor: React.FC<{
     canvasRef: React.RefObject<HTMLCanvasElement>;
     size: number;
+    mode: 'add' | 'remove';
     enabled: boolean;
-}> = ({ canvasRef, size, enabled }) => {
+}> = ({ canvasRef, size, mode, enabled }) => {
     // Fixed-position cursor in viewport coords — independent of canvas layout/
     // letterboxing, so it always lines up with the pointer.
     const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -322,15 +323,18 @@ const BrushCursor: React.FC<{
     }, [canvasRef, enabled]);
 
     if (!pos) return null;
+    const Glyph = mode === 'remove' ? Minus : Plus;
     return (
         <div
-            className="pointer-events-none fixed z-[110] rounded-full"
+            className="pointer-events-none fixed z-[110] rounded-full flex items-center justify-center"
             style={{
                 left: pos.x, top: pos.y, width: size, height: size,
                 transform: 'translate(-50%, -50%)',
-                border: '2px solid #fff',
+                border: '2px dashed #fff',
                 boxShadow: '0 0 0 1px rgba(0,0,0,.5)',
             }}
-        />
+        >
+            <Glyph className="w-4 h-4 text-white" strokeWidth={3} style={{ filter: 'drop-shadow(0 0 1px rgba(0,0,0,.9))' }} />
+        </div>
     );
 };
