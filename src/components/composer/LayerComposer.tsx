@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { X, Check, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { X, Check, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, Droplet } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { Theme, Tooltip } from '@/components/ui/DesignSystem';
 import { useLayerCompositing, ComposerLayer } from './useLayerCompositing';
@@ -122,21 +122,39 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                     <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/10 ${Theme.Effects.Shadow} rounded-full px-3 py-1.5`}>
                         <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-full p-0.5">
                             <Tooltip text={isDe ? 'Hinzufügen' : 'Add'} side="top">
-                                <button onClick={() => comp.setMode('add')} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${comp.mode === 'add' ? 'bg-white dark:bg-zinc-700 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}>
+                                <button onClick={() => comp.setMode('add')} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${comp.mode === 'add' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}>
                                     <Plus className="w-4 h-4" />
                                 </button>
                             </Tooltip>
                             <Tooltip text={isDe ? 'Entfernen' : 'Remove'} side="top">
-                                <button onClick={() => comp.setMode('remove')} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${comp.mode === 'remove' ? 'bg-white dark:bg-zinc-700 text-red-500 shadow-sm' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}>
+                                <button onClick={() => comp.setMode('remove')} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${comp.mode === 'remove' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'}`}>
                                     <Minus className="w-4 h-4" />
                                 </button>
                             </Tooltip>
                         </div>
+
+                        {/* Brush size */}
+                        <Tooltip text={isDe ? 'Pinselgröße' : 'Brush size'} side="top">
+                            <Circle className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        </Tooltip>
                         <input
                             type="range" min={20} max={Math.max(200, Math.round((comp.refDims.w || 1024) / 4))}
                             value={comp.brushSize}
                             onChange={(e) => comp.setBrushSize(Number(e.target.value))}
-                            className="w-28 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-orange-500"
+                            className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500"
+                        />
+
+                        <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-700" />
+
+                        {/* Global feather (soft edge) */}
+                        <Tooltip text={isDe ? 'Weiche Kante (global)' : 'Feather (global)'} side="top">
+                            <Droplet className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        </Tooltip>
+                        <input
+                            type="range" min={0} max={Math.max(40, Math.round((comp.refDims.w || 1024) / 16))}
+                            value={comp.feather}
+                            onChange={(e) => comp.setFeather(Number(e.target.value))}
+                            className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500"
                         />
                     </div>
                 )}
@@ -287,8 +305,8 @@ const BrushCursor: React.FC<{
             style={{
                 left: pos.x, top: pos.y, width: size, height: size,
                 transform: 'translate(-50%, -50%)',
-                border: `2px solid ${mode === 'remove' ? '#ef4444' : '#10b981'}`,
-                boxShadow: '0 0 0 1px rgba(0,0,0,.4)',
+                border: '2px solid #fff',
+                boxShadow: '0 0 0 1px rgba(0,0,0,.5)',
             }}
         />
     );

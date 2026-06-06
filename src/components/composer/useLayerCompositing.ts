@@ -62,6 +62,11 @@ export const useLayerCompositing = (
     const [activeId, setActiveId] = useState<string>(() => (layers[0]?.id ?? ''));
     const [mode, setMode] = useState<BrushMode>('remove');
     const [brushSize, setBrushSize] = useState(120);
+    // Global feather: a single soft-edge amount (in reference px) applied to ALL
+    // mask edges at composite time — non-destructive, adjustable any time.
+    const [feather, setFeather] = useState(0);
+    const featherRef = useRef(0);
+    useEffect(() => { featherRef.current = feather; requestComposite(); /* eslint-disable-next-line */ }, [feather]);
     const [refDims, setRefDims] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
     const [revision, setRevision] = useState(0); // bumps when masks change → thumbs refresh
 
@@ -167,7 +172,10 @@ export const useLayerCompositing = (
             tctx.globalCompositeOperation = 'source-over';
             tctx.drawImage(layer.canvas, 0, 0);
             tctx.globalCompositeOperation = 'destination-in';
+            // Global feather: blur the mask as it's applied so all edges soften.
+            tctx.filter = featherRef.current > 0 ? `blur(${featherRef.current}px)` : 'none';
             tctx.drawImage(layer.mask, 0, 0);
+            tctx.filter = 'none';
             ctx.drawImage(tmp, 0, 0);
         }
     }, [canvasRef]);
@@ -242,7 +250,10 @@ export const useLayerCompositing = (
         x.drawImage(loaded.canvas, 0, 0, w, h);
         if (loaded.mask) {
             x.globalCompositeOperation = 'destination-in';
+            const fScaled = featherRef.current > 0 && refWRef.current ? featherRef.current * (w / refWRef.current) : 0;
+            x.filter = fScaled > 0 ? `blur(${fScaled}px)` : 'none';
             x.drawImage(loaded.mask, 0, 0, w, h);
+            x.filter = 'none';
         }
         ctx.drawImage(tmp, 0, 0);
     }, []);
@@ -264,6 +275,7 @@ export const useLayerCompositing = (
         moveLayer,
         mode, setMode,
         brushSize, setBrushSize,
+        feather, setFeather,
         refDims,
         revision,
         paintDab,
