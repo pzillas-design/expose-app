@@ -867,7 +867,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     title={rows.find(r => r.id === effectiveGroupId)?.title || ''}
                     onClose={() => setShowComposer(false)}
                     onSave={async (base, dataUrl, w, h) => {
-                        await actions?.handleSaveComposite?.(base, dataUrl, w, h);
+                        const newId = await actions?.handleSaveComposite?.(base, dataUrl, w, h);
+                        // Open the new composite in the normal detail/edit view so the
+                        // user can keep prompting on it right away.
+                        if (newId) onSelectImage(newId);
                     }}
                     t={t}
                     isDe={state?.currentLang === 'de'}
