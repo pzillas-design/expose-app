@@ -103,14 +103,13 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
         return comp.brushSize * (rect.width / comp.refDims.w);
     }, [comp.brushSize, comp.refDims.w, comp.ready]);
 
-    const aspect = comp.refDims.w && comp.refDims.h ? `${comp.refDims.w} / ${comp.refDims.h}` : '1 / 1';
     const panelOrder = useMemo(() => [...comp.order].reverse(), [comp.order]);
 
     return (
-        <div className="fixed inset-0 z-[100] flex bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[100] flex overflow-hidden bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
 
             {/* Canvas area */}
-            <div className="relative flex-1 min-h-0 flex items-center justify-center p-4 md:p-8">
+            <div className="relative flex-1 min-w-0 min-h-0 flex items-center justify-center p-4 md:p-8">
                 <Tooltip text={isDe ? 'Schließen' : 'Close'} side="right">
                     <button
                         onClick={onClose}
@@ -126,18 +125,18 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                     </div>
                 )}
 
-                <div className="relative max-w-full max-h-full" style={{ aspectRatio: aspect, height: '100%' }}>
-                    <canvas
-                        ref={canvasRef}
-                        onPointerDown={onPointerDown}
-                        onPointerMove={onPointerMove}
-                        onPointerUp={onPointerUp}
-                        onPointerLeave={onPointerUp}
-                        className="block w-full h-full rounded-lg shadow-sm touch-none bg-white dark:bg-zinc-900"
-                        style={{ cursor: comp.activeId ? 'none' : 'default', objectFit: 'contain' }}
-                    />
-                    <BrushCursor canvasRef={canvasRef} size={displayBrush} enabled={!!comp.activeId} />
-                </div>
+                {/* Canvas: scales to fit the available box while preserving aspect
+                    (object-contain via intrinsic canvas size + max constraints). */}
+                <canvas
+                    ref={canvasRef}
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerLeave={onPointerUp}
+                    className="block max-w-full max-h-full rounded-lg shadow-sm touch-none bg-white dark:bg-zinc-900"
+                    style={{ cursor: comp.activeId ? 'none' : 'default' }}
+                />
+                <BrushCursor canvasRef={canvasRef} size={displayBrush} enabled={!!comp.activeId} />
 
                 {/* Bottom toolbar — styled like the annotation toolbar */}
                 {comp.ready && (
@@ -266,10 +265,10 @@ const LayerCard: React.FC<{
 
     return (
         <div className="flex flex-col gap-2">
-            {/* Controls above the thumbnail */}
-            <div className="flex items-center justify-center gap-2">
+            {/* Controls above the thumbnail — left-aligned */}
+            <div className="flex items-center gap-1.5">
                 <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="top">
-                    <button onClick={onToggle} className={ctlBtn}>
+                    <button onClick={onToggle} className={`${ctlBtn} ${isVisible ? '' : 'ring-1 ring-zinc-300 dark:ring-zinc-600'}`}>
                         {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
                 </Tooltip>
@@ -279,13 +278,18 @@ const LayerCard: React.FC<{
                 <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="top">
                     <button onClick={() => onMove(-1)} disabled={isBottom} className={ctlBtn}><ChevronDown className="w-4 h-4" /></button>
                 </Tooltip>
+                {isActive && (
+                    <span className="ml-auto text-[11px] font-medium text-orange-500">
+                        {isDe ? 'Aktiv' : 'Active'}
+                    </span>
+                )}
             </div>
 
             {/* Masked thumbnail (transparent where erased → panel bg shows through) */}
             <button
                 onClick={onSelect}
                 className={`relative w-full rounded-lg overflow-hidden transition-all ${
-                    isActive ? 'ring-2 ring-orange-500 ring-offset-2 ring-offset-white dark:ring-offset-zinc-950'
+                    isActive ? 'ring-2 ring-orange-500'
                     : 'ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
                 } ${isVisible ? '' : 'opacity-40'}`}
                 style={{ aspectRatio: `${ar}` }}
@@ -302,6 +306,8 @@ const BrushCursor: React.FC<{
     size: number;
     enabled: boolean;
 }> = ({ canvasRef, size, enabled }) => {
+    // Fixed-position cursor in viewport coords — independent of canvas layout/
+    // letterboxing, so it always lines up with the pointer.
     const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -309,7 +315,7 @@ const BrushCursor: React.FC<{
         const move = (e: PointerEvent) => {
             const rect = canvas.getBoundingClientRect();
             const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
-            setPos(inside ? { x: e.clientX - rect.left, y: e.clientY - rect.top } : null);
+            setPos(inside ? { x: e.clientX, y: e.clientY } : null);
         };
         const leave = () => setPos(null);
         canvas.addEventListener('pointermove', move);
@@ -320,7 +326,7 @@ const BrushCursor: React.FC<{
     if (!pos) return null;
     return (
         <div
-            className="pointer-events-none absolute rounded-full"
+            className="pointer-events-none fixed z-[110] rounded-full"
             style={{
                 left: pos.x, top: pos.y, width: size, height: size,
                 transform: 'translate(-50%, -50%)',
