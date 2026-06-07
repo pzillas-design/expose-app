@@ -10,6 +10,7 @@ import { Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { GenerationProgressBar } from '@/components/canvas/ImageItem';
 import { FeedHeroSection } from '../layout/FeedHeroSection';
+import { LayerComposer } from '@/components/composer/LayerComposer';
 
 /* ── TTL helpers ── */
 const TTL_DAYS = 30;
@@ -275,6 +276,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const scrollRef = React.useRef<HTMLDivElement>(null);
     const scrollRafRef = React.useRef<number>(0);
     const { confirm } = useItemDialog();
+    // Layer Composer — opened from the entry tile inside an expanded stack grid
+    const [showComposer, setShowComposer] = React.useState(false);
 
     // Report scroll progress to parent (drives hero navbar collapse animation).
     // Depends on images.length so the listener is re-registered after the loading
@@ -647,7 +650,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 pt-4 sm:pt-8 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${effectiveGroupId ? 'pt-24 sm:pt-28' : 'pt-4 sm:pt-8'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 >
                                     {displayImages.map((img, idx) => {
                                         const gc = (effectiveGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
@@ -692,6 +695,21 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                             />
                                         );
                                     })}
+
+                                    {/* Layer Composer entry — only inside an expanded stack with 2+ variants */}
+                                    {effectiveGroupId && !isSelectMode && displayImages.length >= 2 && (
+                                        <Tooltip text={state?.currentLang === 'de' ? 'Als Ebenen öffnen' : 'Open as layers'} side="top">
+                                            <button
+                                                onClick={() => setShowComposer(true)}
+                                                className="relative aspect-square rounded-lg bg-zinc-100 dark:bg-zinc-900/50 flex flex-col items-center justify-center gap-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60 transition-colors"
+                                            >
+                                                <Layers className="w-7 h-7" strokeWidth={1.5} />
+                                                <span className="text-xs font-medium px-2 text-center leading-tight">
+                                                    {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
+                                                </span>
+                                            </button>
+                                        </Tooltip>
+                                    )}
                                 </div>
                             </>
                         ) : !isLoading && (
@@ -840,6 +858,23 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                         </div>
                     )}
                 </div>
+            )}
+
+            {showComposer && effectiveGroupId && displayImages.length >= 2 && (
+                <LayerComposer
+                    stack={displayImages}
+                    initialBaseId={displayImages[0].id}
+                    title={rows.find(r => r.id === effectiveGroupId)?.title || ''}
+                    onClose={() => setShowComposer(false)}
+                    onSave={async (base, dataUrl, w, h) => {
+                        const newId = await actions?.handleSaveComposite?.(base, dataUrl, w, h);
+                        // Open the new composite in the normal detail/edit view so the
+                        // user can keep prompting on it right away.
+                        if (newId) onSelectImage(newId);
+                    }}
+                    t={t}
+                    isDe={state?.currentLang === 'de'}
+                />
             )}
         </div>
     );

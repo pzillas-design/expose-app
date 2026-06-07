@@ -453,6 +453,96 @@ export const useNanoController = () => {
         return true;
     }, [user, rows, activeId, setRows, setActiveId, selectAndSnap, showToast, currentLang, confirm]);
 
+    /**
+     * Save a layer-composited image as a new variant in its stack.
+     * The composite is produced purely client-side (canvas), so there is no AI
+     * call and no credit cost — we insert it into rows immediately and persist
+     * to storage/DB in the background, mirroring the generation completion path.
+     */
+    const handleSaveComposite = useCallback(async (
+        baseImage: CanvasImage,
+        compositeDataUrl: string,
+        refW: number,
+        refH: number,
+    ): Promise<string | null> => {
+        if (!user) {
+            setAuthModalMode('signin');
+            setIsAuthModalOpen(true);
+            return null;
+        }
+
+        const newId = generateId();
+        const folderId = baseImage.folderId ?? baseImage.id;
+        const rawBaseName = (baseImage.baseName || baseImage.title || 'Image').replace(/_v\d+$/, '');
+
+        // Version is scoped to the stack (folderId). Derive the next number from
+        // the *titles* (the visible "_vN"), not the `version` column — older edge-
+        // function generations can have a title like "48_v2" while their version
+        // column says 11, which would otherwise make the composite jump to v12.
+        const stackItems = rows.flatMap(r => r.items).filter(i => (i.folderId ?? i.id) === folderId);
+        const parseVer = (t?: string) => {
+            const m = (t || '').match(/_v(\d+)$/);
+            return m ? parseInt(m[1], 10) : 1;
+        };
+        const maxVersion = stackItems.reduce((max, i) => Math.max(max, parseVer(i.title)), 0);
+        const newVersion = maxVersion + 1;
+
+        const composite: CanvasImage = {
+            ...baseImage,
+            id: newId,
+            src: compositeDataUrl,
+            originalSrc: compositeDataUrl,
+            thumbSrc: compositeDataUrl,
+            storage_path: '',
+            title: `${rawBaseName}_v${newVersion}`,
+            baseName: rawBaseName,
+            version: newVersion,
+            width: baseImage.width,
+            height: baseImage.height,
+            realWidth: refW,
+            realHeight: refH,
+            parentId: baseImage.id,
+            folderId,
+            isGenerating: false,
+            annotations: [],
+            maskSrc: undefined,
+            generationPrompt: undefined,
+            userDraftPrompt: '',
+            modelVersion: 'layer-composite',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+
+        // Insert into the stack row immediately so the user sees it in the strip.
+        setRows(prev => {
+            const idx = prev.findIndex(r => r.items.some(i => (i.folderId ?? i.id) === folderId));
+            if (idx === -1) return prev;
+            const newRows = [...prev];
+            newRows[idx] = { ...newRows[idx], items: [composite, ...newRows[idx].items] };
+            return newRows;
+        });
+
+        // Persist in the background; swap in the storage_path on success.
+        (async () => {
+            try {
+                const result = await imageService.persistImage(composite, user.id, user.email);
+                if (result.success && result.storage_path) {
+                    setRows(prev => prev.map(row => ({
+                        ...row,
+                        items: row.items.map(i => i.id === newId ? { ...i, storage_path: result.storage_path! } : i),
+                    })));
+                } else {
+                    showToast(currentLang === 'de' ? 'Speichern fehlgeschlagen' : 'Save failed', 'error');
+                }
+            } catch (e) {
+                console.error('[Composite] persist failed:', e);
+                showToast(currentLang === 'de' ? 'Speichern fehlgeschlagen' : 'Save failed', 'error');
+            }
+        })();
+
+        return newId;
+    }, [user, rows, setRows, setAuthModalMode, setIsAuthModalOpen, showToast, currentLang]);
+
     const handleProcessFiles = useCallback((files: FileList | DataTransferItemList | File[]) => {
         const fileArray = (Array.from(files as any) as any[]).map(f => f instanceof File ? f : f.getAsFile?.()).filter((f): f is File => !!f && f.type.startsWith('image/'));
         if (fileArray.length === 0) return;
@@ -708,6 +798,7 @@ export const useNanoController = () => {
         setIsSelectMode,
         processFile: handleProcessFile,
         handleDeleteImage,
+        handleSaveComposite,
         handleDownload,
         handleUpdateAnnotations,
         handleUpdatePrompt,
@@ -741,7 +832,7 @@ export const useNanoController = () => {
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, selectAndSnap, selectMultiple,
         handleSelection, moveSelection, moveRowSelection, setAuthModalMode, setIsAuthModalOpen, setAuthEmail,
         setAuthError, handleAddFunds, handleSignOut, deleteAccount, updateProfile, setIsDragOver, handleFileDrop,
-        setIsSettingsOpen, setIsAdminOpen, setIsSelectMode, handleProcessFile, handleDeleteImage, handleDownload,
+        setIsSettingsOpen, setIsAdminOpen, setIsSelectMode, handleProcessFile, handleDeleteImage, handleSaveComposite, handleDownload,
         handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, handleUpdateImageTitle, performGeneration, handleGenerate,
         handleGenerateMore, handleNavigateParent, setIsBrushResizing, handleCreateNew,
         refreshTemplates, saveTemplate, deleteTemplate, setIsCanvasLoading,
