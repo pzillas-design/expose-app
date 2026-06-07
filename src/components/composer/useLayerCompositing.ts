@@ -62,11 +62,13 @@ export const useLayerCompositing = (
     const [activeId, setActiveId] = useState<string>(() => (layers[0]?.id ?? ''));
     const [mode, setMode] = useState<BrushMode>('remove');
     const [brushSize, setBrushSize] = useState(120);
-    // Global feather: a single soft-edge amount (in reference px) applied to ALL
-    // mask edges at composite time — non-destructive, adjustable any time.
-    const [feather, setFeather] = useState(0);
-    const featherRef = useRef(0);
-    useEffect(() => { featherRef.current = feather; requestComposite(); /* eslint-disable-next-line */ }, [feather]);
+    // Per-stroke edge softness (0 = hard, 100 = very soft). Baked into the mask
+    // as the brush paints — so edges stay crisp at the image border and can vary
+    // stroke to stroke. Replaces the old global blur, which eroded the mask at
+    // the canvas edge and cost a full-canvas gaussian every frame.
+    const [softness, setSoftness] = useState(30);
+    const softnessRef = useRef(30);
+    useEffect(() => { softnessRef.current = softness; }, [softness]);
     const [refDims, setRefDims] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
     const [revision, setRevision] = useState(0); // bumps when masks change → thumbs refresh
 
@@ -172,10 +174,7 @@ export const useLayerCompositing = (
             tctx.globalCompositeOperation = 'source-over';
             tctx.drawImage(layer.canvas, 0, 0);
             tctx.globalCompositeOperation = 'destination-in';
-            // Global feather: blur the mask as it's applied so all edges soften.
-            tctx.filter = featherRef.current > 0 ? `blur(${featherRef.current}px)` : 'none';
             tctx.drawImage(layer.mask, 0, 0);
-            tctx.filter = 'none';
             ctx.drawImage(tmp, 0, 0);
         }
     }, [canvasRef]);
@@ -198,20 +197,42 @@ export const useLayerCompositing = (
     }, [ready]);
 
     // --- Painting (targets the active layer) ---
+    // Stamps soft-edged radial dabs along the stroke. The softness (0..100) sets
+    // how much of the radius fades out, so the feathering lives in the mask and
+    // never erodes the image border the way a global blur did.
     const paintDab = useCallback((x: number, y: number, prevX?: number, prevY?: number) => {
         if (!activeId) return;
         const mask = ensureMask(activeId);
         const mctx = mask.getContext('2d')!;
         mctx.globalCompositeOperation = mode === 'add' ? 'source-over' : 'destination-out';
-        mctx.strokeStyle = '#fff';
-        mctx.fillStyle = '#fff';
-        mctx.lineCap = 'round';
-        mctx.lineJoin = 'round';
-        mctx.lineWidth = brushSize;
+
+        const r = Math.max(1, brushSize / 2);
+        const soft = Math.min(1, Math.max(0, softnessRef.current / 100));
+        const innerRatio = Math.min(0.98, 1 - soft); // 0 soft → hard, 1 soft → full fade
+
+        const stamp = (cx: number, cy: number) => {
+            if (soft <= 0.01) {
+                mctx.fillStyle = '#fff';
+            } else {
+                const g = mctx.createRadialGradient(cx, cy, r * innerRatio, cx, cy, r);
+                g.addColorStop(0, 'rgba(255,255,255,1)');
+                g.addColorStop(1, 'rgba(255,255,255,0)');
+                mctx.fillStyle = g;
+            }
+            mctx.beginPath();
+            mctx.arc(cx, cy, r, 0, Math.PI * 2);
+            mctx.fill();
+        };
+
         if (prevX != null && prevY != null) {
-            mctx.beginPath(); mctx.moveTo(prevX, prevY); mctx.lineTo(x, y); mctx.stroke();
+            const dx = x - prevX, dy = y - prevY;
+            const dist = Math.hypot(dx, dy);
+            const step = Math.max(1, r * 0.2);
+            const n = Math.max(1, Math.ceil(dist / step));
+            for (let i = 1; i <= n; i++) stamp(prevX + (dx * i) / n, prevY + (dy * i) / n);
+        } else {
+            stamp(x, y);
         }
-        mctx.beginPath(); mctx.arc(x, y, brushSize / 2, 0, Math.PI * 2); mctx.fill();
         requestComposite();
     }, [activeId, mode, brushSize, ensureMask, requestComposite]);
 
@@ -253,10 +274,7 @@ export const useLayerCompositing = (
         x.drawImage(loaded.canvas, 0, 0, w, h);
         if (loaded.mask) {
             x.globalCompositeOperation = 'destination-in';
-            const fScaled = featherRef.current > 0 && refWRef.current ? featherRef.current * (w / refWRef.current) : 0;
-            x.filter = fScaled > 0 ? `blur(${fScaled}px)` : 'none';
             x.drawImage(loaded.mask, 0, 0, w, h);
-            x.filter = 'none';
         }
         ctx.drawImage(tmp, 0, 0);
     }, []);
@@ -278,7 +296,7 @@ export const useLayerCompositing = (
         moveLayer,
         mode, setMode,
         brushSize, setBrushSize,
-        feather, setFeather,
+        softness, setSoftness,
         refDims,
         revision,
         paintDab,
