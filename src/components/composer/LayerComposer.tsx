@@ -115,6 +115,12 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
         return comp.brushSize * (rect.width / comp.refDims.w);
     }, [comp.brushSize, comp.refDims.w, comp.ready]);
 
+    // Inner (hard-core) radius fraction — the dashed outer ring is the full brush,
+    // the solid inner ring shows where the soft falloff begins.
+    const innerRatio = Math.min(0.98, 1 - comp.softness / 100);
+    // While dragging a slider, show a centered preview (like the annotation editor).
+    const [isAdjusting, setIsAdjusting] = useState(false);
+
     const panelOrder = useMemo(() => [...comp.order].reverse(), [comp.order]);
 
     return (
@@ -164,7 +170,14 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                     className="block max-w-full max-h-full rounded-lg shadow-sm touch-none bg-white dark:bg-zinc-900"
                     style={{ cursor: comp.activeId ? 'none' : 'default' }}
                 />
-                <BrushCursor canvasRef={canvasRef} size={displayBrush} mode={comp.mode} enabled={!!comp.activeId} />
+                <BrushCursor canvasRef={canvasRef} size={displayBrush} innerRatio={innerRatio} enabled={!!comp.activeId} hidden={isAdjusting} />
+
+                {/* Centered brush preview while dragging a slider */}
+                {comp.ready && comp.activeId && isAdjusting && (
+                    <div className="pointer-events-none absolute left-1/2 top-1/2 z-30" style={{ transform: 'translate(-50%, -50%)' }}>
+                        <BrushRing size={displayBrush} innerRatio={innerRatio} />
+                    </div>
+                )}
 
                 {/* Bottom toolbar — styled like the annotation toolbar */}
                 {comp.ready && (
@@ -188,6 +201,8 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                             <Tooltip text={isDe ? 'Pinselgröße' : 'Brush size'} side="top"><Circle className="w-4 h-4 text-zinc-400 shrink-0" /></Tooltip>
                             <input type="range" min={20} max={Math.max(200, Math.round((comp.refDims.w || 1024) / 4))}
                                 value={comp.brushSize} onChange={(e) => comp.setBrushSize(Number(e.target.value))}
+                                onMouseDown={() => setIsAdjusting(true)} onMouseUp={() => setIsAdjusting(false)}
+                                onTouchStart={() => setIsAdjusting(true)} onTouchEnd={() => setIsAdjusting(false)}
                                 className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
                         </div>
 
@@ -196,6 +211,8 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                             <Tooltip text={isDe ? 'Kantenweichheit' : 'Edge softness'} side="top"><Feather className="w-4 h-4 text-zinc-400 shrink-0" /></Tooltip>
                             <input type="range" min={0} max={100}
                                 value={comp.softness} onChange={(e) => comp.setSoftness(Number(e.target.value))}
+                                onMouseDown={() => setIsAdjusting(true)} onMouseUp={() => setIsAdjusting(false)}
+                                onTouchStart={() => setIsAdjusting(true)} onTouchEnd={() => setIsAdjusting(false)}
                                 className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
                         </div>
                     </div>
@@ -308,13 +325,32 @@ const LayerCard: React.FC<{
     );
 };
 
-/** Dashed brush ring with a centered +/− glyph showing the active mode. */
+/**
+ * Brush ring: a dashed white outer circle = the full brush extent, and a solid
+ * white inner circle = where the soft falloff begins. The gap between them grows
+ * with edge softness. Plain white lines, no shadow — like the annotation editor.
+ */
+const BrushRing: React.FC<{ size: number; innerRatio: number }> = ({ size, innerRatio }) => {
+    const s = Math.max(10, size);
+    const c = s / 2;
+    const outer = Math.max(1, c - 1);
+    const inner = Math.max(0.5, outer * innerRatio);
+    return (
+        <svg width={s} height={s} className="block overflow-visible">
+            <circle cx={c} cy={c} r={outer} fill="none" stroke="#fff" strokeWidth={1.5} strokeDasharray="4 4" />
+            {innerRatio < 0.95 && <circle cx={c} cy={c} r={inner} fill="none" stroke="#fff" strokeWidth={1.5} />}
+        </svg>
+    );
+};
+
+/** Brush ring that follows the pointer over the canvas. */
 const BrushCursor: React.FC<{
     canvasRef: React.RefObject<HTMLCanvasElement>;
     size: number;
-    mode: 'add' | 'remove';
+    innerRatio: number;
     enabled: boolean;
-}> = ({ canvasRef, size, mode, enabled }) => {
+    hidden?: boolean;
+}> = ({ canvasRef, size, innerRatio, enabled, hidden }) => {
     // Fixed-position cursor in viewport coords — independent of canvas layout/
     // letterboxing, so it always lines up with the pointer.
     const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -332,19 +368,10 @@ const BrushCursor: React.FC<{
         return () => { canvas.removeEventListener('pointermove', move); canvas.removeEventListener('pointerleave', leave); };
     }, [canvasRef, enabled]);
 
-    if (!pos) return null;
-    const Glyph = mode === 'remove' ? Minus : Plus;
+    if (!pos || hidden) return null;
     return (
-        <div
-            className="pointer-events-none fixed z-[110] rounded-full flex items-center justify-center"
-            style={{
-                left: pos.x, top: pos.y, width: size, height: size,
-                transform: 'translate(-50%, -50%)',
-                border: '2px dashed #fff',
-                boxShadow: '0 0 0 1px rgba(0,0,0,.5)',
-            }}
-        >
-            <Glyph className="w-4 h-4 text-white" strokeWidth={3} style={{ filter: 'drop-shadow(0 0 1px rgba(0,0,0,.9))' }} />
+        <div className="pointer-events-none fixed z-[110]" style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}>
+            <BrushRing size={size} innerRatio={innerRatio} />
         </div>
     );
 };
