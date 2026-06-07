@@ -121,7 +121,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
         <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
 
             {/* Standard header: back · title · download · save */}
-            <header className="relative shrink-0 h-14 flex items-center px-3 border-b border-zinc-100 dark:border-zinc-900">
+            <header className="relative shrink-0 h-14 flex items-center px-3 bg-white dark:bg-zinc-950 border-b border-black/[0.04] dark:border-white/[0.06]">
                 <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onClose} variant="ghost" />
                 <h2 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-black dark:text-white truncate max-w-[40%]">
                     {title || (isDe ? 'Ebenen' : 'Layers')}
