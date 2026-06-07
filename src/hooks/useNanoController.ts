@@ -475,9 +475,16 @@ export const useNanoController = () => {
         const folderId = baseImage.folderId ?? baseImage.id;
         const rawBaseName = (baseImage.baseName || baseImage.title || 'Image').replace(/_v\d+$/, '');
 
-        // Version is scoped to the stack (folderId) — same rule as useGeneration.
+        // Version is scoped to the stack (folderId). Derive the next number from
+        // the *titles* (the visible "_vN"), not the `version` column — older edge-
+        // function generations can have a title like "48_v2" while their version
+        // column says 11, which would otherwise make the composite jump to v12.
         const stackItems = rows.flatMap(r => r.items).filter(i => (i.folderId ?? i.id) === folderId);
-        const maxVersion = stackItems.reduce((max, i) => Math.max(max, i.version || 1), 0);
+        const parseVer = (t?: string) => {
+            const m = (t || '').match(/_v(\d+)$/);
+            return m ? parseInt(m[1], 10) : 1;
+        };
+        const maxVersion = stackItems.reduce((max, i) => Math.max(max, parseVer(i.title)), 0);
         const newVersion = maxVersion + 1;
 
         const composite: CanvasImage = {
