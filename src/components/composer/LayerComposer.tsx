@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, CircleDotDashed, Download } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, Feather, Download } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { Theme, Tooltip, Button, RoundIconButton } from '@/components/ui/DesignSystem';
 import { useLayerCompositing } from './useLayerCompositing';
@@ -188,7 +188,15 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                             <Tooltip text={isDe ? 'Pinselgröße' : 'Brush size'} side="top"><Circle className="w-4 h-4 text-zinc-400 shrink-0" /></Tooltip>
                             <input type="range" min={20} max={Math.max(200, Math.round((comp.refDims.w || 1024) / 4))}
                                 value={comp.brushSize} onChange={(e) => comp.setBrushSize(Number(e.target.value))}
-                                className="w-28 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
+                                className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
+                        </div>
+
+                        {/* Edge softness (per stroke) */}
+                        <div className="flex items-center gap-2 px-2">
+                            <Tooltip text={isDe ? 'Kantenweichheit' : 'Edge softness'} side="top"><Feather className="w-4 h-4 text-zinc-400 shrink-0" /></Tooltip>
+                            <input type="range" min={0} max={100}
+                                value={comp.softness} onChange={(e) => comp.setSoftness(Number(e.target.value))}
+                                className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
                         </div>
                     </div>
                 )}
@@ -220,7 +228,6 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                                 isTop={pos === comp.order.length - 1}
                                 isBottom={pos === 0}
                                 revision={comp.revision}
-                                feather={comp.feather}
                                 ready={comp.ready}
                                 drawThumb={comp.drawLayerThumb}
                                 onSelect={() => comp.setActiveId(id)}
@@ -230,20 +237,6 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                             />
                         );
                     })}
-                </div>
-
-                {/* Footer: global feather */}
-                <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-900 px-4 py-5">
-                    <div className="flex items-center gap-3">
-                        <Tooltip text={isDe ? 'Weiche Kante (global)' : 'Feather (global)'} side="top">
-                            <CircleDotDashed className="w-4 h-4 text-zinc-400 shrink-0" />
-                        </Tooltip>
-                        <input
-                            type="range" min={0} max={Math.max(40, Math.round((comp.refDims.w || 1024) / 16))}
-                            value={comp.feather} onChange={(e) => comp.setFeather(Number(e.target.value))}
-                            className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500"
-                        />
-                    </div>
                 </div>
             </div>
 
@@ -263,14 +256,13 @@ const LayerCard: React.FC<{
     isTop: boolean;
     isBottom: boolean;
     revision: number;
-    feather: number;
     ready: boolean;
     drawThumb: (id: string, target: HTMLCanvasElement) => void;
     onSelect: () => void;
     onToggle: () => void;
     onMove: (dir: -1 | 1) => void;
     isDe: boolean;
-}> = ({ id, img, isActive, isVisible, isTop, isBottom, revision, feather, ready, drawThumb, onSelect, onToggle, onMove, isDe }) => {
+}> = ({ id, img, isActive, isVisible, isTop, isBottom, revision, ready, drawThumb, onSelect, onToggle, onMove, isDe }) => {
     const thumbRef = useRef<HTMLCanvasElement>(null);
     const ar = (img.realWidth && img.realHeight) ? img.realWidth / img.realHeight
         : (img.width && img.height ? img.width / img.height : 1);
@@ -282,7 +274,7 @@ const LayerCard: React.FC<{
         const h = Math.max(60, Math.round(w / (ar || 1)));
         if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
         drawThumb(id, c);
-    }, [id, revision, feather, ready, ar, drawThumb]);
+    }, [id, revision, ready, ar, drawThumb]);
 
     return (
         <div className="flex flex-col gap-2">
