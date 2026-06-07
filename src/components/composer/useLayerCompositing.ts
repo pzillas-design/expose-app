@@ -76,6 +76,8 @@ export const useLayerCompositing = (
     const refWRef = useRef(0);
     const refHRef = useRef(0);
     const rafRef = useRef<number | null>(null);
+    const compTmpRef = useRef<HTMLCanvasElement | null>(null);   // reused composite scratch
+    const stampRef = useRef<{ canvas: HTMLCanvasElement; size: number; soft: number } | null>(null); // cached brush sprite
     const orderRef = useRef<string[]>(order);
     const visibleRef = useRef<Set<string>>(visible);
     useEffect(() => { orderRef.current = order; }, [order]);
@@ -161,8 +163,11 @@ export const useLayerCompositing = (
         const ctx = canvas.getContext('2d')!;
         ctx.clearRect(0, 0, refW, refH);
 
-        const tmp = document.createElement('canvas');
-        tmp.width = refW; tmp.height = refH;
+        // Reuse one offscreen temp canvas across frames — re-allocating a full-res
+        // (e.g. 4K) canvas every composite caused heavy GC churn / paint jank.
+        let tmp = compTmpRef.current;
+        if (!tmp) { tmp = document.createElement('canvas'); compTmpRef.current = tmp; }
+        if (tmp.width !== refW || tmp.height !== refH) { tmp.width = refW; tmp.height = refH; }
         const tctx = tmp.getContext('2d')!;
 
         for (const id of orderRef.current) {           // bottom → top
@@ -206,32 +211,41 @@ export const useLayerCompositing = (
         const mctx = mask.getContext('2d')!;
         mctx.globalCompositeOperation = mode === 'add' ? 'source-over' : 'destination-out';
 
-        const r = Math.max(1, brushSize / 2);
+        const size = Math.max(2, Math.round(brushSize));
+        const r = size / 2;
         const soft = Math.min(1, Math.max(0, softnessRef.current / 100));
-        const innerRatio = Math.min(0.98, 1 - soft); // 0 soft → hard, 1 soft → full fade
 
-        const stamp = (cx: number, cy: number) => {
+        // Build the brush sprite once per (size, softness) and stamp it with
+        // drawImage — far cheaper than creating a radial gradient on every dab.
+        let s = stampRef.current;
+        if (!s || s.size !== size || s.soft !== soft) {
+            const cnv = s?.canvas ?? document.createElement('canvas');
+            cnv.width = size; cnv.height = size;
+            const sctx = cnv.getContext('2d')!;
+            sctx.clearRect(0, 0, size, size);
             if (soft <= 0.01) {
-                mctx.fillStyle = '#fff';
+                sctx.fillStyle = '#fff';
             } else {
-                const g = mctx.createRadialGradient(cx, cy, r * innerRatio, cx, cy, r);
+                const g = sctx.createRadialGradient(r, r, r * (1 - soft), r, r, r);
                 g.addColorStop(0, 'rgba(255,255,255,1)');
                 g.addColorStop(1, 'rgba(255,255,255,0)');
-                mctx.fillStyle = g;
+                sctx.fillStyle = g;
             }
-            mctx.beginPath();
-            mctx.arc(cx, cy, r, 0, Math.PI * 2);
-            mctx.fill();
-        };
+            sctx.beginPath(); sctx.arc(r, r, r, 0, Math.PI * 2); sctx.fill();
+            s = { canvas: cnv, size, soft };
+            stampRef.current = s;
+        }
+        const sprite = s.canvas;
+        const place = (cx: number, cy: number) => mctx.drawImage(sprite, cx - r, cy - r, size, size);
 
         if (prevX != null && prevY != null) {
             const dx = x - prevX, dy = y - prevY;
             const dist = Math.hypot(dx, dy);
-            const step = Math.max(1, r * 0.2);
+            const step = Math.max(1, r * 0.25);
             const n = Math.max(1, Math.ceil(dist / step));
-            for (let i = 1; i <= n; i++) stamp(prevX + (dx * i) / n, prevY + (dy * i) / n);
+            for (let i = 1; i <= n; i++) place(prevX + (dx * i) / n, prevY + (dy * i) / n);
         } else {
-            stamp(x, y);
+            place(x, y);
         }
         requestComposite();
     }, [activeId, mode, brushSize, ensureMask, requestComposite]);
