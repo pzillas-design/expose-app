@@ -345,6 +345,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // Suppress the scroll-end → handleSelectWithin reaction while we're programmatically
     // scrolling the strip to recenter (otherwise the centering effect fights itself).
     const isProgrammaticScrollRef = useRef(false);
+    // Clear the programmatic-scroll guard on the real scrollend (with a timeout
+    // fallback) instead of a fixed delay — a fixed delay can expire mid-animation
+    // and let scroll-selection hijack to an intermediate thumb (multi-thumb jumps).
+    const scrollEndTimerRef = useRef<number | null>(null);
+    const scrollEndHandlerRef = useRef<(() => void) | null>(null);
     // Marks selectedId changes that came from the user's own horizontal scroll —
     // those don't need the centering effect to reposition the strip (the user is
     // already mid-scroll, snapping it back would jerk).
@@ -394,7 +399,20 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             if (Math.abs(strip.scrollLeft - scrollTarget) < 1) return;
             isProgrammaticScrollRef.current = true;
             strip.scrollTo({ left: scrollTarget, behavior });
-            window.setTimeout(() => { isProgrammaticScrollRef.current = false; }, behavior === 'smooth' ? 600 : 50);
+
+            // Cancel any previous pending clear (rapid successive navigations).
+            if (scrollEndTimerRef.current) { clearTimeout(scrollEndTimerRef.current); scrollEndTimerRef.current = null; }
+            if (scrollEndHandlerRef.current) { strip.removeEventListener('scrollend', scrollEndHandlerRef.current); scrollEndHandlerRef.current = null; }
+
+            const clearGuard = () => {
+                isProgrammaticScrollRef.current = false;
+                if (scrollEndTimerRef.current) { clearTimeout(scrollEndTimerRef.current); scrollEndTimerRef.current = null; }
+                if (scrollEndHandlerRef.current) { strip.removeEventListener('scrollend', scrollEndHandlerRef.current); scrollEndHandlerRef.current = null; }
+            };
+            scrollEndHandlerRef.current = clearGuard;
+            strip.addEventListener('scrollend', clearGuard);
+            // Fallback for browsers without 'scrollend' (and the instant case).
+            scrollEndTimerRef.current = window.setTimeout(clearGuard, behavior === 'smooth' ? 1200 : 60);
         };
 
         let raf1: number, raf2: number;
@@ -634,6 +652,9 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // Keyboard Navigation
     useEffect(() => {
         const handleKeyDown = async (e: KeyboardEvent) => {
+            // Ignore OS key auto-repeat — a held/bounced arrow key would otherwise
+            // fire several navigations from one press ("jumps too many photos").
+            if (e.repeat) return;
             // Ignore if an input or textarea is focused
             if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') {
                 return;
