@@ -18,7 +18,7 @@ export interface AsyncContext {
     requestType?: string;            // 'create' | 'edit'
     prompt: string;                  // already-resolved prompt (with variable labels)
     qualityMode: string;             // nb2-0.5k | nb2-1k | nb2-2k | nb2-4k
-    provider: 'fal-nb2' | 'openai';
+    provider: 'fal-nb2' | 'nano-banana-pro' | 'openai';
     cost: number;
     submitAt: number;                // Date.now() at submit, for duration_ms
     sourceImage?: {
@@ -132,6 +132,9 @@ export async function persistFalResult(
     const realW = Math.round(src.realWidth || fal.width || displayW);
     const realH = Math.round(src.realHeight || fal.height || displayH);
     const parentId = (ctx.requestType === 'edit' || src.id) ? (src.id || null) : null;
+    const modelVersion = ctx.provider === 'openai' ? 'gpt-image-2'
+        : ctx.provider === 'nano-banana-pro' ? 'nano-banana-pro'
+        : 'nano-banana-2';
 
     const newImage = {
         id: jobId,
@@ -142,7 +145,7 @@ export async function persistFalResult(
         height: displayH,
         real_width: realW,
         real_height: realH,
-        model_version: ctx.provider === 'openai' ? 'gpt-image-2' : 'nano-banana-2',
+        model_version: modelVersion,
         title: dbTitle,
         base_name: dbBaseName,
         version: currentVersion,
@@ -168,7 +171,7 @@ export async function persistFalResult(
     const usedVariables = !!(ctx.variables && Object.keys(ctx.variables).length > 0);
     await supabaseAdmin.from('generation_jobs').update({
         status: 'completed',
-        model: ctx.provider === 'openai' ? 'gpt-image-2' : 'nano-banana-2',
+        model: modelVersion,
         duration_ms: durationMs,
         quality_mode: ctx.qualityMode,
         variables_used: usedVariables,

@@ -32,7 +32,12 @@ const FAL_ENDPOINT_EDIT = 'fal-ai/nano-banana-2/edit';
 const OPENAI_ENDPOINT_CREATE = 'fal-ai/gpt-image-2';
 const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2/edit';
 
-type Provider = 'fal-nb2' | 'openai';
+// Nano Banana Pro (Gemini 3 Pro Image) — the higher-fidelity Google tier.
+// Same input shape as NB2 (prompt, image_urls, resolution, aspect_ratio).
+const PRO_ENDPOINT_CREATE = 'fal-ai/nano-banana-pro';
+const PRO_ENDPOINT_EDIT = 'fal-ai/nano-banana-pro/edit';
+
+type Provider = 'fal-nb2' | 'nano-banana-pro' | 'openai';
 
 /**
  * Build GPT-Image-2's `image_size` from our nb2-* tier + aspect ratio.
@@ -301,7 +306,12 @@ Deno.serve(async (req) => {
             sourceStoragePath,
             provider: rawProvider,
         } = payload;
-        const provider: Provider = rawProvider === 'openai' ? 'openai' : 'fal-nb2';
+        const provider: Provider = rawProvider === 'openai' ? 'openai'
+            : rawProvider === 'nano-banana-pro' ? 'nano-banana-pro'
+            : 'fal-nb2';
+        const modelVersion = provider === 'openai' ? 'gpt-image-2'
+            : provider === 'nano-banana-pro' ? 'nano-banana-pro'
+            : 'nano-banana-2';
         // gpt-image-2 'quality' from the new settings modal. Falls back to 'high'
         // (sweet-spot detail/adherence) if the client didn't send it.
         const userQuality: 'low' | 'medium' | 'high' =
@@ -471,6 +481,17 @@ Deno.serve(async (req) => {
                 prompt,
                 quality: userQuality,
                 image_size: imageSize,
+                output_format: 'jpeg',
+                num_images: 1,
+            };
+            if (hasSource) falInput.image_urls = imageUrls;
+        } else if (provider === 'nano-banana-pro') {
+            // Pro shares NB2's input shape; resolution enum is 1K/2K/4K.
+            endpoint = hasSource ? PRO_ENDPOINT_EDIT : PRO_ENDPOINT_CREATE;
+            falInput = {
+                prompt,
+                resolution: falResolution === '0.5K' ? '1K' : falResolution,
+                aspect_ratio: aspectRatio,
                 output_format: 'jpeg',
                 num_images: 1,
             };
@@ -685,7 +706,7 @@ Deno.serve(async (req) => {
             height: displayH,
             real_width: realW,
             real_height: realH,
-            model_version: provider === 'openai' ? 'gpt-image-2' : 'nano-banana-2',
+            model_version: modelVersion,
             title: dbTitle,
             base_name: dbBaseName,
             version: currentVersion,
@@ -722,7 +743,7 @@ Deno.serve(async (req) => {
         const usedVariables = !!(variables && typeof variables === 'object' && Object.keys(variables).length > 0);
         const finalUpdateRes = await supabaseAdmin.from('generation_jobs').update({
             status: 'completed',
-            model: provider === 'openai' ? 'gpt-image-2' : 'nano-banana-2',
+            model: modelVersion,
             duration_ms: durationMs,
             quality_mode: qualityMode,
             request_payload: apiRequestPayload,

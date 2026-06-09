@@ -8,11 +8,11 @@
  * .env.local) to force gpt-image-2 — useful for A/B comparisons.
  */
 
-export type ImageProviderKey = 'fal-nb2' | 'openai';
+export type ImageProviderKey = 'fal-nb2' | 'nano-banana-pro' | 'openai';
 
 export const detectImageProvider = (): ImageProviderKey => {
     const override = (import.meta.env?.VITE_IMAGE_PROVIDER as string | undefined)?.toLowerCase();
-    if (override === 'openai' || override === 'fal-nb2') return override;
+    if (override === 'openai' || override === 'fal-nb2' || override === 'nano-banana-pro') return override as ImageProviderKey;
     return 'fal-nb2';
 };
 
@@ -31,13 +31,15 @@ const TIER_RES: Record<string, string> = {
 };
 
 const PROVIDER_DISPLAY_NAME: Record<ImageProviderKey, string> = {
-    'fal-nb2': 'Nano Banana 2',
-    'openai':  'GPT Image 2',
+    'fal-nb2':         'Nano Banana',
+    'nano-banana-pro': 'Nano Banana Pro',
+    'openai':          'GPT Image',
 };
 
-/** Map a stored DB `model_version` (e.g. 'gpt-image-2', 'nano-banana-2') to a provider key. */
+/** Map a stored DB `model_version` (e.g. 'gpt-image-2', 'nano-banana-pro') to a provider key. */
 export const modelVersionToProvider = (modelVersion?: string | null): ImageProviderKey => {
     if (modelVersion === 'gpt-image-2') return 'openai';
+    if (modelVersion === 'nano-banana-pro') return 'nano-banana-pro';
     return 'fal-nb2';
 };
 

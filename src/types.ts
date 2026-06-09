@@ -146,7 +146,7 @@ export type ImageQualityLevel = 'low' | 'medium' | 'high';
 export type ImageAspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '3:2' | '2:3' | '21:9' | '5:4' | '4:5';
 export type ImageOutputFormat = 'jpeg' | 'png' | 'webp';
 
-export type ImageModelProvider = 'fal-nb2' | 'openai';
+export type ImageModelProvider = 'fal-nb2' | 'nano-banana-pro' | 'openai';
 
 export interface GenerationSettings {
   provider: ImageModelProvider;        // 'openai' (gpt-image-2) | 'fal-nb2' (Google Nano Banana 2)

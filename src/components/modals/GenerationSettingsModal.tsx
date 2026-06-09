@@ -33,9 +33,22 @@ interface GenerationSettingsModalProps {
 
 // ── Option lists ───────────────────────────────────────────────────────────
 
-const PROVIDER_OPTIONS: { value: ImageModelProvider; label: string }[] = [
-    { value: 'openai',  label: 'GPT Image 2' },
-    { value: 'fal-nb2', label: 'Nano Banana 2' },
+// Model family (top selector). The actual provider is derived together with
+// the quality step below.
+type ModelFamily = 'nano' | 'gpt';
+const MODEL_OPTIONS: { family: ModelFamily; label: string }[] = [
+    { family: 'nano', label: 'Nano Banana' },
+    { family: 'gpt',  label: 'GPT Image' },
+];
+
+// Nano Banana quality steps map directly onto the provider variant.
+const NANO_QUALITY_DE: { value: ImageModelProvider; label: string }[] = [
+    { value: 'fal-nb2',         label: 'Schnell' },
+    { value: 'nano-banana-pro', label: 'Beste' },
+];
+const NANO_QUALITY_EN: { value: ImageModelProvider; label: string }[] = [
+    { value: 'fal-nb2',         label: 'Fast' },
+    { value: 'nano-banana-pro', label: 'Best' },
 ];
 
 const RES_OPTIONS: { value: GenerationQuality; label: string }[] = [
@@ -85,13 +98,22 @@ const ASPECT_OPTIONS_EN: { value: ImageAspectRatio; label: string }[] = [
 
 // ── Dynamic subtitles (current-selection descriptions) ─────────────────────
 
-const PROVIDER_DESC_DE: Record<ImageModelProvider, string> = {
-    openai:    'OpenAIs Modell mit starkem Prompt-Verständnis.',
-    'fal-nb2': 'Googles Modell mit kreativen und schnelleren Ergebnissen.',
+const FAMILY_DESC_DE: Record<ModelFamily, string> = {
+    nano: 'Googles Modell — fotorealistisch, schnell. „Beste" nutzt Nano Banana Pro für höchste Qualität.',
+    gpt:  'OpenAIs Modell mit starkem Prompt-Verständnis und Text/Layout.',
 };
-const PROVIDER_DESC_EN: Record<ImageModelProvider, string> = {
-    openai:    "OpenAI's model with strong prompt comprehension.",
-    'fal-nb2': "Google's model with creative and faster results.",
+const FAMILY_DESC_EN: Record<ModelFamily, string> = {
+    nano: "Google's model — photoreal, fast. \"Best\" uses Nano Banana Pro for top quality.",
+    gpt:  "OpenAI's model with strong prompt comprehension and text/layout.",
+};
+
+const NANO_QUALITY_DESC_DE: Record<string, string> = {
+    'fal-nb2':         'Nano Banana — schnell & günstig, für die meisten Edits.',
+    'nano-banana-pro': 'Nano Banana Pro — beste Foto-Qualität, etwas langsamer.',
+};
+const NANO_QUALITY_DESC_EN: Record<string, string> = {
+    'fal-nb2':         'Nano Banana — fast & cheap, for most edits.',
+    'nano-banana-pro': 'Nano Banana Pro — best photo quality, a bit slower.',
 };
 
 const RES_DESC_DE: Record<string, string> = {
@@ -344,35 +366,65 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
     const price = getGenerationPriceUsd(local.resolution, local.quality);
     const priceFormatted = price.toFixed(2).replace('.', ',') + ' €';
 
-    const providerDesc = (isDe ? PROVIDER_DESC_DE : PROVIDER_DESC_EN)[local.provider];
-    const resDesc      = (isDe ? RES_DESC_DE      : RES_DESC_EN)[local.resolution] ?? '';
-    const qualityDesc  = (isDe ? QUALITY_DESC_DE  : QUALITY_DESC_EN)[local.quality];
-    const aspectDesc   = (isDe ? ASPECT_DESC_DE   : ASPECT_DESC_EN)[local.aspectRatio];
+    const family: ModelFamily = local.provider === 'openai' ? 'gpt' : 'nano';
+    const familyDesc      = (isDe ? FAMILY_DESC_DE : FAMILY_DESC_EN)[family];
+    const nanoQualityDesc = (isDe ? NANO_QUALITY_DESC_DE : NANO_QUALITY_DESC_EN)[local.provider] ?? '';
+    const qualityDesc     = (isDe ? QUALITY_DESC_DE  : QUALITY_DESC_EN)[local.quality];
 
-    const qualityOptions = isDe ? QUALITY_OPTIONS_DE : QUALITY_OPTIONS_EN;
+    const qualityOptions     = isDe ? QUALITY_OPTIONS_DE : QUALITY_OPTIONS_EN;
+    const nanoQualityOptions = isDe ? NANO_QUALITY_DE : NANO_QUALITY_EN;
+
+    // Switch model family: keep the Nano variant when staying in Nano; default
+    // to the fast variant when coming from GPT; GPT always maps to 'openai'.
+    const selectFamily = (f: ModelFamily) => {
+        if (f === 'gpt') update('provider', 'openai');
+        else update('provider', local.provider === 'nano-banana-pro' ? 'nano-banana-pro' : 'fal-nb2');
+    };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={isDe ? 'Bild-Einstellungen' : 'Image settings'} maxWidth="lg">
             <div className="px-6 pb-6 pt-2 flex flex-col gap-5">
-                {/* Model */}
+                {/* Model family */}
                 <div className="flex flex-col gap-2">
                     <HeadingWithInfo
                         heading={isDe ? 'Modell' : 'Model'}
                         info={isDe
-                            ? 'GPT Image 2 (OpenAI) folgt Prompts präziser. Nano Banana 2 (Google) ist kreativer und schneller.'
-                            : 'GPT Image 2 (OpenAI) follows prompts more precisely. Nano Banana 2 (Google) is more creative and faster.'}
+                            ? 'Nano Banana (Google) ist fotorealistisch & schnell. GPT Image (OpenAI) folgt Prompts und Text/Layout präziser.'
+                            : 'Nano Banana (Google) is photoreal & fast. GPT Image (OpenAI) follows prompts and text/layout more precisely.'}
                     />
                     <div className="grid grid-cols-2 gap-1.5">
-                        {PROVIDER_OPTIONS.map(opt => (
-                            <PillButton
-                                key={opt.value}
-                                active={local.provider === opt.value}
-                                onClick={() => update('provider', opt.value)}
-                            >
+                        {MODEL_OPTIONS.map(opt => (
+                            <PillButton key={opt.family} active={family === opt.family} onClick={() => selectFamily(opt.family)}>
                                 {opt.label}
                             </PillButton>
                         ))}
                     </div>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">{familyDesc}</span>
+                </div>
+
+                {/* Quality — directly under the model. Segmented stepped control. */}
+                <div className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">{isDe ? 'Qualität' : 'Quality'}</span>
+                    {family === 'nano' ? (
+                        <div className="grid grid-cols-2 gap-1.5">
+                            {nanoQualityOptions.map(opt => (
+                                <PillButton key={opt.value} active={local.provider === opt.value} onClick={() => update('provider', opt.value)}>
+                                    {opt.label}
+                                </PillButton>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-3 gap-1.5">
+                            {qualityOptions.map(opt => (
+                                <PillButton key={opt.value} active={local.quality === opt.value} onClick={() => update('quality', opt.value)}>
+                                    {opt.label}
+                                </PillButton>
+                            ))}
+                        </div>
+                    )}
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
+                        {family === 'nano' ? nanoQualityDesc : qualityDesc}
+                    </span>
                 </div>
 
                 {/* Aspect ratio — placed directly under Model. Dropdown labels carry the description. */}
@@ -398,23 +450,6 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                         onChange={v => update('resolution', v)}
                     />
                 </div>
-
-                {/* Quality — only for gpt-image-2; hidden when Nano Banana 2 is active. */}
-                {local.provider === 'openai' && (
-                    <div className="flex flex-col gap-2">
-                        <HeadingWithInfo
-                            heading={isDe ? 'Qualität' : 'Quality'}
-                            info={isDe
-                                ? 'Wie viel Detailreichtum und kreativen Stil das Modell investiert. Höher = präziser, langsamer, teurer.'
-                                : 'How much detail and creative style the model invests. Higher = more precise, slower, more expensive.'}
-                        />
-                        <Dropdown
-                            value={local.quality}
-                            options={qualityOptions}
-                            onChange={v => update('quality', v)}
-                        />
-                    </div>
-                )}
 
                 {/* Cost per image — same heading + subline pattern as other sections, left-aligned. */}
                 <div className="flex flex-col gap-1">

@@ -56,7 +56,7 @@ const COSTS: Record<string, number> = {
 //   nano-banana-2 2K:        ~42s / 45s / 62s
 //   nano-banana-2 4K:        ~69s / 69s / 86s
 // gpt-image-2 high/low values are extrapolated from medium (~+40% high, ~−65% low).
-type EtaProvider = 'fal-nb2' | 'openai';
+type EtaProvider = 'fal-nb2' | 'nano-banana-pro' | 'openai';
 type EtaQuality  = 'low' | 'medium' | 'high';
 
 const ETA_MATRIX_MS: Record<EtaProvider, Partial<Record<string, Partial<Record<EtaQuality, number>> & { default?: number }>>> = {
@@ -66,6 +66,13 @@ const ETA_MATRIX_MS: Record<EtaProvider, Partial<Record<string, Partial<Record<E
         'nb2-1k':  { default: 35000 },
         'nb2-2k':  { default: 45000 },
         'nb2-4k':  { default: 75000 },
+    },
+    'nano-banana-pro': {
+        // Pro is the higher-fidelity tier — slower than NB2, esp. at 4K.
+        'nb2-05k': { default: 25000 },
+        'nb2-1k':  { default: 50000 },
+        'nb2-2k':  { default: 75000 },
+        'nb2-4k':  { default: 120000 },
     },
     'openai': {
         // gpt-image-2 — quality scales latency strongly.
