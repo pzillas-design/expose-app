@@ -339,6 +339,41 @@ const PillButton: React.FC<PillButtonProps> = ({ active, onClick, children, clas
     </button>
 );
 
+/** Stepped slider with named stops (2 or 3 states). Reads as a slider, snaps to
+ *  discrete values; the stop labels are also clickable. */
+function StepSlider<V extends string>({ steps, value, onChange }: {
+    steps: { value: V; label: string }[];
+    value: V;
+    onChange: (v: V) => void;
+}) {
+    const idx = Math.max(0, steps.findIndex(s => s.value === value));
+    return (
+        <div className="flex flex-col gap-2 pt-0.5">
+            <input
+                type="range"
+                min={0}
+                max={steps.length - 1}
+                step={1}
+                value={idx}
+                onChange={e => onChange(steps[Number(e.target.value)].value)}
+                className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-900 dark:accent-white"
+            />
+            <div className="flex justify-between">
+                {steps.map((s, i) => (
+                    <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => onChange(s.value)}
+                        className={`text-xs transition-colors ${i === idx ? 'font-semibold text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                    >
+                        {s.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 // ── Modal ──────────────────────────────────────────────────────────────────
 
 export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = ({
@@ -367,9 +402,6 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
     const priceFormatted = price.toFixed(2).replace('.', ',') + ' €';
 
     const family: ModelFamily = local.provider === 'openai' ? 'gpt' : 'nano';
-    const familyDesc      = (isDe ? FAMILY_DESC_DE : FAMILY_DESC_EN)[family];
-    const nanoQualityDesc = (isDe ? NANO_QUALITY_DESC_DE : NANO_QUALITY_DESC_EN)[local.provider] ?? '';
-    const qualityDesc     = (isDe ? QUALITY_DESC_DE  : QUALITY_DESC_EN)[local.quality];
 
     const qualityOptions     = isDe ? QUALITY_OPTIONS_DE : QUALITY_OPTIONS_EN;
     const nanoQualityOptions = isDe ? NANO_QUALITY_DE : NANO_QUALITY_EN;
@@ -388,9 +420,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                 <div className="flex flex-col gap-2">
                     <HeadingWithInfo
                         heading={isDe ? 'Modell' : 'Model'}
-                        info={isDe
-                            ? 'Nano Banana (Google) ist fotorealistisch & schnell. GPT Image (OpenAI) folgt Prompts und Text/Layout präziser.'
-                            : 'Nano Banana (Google) is photoreal & fast. GPT Image (OpenAI) follows prompts and text/layout more precisely.'}
+                        info={isDe ? FAMILY_DESC_DE[family] : FAMILY_DESC_EN[family]}
                     />
                     <div className="grid grid-cols-2 gap-1.5">
                         {MODEL_OPTIONS.map(opt => (
@@ -399,32 +429,23 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                             </PillButton>
                         ))}
                     </div>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">{familyDesc}</span>
                 </div>
 
-                {/* Quality — directly under the model. Segmented stepped control. */}
+                {/* Quality — directly under the model. Real stepped slider. */}
                 <div className="flex flex-col gap-2">
-                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">{isDe ? 'Qualität' : 'Quality'}</span>
-                    {family === 'nano' ? (
-                        <div className="grid grid-cols-2 gap-1.5">
-                            {nanoQualityOptions.map(opt => (
-                                <PillButton key={opt.value} active={local.provider === opt.value} onClick={() => update('provider', opt.value)}>
-                                    {opt.label}
-                                </PillButton>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-3 gap-1.5">
-                            {qualityOptions.map(opt => (
-                                <PillButton key={opt.value} active={local.quality === opt.value} onClick={() => update('quality', opt.value)}>
-                                    {opt.label}
-                                </PillButton>
-                            ))}
-                        </div>
-                    )}
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
-                        {family === 'nano' ? nanoQualityDesc : qualityDesc}
-                    </span>
+                    <HeadingWithInfo
+                        heading={isDe ? 'Qualität' : 'Quality'}
+                        info={family === 'nano'
+                            ? (isDe
+                                ? 'Schnell = Nano Banana (schnell & günstig). Beste = Nano Banana Pro (höchste Foto-Qualität, etwas langsamer).'
+                                : 'Fast = Nano Banana (fast & cheap). Best = Nano Banana Pro (top photo quality, a bit slower).')
+                            : (isDe
+                                ? 'Wie viel Detail & kreativen Stil das Modell investiert. Höher = präziser, langsamer, teurer.'
+                                : 'How much detail & creative style the model invests. Higher = more precise, slower, pricier.')}
+                    />
+                    {family === 'nano'
+                        ? <StepSlider steps={nanoQualityOptions} value={local.provider} onChange={v => update('provider', v)} />
+                        : <StepSlider steps={qualityOptions} value={local.quality} onChange={v => update('quality', v)} />}
                 </div>
 
                 {/* Aspect ratio — placed directly under Model. Dropdown labels carry the description. */}
