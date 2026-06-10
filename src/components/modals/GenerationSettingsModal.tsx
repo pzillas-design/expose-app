@@ -339,32 +339,62 @@ const PillButton: React.FC<PillButtonProps> = ({ active, onClick, children, clas
     </button>
 );
 
-/** Stepped slider with named stops (2 or 3 states). Reads as a slider, snaps to
- *  discrete values; the stop labels are also clickable. */
+/** Stepped slider with named stops (2 or 3 states). Custom-drawn track, ticks
+ *  and a large grip; a transparent native range sits on top for drag/keyboard.
+ *  Stop labels are centered under each tick and clickable. */
 function StepSlider<V extends string>({ steps, value, onChange }: {
     steps: { value: V; label: string }[];
     value: V;
     onChange: (v: V) => void;
 }) {
+    const n = steps.length;
     const idx = Math.max(0, steps.findIndex(s => s.value === value));
+    const pct = n > 1 ? (idx / (n - 1)) * 100 : 0;
+    const posAt = (i: number) => (n > 1 ? (i / (n - 1)) * 100 : 0);
+
     return (
-        <div className="flex flex-col gap-2 pt-0.5">
-            <input
-                type="range"
-                min={0}
-                max={steps.length - 1}
-                step={1}
-                value={idx}
-                onChange={e => onChange(steps[Number(e.target.value)].value)}
-                className="w-full h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-900 dark:accent-white"
-            />
-            <div className="flex justify-between">
+        <div className="px-2.5 pt-2">
+            <div className="relative h-7 flex items-center">
+                {/* track */}
+                <div className="absolute inset-x-0 h-2 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                {/* filled portion */}
+                <div className="absolute left-0 h-2 rounded-full bg-zinc-900 dark:bg-white transition-[width] duration-150 ease-out" style={{ width: `${pct}%` }} />
+                {/* tick marks at each stop */}
+                {steps.map((s, i) => (
+                    <span
+                        key={s.value}
+                        className={`absolute w-1.5 h-1.5 rounded-full -translate-x-1/2 transition-colors ${i <= idx ? 'bg-white/80 dark:bg-zinc-900/70' : 'bg-zinc-300 dark:bg-zinc-600'}`}
+                        style={{ left: `${posAt(i)}%` }}
+                    />
+                ))}
+                {/* large grip */}
+                <span
+                    className="absolute w-6 h-6 rounded-full bg-white border border-zinc-300 dark:border-zinc-500 shadow-md -translate-x-1/2 pointer-events-none transition-[left] duration-150 ease-out"
+                    style={{ left: `${pct}%` }}
+                >
+                    <span className="absolute inset-0 m-auto w-2 h-2 rounded-full bg-zinc-900 dark:bg-zinc-700" />
+                </span>
+                {/* transparent native range for dragging + keyboard a11y */}
+                <input
+                    type="range"
+                    min={0}
+                    max={n - 1}
+                    step={1}
+                    value={idx}
+                    onChange={e => onChange(steps[Number(e.target.value)].value)}
+                    className="absolute inset-x-0 w-full h-7 opacity-0 cursor-pointer"
+                    aria-label="quality"
+                />
+            </div>
+            {/* labels centered under each stop */}
+            <div className="relative h-5 mt-2.5">
                 {steps.map((s, i) => (
                     <button
                         key={s.value}
                         type="button"
                         onClick={() => onChange(s.value)}
-                        className={`text-xs transition-colors ${i === idx ? 'font-semibold text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                        className={`absolute -translate-x-1/2 whitespace-nowrap text-xs transition-colors ${i === idx ? 'font-bold text-zinc-900 dark:text-white' : 'font-medium text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                        style={{ left: `${posAt(i)}%` }}
                     >
                         {s.label}
                     </button>
