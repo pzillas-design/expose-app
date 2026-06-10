@@ -43,12 +43,12 @@ const MODEL_OPTIONS: { family: ModelFamily; label: string }[] = [
 
 // Nano Banana quality steps map directly onto the provider variant.
 const NANO_QUALITY_DE: { value: ImageModelProvider; label: string }[] = [
-    { value: 'fal-nb2',         label: 'Schnell' },
-    { value: 'nano-banana-pro', label: 'Beste' },
+    { value: 'fal-nb2',         label: 'Nano Banana 2 (schneller)' },
+    { value: 'nano-banana-pro', label: 'Nano Banana Pro (besser)' },
 ];
 const NANO_QUALITY_EN: { value: ImageModelProvider; label: string }[] = [
-    { value: 'fal-nb2',         label: 'Fast' },
-    { value: 'nano-banana-pro', label: 'Best' },
+    { value: 'fal-nb2',         label: 'Nano Banana 2 (faster)' },
+    { value: 'nano-banana-pro', label: 'Nano Banana Pro (better)' },
 ];
 
 const RES_OPTIONS: { value: GenerationQuality; label: string }[] = [
@@ -99,21 +99,12 @@ const ASPECT_OPTIONS_EN: { value: ImageAspectRatio; label: string }[] = [
 // ── Dynamic subtitles (current-selection descriptions) ─────────────────────
 
 const FAMILY_DESC_DE: Record<ModelFamily, string> = {
-    nano: 'Googles Modell — fotorealistisch, schnell. „Beste" nutzt Nano Banana Pro für höchste Qualität.',
-    gpt:  'OpenAIs Modell mit starkem Prompt-Verständnis und Text/Layout.',
+    nano: 'Googles fotorealistisches Modell — schnell und ideal für die meisten Edits.',
+    gpt:  'OpenAIs Modell mit besonders präzisem Prompt-, Text- und Layout-Verständnis.',
 };
 const FAMILY_DESC_EN: Record<ModelFamily, string> = {
-    nano: "Google's model — photoreal, fast. \"Best\" uses Nano Banana Pro for top quality.",
-    gpt:  "OpenAI's model with strong prompt comprehension and text/layout.",
-};
-
-const NANO_QUALITY_DESC_DE: Record<string, string> = {
-    'fal-nb2':         'Nano Banana — schnell & günstig, für die meisten Edits.',
-    'nano-banana-pro': 'Nano Banana Pro — beste Foto-Qualität, etwas langsamer.',
-};
-const NANO_QUALITY_DESC_EN: Record<string, string> = {
-    'fal-nb2':         'Nano Banana — fast & cheap, for most edits.',
-    'nano-banana-pro': 'Nano Banana Pro — best photo quality, a bit slower.',
+    nano: "Google's photoreal model — fast and ideal for most edits.",
+    gpt:  "OpenAI's model with especially precise prompt, text and layout understanding.",
 };
 
 const RES_DESC_DE: Record<string, string> = {
@@ -386,19 +377,29 @@ function StepSlider<V extends string>({ steps, value, onChange }: {
                     aria-label="quality"
                 />
             </div>
-            {/* labels centered under each stop */}
+            {/* labels under each stop — ends are edge-aligned so long names don't
+                overflow, middle stops stay centered on their tick */}
             <div className="relative h-5 mt-2.5">
-                {steps.map((s, i) => (
-                    <button
-                        key={s.value}
-                        type="button"
-                        onClick={() => onChange(s.value)}
-                        className={`absolute -translate-x-1/2 whitespace-nowrap text-xs transition-colors ${i === idx ? 'font-bold text-zinc-900 dark:text-white' : 'font-medium text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
-                        style={{ left: `${posAt(i)}%` }}
-                    >
-                        {s.label}
-                    </button>
-                ))}
+                {steps.map((s, i) => {
+                    const isFirst = i === 0;
+                    const isLast = i === n - 1;
+                    const style: React.CSSProperties = isFirst
+                        ? { left: 0 }
+                        : isLast
+                            ? { right: 0 }
+                            : { left: `${posAt(i)}%`, transform: 'translateX(-50%)' };
+                    return (
+                        <button
+                            key={s.value}
+                            type="button"
+                            onClick={() => onChange(s.value)}
+                            className={`absolute whitespace-nowrap text-xs transition-colors ${i === idx ? 'font-bold text-zinc-900 dark:text-white' : 'font-medium text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+                            style={style}
+                        >
+                            {s.label}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );
@@ -467,11 +468,11 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                         heading={isDe ? 'Qualität' : 'Quality'}
                         info={family === 'nano'
                             ? (isDe
-                                ? 'Schnell = Nano Banana (schnell & günstig). Beste = Nano Banana Pro (höchste Foto-Qualität, etwas langsamer).'
-                                : 'Fast = Nano Banana (fast & cheap). Best = Nano Banana Pro (top photo quality, a bit slower).')
+                                ? 'Pro liefert die höhere Foto-Qualität, dauert aber etwas länger.'
+                                : 'Pro gives higher photo quality but takes a bit longer.')
                             : (isDe
-                                ? 'Wie viel Detail & kreativen Stil das Modell investiert. Höher = präziser, langsamer, teurer.'
-                                : 'How much detail & creative style the model invests. Higher = more precise, slower, pricier.')}
+                                ? 'Höhere Stufe = mehr Detail und Präzision, aber langsamer und teurer.'
+                                : 'Higher = more detail and precision, but slower and pricier.')}
                     />
                     {family === 'nano'
                         ? <StepSlider steps={nanoQualityOptions} value={local.provider} onChange={v => update('provider', v)} />
