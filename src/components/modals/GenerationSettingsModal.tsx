@@ -13,16 +13,6 @@ import {
     ImageModelProvider,
 } from '@/types';
 
-/**
- * Apple-polished settings modal: monochrome segmented controls (no orange),
- * a single dynamic subtitle *below* each option grid that describes the
- * currently selected value (no per-option sublabels, no '?' icons).
- *
- *   [ heading ]
- *   [ option grid                               ]
- *   [ subtitle that updates based on selection  ]
- */
-
 interface GenerationSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -31,25 +21,59 @@ interface GenerationSettingsModalProps {
     lang?: 'de' | 'en';
 }
 
-// ── Option lists ───────────────────────────────────────────────────────────
+// ── Generation mode — encodes provider + quality in one pick ───────────────
 
-// Model family (top selector). The actual provider is derived together with
-// the quality step below.
-type ModelFamily = 'nano' | 'gpt';
-const MODEL_OPTIONS: { family: ModelFamily; label: string }[] = [
-    { family: 'nano', label: 'Nano Banana' },
-    { family: 'gpt',  label: 'GPT Image' },
+type GenerationMode = 'nb2' | 'nb2-pro' | 'gpt-low' | 'gpt-mid' | 'gpt-high';
+
+const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quality: ImageQualityLevel }> = {
+    'nb2':      { provider: 'fal-nb2',          quality: 'low'    },
+    'nb2-pro':  { provider: 'nano-banana-pro',   quality: 'high'   },
+    'gpt-low':  { provider: 'openai',            quality: 'low'    },
+    'gpt-mid':  { provider: 'openai',            quality: 'medium' },
+    'gpt-high': { provider: 'openai',            quality: 'high'   },
+};
+
+const MODE_OPTIONS_DE: { value: GenerationMode; label: string }[] = [
+    { value: 'nb2',      label: 'NB 2'              },
+    { value: 'nb2-pro',  label: 'NB Pro'             },
+    { value: 'gpt-low',  label: 'GPT Image Niedrig'  },
+    { value: 'gpt-mid',  label: 'GPT Image Mittel'   },
+    { value: 'gpt-high', label: 'GPT Image Hoch'     },
 ];
 
-// Nano Banana quality steps map directly onto the provider variant.
-const NANO_QUALITY_DE: { value: ImageModelProvider; label: string }[] = [
-    { value: 'fal-nb2',         label: 'Nano Banana 2 (schneller)' },
-    { value: 'nano-banana-pro', label: 'Nano Banana Pro (besser)' },
+const MODE_OPTIONS_EN: { value: GenerationMode; label: string }[] = [
+    { value: 'nb2',      label: 'NB 2'           },
+    { value: 'nb2-pro',  label: 'NB Pro'          },
+    { value: 'gpt-low',  label: 'GPT Image Low'   },
+    { value: 'gpt-mid',  label: 'GPT Image Medium' },
+    { value: 'gpt-high', label: 'GPT Image High'  },
 ];
-const NANO_QUALITY_EN: { value: ImageModelProvider; label: string }[] = [
-    { value: 'fal-nb2',         label: 'Nano Banana 2 (faster)' },
-    { value: 'nano-banana-pro', label: 'Nano Banana Pro (better)' },
-];
+
+const MODE_DESC_DE: Record<GenerationMode, string> = {
+    'nb2':      'Googles Modell · Standard.',
+    'nb2-pro':  'Googles Modell · höhere Qualität.',
+    'gpt-low':  'OpenAIs GPT Image 2 · einfach & schnell.',
+    'gpt-mid':  'OpenAIs GPT Image 2 · ausgewogen.',
+    'gpt-high': 'OpenAIs GPT Image 2 · präzise und detailreich.',
+};
+
+const MODE_DESC_EN: Record<GenerationMode, string> = {
+    'nb2':      "Google's model · standard.",
+    'nb2-pro':  "Google's model · higher quality.",
+    'gpt-low':  "OpenAI's GPT Image 2 · simple & fast.",
+    'gpt-mid':  "OpenAI's GPT Image 2 · balanced.",
+    'gpt-high': "OpenAI's GPT Image 2 · precise and detailed.",
+};
+
+function detectMode(s: GenerationSettings): GenerationMode {
+    if (s.provider === 'nano-banana-pro') return 'nb2-pro';
+    if (s.provider === 'fal-nb2') return 'nb2';
+    if (s.quality === 'low') return 'gpt-low';
+    if (s.quality === 'medium') return 'gpt-mid';
+    return 'gpt-high';
+}
+
+// ── Resolution options ─────────────────────────────────────────────────────
 
 const RES_OPTIONS: { value: GenerationQuality; label: string }[] = [
     { value: 'nb2-1k', label: '1K · 1024 px' },
@@ -57,17 +81,18 @@ const RES_OPTIONS: { value: GenerationQuality; label: string }[] = [
     { value: 'nb2-4k', label: '4K · 3840 px' },
 ];
 
-const QUALITY_OPTIONS_DE: { value: ImageQualityLevel; label: string }[] = [
-    { value: 'low',    label: 'Niedrig' },
-    { value: 'medium', label: 'Mittel'  },
-    { value: 'high',   label: 'Hoch'    },
-];
+const RES_DESC_DE: Record<string, string> = {
+    'nb2-1k': '1024 px lange Seite.',
+    'nb2-2k': '2560 px lange Seite.',
+    'nb2-4k': '3840 px lange Seite.',
+};
+const RES_DESC_EN: Record<string, string> = {
+    'nb2-1k': '1024 px long edge.',
+    'nb2-2k': '2560 px long edge.',
+    'nb2-4k': '3840 px long edge.',
+};
 
-const QUALITY_OPTIONS_EN: { value: ImageQualityLevel; label: string }[] = [
-    { value: 'low',    label: 'Low'    },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high',   label: 'High'   },
-];
+// ── Aspect-ratio options ───────────────────────────────────────────────────
 
 const ASPECT_OPTIONS_DE: { value: ImageAspectRatio; label: string }[] = [
     { value: 'auto', label: 'Auto (aus Quellbild)' },
@@ -96,39 +121,6 @@ const ASPECT_OPTIONS_EN: { value: ImageAspectRatio; label: string }[] = [
     { value: '21:9', label: '21:9 — cinematic'      },
 ];
 
-// ── Dynamic subtitles (current-selection descriptions) ─────────────────────
-
-const FAMILY_DESC_DE: Record<ModelFamily, string> = {
-    nano: 'Googles fotorealistisches Modell — schnell und ideal für die meisten Edits.',
-    gpt:  'OpenAIs Modell mit besonders präzisem Prompt-, Text- und Layout-Verständnis.',
-};
-const FAMILY_DESC_EN: Record<ModelFamily, string> = {
-    nano: "Google's photoreal model — fast and ideal for most edits.",
-    gpt:  "OpenAI's model with especially precise prompt, text and layout understanding.",
-};
-
-const RES_DESC_DE: Record<string, string> = {
-    'nb2-1k': '1024 px lange Seite.',
-    'nb2-2k': '1920 px lange Seite.',
-    'nb2-4k': '3840 px lange Seite.',
-};
-const RES_DESC_EN: Record<string, string> = {
-    'nb2-1k': '1024 px long edge.',
-    'nb2-2k': '1920 px long edge.',
-    'nb2-4k': '3840 px long edge.',
-};
-
-const QUALITY_DESC_DE: Record<ImageQualityLevel, string> = {
-    low:    'Setzt nur das Wesentliche um.',
-    medium: 'Ausgewogen zwischen Schlichtheit und Detail.',
-    high:   'Kreativ und detailfreudig.',
-};
-const QUALITY_DESC_EN: Record<ImageQualityLevel, string> = {
-    low:    'Keeps only the essentials.',
-    medium: 'Balanced between simplicity and detail.',
-    high:   'Creative and rich in detail.',
-};
-
 const ASPECT_DESC_DE: Record<ImageAspectRatio, string> = {
     auto:  'Übernimmt das Verhältnis aus dem Quellbild.',
     '1:1': 'Quadrat · Social-Posts und Avatare.',
@@ -156,7 +148,7 @@ const ASPECT_DESC_EN: Record<ImageAspectRatio, string> = {
     '21:9': 'Cinematic · ultrawide.',
 };
 
-// ── Dropdown (used for aspect-ratio field only) ────────────────────────────
+// ── Dropdown ───────────────────────────────────────────────────────────────
 
 interface DropdownProps<V extends string> {
     value: V;
@@ -165,10 +157,6 @@ interface DropdownProps<V extends string> {
 }
 function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<V>) {
     const [open, setOpen] = useState(false);
-    // Panel is rendered via portal into document.body so it's not clipped by the
-    // Modal's overflow boundary. Position is computed from the trigger button's
-    // bounding rect — and flipped above the trigger when there isn't enough room
-    // below the viewport edge.
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const [panelPos, setPanelPos] = useState<{ top: number; left: number; width: number; placement: 'down' | 'up' } | null>(null);
@@ -177,7 +165,7 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
         const t = triggerRef.current;
         if (!t) return;
         const r = t.getBoundingClientRect();
-        const PANEL_MAX_H = 320; // soft estimate for placement decision
+        const PANEL_MAX_H = 320;
         const spaceBelow = window.innerHeight - r.bottom;
         const placement: 'down' | 'up' = spaceBelow >= PANEL_MAX_H || spaceBelow >= window.innerHeight - r.top
             ? 'down'
@@ -202,7 +190,6 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
         const onScrollOrResize = () => updatePos();
         document.addEventListener('mousedown', onClickOutside);
         window.addEventListener('resize', onScrollOrResize);
-        // Capture phase so we react to inner scroll containers too (e.g. Modal body).
         window.addEventListener('scroll', onScrollOrResize, true);
         return () => {
             document.removeEventListener('mousedown', onClickOutside);
@@ -263,35 +250,8 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
     );
 }
 
-// ── Aspect-ratio thumbnail (mirrors the AspectIcon in CreationModal) ───────
-
-const AspectThumb: React.FC<{ ratio: ImageAspectRatio; active: boolean }> = ({ ratio, active }) => {
-    const stroke = active
-        ? 'border-current'
-        : 'border-zinc-400 dark:border-zinc-500 group-hover:border-zinc-600 dark:group-hover:border-zinc-300';
-    const base = `border-[1.5px] rounded-[1px] transition-colors ${stroke}`;
-    if (ratio === 'auto') {
-        // dotted square so the thumbnail still occupies the same footprint
-        return <div className={`w-4 h-4 border-[1.5px] border-dashed rounded-[1px] transition-colors ${stroke}`} />;
-    }
-    const dims: Record<Exclude<ImageAspectRatio, 'auto'>, string> = {
-        '16:9': 'w-5 h-[11px]',
-        '9:16': 'w-[11px] h-5',
-        '4:3':  'w-5 h-[15px]',
-        '3:4':  'w-[15px] h-5',
-        '3:2':  'w-5 h-[13px]',
-        '2:3':  'w-[13px] h-5',
-        '1:1':  'w-4 h-4',
-        '5:4':  'w-5 h-4',
-        '4:5':  'w-4 h-5',
-        '21:9': 'w-5 h-[9px]',
-    };
-    return <div className={`${base} ${dims[ratio]}`} />;
-};
-
 // ── Building blocks ────────────────────────────────────────────────────────
 
-/** Heading with a small info icon that surfaces a tooltip on hover. */
 const HeadingWithInfo: React.FC<{ heading: string; info: string }> = ({ heading, info }) => (
     <div className="flex items-center gap-1.5">
         <span className="text-sm font-semibold text-zinc-900 dark:text-white">{heading}</span>
@@ -300,110 +260,6 @@ const HeadingWithInfo: React.FC<{ heading: string; info: string }> = ({ heading,
         </Tooltip>
     </div>
 );
-
-const Section: React.FC<{ heading: string; subtitle: string; children: React.ReactNode }> = ({ heading, subtitle, children }) => (
-    <div className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-zinc-900 dark:text-white">{heading}</span>
-        {children}
-        <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">{subtitle}</span>
-    </div>
-);
-
-/** Apple-style segmented option button — monochrome inverse fill on active. */
-interface PillButtonProps {
-    active: boolean;
-    onClick: () => void;
-    children: React.ReactNode;
-    className?: string;
-}
-const PillButton: React.FC<PillButtonProps> = ({ active, onClick, children, className = '' }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        className={`group flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] px-3 py-2.5 text-sm font-medium transition-all ${
-            active
-                ? 'border-zinc-900 dark:border-zinc-100 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100'
-                : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-700'
-        } ${className}`}
-    >
-        {children}
-    </button>
-);
-
-/** Stepped slider with named stops (2 or 3 states). Custom-drawn track, ticks
- *  and a large grip; a transparent native range sits on top for drag/keyboard.
- *  Stop labels are centered under each tick and clickable. */
-function StepSlider<V extends string>({ steps, value, onChange }: {
-    steps: { value: V; label: string }[];
-    value: V;
-    onChange: (v: V) => void;
-}) {
-    const n = steps.length;
-    const idx = Math.max(0, steps.findIndex(s => s.value === value));
-    const pct = n > 1 ? (idx / (n - 1)) * 100 : 0;
-    const posAt = (i: number) => (n > 1 ? (i / (n - 1)) * 100 : 0);
-
-    return (
-        <div className="px-2.5 pt-2">
-            <div className="relative h-7 flex items-center">
-                {/* track */}
-                <div className="absolute inset-x-0 h-2 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-                {/* filled portion */}
-                <div className="absolute left-0 h-2 rounded-full bg-zinc-900 dark:bg-white transition-[width] duration-150 ease-out" style={{ width: `${pct}%` }} />
-                {/* tick marks at each stop */}
-                {steps.map((s, i) => (
-                    <span
-                        key={s.value}
-                        className={`absolute w-1.5 h-1.5 rounded-full -translate-x-1/2 transition-colors ${i <= idx ? 'bg-white/80 dark:bg-zinc-900/70' : 'bg-zinc-300 dark:bg-zinc-600'}`}
-                        style={{ left: `${posAt(i)}%` }}
-                    />
-                ))}
-                {/* large grip */}
-                <span
-                    className="absolute w-6 h-6 rounded-full bg-white border border-zinc-300 dark:border-zinc-500 shadow-md -translate-x-1/2 pointer-events-none transition-[left] duration-150 ease-out"
-                    style={{ left: `${pct}%` }}
-                >
-                    <span className="absolute inset-0 m-auto w-2 h-2 rounded-full bg-zinc-900 dark:bg-zinc-700" />
-                </span>
-                {/* transparent native range for dragging + keyboard a11y */}
-                <input
-                    type="range"
-                    min={0}
-                    max={n - 1}
-                    step={1}
-                    value={idx}
-                    onChange={e => onChange(steps[Number(e.target.value)].value)}
-                    className="absolute inset-x-0 w-full h-7 opacity-0 cursor-pointer"
-                    aria-label="quality"
-                />
-            </div>
-            {/* labels under each stop — ends are edge-aligned so long names don't
-                overflow, middle stops stay centered on their tick */}
-            <div className="relative h-5 mt-2.5">
-                {steps.map((s, i) => {
-                    const isFirst = i === 0;
-                    const isLast = i === n - 1;
-                    const style: React.CSSProperties = isFirst
-                        ? { left: 0 }
-                        : isLast
-                            ? { right: 0 }
-                            : { left: `${posAt(i)}%`, transform: 'translateX(-50%)' };
-                    return (
-                        <button
-                            key={s.value}
-                            type="button"
-                            onClick={() => onChange(s.value)}
-                            className={`absolute whitespace-nowrap text-xs transition-colors ${i === idx ? 'font-bold text-zinc-900 dark:text-white' : 'font-medium text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}
-                            style={style}
-                        >
-                            {s.label}
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
-    );
-}
 
 // ── Modal ──────────────────────────────────────────────────────────────────
 
@@ -427,71 +283,40 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
         onChange?.(next);
     };
 
-    // Price now depends on (resolution × quality). Shown in its own box above the
-    // Done button, not baked into the subtitles.
+    const mode = detectMode(local);
     const price = getGenerationPriceUsd(local.resolution, local.quality);
     const priceFormatted = price.toFixed(2).replace('.', ',') + ' €';
 
-    const family: ModelFamily = local.provider === 'openai' ? 'gpt' : 'nano';
-
-    const qualityOptions     = isDe ? QUALITY_OPTIONS_DE : QUALITY_OPTIONS_EN;
-    const nanoQualityOptions = isDe ? NANO_QUALITY_DE : NANO_QUALITY_EN;
-
-    // Switch model family: keep the Nano variant when staying in Nano; default
-    // to the fast variant when coming from GPT; GPT always maps to 'openai'.
-    const selectFamily = (f: ModelFamily) => {
-        if (f === 'gpt') update('provider', 'openai');
-        else update('provider', local.provider === 'nano-banana-pro' ? 'nano-banana-pro' : 'fal-nb2');
+    const handleModeChange = (m: GenerationMode) => {
+        const p = MODE_PRESETS[m];
+        const next = { ...local, provider: p.provider, quality: p.quality };
+        setLocal(next);
+        onChange?.(next);
     };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={isDe ? 'Bild-Einstellungen' : 'Image settings'} maxWidth="lg">
             <div className="px-6 pb-6 pt-2 flex flex-col gap-5">
-                {/* Model family */}
+
+                {/* Mode (model + quality combined) */}
                 <div className="flex flex-col gap-2">
                     <HeadingWithInfo
-                        heading={isDe ? 'Modell' : 'Model'}
-                        info={isDe ? FAMILY_DESC_DE[family] : FAMILY_DESC_EN[family]}
+                        heading={isDe ? 'Modus' : 'Mode'}
+                        info={isDe
+                            ? 'NB 2 und NB Pro nutzen Googles Modell. GTA-Modi nutzen OpenAIs GPT Image 2.'
+                            : "NB 2 and NB Pro use Google's model. GTA modes use OpenAI's GPT Image 2."}
                     />
-                    <div className="grid grid-cols-2 gap-1.5">
-                        {MODEL_OPTIONS.map(opt => (
-                            <PillButton key={opt.family} active={family === opt.family} onClick={() => selectFamily(opt.family)}>
-                                {opt.label}
-                            </PillButton>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Quality — directly under the model. Real stepped slider. */}
-                <div className="flex flex-col gap-2">
-                    <HeadingWithInfo
-                        heading={isDe ? 'Qualität' : 'Quality'}
-                        info={family === 'nano'
-                            ? (isDe
-                                ? 'Pro liefert die höhere Foto-Qualität, dauert aber etwas länger.'
-                                : 'Pro gives higher photo quality but takes a bit longer.')
-                            : (isDe
-                                ? 'Höhere Stufe = mehr Detail und Präzision, aber langsamer und teurer.'
-                                : 'Higher = more detail and precision, but slower and pricier.')}
-                    />
-                    {family === 'nano'
-                        ? <StepSlider steps={nanoQualityOptions} value={local.provider} onChange={v => update('provider', v)} />
-                        : <StepSlider steps={qualityOptions} value={local.quality} onChange={v => update('quality', v)} />}
-                </div>
-
-                {/* Aspect ratio — placed directly under Model. Dropdown labels carry the description. */}
-                <div className="flex flex-col gap-2">
-                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
-                        {isDe ? 'Seitenverhältnis' : 'Aspect ratio'}
-                    </span>
                     <Dropdown
-                        value={local.aspectRatio}
-                        options={isDe ? ASPECT_OPTIONS_DE : ASPECT_OPTIONS_EN}
-                        onChange={v => update('aspectRatio', v)}
+                        value={mode}
+                        options={isDe ? MODE_OPTIONS_DE : MODE_OPTIONS_EN}
+                        onChange={handleModeChange}
                     />
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
+                        {(isDe ? MODE_DESC_DE : MODE_DESC_EN)[mode]}
+                    </span>
                 </div>
 
-                {/* Resolution — its own row. */}
+                {/* Resolution — separate */}
                 <div className="flex flex-col gap-2">
                     <span className="text-sm font-semibold text-zinc-900 dark:text-white">
                         {isDe ? 'Auflösung' : 'Resolution'}
@@ -501,9 +326,27 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                         options={RES_OPTIONS}
                         onChange={v => update('resolution', v)}
                     />
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
+                        {(isDe ? RES_DESC_DE : RES_DESC_EN)[local.resolution] ?? ''}
+                    </span>
                 </div>
 
-                {/* Cost per image — same heading + subline pattern as other sections, left-aligned. */}
+                {/* Aspect ratio */}
+                <div className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                        {isDe ? 'Seitenverhältnis' : 'Aspect ratio'}
+                    </span>
+                    <Dropdown
+                        value={local.aspectRatio}
+                        options={isDe ? ASPECT_OPTIONS_DE : ASPECT_OPTIONS_EN}
+                        onChange={v => update('aspectRatio', v)}
+                    />
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
+                        {(isDe ? ASPECT_DESC_DE : ASPECT_DESC_EN)[local.aspectRatio]}
+                    </span>
+                </div>
+
+                {/* Cost per image */}
                 <div className="flex flex-col gap-1">
                     <span className="text-sm font-semibold text-zinc-900 dark:text-white">
                         {isDe ? 'Kosten pro Bild' : 'Cost per image'}
