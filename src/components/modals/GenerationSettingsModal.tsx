@@ -49,22 +49,6 @@ const MODE_OPTIONS_EN: { value: GenerationMode; label: string }[] = [
     { value: 'gpt-high', label: 'GPT Image High'   },
 ];
 
-const MODE_DESC_DE: Record<GenerationMode, string> = {
-    'nb2':      'Googles Modell · Standard.',
-    'nb2-pro':  'Googles Modell · höhere Qualität.',
-    'gpt-low':  'OpenAIs GPT Image 2 · einfach & schnell.',
-    'gpt-mid':  'OpenAIs GPT Image 2 · ausgewogen.',
-    'gpt-high': 'OpenAIs GPT Image 2 · präzise und detailreich.',
-};
-
-const MODE_DESC_EN: Record<GenerationMode, string> = {
-    'nb2':      "Google's model · standard.",
-    'nb2-pro':  "Google's model · higher quality.",
-    'gpt-low':  "OpenAI's GPT Image 2 · simple & fast.",
-    'gpt-mid':  "OpenAI's GPT Image 2 · balanced.",
-    'gpt-high': "OpenAI's GPT Image 2 · precise and detailed.",
-};
-
 function detectMode(s: GenerationSettings): GenerationMode {
     if (s.provider === 'nano-banana-pro') return 'nb2-pro';
     if (s.provider === 'fal-nb2') return 'nb2';
@@ -80,17 +64,6 @@ const RES_OPTIONS: { value: GenerationQuality; label: string }[] = [
     { value: 'nb2-2k', label: '2K · 2560 px' },
     { value: 'nb2-4k', label: '4K · 3840 px' },
 ];
-
-const RES_DESC_DE: Record<string, string> = {
-    'nb2-1k': '1024 px lange Seite.',
-    'nb2-2k': '2560 px lange Seite.',
-    'nb2-4k': '3840 px lange Seite.',
-};
-const RES_DESC_EN: Record<string, string> = {
-    'nb2-1k': '1024 px long edge.',
-    'nb2-2k': '2560 px long edge.',
-    'nb2-4k': '3840 px long edge.',
-};
 
 // ── Aspect-ratio options ───────────────────────────────────────────────────
 
@@ -120,33 +93,6 @@ const ASPECT_OPTIONS_EN: { value: ImageAspectRatio; label: string }[] = [
     { value: '4:5',  label: '4:5 — social portrait' },
     { value: '21:9', label: '21:9 — cinematic'      },
 ];
-
-const ASPECT_DESC_DE: Record<ImageAspectRatio, string> = {
-    auto:  'Übernimmt das Verhältnis aus dem Quellbild.',
-    '1:1': 'Quadrat · Social-Posts und Avatare.',
-    '16:9': 'Breitbild · Slides und Banner.',
-    '9:16': 'Hochkant · Stories und Reels.',
-    '4:3': 'Klassisch · Foto-Standard.',
-    '3:4': 'Hochformat · Porträt-Standard.',
-    '3:2': 'DSLR-Querformat.',
-    '2:3': 'DSLR-Hochformat.',
-    '5:4': 'Print-Querformat.',
-    '4:5': 'Social-Hochformat.',
-    '21:9': 'Cinematic · ultrabreit.',
-};
-const ASPECT_DESC_EN: Record<ImageAspectRatio, string> = {
-    auto:  'Inherits the ratio of the source image.',
-    '1:1': 'Square · social posts and avatars.',
-    '16:9': 'Widescreen · slides and banners.',
-    '9:16': 'Vertical · stories and reels.',
-    '4:3': 'Classic · photo standard.',
-    '3:4': 'Portrait · classic.',
-    '3:2': 'DSLR landscape.',
-    '2:3': 'DSLR portrait.',
-    '5:4': 'Print landscape.',
-    '4:5': 'Social portrait.',
-    '21:9': 'Cinematic · ultrawide.',
-};
 
 // ── Dropdown ───────────────────────────────────────────────────────────────
 
@@ -311,9 +257,6 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                         options={isDe ? MODE_OPTIONS_DE : MODE_OPTIONS_EN}
                         onChange={handleModeChange}
                     />
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
-                        {(isDe ? MODE_DESC_DE : MODE_DESC_EN)[mode]}
-                    </span>
                 </div>
 
                 {/* Resolution — separate */}
@@ -326,9 +269,6 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                         options={RES_OPTIONS}
                         onChange={v => update('resolution', v)}
                     />
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
-                        {(isDe ? RES_DESC_DE : RES_DESC_EN)[local.resolution] ?? ''}
-                    </span>
                 </div>
 
                 {/* Aspect ratio */}
@@ -341,9 +281,6 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                         options={isDe ? ASPECT_OPTIONS_DE : ASPECT_OPTIONS_EN}
                         onChange={v => update('aspectRatio', v)}
                     />
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
-                        {(isDe ? ASPECT_DESC_DE : ASPECT_DESC_EN)[local.aspectRatio]}
-                    </span>
                 </div>
 
                 {/* Cost per image */}
