@@ -33,20 +33,23 @@ const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quali
     'gpt-high': { provider: 'openai',            quality: 'high'   },
 };
 
+// Hints reflect each model's documented edge: NB2 = speed/price at ~90% of Pro
+// quality, NB Pro = top image quality & typography, GPT Image = prompt
+// adherence (low = cheap drafts, high = max precision).
 const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[] = [
     { value: 'nb2',      label: 'Nano Banana 2',     hint: 'schnell & günstig' },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',   hint: 'beste Qualität'    },
-    { value: 'gpt-low',  label: 'GPT Image Niedrig', hint: 'am günstigsten'    },
+    { value: 'gpt-low',  label: 'GPT Image Niedrig', hint: 'schnelle Entwürfe' },
     { value: 'gpt-mid',  label: 'GPT Image Mittel',  hint: 'ausgewogen'        },
-    { value: 'gpt-high', label: 'GPT Image Hoch',    hint: 'sehr detailliert'  },
+    { value: 'gpt-high', label: 'GPT Image Hoch',    hint: 'sehr präzise'      },
 ];
 
 const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[] = [
     { value: 'nb2',      label: 'Nano Banana 2',    hint: 'fast & affordable' },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',  hint: 'best quality'      },
-    { value: 'gpt-low',  label: 'GPT Image Low',    hint: 'cheapest'          },
+    { value: 'gpt-low',  label: 'GPT Image Low',    hint: 'quick drafts'      },
     { value: 'gpt-mid',  label: 'GPT Image Medium', hint: 'balanced'          },
-    { value: 'gpt-high', label: 'GPT Image High',   hint: 'very detailed'     },
+    { value: 'gpt-high', label: 'GPT Image High',   hint: 'very precise'      },
 ];
 
 function detectMode(s: GenerationSettings): GenerationMode {
