@@ -168,26 +168,42 @@ export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
   outputFormat: 'jpeg',
 };
 
-// USD price matrix per (resolution × quality). Quality affects price now —
-// higher quality = more model compute = more cost, passed on transparently.
-// Margins target ~40–60% across the matrix.
-export const PRICES_USD: Record<string, Record<ImageQualityLevel, number>> = {
-  'nb2-1k': { low: 0.10, medium: 0.20, high: 0.30 },
-  'nb2-2k': { low: 0.15, medium: 0.30, high: 0.40 },
-  'nb2-4k': { low: 0.25, medium: 0.50, high: 0.60 },
+// Sale prices per image. Nano Banana tiers are flat per resolution — Google's
+// API has no quality knob, so quality only prices into GPT Image 2.
+// Margins target ~75% against fal.ai costs (NB2: $0.06/0.08/0.12/0.16,
+// NB Pro: $0.15/0.15/0.30, GPT high: $0.21/~0.25/0.40).
+export const NB2_PRICES_USD: Record<string, number> = {
+  'nb2-05k': 0.25,
+  'nb2-1k':  0.30,
+  'nb2-2k':  0.50,
+  'nb2-4k':  0.65,
 };
 
-/** Convenience getter for the matrix above. Defaults to 0 if unknown. */
-export const getGenerationPriceUsd = (resolution: string, quality: ImageQualityLevel): number =>
-  PRICES_USD[resolution]?.[quality] ?? 0;
+export const NB_PRO_PRICES_USD: Record<string, number> = {
+  'nb2-1k': 0.60,
+  'nb2-2k': 0.60,
+  'nb2-4k': 1.20,
+};
 
-// Legacy export — keeps callers that only know "high quality" pricing working.
+export const GPT_PRICES_USD: Record<string, Record<ImageQualityLevel, number>> = {
+  'nb2-1k': { low: 0.05, medium: 0.20, high: 0.85 },
+  'nb2-2k': { low: 0.10, medium: 0.30, high: 1.00 },
+  'nb2-4k': { low: 0.20, medium: 0.50, high: 1.60 },
+};
+
+/** Price for a (provider × resolution × quality) combination. Defaults to 0 if unknown. */
+export const getGenerationPriceUsd = (
+  provider: ImageModelProvider,
+  resolution: string,
+  quality: ImageQualityLevel,
+): number =>
+  provider === 'openai'          ? (GPT_PRICES_USD[resolution]?.[quality] ?? 0)
+  : provider === 'nano-banana-pro' ? (NB_PRO_PRICES_USD[resolution] ?? 0)
+  : (NB2_PRICES_USD[resolution] ?? 0);
+
+// Legacy export — keeps callers that only know per-resolution pricing working.
 // Prefer getGenerationPriceUsd() in new code.
-export const RESOLUTION_PRICES_USD: Record<string, number> = {
-  'nb2-1k': PRICES_USD['nb2-1k'].high,
-  'nb2-2k': PRICES_USD['nb2-2k'].high,
-  'nb2-4k': PRICES_USD['nb2-4k'].high,
-};
+export const RESOLUTION_PRICES_USD: Record<string, number> = NB2_PRICES_USD;
 
 // --- ADMIN TYPES ---
 

@@ -284,7 +284,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
     };
 
     const mode = detectMode(local);
-    const price = getGenerationPriceUsd(local.resolution, local.quality);
+    const price = getGenerationPriceUsd(local.provider, local.resolution, local.quality);
     const priceFormatted = price.toFixed(2).replace('.', ',') + ' €';
 
     const handleModeChange = (m: GenerationMode) => {

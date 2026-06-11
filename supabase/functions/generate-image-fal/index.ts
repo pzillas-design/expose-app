@@ -14,7 +14,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decodeBase64, encodeBase64 } from 'https://deno.land/std@0.207.0/encoding/base64.ts';
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from '../generate-image/utils/aspectRatio.ts';
 import { extractBase64FromDataUrl } from '../generate-image/utils/imageProcessing.ts';
-import { COSTS } from '../generate-image/types/index.ts';
+import { COSTS, GPT_COSTS } from '../generate-image/types/index.ts';
 import { verifyJwtSignature } from '../_shared/auth.ts';
 
 const corsHeaders = {
@@ -411,7 +411,13 @@ Deno.serve(async (req) => {
         logInfo('Start', `job=${newId} user=${user.id} quality=${qualityMode} type=${requestType} promptLen=${prompt.length}`);
 
         // ── Credits ────────────────────────────────────────────────────────
-        const cost = COSTS[qualityMode] || 0;
+        // Price depends on the provider: NB Pro has its own (higher) per-resolution
+        // tariff, GPT Image 2 is the only model where quality affects the price.
+        const cost = provider === 'openai'
+            ? (GPT_COSTS[qualityMode]?.[userQuality] ?? COSTS[qualityMode] ?? 0)
+            : provider === 'nano-banana-pro'
+            ? (COSTS[qualityMode.replace('nb2-', 'pro-')] ?? COSTS[qualityMode] ?? 0)
+            : (COSTS[qualityMode] || 0);
         let { data: profile } = await supabaseAdmin
             .from('profiles')
             .select('credits, role')

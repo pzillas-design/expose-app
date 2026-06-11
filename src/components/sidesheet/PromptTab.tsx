@@ -92,10 +92,10 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const [previewSettings, setPreviewSettings] = useState<GenerationSettings>(DEFAULT_GENERATION_SETTINGS);
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
-        ...(PRIMARY_PROVIDER === 'kie' ? [] : [{ id: 'nb2-05k' as GenerationQuality, label: getCurrentProviderTierLabel('nb2-05k'), desc: `512 px · ${t('quality_faster')}`, price: '0.05 €' }]),
-        { id: 'nb2-1k', label: getCurrentProviderTierLabel('nb2-1k'), desc: `1024 px · ${t('quality_faster')}`, price: '0.10 €' },
-        { id: 'nb2-2k', label: getCurrentProviderTierLabel('nb2-2k'), desc: `2048 px · ${t('quality_faster')}`, price: '0.20 €' },
-        { id: 'nb2-4k', label: getCurrentProviderTierLabel('nb2-4k'), desc: `4096 px · ${t('quality_faster')}`, price: '0.40 €' },
+        ...(PRIMARY_PROVIDER === 'kie' ? [] : [{ id: 'nb2-05k' as GenerationQuality, label: getCurrentProviderTierLabel('nb2-05k'), desc: `512 px · ${t('quality_faster')}`, price: '0.25 €' }]),
+        { id: 'nb2-1k', label: getCurrentProviderTierLabel('nb2-1k'), desc: `1024 px · ${t('quality_faster')}`, price: '0.30 €' },
+        { id: 'nb2-2k', label: getCurrentProviderTierLabel('nb2-2k'), desc: `2048 px · ${t('quality_faster')}`, price: '0.50 €' },
+        { id: 'nb2-4k', label: getCurrentProviderTierLabel('nb2-4k'), desc: `4096 px · ${t('quality_faster')}`, price: '0.65 €' },
     ];
 
     const currentResolution = (qualityMode.split('-')[1] ?? '2k') as '05k' | '1k' | '2k' | '4k';
