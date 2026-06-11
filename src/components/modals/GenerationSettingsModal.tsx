@@ -21,16 +21,16 @@ interface GenerationSettingsModalProps {
     lang?: 'de' | 'en';
 }
 
-// ── Generation mode — unified preset that encodes provider + resolution + quality ──
+// ── Generation mode — encodes provider + quality in one pick ───────────────
 
 type GenerationMode = 'nb2' | 'nb2-pro' | 'gpt-low' | 'gpt-mid' | 'gpt-high';
 
-const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; resolution: GenerationQuality; quality: ImageQualityLevel }> = {
-    'nb2':      { provider: 'fal-nb2', resolution: 'nb2-1k', quality: 'high'   },
-    'nb2-pro':  { provider: 'fal-nb2', resolution: 'nb2-2k', quality: 'high'   },
-    'gpt-low':  { provider: 'openai',  resolution: 'nb2-1k', quality: 'low'    },
-    'gpt-mid':  { provider: 'openai',  resolution: 'nb2-1k', quality: 'medium' },
-    'gpt-high': { provider: 'openai',  resolution: 'nb2-1k', quality: 'high'   },
+const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quality: ImageQualityLevel }> = {
+    'nb2':      { provider: 'fal-nb2', quality: 'low'    },
+    'nb2-pro':  { provider: 'fal-nb2', quality: 'high'   },
+    'gpt-low':  { provider: 'openai',  quality: 'low'    },
+    'gpt-mid':  { provider: 'openai',  quality: 'medium' },
+    'gpt-high': { provider: 'openai',  quality: 'high'   },
 };
 
 const MODE_OPTIONS_DE: { value: GenerationMode; label: string }[] = [
@@ -42,39 +42,58 @@ const MODE_OPTIONS_DE: { value: GenerationMode; label: string }[] = [
 ];
 
 const MODE_OPTIONS_EN: { value: GenerationMode; label: string }[] = [
-    { value: 'nb2',      label: 'NB 2'       },
-    { value: 'nb2-pro',  label: 'NB Pro'      },
-    { value: 'gpt-low',  label: 'GTA Low'     },
-    { value: 'gpt-mid',  label: 'GTA Medium'  },
-    { value: 'gpt-high', label: 'GTA High'    },
+    { value: 'nb2',      label: 'NB 2'      },
+    { value: 'nb2-pro',  label: 'NB Pro'     },
+    { value: 'gpt-low',  label: 'GTA Low'    },
+    { value: 'gpt-mid',  label: 'GTA Medium' },
+    { value: 'gpt-high', label: 'GTA High'   },
 ];
 
 const MODE_DESC_DE: Record<GenerationMode, string> = {
-    'nb2':      'Googles Modell · 1024 px · schnell.',
-    'nb2-pro':  'Googles Modell · 2560 px · höhere Qualität.',
-    'gpt-low':  'OpenAIs Modell · 1024 px · einfach & schnell.',
-    'gpt-mid':  'OpenAIs Modell · 1024 px · ausgewogen.',
-    'gpt-high': 'OpenAIs Modell · 1024 px · präzise und detailreich.',
+    'nb2':      'Googles Modell · Standard.',
+    'nb2-pro':  'Googles Modell · höhere Qualität.',
+    'gpt-low':  'OpenAIs GPT Image 2 · einfach & schnell.',
+    'gpt-mid':  'OpenAIs GPT Image 2 · ausgewogen.',
+    'gpt-high': 'OpenAIs GPT Image 2 · präzise und detailreich.',
 };
 
 const MODE_DESC_EN: Record<GenerationMode, string> = {
-    'nb2':      "Google's model · 1024 px · fast.",
-    'nb2-pro':  "Google's model · 2560 px · higher quality.",
-    'gpt-low':  "OpenAI's model · 1024 px · simple & fast.",
-    'gpt-mid':  "OpenAI's model · 1024 px · balanced.",
-    'gpt-high': "OpenAI's model · 1024 px · precise and detailed.",
+    'nb2':      "Google's model · standard.",
+    'nb2-pro':  "Google's model · higher quality.",
+    'gpt-low':  "OpenAI's GPT Image 2 · simple & fast.",
+    'gpt-mid':  "OpenAI's GPT Image 2 · balanced.",
+    'gpt-high': "OpenAI's GPT Image 2 · precise and detailed.",
 };
 
 function detectMode(s: GenerationSettings): GenerationMode {
     if (s.provider === 'fal-nb2') {
-        return s.resolution === 'nb2-1k' ? 'nb2' : 'nb2-pro';
+        return s.quality === 'high' ? 'nb2-pro' : 'nb2';
     }
     if (s.quality === 'low') return 'gpt-low';
     if (s.quality === 'medium') return 'gpt-mid';
     return 'gpt-high';
 }
 
-// ── Aspect-ratio option lists ──────────────────────────────────────────────
+// ── Resolution options ─────────────────────────────────────────────────────
+
+const RES_OPTIONS: { value: GenerationQuality; label: string }[] = [
+    { value: 'nb2-1k', label: '1K · 1024 px' },
+    { value: 'nb2-2k', label: '2K · 2560 px' },
+    { value: 'nb2-4k', label: '4K · 3840 px' },
+];
+
+const RES_DESC_DE: Record<string, string> = {
+    'nb2-1k': '1024 px lange Seite.',
+    'nb2-2k': '2560 px lange Seite.',
+    'nb2-4k': '3840 px lange Seite.',
+};
+const RES_DESC_EN: Record<string, string> = {
+    'nb2-1k': '1024 px long edge.',
+    'nb2-2k': '2560 px long edge.',
+    'nb2-4k': '3840 px long edge.',
+};
+
+// ── Aspect-ratio options ───────────────────────────────────────────────────
 
 const ASPECT_OPTIONS_DE: { value: ImageAspectRatio; label: string }[] = [
     { value: 'auto', label: 'Auto (aus Quellbild)' },
@@ -259,22 +278,19 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
         if (value) setLocal(value);
     }, [value]);
 
-    const mode = detectMode(local);
-    const preset = MODE_PRESETS[mode];
-    const price = getGenerationPriceUsd(preset.resolution, preset.quality);
-    const priceFormatted = price.toFixed(2).replace('.', ',') + ' €';
-    const modeDesc = (isDe ? MODE_DESC_DE : MODE_DESC_EN)[mode];
-    const aspectDesc = (isDe ? ASPECT_DESC_DE : ASPECT_DESC_EN)[local.aspectRatio];
-
-    const handleModeChange = (m: GenerationMode) => {
-        const p = MODE_PRESETS[m];
-        const next = { ...local, provider: p.provider, resolution: p.resolution, quality: p.quality };
+    const update = <K extends keyof GenerationSettings>(key: K, v: GenerationSettings[K]) => {
+        const next = { ...local, [key]: v };
         setLocal(next);
         onChange?.(next);
     };
 
-    const handleAspectChange = (v: ImageAspectRatio) => {
-        const next = { ...local, aspectRatio: v };
+    const mode = detectMode(local);
+    const price = getGenerationPriceUsd(local.resolution, local.quality);
+    const priceFormatted = price.toFixed(2).replace('.', ',') + ' €';
+
+    const handleModeChange = (m: GenerationMode) => {
+        const p = MODE_PRESETS[m];
+        const next = { ...local, provider: p.provider, quality: p.quality };
         setLocal(next);
         onChange?.(next);
     };
@@ -283,20 +299,37 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
         <Modal isOpen={isOpen} onClose={onClose} title={isDe ? 'Bild-Einstellungen' : 'Image settings'} maxWidth="lg">
             <div className="px-6 pb-6 pt-2 flex flex-col gap-5">
 
-                {/* Mode */}
+                {/* Mode (model + quality combined) */}
                 <div className="flex flex-col gap-2">
                     <HeadingWithInfo
                         heading={isDe ? 'Modus' : 'Mode'}
                         info={isDe
                             ? 'NB 2 und NB Pro nutzen Googles Modell. GTA-Modi nutzen OpenAIs GPT Image 2.'
-                            : 'NB 2 and NB Pro use Google\'s model. GTA modes use OpenAI\'s GPT Image 2.'}
+                            : "NB 2 and NB Pro use Google's model. GTA modes use OpenAI's GPT Image 2."}
                     />
                     <Dropdown
                         value={mode}
                         options={isDe ? MODE_OPTIONS_DE : MODE_OPTIONS_EN}
                         onChange={handleModeChange}
                     />
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">{modeDesc}</span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
+                        {(isDe ? MODE_DESC_DE : MODE_DESC_EN)[mode]}
+                    </span>
+                </div>
+
+                {/* Resolution — separate */}
+                <div className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                        {isDe ? 'Auflösung' : 'Resolution'}
+                    </span>
+                    <Dropdown
+                        value={local.resolution}
+                        options={RES_OPTIONS}
+                        onChange={v => update('resolution', v)}
+                    />
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
+                        {(isDe ? RES_DESC_DE : RES_DESC_EN)[local.resolution] ?? ''}
+                    </span>
                 </div>
 
                 {/* Aspect ratio */}
@@ -307,9 +340,11 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                     <Dropdown
                         value={local.aspectRatio}
                         options={isDe ? ASPECT_OPTIONS_DE : ASPECT_OPTIONS_EN}
-                        onChange={handleAspectChange}
+                        onChange={v => update('aspectRatio', v)}
                     />
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">{aspectDesc}</span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">
+                        {(isDe ? ASPECT_DESC_DE : ASPECT_DESC_EN)[local.aspectRatio]}
+                    </span>
                 </div>
 
                 {/* Cost per image */}
