@@ -247,7 +247,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                 {/* Mode (model + quality combined) */}
                 <div className="flex flex-col gap-2">
                     <HeadingWithInfo
-                        heading={isDe ? 'Modus' : 'Mode'}
+                        heading={isDe ? 'KI-Modell' : 'AI model'}
                         info={isDe
                             ? 'Nano Banana 2 und Nano Banana Pro nutzen Googles Modell. GPT-Image-Modi nutzen OpenAIs GPT Image 2.'
                             : "Nano Banana 2 and Nano Banana Pro use Google's model. GPT Image modes use OpenAI's GPT Image 2."}
