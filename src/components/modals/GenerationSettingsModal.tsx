@@ -33,20 +33,20 @@ const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quali
     'gpt-high': { provider: 'openai',            quality: 'high'   },
 };
 
-const MODE_OPTIONS_DE: { value: GenerationMode; label: string }[] = [
-    { value: 'nb2',      label: 'Nano Banana 2'      },
-    { value: 'nb2-pro',  label: 'Nano Banana Pro'    },
-    { value: 'gpt-low',  label: 'GPT Image Niedrig'  },
-    { value: 'gpt-mid',  label: 'GPT Image Mittel'   },
-    { value: 'gpt-high', label: 'GPT Image Hoch'     },
+const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[] = [
+    { value: 'nb2',      label: 'Nano Banana 2',     hint: 'schnell & günstig' },
+    { value: 'nb2-pro',  label: 'Nano Banana Pro',   hint: 'beste Qualität'    },
+    { value: 'gpt-low',  label: 'GPT Image Niedrig', hint: 'am günstigsten'    },
+    { value: 'gpt-mid',  label: 'GPT Image Mittel',  hint: 'ausgewogen'        },
+    { value: 'gpt-high', label: 'GPT Image Hoch',    hint: 'sehr detailliert'  },
 ];
 
-const MODE_OPTIONS_EN: { value: GenerationMode; label: string }[] = [
-    { value: 'nb2',      label: 'Nano Banana 2'    },
-    { value: 'nb2-pro',  label: 'Nano Banana Pro'  },
-    { value: 'gpt-low',  label: 'GPT Image Low'    },
-    { value: 'gpt-mid',  label: 'GPT Image Medium' },
-    { value: 'gpt-high', label: 'GPT Image High'   },
+const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[] = [
+    { value: 'nb2',      label: 'Nano Banana 2',    hint: 'fast & affordable' },
+    { value: 'nb2-pro',  label: 'Nano Banana Pro',  hint: 'best quality'      },
+    { value: 'gpt-low',  label: 'GPT Image Low',    hint: 'cheapest'          },
+    { value: 'gpt-mid',  label: 'GPT Image Medium', hint: 'balanced'          },
+    { value: 'gpt-high', label: 'GPT Image High',   hint: 'very detailed'     },
 ];
 
 function detectMode(s: GenerationSettings): GenerationMode {
@@ -98,7 +98,7 @@ const ASPECT_OPTIONS_EN: { value: ImageAspectRatio; label: string }[] = [
 
 interface DropdownProps<V extends string> {
     value: V;
-    options: { value: V; label: string }[];
+    options: { value: V; label: string; hint?: string }[];
     onChange: (v: V) => void;
 }
 function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<V>) {
@@ -185,7 +185,12 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
                                 }`}
                             >
                                 <span className="truncate">{opt.label}</span>
-                                {active && <Check className="w-4 h-4 shrink-0" />}
+                                <span className="flex items-center gap-2 shrink-0">
+                                    {opt.hint && (
+                                        <span className="text-xs text-zinc-400 dark:text-zinc-500 font-normal">{opt.hint}</span>
+                                    )}
+                                    {active && <Check className="w-4 h-4 shrink-0" />}
+                                </span>
                             </button>
                         );
                     })}
