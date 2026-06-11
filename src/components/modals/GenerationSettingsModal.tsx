@@ -13,16 +13,6 @@ import {
     ImageModelProvider,
 } from '@/types';
 
-/**
- * Apple-polished settings modal: monochrome segmented controls (no orange),
- * a single dynamic subtitle *below* each option grid that describes the
- * currently selected value (no per-option sublabels, no '?' icons).
- *
- *   [ heading ]
- *   [ option grid                               ]
- *   [ subtitle that updates based on selection  ]
- */
-
 interface GenerationSettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -31,30 +21,60 @@ interface GenerationSettingsModalProps {
     lang?: 'de' | 'en';
 }
 
-// ── Option lists ───────────────────────────────────────────────────────────
+// ── Generation mode — unified preset that encodes provider + resolution + quality ──
 
-const PROVIDER_OPTIONS: { value: ImageModelProvider; label: string }[] = [
-    { value: 'openai',  label: 'GPT Image 2' },
-    { value: 'fal-nb2', label: 'Nano Banana 2' },
+type GenerationMode = 'nb2' | 'nb2-pro' | 'gpt-low' | 'gpt-mid' | 'gpt-high';
+
+const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; resolution: GenerationQuality; quality: ImageQualityLevel }> = {
+    'nb2':      { provider: 'fal-nb2', resolution: 'nb2-1k', quality: 'high'   },
+    'nb2-pro':  { provider: 'fal-nb2', resolution: 'nb2-2k', quality: 'high'   },
+    'gpt-low':  { provider: 'openai',  resolution: 'nb2-1k', quality: 'low'    },
+    'gpt-mid':  { provider: 'openai',  resolution: 'nb2-1k', quality: 'medium' },
+    'gpt-high': { provider: 'openai',  resolution: 'nb2-1k', quality: 'high'   },
+};
+
+const MODE_OPTIONS_DE: { value: GenerationMode; label: string }[] = [
+    { value: 'nb2',      label: 'NB 2'       },
+    { value: 'nb2-pro',  label: 'NB Pro'      },
+    { value: 'gpt-low',  label: 'GTA Niedrig' },
+    { value: 'gpt-mid',  label: 'GTA Mittel'  },
+    { value: 'gpt-high', label: 'GTA Hoch'    },
 ];
 
-const RES_OPTIONS: { value: GenerationQuality; label: string }[] = [
-    { value: 'nb2-1k', label: '1K · 1024 px' },
-    { value: 'nb2-2k', label: '2K · 2560 px' },
-    { value: 'nb2-4k', label: '4K · 3840 px' },
+const MODE_OPTIONS_EN: { value: GenerationMode; label: string }[] = [
+    { value: 'nb2',      label: 'NB 2'       },
+    { value: 'nb2-pro',  label: 'NB Pro'      },
+    { value: 'gpt-low',  label: 'GTA Low'     },
+    { value: 'gpt-mid',  label: 'GTA Medium'  },
+    { value: 'gpt-high', label: 'GTA High'    },
 ];
 
-const QUALITY_OPTIONS_DE: { value: ImageQualityLevel; label: string }[] = [
-    { value: 'low',    label: 'Niedrig' },
-    { value: 'medium', label: 'Mittel'  },
-    { value: 'high',   label: 'Hoch'    },
-];
+const MODE_DESC_DE: Record<GenerationMode, string> = {
+    'nb2':      'Googles Modell · 1024 px · schnell.',
+    'nb2-pro':  'Googles Modell · 2560 px · höhere Qualität.',
+    'gpt-low':  'OpenAIs Modell · 1024 px · einfach & schnell.',
+    'gpt-mid':  'OpenAIs Modell · 1024 px · ausgewogen.',
+    'gpt-high': 'OpenAIs Modell · 1024 px · präzise und detailreich.',
+};
 
-const QUALITY_OPTIONS_EN: { value: ImageQualityLevel; label: string }[] = [
-    { value: 'low',    label: 'Low'    },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high',   label: 'High'   },
-];
+const MODE_DESC_EN: Record<GenerationMode, string> = {
+    'nb2':      "Google's model · 1024 px · fast.",
+    'nb2-pro':  "Google's model · 2560 px · higher quality.",
+    'gpt-low':  "OpenAI's model · 1024 px · simple & fast.",
+    'gpt-mid':  "OpenAI's model · 1024 px · balanced.",
+    'gpt-high': "OpenAI's model · 1024 px · precise and detailed.",
+};
+
+function detectMode(s: GenerationSettings): GenerationMode {
+    if (s.provider === 'fal-nb2') {
+        return s.resolution === 'nb2-1k' ? 'nb2' : 'nb2-pro';
+    }
+    if (s.quality === 'low') return 'gpt-low';
+    if (s.quality === 'medium') return 'gpt-mid';
+    return 'gpt-high';
+}
+
+// ── Aspect-ratio option lists ──────────────────────────────────────────────
 
 const ASPECT_OPTIONS_DE: { value: ImageAspectRatio; label: string }[] = [
     { value: 'auto', label: 'Auto (aus Quellbild)' },
@@ -83,39 +103,6 @@ const ASPECT_OPTIONS_EN: { value: ImageAspectRatio; label: string }[] = [
     { value: '21:9', label: '21:9 — cinematic'      },
 ];
 
-// ── Dynamic subtitles (current-selection descriptions) ─────────────────────
-
-const PROVIDER_DESC_DE: Record<ImageModelProvider, string> = {
-    openai:    'OpenAIs Modell mit starkem Prompt-Verständnis.',
-    'fal-nb2': 'Googles Modell mit kreativen und schnelleren Ergebnissen.',
-};
-const PROVIDER_DESC_EN: Record<ImageModelProvider, string> = {
-    openai:    "OpenAI's model with strong prompt comprehension.",
-    'fal-nb2': "Google's model with creative and faster results.",
-};
-
-const RES_DESC_DE: Record<string, string> = {
-    'nb2-1k': '1024 px lange Seite.',
-    'nb2-2k': '1920 px lange Seite.',
-    'nb2-4k': '3840 px lange Seite.',
-};
-const RES_DESC_EN: Record<string, string> = {
-    'nb2-1k': '1024 px long edge.',
-    'nb2-2k': '1920 px long edge.',
-    'nb2-4k': '3840 px long edge.',
-};
-
-const QUALITY_DESC_DE: Record<ImageQualityLevel, string> = {
-    low:    'Setzt nur das Wesentliche um.',
-    medium: 'Ausgewogen zwischen Schlichtheit und Detail.',
-    high:   'Kreativ und detailfreudig.',
-};
-const QUALITY_DESC_EN: Record<ImageQualityLevel, string> = {
-    low:    'Keeps only the essentials.',
-    medium: 'Balanced between simplicity and detail.',
-    high:   'Creative and rich in detail.',
-};
-
 const ASPECT_DESC_DE: Record<ImageAspectRatio, string> = {
     auto:  'Übernimmt das Verhältnis aus dem Quellbild.',
     '1:1': 'Quadrat · Social-Posts und Avatare.',
@@ -143,7 +130,7 @@ const ASPECT_DESC_EN: Record<ImageAspectRatio, string> = {
     '21:9': 'Cinematic · ultrawide.',
 };
 
-// ── Dropdown (used for aspect-ratio field only) ────────────────────────────
+// ── Dropdown ───────────────────────────────────────────────────────────────
 
 interface DropdownProps<V extends string> {
     value: V;
@@ -152,10 +139,6 @@ interface DropdownProps<V extends string> {
 }
 function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<V>) {
     const [open, setOpen] = useState(false);
-    // Panel is rendered via portal into document.body so it's not clipped by the
-    // Modal's overflow boundary. Position is computed from the trigger button's
-    // bounding rect — and flipped above the trigger when there isn't enough room
-    // below the viewport edge.
     const triggerRef = useRef<HTMLButtonElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const [panelPos, setPanelPos] = useState<{ top: number; left: number; width: number; placement: 'down' | 'up' } | null>(null);
@@ -164,7 +147,7 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
         const t = triggerRef.current;
         if (!t) return;
         const r = t.getBoundingClientRect();
-        const PANEL_MAX_H = 320; // soft estimate for placement decision
+        const PANEL_MAX_H = 320;
         const spaceBelow = window.innerHeight - r.bottom;
         const placement: 'down' | 'up' = spaceBelow >= PANEL_MAX_H || spaceBelow >= window.innerHeight - r.top
             ? 'down'
@@ -189,7 +172,6 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
         const onScrollOrResize = () => updatePos();
         document.addEventListener('mousedown', onClickOutside);
         window.addEventListener('resize', onScrollOrResize);
-        // Capture phase so we react to inner scroll containers too (e.g. Modal body).
         window.addEventListener('scroll', onScrollOrResize, true);
         return () => {
             document.removeEventListener('mousedown', onClickOutside);
@@ -250,35 +232,8 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
     );
 }
 
-// ── Aspect-ratio thumbnail (mirrors the AspectIcon in CreationModal) ───────
-
-const AspectThumb: React.FC<{ ratio: ImageAspectRatio; active: boolean }> = ({ ratio, active }) => {
-    const stroke = active
-        ? 'border-current'
-        : 'border-zinc-400 dark:border-zinc-500 group-hover:border-zinc-600 dark:group-hover:border-zinc-300';
-    const base = `border-[1.5px] rounded-[1px] transition-colors ${stroke}`;
-    if (ratio === 'auto') {
-        // dotted square so the thumbnail still occupies the same footprint
-        return <div className={`w-4 h-4 border-[1.5px] border-dashed rounded-[1px] transition-colors ${stroke}`} />;
-    }
-    const dims: Record<Exclude<ImageAspectRatio, 'auto'>, string> = {
-        '16:9': 'w-5 h-[11px]',
-        '9:16': 'w-[11px] h-5',
-        '4:3':  'w-5 h-[15px]',
-        '3:4':  'w-[15px] h-5',
-        '3:2':  'w-5 h-[13px]',
-        '2:3':  'w-[13px] h-5',
-        '1:1':  'w-4 h-4',
-        '5:4':  'w-5 h-4',
-        '4:5':  'w-4 h-5',
-        '21:9': 'w-5 h-[9px]',
-    };
-    return <div className={`${base} ${dims[ratio]}`} />;
-};
-
 // ── Building blocks ────────────────────────────────────────────────────────
 
-/** Heading with a small info icon that surfaces a tooltip on hover. */
 const HeadingWithInfo: React.FC<{ heading: string; info: string }> = ({ heading, info }) => (
     <div className="flex items-center gap-1.5">
         <span className="text-sm font-semibold text-zinc-900 dark:text-white">{heading}</span>
@@ -286,35 +241,6 @@ const HeadingWithInfo: React.FC<{ heading: string; info: string }> = ({ heading,
             <Info className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-help shrink-0" />
         </Tooltip>
     </div>
-);
-
-const Section: React.FC<{ heading: string; subtitle: string; children: React.ReactNode }> = ({ heading, subtitle, children }) => (
-    <div className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-zinc-900 dark:text-white">{heading}</span>
-        {children}
-        <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">{subtitle}</span>
-    </div>
-);
-
-/** Apple-style segmented option button — monochrome inverse fill on active. */
-interface PillButtonProps {
-    active: boolean;
-    onClick: () => void;
-    children: React.ReactNode;
-    className?: string;
-}
-const PillButton: React.FC<PillButtonProps> = ({ active, onClick, children, className = '' }) => (
-    <button
-        type="button"
-        onClick={onClick}
-        className={`group flex items-center justify-center gap-1.5 rounded-lg border-[1.5px] px-3 py-2.5 text-sm font-medium transition-all ${
-            active
-                ? 'border-zinc-900 dark:border-zinc-100 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100'
-                : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-700'
-        } ${className}`}
-    >
-        {children}
-    </button>
 );
 
 // ── Modal ──────────────────────────────────────────────────────────────────
@@ -333,49 +259,47 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
         if (value) setLocal(value);
     }, [value]);
 
-    const update = <K extends keyof GenerationSettings>(key: K, v: GenerationSettings[K]) => {
-        const next = { ...local, [key]: v };
+    const mode = detectMode(local);
+    const preset = MODE_PRESETS[mode];
+    const price = getGenerationPriceUsd(preset.resolution, preset.quality);
+    const priceFormatted = price.toFixed(2).replace('.', ',') + ' €';
+    const modeDesc = (isDe ? MODE_DESC_DE : MODE_DESC_EN)[mode];
+    const aspectDesc = (isDe ? ASPECT_DESC_DE : ASPECT_DESC_EN)[local.aspectRatio];
+
+    const handleModeChange = (m: GenerationMode) => {
+        const p = MODE_PRESETS[m];
+        const next = { ...local, provider: p.provider, resolution: p.resolution, quality: p.quality };
         setLocal(next);
         onChange?.(next);
     };
 
-    // Price now depends on (resolution × quality). Shown in its own box above the
-    // Done button, not baked into the subtitles.
-    const price = getGenerationPriceUsd(local.resolution, local.quality);
-    const priceFormatted = price.toFixed(2).replace('.', ',') + ' €';
-
-    const providerDesc = (isDe ? PROVIDER_DESC_DE : PROVIDER_DESC_EN)[local.provider];
-    const resDesc      = (isDe ? RES_DESC_DE      : RES_DESC_EN)[local.resolution] ?? '';
-    const qualityDesc  = (isDe ? QUALITY_DESC_DE  : QUALITY_DESC_EN)[local.quality];
-    const aspectDesc   = (isDe ? ASPECT_DESC_DE   : ASPECT_DESC_EN)[local.aspectRatio];
-
-    const qualityOptions = isDe ? QUALITY_OPTIONS_DE : QUALITY_OPTIONS_EN;
+    const handleAspectChange = (v: ImageAspectRatio) => {
+        const next = { ...local, aspectRatio: v };
+        setLocal(next);
+        onChange?.(next);
+    };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={isDe ? 'Bild-Einstellungen' : 'Image settings'} maxWidth="lg">
             <div className="px-6 pb-6 pt-2 flex flex-col gap-5">
-                {/* Model */}
+
+                {/* Mode */}
                 <div className="flex flex-col gap-2">
                     <HeadingWithInfo
-                        heading={isDe ? 'Modell' : 'Model'}
+                        heading={isDe ? 'Modus' : 'Mode'}
                         info={isDe
-                            ? 'GPT Image 2 (OpenAI) folgt Prompts präziser. Nano Banana 2 (Google) ist kreativer und schneller.'
-                            : 'GPT Image 2 (OpenAI) follows prompts more precisely. Nano Banana 2 (Google) is more creative and faster.'}
+                            ? 'NB 2 und NB Pro nutzen Googles Modell. GTA-Modi nutzen OpenAIs GPT Image 2.'
+                            : 'NB 2 and NB Pro use Google\'s model. GTA modes use OpenAI\'s GPT Image 2.'}
                     />
-                    <div className="grid grid-cols-2 gap-1.5">
-                        {PROVIDER_OPTIONS.map(opt => (
-                            <PillButton
-                                key={opt.value}
-                                active={local.provider === opt.value}
-                                onClick={() => update('provider', opt.value)}
-                            >
-                                {opt.label}
-                            </PillButton>
-                        ))}
-                    </div>
+                    <Dropdown
+                        value={mode}
+                        options={isDe ? MODE_OPTIONS_DE : MODE_OPTIONS_EN}
+                        onChange={handleModeChange}
+                    />
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">{modeDesc}</span>
                 </div>
 
-                {/* Aspect ratio — placed directly under Model. Dropdown labels carry the description. */}
+                {/* Aspect ratio */}
                 <div className="flex flex-col gap-2">
                     <span className="text-sm font-semibold text-zinc-900 dark:text-white">
                         {isDe ? 'Seitenverhältnis' : 'Aspect ratio'}
@@ -383,40 +307,12 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                     <Dropdown
                         value={local.aspectRatio}
                         options={isDe ? ASPECT_OPTIONS_DE : ASPECT_OPTIONS_EN}
-                        onChange={v => update('aspectRatio', v)}
+                        onChange={handleAspectChange}
                     />
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug min-h-[1.25rem]">{aspectDesc}</span>
                 </div>
 
-                {/* Resolution — its own row. */}
-                <div className="flex flex-col gap-2">
-                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
-                        {isDe ? 'Auflösung' : 'Resolution'}
-                    </span>
-                    <Dropdown
-                        value={local.resolution}
-                        options={RES_OPTIONS}
-                        onChange={v => update('resolution', v)}
-                    />
-                </div>
-
-                {/* Quality — only for gpt-image-2; hidden when Nano Banana 2 is active. */}
-                {local.provider === 'openai' && (
-                    <div className="flex flex-col gap-2">
-                        <HeadingWithInfo
-                            heading={isDe ? 'Qualität' : 'Quality'}
-                            info={isDe
-                                ? 'Wie viel Detailreichtum und kreativen Stil das Modell investiert. Höher = präziser, langsamer, teurer.'
-                                : 'How much detail and creative style the model invests. Higher = more precise, slower, more expensive.'}
-                        />
-                        <Dropdown
-                            value={local.quality}
-                            options={qualityOptions}
-                            onChange={v => update('quality', v)}
-                        />
-                    </div>
-                )}
-
-                {/* Cost per image — same heading + subline pattern as other sections, left-aligned. */}
+                {/* Cost per image */}
                 <div className="flex flex-col gap-1">
                     <span className="text-sm font-semibold text-zinc-900 dark:text-white">
                         {isDe ? 'Kosten pro Bild' : 'Cost per image'}
