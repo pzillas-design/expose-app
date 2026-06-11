@@ -34,19 +34,19 @@ const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quali
 };
 
 const MODE_OPTIONS_DE: { value: GenerationMode; label: string }[] = [
-    { value: 'nb2',      label: 'NB 2'              },
-    { value: 'nb2-pro',  label: 'NB Pro'             },
+    { value: 'nb2',      label: 'Nano Banana 2'      },
+    { value: 'nb2-pro',  label: 'Nano Banana Pro'    },
     { value: 'gpt-low',  label: 'GPT Image Niedrig'  },
     { value: 'gpt-mid',  label: 'GPT Image Mittel'   },
     { value: 'gpt-high', label: 'GPT Image Hoch'     },
 ];
 
 const MODE_OPTIONS_EN: { value: GenerationMode; label: string }[] = [
-    { value: 'nb2',      label: 'NB 2'           },
-    { value: 'nb2-pro',  label: 'NB Pro'          },
-    { value: 'gpt-low',  label: 'GPT Image Low'   },
+    { value: 'nb2',      label: 'Nano Banana 2'    },
+    { value: 'nb2-pro',  label: 'Nano Banana Pro'  },
+    { value: 'gpt-low',  label: 'GPT Image Low'    },
     { value: 'gpt-mid',  label: 'GPT Image Medium' },
-    { value: 'gpt-high', label: 'GPT Image High'  },
+    { value: 'gpt-high', label: 'GPT Image High'   },
 ];
 
 const MODE_DESC_DE: Record<GenerationMode, string> = {
@@ -303,8 +303,8 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                     <HeadingWithInfo
                         heading={isDe ? 'Modus' : 'Mode'}
                         info={isDe
-                            ? 'NB 2 und NB Pro nutzen Googles Modell. GTA-Modi nutzen OpenAIs GPT Image 2.'
-                            : "NB 2 and NB Pro use Google's model. GTA modes use OpenAI's GPT Image 2."}
+                            ? 'Nano Banana 2 und Nano Banana Pro nutzen Googles Modell. GPT-Image-Modi nutzen OpenAIs GPT Image 2.'
+                            : "Nano Banana 2 and Nano Banana Pro use Google's model. GPT Image modes use OpenAI's GPT Image 2."}
                     />
                     <Dropdown
                         value={mode}
