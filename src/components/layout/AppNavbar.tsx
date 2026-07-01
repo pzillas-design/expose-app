@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff, Layers } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -56,6 +56,12 @@ interface AppNavbarProps {
     heroProgress?: number;
     /** Called when upload button is clicked in hero navbar mode */
     onHeroUploadClick?: () => void;
+    /** 0 = hero/expanded, 1 = compact. Group drill-down mode only. */
+    groupHeroProgress?: number;
+    /** Called when "Ebenen öffnen" button is clicked in expanded group hero mode */
+    onOpenLayerComposer?: () => void;
+    /** Whether to show the "Ebenen öffnen" button (group has ≥2 images) */
+    canOpenLayerComposer?: boolean;
     isPublic?: boolean;
     onStartApp?: () => void;
     voiceFeatureEnabled?: boolean;
@@ -113,6 +119,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onCloseGroup,
     heroProgress,
     onHeroUploadClick,
+    groupHeroProgress,
+    onOpenLayerComposer,
+    canOpenLayerComposer = false,
     isPublic = false,
     onStartApp,
     voiceFeatureEnabled = false,
@@ -844,6 +853,59 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             </>
                         )}
                     </div>
+                </div>
+            </header>
+        );
+    }
+
+    // Expandable batch / group drill-down header — mirrors the main gallery hero but shows
+    // the group title centered and an "Ebenen öffnen" action instead of the logo.
+    const isGroupHeroMode = isGroupDrillDown && !isSelectMode && !isDetail && !isCreate && groupHeroProgress !== undefined;
+
+    if (isGroupHeroMode) {
+        const hp = groupHeroProgress!;
+        const isScrolled = hp > 0.4;
+        const showBorder = hp > 0.9;
+
+        return (
+            <header
+                className={`fixed top-0 left-0 right-0 z-50 flex items-center px-4 md:px-6 transition-all duration-300 border-b ${showBorder
+                    ? 'border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/85'
+                    : 'border-transparent bg-white/0 dark:bg-zinc-950/0'
+                } ${isScrolled ? 'h-14' : 'h-[88px] md:h-[108px]'}`}
+            >
+                {/* LEFT: Back button (always compact) */}
+                <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
+                    <button
+                        className="relative flex items-center justify-center rounded-full transition-all duration-300 group h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        onClick={onCloseGroup}
+                    >
+                        <ChevronLeft className="shrink-0 w-[18px] h-[18px] text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100" />
+                    </button>
+                    {progressRing}
+                </div>
+
+                {/* CENTER: Group title — large when expanded, small when scrolled */}
+                <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none z-10 max-w-[55%]">
+                    <span className={`font-semibold tracking-tight text-zinc-900 dark:text-white text-center transition-all duration-300 truncate ${isScrolled ? 'text-[13px]' : 'text-[19px] md:text-[22px]'}`}>
+                        {groupInfo}
+                    </span>
+                </div>
+
+                {/* RIGHT: "Ebenen öffnen" text button (expanded) + balance + menu */}
+                <div className="flex-1 basis-0 grow flex items-center gap-2 justify-end relative z-10 pointer-events-auto">
+                    {canOpenLayerComposer && !isScrolled && (
+                        <button
+                            onClick={onOpenLayerComposer}
+                            className={`relative flex items-center justify-center rounded-full transition-all duration-300 group h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2`}
+                        >
+                            <Layers className="shrink-0 w-4 h-4 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
+                            <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                {lang === 'de' ? 'Ebenen öffnen' : 'Open layers'}
+                            </span>
+                        </button>
+                    )}
+                    {rightContent}
                 </div>
             </header>
         );

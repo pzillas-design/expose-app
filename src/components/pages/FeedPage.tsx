@@ -260,9 +260,12 @@ interface FeedPageProps {
     lastViewedId?: string | null;
     onScrollProgress?: (p: number) => void;
     voiceFocusIndex?: number | null;
+    showComposer?: boolean;
+    onOpenComposer?: () => void;
+    onCloseComposer?: () => void;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress, voiceFocusIndex }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer }) => {
     // URL-based fallback: expandedGroupId may still be null on first render after /stack/:id navigation
     const effectiveGroupId = expandedGroupId || (
         typeof window !== 'undefined' && window.location.pathname.startsWith('/stack/')
@@ -276,8 +279,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const scrollRef = React.useRef<HTMLDivElement>(null);
     const scrollRafRef = React.useRef<number>(0);
     const { confirm } = useItemDialog();
-    // Layer Composer — opened from the entry tile inside an expanded stack grid
-    const [showComposer, setShowComposer] = React.useState(false);
+    // Layer Composer — opened from the entry tile inside an expanded stack grid.
+    // If showComposerProp/onOpenComposer/onCloseComposer are provided, the parent manages state;
+    // otherwise falls back to local state so the component works standalone.
+    const [showComposerInternal, setShowComposerInternal] = React.useState(false);
+    const showComposer = showComposerProp ?? showComposerInternal;
+    const openComposer = React.useCallback(() => { onOpenComposer?.(); setShowComposerInternal(true); }, [onOpenComposer]);
+    const closeComposer = React.useCallback(() => { onCloseComposer?.(); setShowComposerInternal(false); }, [onCloseComposer]);
 
     // Report scroll progress to parent (drives hero navbar collapse animation).
     // Depends on images.length so the listener is re-registered after the loading
@@ -400,10 +408,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
     }, [effectiveGroupId, isSelectMode, rows]);
 
-    // Track which cover tile to animate when closing a group
+    // Track which cover tile to animate when closing a group.
+    // useLayoutEffect fires synchronously before paint so the first visible frame
+    // already has scale(1.1) applied — avoids the "normal→big→small" zapple.
     const [returnCoverId, setReturnCoverId] = React.useState<string | null>(null);
     const prevExpandedGroupId = React.useRef<string | null>(null);
-    React.useEffect(() => {
+    React.useLayoutEffect(() => {
         if (prevExpandedGroupId.current && !expandedGroupId) {
             const row = rows.find(r => r.id === prevExpandedGroupId.current);
             const cover = row?.items[0];
@@ -650,7 +660,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in zoom-in-[99%] duration-200 ease-out ${effectiveGroupId ? 'pt-24 sm:pt-28' : 'pt-4 sm:pt-8'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out ${effectiveGroupId ? 'pt-24 sm:pt-28' : 'pt-4 sm:pt-8'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 >
                                     {displayImages.map((img, idx) => {
                                         const gc = (effectiveGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
@@ -700,7 +710,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     {effectiveGroupId && !isSelectMode && displayImages.length >= 2 && (
                                         <Tooltip text={state?.currentLang === 'de' ? 'Als Ebenen öffnen' : 'Open as layers'} side="top">
                                             <button
-                                                onClick={() => setShowComposer(true)}
+                                                onClick={openComposer}
                                                 className="relative aspect-square rounded-lg bg-zinc-100 dark:bg-zinc-900/50 flex flex-col items-center justify-center gap-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60 transition-colors"
                                             >
                                                 <Layers className="w-7 h-7" strokeWidth={1.5} />
@@ -865,12 +875,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     stack={displayImages}
                     initialBaseId={displayImages[0].id}
                     title={rows.find(r => r.id === effectiveGroupId)?.title || ''}
-                    onClose={() => setShowComposer(false)}
+                    onClose={closeComposer}
                     onSave={async (base, dataUrl, w, h) => {
-                        const newId = await actions?.handleSaveComposite?.(base, dataUrl, w, h);
-                        // Open the new composite in the normal detail/edit view so the
-                        // user can keep prompting on it right away.
-                        if (newId) onSelectImage(newId);
+                        await actions?.handleSaveComposite?.(base, dataUrl, w, h);
                     }}
                     t={t}
                     isDe={state?.currentLang === 'de'}

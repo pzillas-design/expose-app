@@ -96,6 +96,7 @@ export function App() {
     const [isVoiceUploadOpen, setIsVoiceUploadOpen] = React.useState(false);
     const [voiceDownloadImage, setVoiceDownloadImage] = React.useState<{ id: string; name: string } | null>(null);
     const [feedHeroProgress, setFeedHeroProgress] = React.useState(0);
+    const [composerOpen, setComposerOpen] = React.useState(false);
     const [voiceAdminConfig, setVoiceAdminConfig] = React.useState(() => loadVoiceAdminConfig());
     const [voiceDiagnostics, setVoiceDiagnostics] = React.useState<VoiceDiagnostics>(() => {
         const empty = getEmptyVoiceDiagnostics();
@@ -1152,6 +1153,9 @@ export function App() {
                     heroProgress={isExpandableRoute
                         ? (location.pathname === '/' && user ? feedHeroProgress : globalScrollProgress)
                         : undefined}
+                    groupHeroProgress={expandedGroupId ? feedHeroProgress : undefined}
+                    onOpenLayerComposer={() => setComposerOpen(true)}
+                    canOpenLayerComposer={!!expandedGroupId && (state.rows.find((r: any) => r.id === expandedGroupId)?.items?.length ?? 0) >= 2}
                     onHeroUploadClick={() => { (document.getElementById('feed-upload-input') as HTMLInputElement | null)?.click(); }}
                     voiceFeatureEnabled={voiceFeatureEnabled}
                     voiceModeActive={voice.isActive}
@@ -1261,6 +1265,9 @@ export function App() {
                                     t={t}
                                     onScrollProgress={setFeedHeroProgress}
                                     voiceFocusIndex={voiceFocusIndex}
+                                    showComposer={composerOpen}
+                                    onOpenComposer={() => setComposerOpen(true)}
+                                    onCloseComposer={() => setComposerOpen(false)}
                                 />
                             ) : (
                                 <AboutPage
@@ -1315,6 +1322,9 @@ export function App() {
                                     t={t}
                                     onScrollProgress={setFeedHeroProgress}
                                     voiceFocusIndex={voiceFocusIndex}
+                                    showComposer={composerOpen}
+                                    onOpenComposer={() => setComposerOpen(true)}
+                                    onCloseComposer={() => setComposerOpen(false)}
                                 />
                             </ProtectedRoute>
                         } />
