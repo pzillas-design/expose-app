@@ -56,6 +56,10 @@ interface AppNavbarProps {
     heroProgress?: number;
     /** Called when upload button is clicked in hero navbar mode */
     onHeroUploadClick?: () => void;
+    /** Current detected grid column count */
+    gridColumns?: number;
+    /** Called to adjust grid columns by +1 or -1 */
+    onAdjustColumns?: (delta: number) => void;
     /** 0 = hero/expanded, 1 = compact. Group drill-down mode only. */
     groupHeroProgress?: number;
     /** Called when "Ebenen öffnen" button is clicked in expanded group hero mode */
@@ -119,6 +123,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onCloseGroup,
     heroProgress,
     onHeroUploadClick,
+    gridColumns,
+    onAdjustColumns,
     groupHeroProgress,
     onOpenLayerComposer,
     canOpenLayerComposer = false,
@@ -225,6 +231,32 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const isGallery = !isDetail && !isCreate && (currentPath === '/' || currentPath === '');
     const isSpecialPage = ['/about', '/legal', '/impressum', '/contact', '/privacy', '/datenschutz', '/blog'].includes(currentPath);
     const isBlogPost = /^\/blog\/.+/.test(currentPath);
+
+    // Grid column adjuster inline item — shared across all grid menus
+    const columnAdjusterItem = onAdjustColumns && gridColumns ? [{
+        label: '',
+        onClick: () => {},
+        render: (
+            <div className="flex items-center justify-between px-4 py-2.5">
+                <span className="text-xs font-normal text-zinc-700 dark:text-zinc-300 font-medium">
+                    {lang === 'de' ? 'Raster' : 'Grid'}
+                </span>
+                <div className="flex items-center gap-1.5">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onAdjustColumns(-1); }}
+                        disabled={(gridColumns ?? 2) <= 1}
+                        className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-sm font-medium disabled:opacity-30 disabled:pointer-events-none"
+                    >−</button>
+                    <span className="w-4 text-center text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">{gridColumns}</span>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onAdjustColumns(1); }}
+                        disabled={(gridColumns ?? 2) >= 8}
+                        className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-sm font-medium disabled:opacity-30 disabled:pointer-events-none"
+                    >+</button>
+                </div>
+            </div>
+        ),
+    }] : [];
 
     const balanceDisplay = user && displayCredits !== null && (
         <Tooltip text={t('balance')}>
@@ -400,6 +432,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         else window.location.href = '/';
                                     } 
                                 },
+                                ...columnAdjusterItem,
                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                 ...voiceMenuItem,
                                 { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
@@ -573,6 +606,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                                         else window.location.href = '/';
                                                     } 
                                                 },
+                                                ...columnAdjusterItem,
                                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                                 ...voiceMenuItem,
                                                 { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
@@ -841,6 +875,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                                             else window.location.href = '/';
                                                         }
                                                     },
+                                                    ...columnAdjusterItem,
                                                     { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                                     ...voiceMenuItem,
                                                     { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },

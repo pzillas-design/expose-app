@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, Feather, Download } from 'lucide-react';
+import { ChevronLeft, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, Download } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { Theme, Tooltip, Button, RoundIconButton } from '@/components/ui/DesignSystem';
 import { useLayerCompositing } from './useLayerCompositing';
@@ -152,7 +152,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
             <div className="flex-1 flex min-h-0 overflow-hidden">
 
             {/* Canvas area */}
-            <div className="relative flex-1 min-w-0 min-h-0 flex items-center justify-center p-4 md:p-8">
+            <div className="relative flex-1 min-w-0 min-h-0 flex items-center justify-center">
                 {!comp.ready && (
                     <div className="absolute inset-0 flex items-center justify-center">
                         <Loader2 className="w-7 h-7 animate-spin text-zinc-300" />
@@ -167,7 +167,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                     onPointerMove={onPointerMove}
                     onPointerUp={onPointerUp}
                     onPointerLeave={onPointerUp}
-                    className="block max-w-full max-h-full rounded-lg shadow-sm touch-none bg-white dark:bg-zinc-900"
+                    className="block max-w-full max-h-full touch-none bg-white dark:bg-zinc-900"
                     style={{ cursor: comp.activeId ? 'none' : 'default' }}
                 />
                 <BrushCursor canvasRef={canvasRef} size={displayBrush} innerRatio={innerRatio} enabled={!!comp.activeId} hidden={isAdjusting} />
@@ -208,7 +208,12 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
 
                         {/* Edge softness (per stroke) */}
                         <div className="flex items-center gap-2 px-2">
-                            <Tooltip text={isDe ? 'Kantenweichheit' : 'Edge softness'} side="top"><Feather className="w-4 h-4 text-zinc-400 shrink-0" /></Tooltip>
+                            <Tooltip text={isDe ? 'Kantenweichheit' : 'Edge softness'} side="top">
+                                {/* Blurry dot icon representing edge softness */}
+                                <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                                    <div className="w-3 h-3 rounded-full bg-zinc-400 blur-[2.5px]" />
+                                </div>
+                            </Tooltip>
                             <input type="range" min={0} max={100}
                                 value={comp.softness} onChange={(e) => comp.setSoftness(Number(e.target.value))}
                                 onMouseDown={() => setIsAdjusting(true)} onMouseUp={() => setIsAdjusting(false)}

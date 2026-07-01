@@ -7,6 +7,7 @@ export interface DropdownItem {
     onClick: () => void;
     danger?: boolean;
     separator?: boolean; // renders a separator above this item
+    render?: React.ReactNode; // custom content, bypasses default button layout
 }
 
 interface DropdownMenuProps {
@@ -36,17 +37,20 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({ items, className = '
     `}>
         {items.map((item, i) => (
             <React.Fragment key={i}>
-                <button
-                    onClick={item.onClick}
-                    className={item.danger ? dangerClass : itemClass}
-                >
-                    <span className={item.danger ? dangerTextClass : textClass}>{item.label}</span>
-                    {item.icon && (
-                        <span className={item.danger ? dangerIconClass : iconClass}>
-                            {item.icon}
-                        </span>
-                    )}
-                </button>
+                {item.separator && <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />}
+                {item.render ? item.render : (
+                    <button
+                        onClick={item.onClick}
+                        className={item.danger ? dangerClass : itemClass}
+                    >
+                        <span className={item.danger ? dangerTextClass : textClass}>{item.label}</span>
+                        {item.icon && (
+                            <span className={item.danger ? dangerIconClass : iconClass}>
+                                {item.icon}
+                            </span>
+                        )}
+                    </button>
+                )}
             </React.Fragment>
         ))}
     </div>

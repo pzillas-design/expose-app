@@ -8,7 +8,6 @@ import { useKeyboardGridNavigation } from '@/hooks/useKeyboardGridNavigation';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
-import { GenerationProgressBar } from '@/components/canvas/ImageItem';
 import { FeedHeroSection } from '../layout/FeedHeroSection';
 import { LayerComposer } from '@/components/composer/LayerComposer';
 
@@ -148,11 +147,9 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                     <BlobBackground />
                                 );
                             })()}
-                            <GenerationProgressBar
-                                startTime={img.generationStartTime}
-                                estimatedDuration={img.estimatedDuration}
-                                onImage={!!(parentSrc || img.thumbSrc || img.src)}
-                            />
+                            <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+                                <Loader2 className="w-7 h-7 animate-[spin_3s_linear_infinite] text-white/70" />
+                            </div>
                         </>
                     ) : previewSrc ? (
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -263,9 +260,10 @@ interface FeedPageProps {
     showComposer?: boolean;
     onOpenComposer?: () => void;
     onCloseComposer?: () => void;
+    columnsOverride?: number;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer, columnsOverride }) => {
     // URL-based fallback: expandedGroupId may still be null on first render after /stack/:id navigation
     const effectiveGroupId = expandedGroupId || (
         typeof window !== 'undefined' && window.location.pathname.startsWith('/stack/')
@@ -661,6 +659,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
                                     className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out ${effectiveGroupId ? 'pt-24 sm:pt-28' : 'pt-4 sm:pt-8'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                style={columnsOverride ? { gridTemplateColumns: `repeat(${columnsOverride}, minmax(0, 1fr))` } : undefined}
                                 >
                                     {displayImages.map((img, idx) => {
                                         const gc = (effectiveGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);

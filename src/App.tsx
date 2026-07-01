@@ -97,6 +97,10 @@ export function App() {
     const [voiceDownloadImage, setVoiceDownloadImage] = React.useState<{ id: string; name: string } | null>(null);
     const [feedHeroProgress, setFeedHeroProgress] = React.useState(0);
     const [composerOpen, setComposerOpen] = React.useState(false);
+    const [columnsOverride, setColumnsOverride] = React.useState<number | null>(() => {
+        const stored = localStorage.getItem('expose_grid_columns');
+        return stored ? Number(stored) : null;
+    });
     const [voiceAdminConfig, setVoiceAdminConfig] = React.useState(() => loadVoiceAdminConfig());
     const [voiceDiagnostics, setVoiceDiagnostics] = React.useState<VoiceDiagnostics>(() => {
         const empty = getEmptyVoiceDiagnostics();
@@ -1156,6 +1160,13 @@ export function App() {
                     groupHeroProgress={expandedGroupId ? feedHeroProgress : undefined}
                     onOpenLayerComposer={() => setComposerOpen(true)}
                     canOpenLayerComposer={!!expandedGroupId && (state.rows.find((r: any) => r.id === expandedGroupId)?.items?.length ?? 0) >= 2}
+                    gridColumns={columnsOverride ?? state.gridColumns ?? undefined}
+                    onAdjustColumns={(delta) => {
+                        const current = columnsOverride ?? state.gridColumns ?? 2;
+                        const next = Math.max(1, Math.min(8, current + delta));
+                        setColumnsOverride(next);
+                        localStorage.setItem('expose_grid_columns', String(next));
+                    }}
                     onHeroUploadClick={() => { (document.getElementById('feed-upload-input') as HTMLInputElement | null)?.click(); }}
                     voiceFeatureEnabled={voiceFeatureEnabled}
                     voiceModeActive={voice.isActive}
@@ -1268,6 +1279,7 @@ export function App() {
                                     showComposer={composerOpen}
                                     onOpenComposer={() => setComposerOpen(true)}
                                     onCloseComposer={() => setComposerOpen(false)}
+                                    columnsOverride={columnsOverride ?? undefined}
                                 />
                             ) : (
                                 <AboutPage
@@ -1325,6 +1337,7 @@ export function App() {
                                     showComposer={composerOpen}
                                     onOpenComposer={() => setComposerOpen(true)}
                                     onCloseComposer={() => setComposerOpen(false)}
+                                    columnsOverride={columnsOverride ?? undefined}
                                 />
                             </ProtectedRoute>
                         } />

@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useState, useRef } from 'react';
 import { CanvasImage, AnnotationObject, TranslationFunction } from '@/types';
-import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus, Square, SquareCheck } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Trash, RotateCcw, MoreVertical, Save, Plus, Square, SquareCheck, Loader2 } from 'lucide-react';
 import { EditorCanvas } from './EditorCanvas';
 import { Tooltip, Typo, Theme } from '@/components/ui/DesignSystem';
 import { downloadImage } from '@/utils/imageUtils';
@@ -422,12 +422,9 @@ export const ImageItem: React.FC<ImageItemProps> = memo(({
                         <div className="absolute inset-y-0 -left-full w-[300%] bg-gradient-to-r from-transparent via-white/8 dark:via-white/5 to-transparent animate-[shimmer-ghost_8s_ease-in-out_infinite]" />
                     </div>
                 )}
-                        <GenerationProgressBar
-                            startTime={image.generationStartTime}
-                            estimatedDuration={image.estimatedDuration}
-                            finishing={isFinishing}
-                            onImage={!!(image.thumbSrc || image.src)}
-                        />
+                        <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+                            <Loader2 className={`w-8 h-8 animate-[spin_3s_linear_infinite] ${(image.thumbSrc || image.src) ? 'text-white/70' : 'text-zinc-400/70 dark:text-zinc-500/70'}`} />
+                        </div>
                     </>
                 )}
             </div>

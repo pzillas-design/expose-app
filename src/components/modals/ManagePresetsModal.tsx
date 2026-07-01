@@ -152,24 +152,22 @@ const LanguageForm = ({
                                 ) : (
                                     <div
                                         onClick={() => startEditing(ctrl)}
-                                        className="flex items-center justify-between py-4 cursor-pointer group transition-all active:scale-[0.98] border-b border-zinc-100 dark:border-zinc-800"
+                                        className="flex flex-col py-3 cursor-pointer group transition-all active:scale-[0.98]"
                                     >
-                                        <div className="min-w-0 flex-1">
-                                            <div className="text-xs font-normal text-zinc-400 dark:text-zinc-500 mb-2 truncate">{ctrl.label}</div>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {ctrl.options.map(o => (
-                                                    <span key={o.id} className="text-[12px] px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200">
-                                                        {o.label}
-                                                    </span>
-                                                ))}
-                                            </div>
+                                        <div className="text-xs font-normal text-zinc-400 dark:text-zinc-500 mb-2 truncate">{ctrl.label}</div>
+                                        <div className="flex flex-wrap gap-1.5 items-center">
+                                            {ctrl.options.map(o => (
+                                                <span key={o.id} className="text-[12px] px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200">
+                                                    {o.label}
+                                                </span>
+                                            ))}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); startEditing(ctrl); }}
+                                                className="flex items-center justify-center w-6 h-6 text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors shrink-0"
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); startEditing(ctrl); }}
-                                            className="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-800 dark:hover:text-zinc-100 transition-all shrink-0 ml-2"
-                                        >
-                                            <Pencil className="w-4 h-4" />
-                                        </button>
                                     </div>
                                 )}
                             </React.Fragment>
