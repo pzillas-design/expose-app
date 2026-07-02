@@ -100,13 +100,22 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     const handleDownload = useCallback(() => {
         const out = comp.exportComposite();
         if (!out) return;
+        // Gleiche Namenskonvention wie beim Speichern (handleSaveComposite):
+        // baseName_vN mit der nächsten freien Version im Stapel.
+        const parseVer = (t?: string) => {
+            const m = (t || '').match(/_v(\d+)$/);
+            return m ? parseInt(m[1], 10) : 1;
+        };
+        const base = stack.find(i => i.id === comp.baseId) || stack[0];
+        const rawBase = (base?.baseName || base?.title || title || 'composite').replace(/_v\d+$/, '');
+        const nextVer = stack.reduce((max, i) => Math.max(max, parseVer(i.title)), 0) + 1;
         const a = document.createElement('a');
         a.href = out.dataUrl;
-        a.download = `${(title || 'composite').replace(/[^a-z0-9_-]+/gi, '_')}.jpg`;
+        a.download = `${`${rawBase}_v${nextVer}`.replace(/[^a-z0-9_-]+/gi, '_')}.jpg`;
         document.body.appendChild(a);
         a.click();
         a.remove();
-    }, [comp, title]);
+    }, [comp, stack, title]);
 
     const displayBrush = useMemo(() => {
         const canvas = canvasRef.current;
