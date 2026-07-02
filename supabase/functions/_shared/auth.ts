@@ -1,8 +1,8 @@
 /**
  * JWT signature verification for edge functions.
- * Handles both HS256 (HMAC-SHA256) and ES256 (ECDSA) tokens.
- * Supabase started issuing ES256 tokens; for those we fall back to unverified
- * decode since getUserById with the service role key provides the real auth check.
+ * Handles both HS256 (HMAC-SHA256, legacy secret) and ES256 (ECDSA, verified
+ * against the project's public JWKS) tokens. Fails closed: a token whose
+ * signature cannot be verified is rejected — there is no unverified fallback.
  * Intentionally skips expiration check (verify_jwt=false handles expired tokens).
  */
 
@@ -15,28 +15,43 @@ function base64UrlDecode(str: string): Uint8Array {
     return Uint8Array.from(binary, c => c.charCodeAt(0));
 }
 
-export async function verifyJwtSignature(token: string): Promise<{ sub: string; email?: string; role?: string }> {
-    const parts = token.split('.');
-    if (parts.length !== 3) throw new Error('Malformed JWT');
+// JWKS is cached per isolate — Supabase rotates keys rarely; on a kid miss we refetch once.
+let jwksCache: { keys: any[] } | null = null;
 
-    const [headerB64, payloadB64, signatureB64] = parts;
+async function fetchJwks(force = false): Promise<{ keys: any[] }> {
+    if (jwksCache && !force) return jwksCache;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    if (!supabaseUrl) throw new Error('SUPABASE_URL not configured');
+    const res = await fetch(`${supabaseUrl}/auth/v1/.well-known/jwks.json`);
+    if (!res.ok) throw new Error(`JWKS fetch failed: ${res.status}`);
+    jwksCache = await res.json();
+    return jwksCache!;
+}
 
-    // Check the JWT algorithm — Supabase now issues ES256 (ECDSA) tokens in addition to HS256.
-    // We can only verify HS256 with the SUPABASE_JWT_SECRET; for ES256 we rely on getUserById.
-    const header = JSON.parse(new TextDecoder().decode(base64UrlDecode(headerB64)));
-    const alg = header.alg ?? 'HS256';
-
-    const secret = Deno.env.get('JWT_SECRET') || Deno.env.get('SUPABASE_JWT_SECRET');
-    if (!secret || alg !== 'HS256') {
-        // No secret available, or non-HMAC algorithm (e.g. ES256):
-        // fall back to unverified decode. getUserById with service role key
-        // provides the real authentication guarantee.
-        const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(payloadB64)));
-        if (!payload.sub) throw new Error('JWT missing sub claim');
-        return { sub: payload.sub, email: payload.email, role: payload.role };
+async function verifyEs256(headerB64: string, payloadB64: string, signatureB64: string, kid?: string): Promise<void> {
+    let jwks = await fetchJwks();
+    let jwk = jwks.keys.find((k: any) => (kid ? k.kid === kid : k.alg === 'ES256' || k.kty === 'EC'));
+    if (!jwk && kid) {
+        // Key rotation: refetch once before giving up.
+        jwks = await fetchJwks(true);
+        jwk = jwks.keys.find((k: any) => k.kid === kid);
     }
+    if (!jwk) throw new Error('No matching JWKS key for token');
 
-    // HS256: Import HMAC key and verify signature
+    const key = await crypto.subtle.importKey(
+        'jwk',
+        jwk,
+        { name: 'ECDSA', namedCurve: 'P-256' },
+        false,
+        ['verify']
+    );
+    const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
+    // JWT ES256 signatures are raw r||s (64 bytes) — exactly what WebCrypto expects.
+    const valid = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, base64UrlDecode(signatureB64), data);
+    if (!valid) throw new Error('Invalid JWT signature');
+}
+
+async function verifyHs256(headerB64: string, payloadB64: string, signatureB64: string, secret: string): Promise<void> {
     const key = await crypto.subtle.importKey(
         'raw',
         new TextEncoder().encode(secret),
@@ -44,16 +59,31 @@ export async function verifyJwtSignature(token: string): Promise<{ sub: string; 
         false,
         ['verify']
     );
-
     const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
-    const signature = base64UrlDecode(signatureB64);
-
-    const valid = await crypto.subtle.verify('HMAC', key, signature, data);
+    const valid = await crypto.subtle.verify('HMAC', key, base64UrlDecode(signatureB64), data);
     if (!valid) throw new Error('Invalid JWT signature');
+}
+
+export async function verifyJwtSignature(token: string): Promise<{ sub: string; email?: string; role?: string }> {
+    const parts = token.split('.');
+    if (parts.length !== 3) throw new Error('Malformed JWT');
+
+    const [headerB64, payloadB64, signatureB64] = parts;
+    const header = JSON.parse(new TextDecoder().decode(base64UrlDecode(headerB64)));
+    const alg = header.alg ?? 'HS256';
+
+    if (alg === 'ES256') {
+        await verifyEs256(headerB64, payloadB64, signatureB64, header.kid);
+    } else if (alg === 'HS256') {
+        const secret = Deno.env.get('JWT_SECRET') || Deno.env.get('SUPABASE_JWT_SECRET');
+        if (!secret) throw new Error('No JWT secret configured for HS256 verification');
+        await verifyHs256(headerB64, payloadB64, signatureB64, secret);
+    } else {
+        throw new Error(`Unsupported JWT algorithm: ${alg}`);
+    }
 
     // Parse payload — intentionally NOT checking exp
     const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(payloadB64)));
-
     if (!payload.sub) throw new Error('JWT missing sub claim');
 
     return { sub: payload.sub, email: payload.email, role: payload.role };
