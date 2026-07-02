@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff, Layers } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -927,19 +927,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     </span>
                 </div>
 
-                {/* RIGHT: "Ebenen öffnen" text button (expanded) + balance + menu */}
+                {/* RIGHT: balance + menu — the layer composer is now entered via the
+                    "Ebenen kombinieren" tile in the grid, so no navbar button here. */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-end relative z-10 pointer-events-auto">
-                    {canOpenLayerComposer && !isScrolled && (
-                        <button
-                            onClick={onOpenLayerComposer}
-                            className={`relative flex items-center justify-center rounded-full transition-all duration-300 group h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2`}
-                        >
-                            <Layers className="shrink-0 w-4 h-4 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
-                            <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
-                                {lang === 'de' ? 'Ebenen öffnen' : 'Open layers'}
-                            </span>
-                        </button>
-                    )}
                     {rightContent}
                 </div>
             </header>

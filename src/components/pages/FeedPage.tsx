@@ -712,18 +712,29 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         );
                                     })}
 
-                                    {/* Layer Composer entry — only inside an expanded stack with 2+ variants */}
+                                    {/* Layer Composer entry — only inside an expanded stack with 2+ variants.
+                                        Matches the parent image's aspect ratio (letterboxed in the square cell)
+                                        so it lines up uniformly with the other tiles. */}
                                     {effectiveGroupId && !isSelectMode && displayImages.length >= 2 && (
                                         <Tooltip text={state?.currentLang === 'de' ? 'Als Ebenen öffnen' : 'Open as layers'} side="top">
-                                            <button
-                                                onClick={openComposer}
-                                                className="relative aspect-square rounded-lg bg-zinc-100 dark:bg-zinc-900/50 flex flex-col items-center justify-center gap-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60 transition-colors"
-                                            >
-                                                <Layers className="w-7 h-7" strokeWidth={1.5} />
-                                                <span className="text-xs font-medium px-2 text-center leading-tight">
-                                                    {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
-                                                </span>
-                                            </button>
+                                            <div className="relative isolate aspect-square flex items-center justify-center">
+                                                <button
+                                                    onClick={openComposer}
+                                                    style={{
+                                                        aspectRatio: `${displayImages[0].width} / ${displayImages[0].height}`,
+                                                        width: displayImages[0].width > displayImages[0].height ? '100%' : 'auto',
+                                                        height: displayImages[0].width > displayImages[0].height ? 'auto' : '100%',
+                                                        maxHeight: '100%',
+                                                        maxWidth: '100%',
+                                                    }}
+                                                    className="relative bg-zinc-100 dark:bg-zinc-900/50 flex flex-col items-center justify-center gap-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60 transition-colors"
+                                                >
+                                                    <Layers className="w-7 h-7" strokeWidth={1.5} />
+                                                    <span className="text-xs font-medium px-2 text-center leading-tight">
+                                                        {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
+                                                    </span>
+                                                </button>
+                                            </div>
                                         </Tooltip>
                                     )}
                                 </div>
