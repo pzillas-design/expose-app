@@ -320,6 +320,23 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         el.addEventListener('scroll', fn, { passive: true });
         return () => { el.removeEventListener('scroll', fn); cancelAnimationFrame(scrollRafRef.current); };
     }, [onScrollProgress, hasImages]);
+
+    // Pagination fallback for the IntersectionObserver: with the min-h-[100dvh]
+    // spacer (or in throttled/background tabs) the observer can miss the sentinel,
+    // leaving "scroll for more" stuck with nothing loading. A direct near-bottom
+    // check guarantees the next page loads. handleLoadMore is itself guarded
+    // against duplicate/concurrent loads.
+    React.useEffect(() => {
+        const el = scrollRef.current;
+        if (!el || effectiveGroupId) return; // only the main feed paginates
+        const onScroll = () => {
+            if (!hasMore || isFetchingMore || isLoading) return;
+            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 600) onLoadMore?.();
+        };
+        el.addEventListener('scroll', onScroll, { passive: true });
+        return () => el.removeEventListener('scroll', onScroll);
+    }, [effectiveGroupId, hasMore, isFetchingMore, isLoading, onLoadMore, hasImages]);
+
     const prevSelectModeRef = React.useRef(false);
     const prevSelectedCountRef = React.useRef(0);
     const lastSelectImageRef = React.useRef<string | null>(null);
@@ -665,7 +682,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out ${effectiveGroupId ? 'pt-24 sm:pt-28' : 'pt-4 sm:pt-8'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 style={columnsOverride ? { gridTemplateColumns: `repeat(${columnsOverride}, minmax(0, 1fr))` } : undefined}
                                 >
                                     {displayImages.map((img, idx) => {
