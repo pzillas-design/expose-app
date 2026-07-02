@@ -5,7 +5,6 @@ import {
     Line, ComposedChart,
 } from 'recharts';
 import { TranslationFunction } from '@/types';
-import { adminService } from '@/services/adminService';
 import { supabase } from '@/services/supabaseClient';
 import { AdminViewHeader } from './AdminViewHeader';
 
@@ -20,22 +19,10 @@ type SeriesKey =
     | 'voiceSessions' | 'failedJobs'
     | 'revenue' | 'aiCost' | 'profit';
 
+// Preis-/Kostenformeln leben jetzt serverseitig in den admin_stats_* RPCs
+// (Migration 20260702130000_admin_stats_aggregation.sql).
 const USD_TO_EUR = 0.92;
-const GOOGLE_INPUT_TEXT_IMAGE_USD_PER_M = 0.5;
-const GOOGLE_OUTPUT_IMAGE_USD_PER_M = 60;
 const EXCLUDED_EMAILS = ['pzillas@gmail.com'];
-
-const RESOLUTION_INFO: Record<ResolutionBucket, { label: string; color: string; fallbackUsd: number }> = {
-    '0.5K': { label: '0.5K', color: '#a3a3a3', fallbackUsd: 0.04 },
-    '1K':   { label: '1K',   color: '#eab308', fallbackUsd: 0.067 },
-    '2K':   { label: '2K',   color: '#f97316', fallbackUsd: 0.101 },
-    '4K':   { label: '4K',   color: '#ef4444', fallbackUsd: 0.151 },
-    'Other':{ label: 'Other',color: '#71717a', fallbackUsd: 0 },
-};
-const RESOLUTION_ORDER: ResolutionBucket[] = ['0.5K', '1K', '2K', '4K', 'Other'];
-const RES_TO_SERIES: Partial<Record<ResolutionBucket, SeriesKey>> = {
-    '0.5K': 'res05K', '1K': 'res1K', '2K': 'res2K', '4K': 'res4K',
-};
 
 type SeriesConfig = { key: SeriesKey; label: string; color: string; axis: 'left' | 'right'; note?: string };
 const SERIES_CONFIG: SeriesConfig[] = [
@@ -123,46 +110,17 @@ function seedBuckets(range: TimeRange, now: Date): Record<string, any> {
     return b;
 }
 
-function getBucketStartTs(key: string, range: TimeRange): number {
-    const g = getBucketGrouping(range);
-    if (g === 'day')   return new Date(key).getTime();
-    if (g === 'week')  { const [yr, wk] = key.split('-W').map(Number); const jan1 = new Date(Date.UTC(yr,0,1)); return jan1.getTime() + (wk-1)*7*86400000; }
-    return new Date(key+'-01').getTime();
-}
-function getBucketEndTs(key: string, range: TimeRange): number {
-    const g = getBucketGrouping(range);
-    if (g === 'day')   return getBucketStartTs(key,range) + 86400000;
-    if (g === 'week')  return getBucketStartTs(key,range) + 7*86400000;
-    const [y,m] = key.split('-').map(Number);
-    return new Date(y, m, 1).getTime();
-}
-
-const getResolutionBucket = (job: any): ResolutionBucket => {
-    const v = String(job.imageSize || job.qualityMode || job.model || '').toLowerCase();
-    if (v.includes('4k'))  return '4K';
-    if (v.includes('2k'))  return '2K';
-    if (v.includes('1k'))  return '1K';
-    if (v.includes('0.5') || v.includes('05k') || v.includes('sd') || v.includes('512')) return '0.5K';
-    return 'Other';
-};
-const calculateEstimatedGoogleCostEur = (job: any): number => {
-    const inputTokens = Number(job.tokensPrompt || 0);
-    const outputTokens = Number(job.tokensCompletion || 0);
-    const res = getResolutionBucket(job);
-    const inputUsd = (inputTokens / 1_000_000) * GOOGLE_INPUT_TEXT_IMAGE_USD_PER_M;
-    const outputUsd = outputTokens > 0 ? (outputTokens / 1_000_000) * GOOGLE_OUTPUT_IMAGE_USD_PER_M : RESOLUTION_INFO[res].fallbackUsd;
-    return (inputUsd + outputUsd) * USD_TO_EUR;
-};
-
 // ── Component ─────────────────────────────────────────────────────────────────
 export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
-    const [jobs,          setJobs]          = useState<any[]>([]);
-    const [profiles,      setProfiles]      = useState<any[]>([]);
-    const [rawVoice,      setRawVoice]      = useState<any[]>([]);
+    // Alle Kennzahlen kommen serverseitig aggregiert aus Postgres-RPCs
+    // (admin_stats_totals / admin_stats_buckets / admin_stats_baseline) —
+    // es werden keine Rohzeilen mehr geladen, daher kein 1000-Job-Limit mehr.
+    const [totals,        setTotals]        = useState<any | null>(null);
+    const [bucketRows,    setBucketRows]    = useState<any[]>([]);
+    const [baseline,      setBaseline]      = useState<{ profilesBefore: number; activatedBefore: number }>({ profilesBefore: 0, activatedBefore: 0 });
     const [stripeRevenue, setStripeRevenue] = useState<number | null>(null);
     const [stripePayCnt,  setStripePayCnt]  = useState(0);
     const [stripeMonthly, setStripeMonthly] = useState<Record<string, number>>({});
-    const [voiceTotals,   setVoiceTotals]   = useState<{ sessionCount: number; totalMinutes: number; costEur: number }>({ sessionCount: 0, totalMinutes: 0, costEur: 0 });
     const [loading,       setLoading]       = useState(true);
     const [refreshing,    setRefreshing]    = useState(false);
     const [lastFetchedAt, setLastFetchedAt] = useState<Date | null>(null);
@@ -181,21 +139,43 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
     });
     const toggle = (k: keyof typeof visible) => setVisible(p => ({ ...p, [k]: !p[k] }));
 
+    // Startzeitpunkt des ersten gezeichneten Buckets — muss zu seedBuckets() passen.
+    const rangeStart = (range: TimeRange): Date => {
+        const d = new Date();
+        if (range === '7d')  { d.setDate(d.getDate() - 6);  d.setHours(0,0,0,0); return d; }
+        if (range === '14d') { d.setDate(d.getDate() - 13); d.setHours(0,0,0,0); return d; }
+        if (range === '30d') { d.setDate(d.getDate() - 29); d.setHours(0,0,0,0); return d; }
+        if (range === '60d') { d.setDate(d.getDate() - 8 * 7); d.setHours(0,0,0,0); return d; }
+        return new Date(d.getFullYear(), d.getMonth() - 17, 1);
+    };
+
+    const fetchRange = useCallback(async (range: TimeRange) => {
+        try {
+            const start = rangeStart(range).toISOString();
+            const bucket = getBucketGrouping(range);
+            const [bucketsRes, baselineRes] = await Promise.all([
+                supabase.rpc('admin_stats_buckets', { p_start: start, p_bucket: bucket, p_excluded_emails: EXCLUDED_EMAILS }),
+                supabase.rpc('admin_stats_baseline', { p_start: start, p_excluded_emails: EXCLUDED_EMAILS }),
+            ]);
+            if (bucketsRes.error) throw bucketsRes.error;
+            if (baselineRes.error) throw baselineRes.error;
+            setBucketRows(bucketsRes.data || []);
+            setBaseline({
+                profilesBefore: Number(baselineRes.data?.profilesBefore ?? 0),
+                activatedBefore: Number(baselineRes.data?.activatedBefore ?? 0),
+            });
+        } catch (e) { console.error('AdminStatsView range fetch error:', e); }
+    }, []);
+
     const fetchAll = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true); else setLoading(true);
         try {
-            const [jobsData, voiceSessions, profilesResult, { data: { session } }] = await Promise.all([
-                adminService.getJobs(1, 1000),
-                adminService.getVoiceSessions(200),
-                supabase.from('profiles').select('id, created_at, email'),
+            const [totalsRes, { data: { session } }] = await Promise.all([
+                supabase.rpc('admin_stats_totals', { p_excluded_emails: EXCLUDED_EMAILS }),
                 supabase.auth.getSession()
             ]);
-            const fj = jobsData.filter((j: any) => !EXCLUDED_EMAILS.includes(j.userEmail));
-            const fv = voiceSessions.filter((s: any) => !EXCLUDED_EMAILS.includes(s.userEmail));
-            const fp = (profilesResult.data || []).filter((p: any) => !EXCLUDED_EMAILS.includes(p.email));
-            setJobs(fj); setProfiles(fp); setRawVoice(fv);
-            const mins = fv.reduce((s: number, v: any) => s + (v.durationMs || 0) / 60000, 0);
-            setVoiceTotals({ sessionCount: fv.length, totalMinutes: mins, costEur: mins * 0.043 * USD_TO_EUR });
+            if (totalsRes.error) throw totalsRes.error;
+            setTotals(totalsRes.data);
             if (session?.access_token) {
                 const start = new Date(); start.setDate(start.getDate() - 90);
                 const res = await supabase.functions.invoke('admin-stats', {
@@ -217,94 +197,76 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
         fetchAll(false);
     }, [fetchAll]);
 
-    // ── Derived ───────────────────────────────────────────────────────────────
-    const completedJobs       = jobs.filter(j => j.status === 'completed');
-    const failedJobs          = jobs.filter(j => j.status === 'failed');
-    const googleAiCost        = completedJobs.reduce((a, j) => a + calculateEstimatedGoogleCostEur(j), 0);
-    const totalAiCost         = googleAiCost + voiceTotals.costEur;
+    useEffect(() => {
+        fetchRange(timeRange);
+    }, [fetchRange, timeRange]);
+
+    // ── Derived (aus admin_stats_totals) ─────────────────────────────────────
+    const completedJobsCount  = Number(totals?.completedJobs ?? 0);
+    const voiceMinutes        = Number(totals?.voiceTotalMinutes ?? 0);
+    const voiceCostEur        = voiceMinutes * 0.043 * USD_TO_EUR;
+    const googleAiCost        = Number(totals?.aiCostEur ?? 0);
+    const totalAiCost         = googleAiCost + voiceCostEur;
     const profit              = stripeRevenue != null ? stripeRevenue - totalAiCost : null;
     const margin              = stripeRevenue != null && stripeRevenue > 0 && profit != null ? (profit / stripeRevenue) * 100 : null;
-    const now                 = new Date();
-    const startOfToday        = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const newSignupsToday     = profiles.filter(p => new Date(p.created_at).getTime() >= startOfToday).length;
-    const newSignups7d        = profiles.filter(p => new Date(p.created_at).getTime() >= startOfToday - 6*86400000).length;
-    const uniqueUsersWithJobs = new Set(completedJobs.map(j => j.userEmail || j.userName)).size;
-    const activationRate      = profiles.length > 0 ? (uniqueUsersWithJobs / profiles.length) * 100 : 0;
-    const errorRate           = jobs.length > 0 ? (failedJobs.length / jobs.length) * 100 : 0;
-    const uniqueUsersTotal    = new Set(jobs.map(j => j.userEmail || j.userName)).size;
-    const avgGen              = uniqueUsersTotal > 0 ? completedJobs.length / uniqueUsersTotal : 0;
-    const maxUserCount        = Math.max(...jobs.reduce((acc, j) => {
-        const u = j.userEmail || j.userName || 'Unknown';
-        acc.set(u, (acc.get(u) || 0) + 1);
-        return acc;
-    }, new Map<string, number>()).values(), 0);
+    const totalProfiles       = Number(totals?.totalProfiles ?? 0);
+    const newSignupsToday     = Number(totals?.signupsToday ?? 0);
+    const newSignups7d        = Number(totals?.signups7d ?? 0);
+    const uniqueUsersTotal    = Number(totals?.uniqueUsersTotal ?? 0);
+    const avgGen              = uniqueUsersTotal > 0 ? completedJobsCount / uniqueUsersTotal : 0;
+    const topUsers            = ((totals?.topUsers ?? []) as { name: string; count: number }[]);
+    const maxUserCount        = topUsers.reduce((m, u) => Math.max(m, Number(u.count)), 0);
+    const providerStats       = ((totals?.providerStats ?? []) as any[]);
 
-    const topUsers = Array.from(jobs.reduce((acc, j) => {
-        const u = j.userEmail || j.userName || 'Unknown';
-        acc.set(u, (acc.get(u) || 0) + 1);
-        return acc;
-    }, new Map<string, number>())).map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count);
-
-    // ── Chart data ────────────────────────────────────────────────────────────
+    // ── Chart data (aus admin_stats_buckets + Baseline) ──────────────────────
     const chartData = useMemo(() => {
-        const buckets = seedBuckets(timeRange, now);
+        const buckets = seedBuckets(timeRange, new Date());
         const keys = Object.keys(buckets);
+        const rowsByKey = new Map<string, any>(bucketRows.map((r: any) => [r.bucket_key, r]));
 
-        const firstJobTs = new Map<string, number>();
-        completedJobs.forEach(job => {
-            const uid = job.userEmail || job.userName;
-            const ts  = new Date(job.createdAt).getTime();
-            if (!firstJobTs.has(uid) || firstJobTs.get(uid)! > ts) firstJobTs.set(uid, ts);
+        let cumUsers = baseline.profilesBefore;
+        let cumActivated = baseline.activatedBefore;
+        // RPC-Zeilen vor dem ersten gezeichneten Bucket (z.B. angebrochene erste
+        // ISO-Woche) fließen in die kumulativen Startwerte ein statt zu verfallen.
+        const firstKey = keys[0];
+        bucketRows.forEach((r: any) => {
+            if (firstKey && r.bucket_key < firstKey) {
+                cumUsers += Number(r.new_profiles || 0);
+                cumActivated += Number(r.first_time_users || 0);
+            }
         });
 
-        completedJobs.forEach(job => {
-            const key = makeBucketKey(new Date(job.createdAt), timeRange);
-            if (!buckets[key]) return;
-            const res = getResolutionBucket(job);
-            buckets[key][res]        = (buckets[key][res]||0) + 1;
-            buckets[key]._totalJobs  = (buckets[key]._totalJobs||0) + 1;
-            buckets[key]._aiCost     = (buckets[key]._aiCost||0) + calculateEstimatedGoogleCostEur(job);
+        keys.forEach(key => {
+            const b = buckets[key];
+            const r = rowsByKey.get(key);
+            b._totalJobs     = Number(r?.completed_jobs || 0);
+            b._failedJobs    = Number(r?.failed_jobs || 0);
+            b._voiceSessions = Number(r?.voice_sessions || 0);
+            b._newInPeriod   = Number(r?.new_profiles || 0);
+            b._aiCost        = Number(r?.ai_cost_eur || 0);
+            b['0.5K']        = Number(r?.res_05k || 0);
+            b['1K']          = Number(r?.res_1k || 0);
+            b['2K']          = Number(r?.res_2k || 0);
+            b['4K']          = Number(r?.res_4k || 0);
+            b['Other']       = Number(r?.res_other || 0);
+            cumUsers     += b._newInPeriod;
+            cumActivated += Number(r?.first_time_users || 0);
+            b._totalUsers     = cumUsers;
+            b._activationRate = cumUsers > 0 ? Math.round((cumActivated / cumUsers) * 100) : 0;
         });
-        failedJobs.forEach(job => {
-            const key = makeBucketKey(new Date(job.createdAt), timeRange);
-            if (buckets[key]) buckets[key]._failedJobs = (buckets[key]._failedJobs||0) + 1;
-        });
-        profiles.forEach(p => {
-            const key = makeBucketKey(new Date(p.created_at), timeRange);
-            if (buckets[key]) buckets[key]._newInPeriod = (buckets[key]._newInPeriod||0) + 1;
-        });
-        rawVoice.forEach(s => {
-            const ts = s.startedAt || s.createdAt || s.started_at;
-            if (!ts) return;
-            const key = makeBucketKey(new Date(ts), timeRange);
-            if (buckets[key]) buckets[key]._voiceSessions = (buckets[key]._voiceSessions||0) + 1;
-        });
+
         if (timeRange === 'all') {
             Object.entries(stripeMonthly).forEach(([monthKey, rev]) => {
                 if (buckets[monthKey]) buckets[monthKey]._revenue = (buckets[monthKey]._revenue||0) + rev;
             });
+            keys.forEach(key => {
+                const b = buckets[key];
+                if (b._revenue != null && b._aiCost != null) b._profit = b._revenue - b._aiCost;
+            });
         }
 
-        const firstBucketStart = keys.length > 0 ? getBucketStartTs(keys[0], timeRange) : 0;
-        let cumUsers = 0, cumActivated = 0;
-        profiles.forEach(p => { if (new Date(p.created_at).getTime() < firstBucketStart) cumUsers++; });
-        firstJobTs.forEach(ts => { if (ts < firstBucketStart) cumActivated++; });
-
-        keys.forEach(key => {
-            cumUsers += buckets[key]._newInPeriod || 0;
-            const bStart = getBucketStartTs(key, timeRange);
-            const bEnd   = getBucketEndTs(key, timeRange);
-            firstJobTs.forEach(ts => { if (ts >= bStart && ts < bEnd) cumActivated++; });
-            buckets[key]._totalUsers     = cumUsers;
-            buckets[key]._activationRate = cumUsers > 0 ? Math.round((cumActivated / cumUsers) * 100) : 0;
-            // _failedJobs is already set as raw count by the failedJobs loop above — keep it as-is
-            if (buckets[key]._revenue != null && buckets[key]._aiCost != null)
-                buckets[key]._profit = buckets[key]._revenue - buckets[key]._aiCost;
-        });
-
         return Object.values(buckets);
-    }, [completedJobs, failedJobs, profiles, rawVoice, stripeMonthly, timeRange]);
+    }, [bucketRows, baseline, stripeMonthly, timeRange]);
 
     if (loading) return (
         <div className="h-full flex items-center justify-center">
@@ -319,7 +281,7 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                 description={lastFetchedAt ? `Aktualisiert ${lastFetchedAt.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : undefined}
                 actions={
                     <button
-                        onClick={() => fetchAll(true)}
+                        onClick={() => { fetchAll(true); fetchRange(timeRange); }}
                         disabled={refreshing}
                         className="p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 transition-colors disabled:opacity-50"
                         title="Aktualisieren"
@@ -423,8 +385,8 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                     <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[2rem] p-6 shadow-sm flex flex-col justify-between">
                         <SectionLabel>Überblick</SectionLabel>
                         <div className="mt-6 space-y-4">
-                            <EfficiencyRow dot="#3b82f6" label="Nutzer gesamt"       value={String(profiles.length)}                                        sub={`Heute +${newSignupsToday} · 7 Tage +${newSignups7d}`} />
-                            <EfficiencyRow dot="#f97316" label="Generierungen"       value={String(completedJobs.length)}                                   sub={`${uniqueUsersTotal} aktive Nutzer · Ø ${avgGen.toFixed(1)}/User`} />
+                            <EfficiencyRow dot="#3b82f6" label="Nutzer gesamt"       value={String(totalProfiles)}                                          sub={`Heute +${newSignupsToday} · 7 Tage +${newSignups7d}`} />
+                            <EfficiencyRow dot="#f97316" label="Generierungen"       value={String(completedJobsCount)}                                     sub={`${uniqueUsersTotal} aktive Nutzer · Ø ${avgGen.toFixed(1)}/User`} />
                             <EfficiencyRow dot="#10b981" label="Einnahmen (90 Tage)" value={stripeRevenue != null ? `${stripeRevenue.toFixed(0)} €` : '—'}  sub={`${stripePayCnt} Zahlungen`} color="#10b981" />
                             <EfficiencyRow dot="#059669" label="Gewinn"              value={profit != null ? `${profit.toFixed(0)} €` : '—'}                sub={margin != null ? `Marge ${margin.toFixed(0)} %` : '—'} color="#059669" />
                         </div>
@@ -439,19 +401,16 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         <p className="text-[10px] text-zinc-400 mb-3">Anzahl Generierungen die mit Fehler abgebrochen sind (Timeout, API-Fehler etc.)</p>
                         {/* Provider performance sub-stats — per-provider Ø-time, success-rate, jobs. */}
                         {(() => {
-                            type ProviderRow = { key: string; label: string; matcher: (p: any) => boolean };
-                            const providerRows: ProviderRow[] = [
-                                { key: 'nb2',    label: 'NB2',    matcher: (p) => p === 'fal' || p === 'fal-nb2' },
-                                { key: 'gpt2',   label: 'GPT-2',  matcher: (p) => p === 'openai' },
+                            const providerRows = [
+                                { key: 'nb2',    label: 'NB2'   },
+                                { key: 'gpt2',   label: 'GPT-2' },
                             ];
                             const stats = providerRows.map(row => {
-                                const matching = jobs.filter((j: any) => row.matcher(j.provider));
-                                const completed = matching.filter((j: any) => j.status === 'completed');
-                                const failed    = matching.filter((j: any) => j.status === 'failed');
-                                const total     = completed.length + failed.length;
-                                const success   = total > 0 ? (completed.length / total) * 100 : null;
-                                const durations = completed.map((j: any) => Number(j.durationMs || 0)).filter(v => v > 0);
-                                const avgDur    = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
+                                const s = providerStats.find((p: any) => p.key === row.key);
+                                const total     = Number(s?.total || 0);
+                                const completed = Number(s?.completed || 0);
+                                const success   = total > 0 ? (completed / total) * 100 : null;
+                                const avgDur    = s?.avg_duration_ms != null ? Number(s.avg_duration_ms) : null;
                                 return { ...row, total, success, avgDur };
                             }).filter(s => s.total > 0);
                             if (stats.length === 0) return null;
@@ -505,16 +464,16 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         </div>
                         <p className="text-[10px] text-zinc-400 mb-4">Wie oft generierte Bilder tatsächlich heruntergeladen werden — Indikator für Output-Zufriedenheit.</p>
                         {(() => {
-                            type ProviderRow = { key: string; label: string; matcher: (p: any) => boolean };
-                            const providerRows: ProviderRow[] = [
-                                { key: 'nb2',  label: 'Nano Banana 2', matcher: (p) => p === 'fal' || p === 'fal-nb2' },
-                                { key: 'gpt2', label: 'GPT Image 2',   matcher: (p) => p === 'openai' },
+                            const providerRows = [
+                                { key: 'nb2',  label: 'Nano Banana 2' },
+                                { key: 'gpt2', label: 'GPT Image 2'   },
                             ];
                             const rows = providerRows.map(row => {
-                                const completed = jobs.filter((j: any) => j.status === 'completed' && row.matcher(j.provider));
-                                const downloads = completed.filter((j: any) => !!j.downloadedAt).length;
-                                const dlRate    = completed.length > 0 ? (downloads / completed.length) * 100 : null;
-                                return { ...row, completed: completed.length, downloads, dlRate };
+                                const s = providerStats.find((p: any) => p.key === row.key);
+                                const completed = Number(s?.completed || 0);
+                                const downloads = Number(s?.downloads || 0);
+                                const dlRate    = completed > 0 ? (downloads / completed) * 100 : null;
+                                return { ...row, completed, downloads, dlRate };
                             }).filter(r => r.completed > 0);
 
                             if (rows.length === 0) {
