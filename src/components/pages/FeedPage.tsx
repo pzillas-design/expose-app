@@ -61,13 +61,12 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
 
-    const isWide = img.width > img.height;
+    // Tile hugs the image's natural aspect ratio at full column width — no square
+    // letterboxing. Row height then follows the tallest image in that row.
     const boundedStyle = {
         aspectRatio: `${img.width} / ${img.height}`,
-        width: isWide ? '100%' : 'auto',
-        height: isWide ? 'auto' : '100%',
-        maxHeight: '100%',
-        maxWidth: '100%',
+        width: '100%',
+        height: 'auto',
     };
 
     return (
@@ -75,7 +74,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
             onPointerEnter={(e) => { if (e.pointerType !== 'touch') setActiveIndex(idx); }}
             onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
             data-image-id={img.id}
-            className={`relative isolate group aspect-square flex items-center justify-center cursor-pointer`}
+            className={`relative isolate group cursor-pointer`}
             style={isLastViewed
                 ? {
                     // Set the 'from' keyframe values as inline style so the very first paint
@@ -682,7 +681,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-start gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 style={columnsOverride ? { gridTemplateColumns: `repeat(${columnsOverride}, minmax(0, 1fr))` } : undefined}
                                 >
                                     {displayImages.map((img, idx) => {
@@ -734,24 +733,16 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         so it lines up uniformly with the other tiles. */}
                                     {effectiveGroupId && !isSelectMode && displayImages.length >= 2 && (
                                         <Tooltip text={state?.currentLang === 'de' ? 'Als Ebenen öffnen' : 'Open as layers'} side="top">
-                                            <div className="relative isolate aspect-square flex items-center justify-center">
-                                                <button
-                                                    onClick={openComposer}
-                                                    style={{
-                                                        aspectRatio: `${displayImages[0].width} / ${displayImages[0].height}`,
-                                                        width: displayImages[0].width > displayImages[0].height ? '100%' : 'auto',
-                                                        height: displayImages[0].width > displayImages[0].height ? 'auto' : '100%',
-                                                        maxHeight: '100%',
-                                                        maxWidth: '100%',
-                                                    }}
-                                                    className="relative bg-zinc-100 dark:bg-zinc-900/50 flex flex-col items-center justify-center gap-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60 transition-colors"
-                                                >
-                                                    <Layers className="w-7 h-7" strokeWidth={1.5} />
-                                                    <span className="text-xs font-medium px-2 text-center leading-tight">
-                                                        {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
-                                                    </span>
-                                                </button>
-                                            </div>
+                                            <button
+                                                onClick={openComposer}
+                                                style={{ aspectRatio: `${displayImages[0].width} / ${displayImages[0].height}`, width: '100%', height: 'auto' }}
+                                                className="relative bg-zinc-100 dark:bg-zinc-900/50 flex flex-col items-center justify-center gap-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60 transition-colors"
+                                            >
+                                                <Layers className="w-7 h-7" strokeWidth={1.5} />
+                                                <span className="text-xs font-medium px-2 text-center leading-tight">
+                                                    {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
+                                                </span>
+                                            </button>
                                         </Tooltip>
                                     )}
                                 </div>
