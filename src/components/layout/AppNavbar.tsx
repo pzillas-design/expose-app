@@ -432,10 +432,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         else window.location.href = '/';
                                     } 
                                 },
-                                ...columnAdjusterItem,
                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                 ...voiceMenuItem,
                                 { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                ...columnAdjusterItem,
                                 { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                             ]}
                         />
@@ -606,10 +606,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                                         else window.location.href = '/';
                                                     } 
                                                 },
-                                                ...columnAdjusterItem,
                                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                                 ...voiceMenuItem,
                                                 { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                                ...columnAdjusterItem,
                                                 { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                             ]}
                                 />
