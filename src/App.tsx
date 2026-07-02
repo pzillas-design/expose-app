@@ -1103,6 +1103,9 @@ export function App() {
                         }
                         return undefined;
                     })()}
+                    groupItemCount={expandedGroupId
+                        ? (state.rows.find((r: any) => r.id === expandedGroupId)?.items?.length ?? 0)
+                        : undefined}
                     detailActions={null}
                     detailHasPrompt={(() => {
                         if (location.pathname.startsWith('/image/')) {

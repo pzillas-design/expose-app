@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff, Layers } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -31,6 +31,7 @@ interface AppNavbarProps {
     mode?: 'grid' | 'detail' | 'create';
     detailInfo?: string;
     groupInfo?: string;
+    groupItemCount?: number;
     detailActions?: React.ReactNode;
     onBack?: () => void;
     hasImages?: boolean;
@@ -100,6 +101,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     mode = 'grid',
     detailInfo,
     groupInfo,
+    groupItemCount,
     detailActions,
     onBack,
     hasImages = true,
@@ -394,9 +396,17 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             </span>
         </div>
     ) : isGroupDrillDown && groupInfo ? (
-        <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[220px]">
-            {groupInfo}
-        </span>
+        <div className="flex items-center gap-1.5">
+            <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
+                {groupInfo}
+            </span>
+            {groupItemCount && groupItemCount > 1 ? (
+                <span className="flex items-center gap-0.5 text-[11px] font-medium text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                    <Layers className="w-3 h-3" strokeWidth={2} />
+                    {groupItemCount}
+                </span>
+            ) : null}
+        </div>
     ) : (
         <button
             type="button"
@@ -920,11 +930,18 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     {progressRing}
                 </div>
 
-                {/* CENTER: Group title — large when expanded, small when scrolled */}
-                <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none z-10 max-w-[55%]">
-                    <span className={`font-semibold tracking-tight text-zinc-900 dark:text-white text-center transition-all duration-300 truncate ${isScrolled ? 'text-[13px]' : 'text-[15px] md:text-[17px]'}`}>
+                {/* CENTER: Group title — same font as the detail view; a subtle
+                    variant count is the minimal "this is a stack" signal. */}
+                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-10 max-w-[60%]">
+                    <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                         {groupInfo}
                     </span>
+                    {groupItemCount && groupItemCount > 1 ? (
+                        <span className="flex items-center gap-0.5 text-[11px] font-medium text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                            <Layers className="w-3 h-3" strokeWidth={2} />
+                            {groupItemCount}
+                        </span>
+                    ) : null}
                 </div>
 
                 {/* RIGHT: balance + menu — the layer composer is now entered via the
