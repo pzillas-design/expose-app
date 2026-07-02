@@ -112,6 +112,9 @@ Deno.serve(async (req) => {
                 user_id: user.id,
                 amount: amount.toString(),
             },
+            // Stripe erstellt automatisch eine Rechnung für den Kauf und
+            // mailt sie dem Kunden (Einstellung "Successful payments" im Dashboard).
+            invoice_creation: { enabled: true },
         })
 
         console.log(`[checkout] session created: ${session.id}`);
