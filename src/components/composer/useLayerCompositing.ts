@@ -297,7 +297,9 @@ export const useLayerCompositing = (
         composite();
         const canvas = canvasRef.current;
         if (!canvas) return null;
-        return { dataUrl: canvas.toDataURL('image/jpeg', 0.95), w: refWRef.current, h: refHRef.current };
+        // 0.95 produzierte ~4-5 MB pro Composite — 0.85 halbiert das ohne sichtbaren Verlust
+        // (gleiches Niveau wie die übrigen JPEG-Exporte, siehe annotationUtils).
+        return { dataUrl: canvas.toDataURL('image/jpeg', 0.85), w: refWRef.current, h: refHRef.current };
     }, [composite, canvasRef]);
 
     useEffect(() => () => { if (rafRef.current != null) cancelAnimationFrame(rafRef.current); }, []);

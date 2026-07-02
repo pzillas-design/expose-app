@@ -261,13 +261,18 @@ export function App() {
         setIsDetailExiting(true);
         setTimeout(() => {
             setIsDetailExiting(false);
-            if (expandedGroupId) {
+            // Zurück in den Stapel des zuletzt angesehenen Bildes — expandedGroupId
+            // wäre veraltet, wenn im Detail über Stapelgrenzen hinweg navigiert wurde.
+            const currentRow = state.rows.find(r => r.items.some(i => i.id === state.activeId));
+            if (currentRow && currentRow.items.length >= 2) {
+                navigate(`/stack/${currentRow.id}`);
+            } else if (expandedGroupId) {
                 navigate(`/stack/${expandedGroupId}`);
             } else {
                 navigate('/');
             }
         }, 180);
-    }, [navigate, expandedGroupId, state.sideSheetMode, actions]);
+    }, [navigate, expandedGroupId, state.sideSheetMode, state.rows, state.activeId, actions]);
 
     // Detail-view delete: navigate to the adjacent image URL BEFORE removing the deleted image from state.
     // Without this, DetailPage's `!img → onBack()` fires and the 180ms timer navigates to grid,

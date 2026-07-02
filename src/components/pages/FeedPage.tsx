@@ -884,6 +884,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     onClose={closeComposer}
                     onSave={async (base, dataUrl, w, h) => {
                         await actions?.handleSaveComposite?.(base, dataUrl, w, h);
+                        // Nach dem Speichern immer in der Stapel-Ansicht landen, nicht im Detail
+                        if (effectiveGroupId) onExpandedGroupChange(effectiveGroupId);
                     }}
                     t={t}
                     isDe={state?.currentLang === 'de'}
