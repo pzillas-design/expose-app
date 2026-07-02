@@ -681,7 +681,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-start gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-12 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-start gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 style={columnsOverride ? { gridTemplateColumns: `repeat(${columnsOverride}, minmax(0, 1fr))` } : undefined}
                                 >
                                     {displayImages.map((img, idx) => {
