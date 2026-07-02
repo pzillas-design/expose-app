@@ -995,7 +995,7 @@ export function App() {
         return () => window.removeEventListener('keydown', handler);
     }, [voiceFeatureEnabled, user, voice]);
 
-    const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname === '/create');
+    const isAppLayout = user && (location.pathname === '/' || location.pathname.startsWith('/image/') || location.pathname.startsWith('/stack/') || location.pathname === '/create');
     const isAdminRoute = location.pathname.startsWith('/admin');
     const isPublicLanding = !user && (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/impressum' || location.pathname === '/contact' || location.pathname === '/blog' || location.pathname.startsWith('/blog/'));
     

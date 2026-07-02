@@ -922,7 +922,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
                 {/* CENTER: Group title — large when expanded, small when scrolled */}
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center pointer-events-none z-10 max-w-[55%]">
-                    <span className={`font-semibold tracking-tight text-zinc-900 dark:text-white text-center transition-all duration-300 truncate ${isScrolled ? 'text-[13px]' : 'text-[19px] md:text-[22px]'}`}>
+                    <span className={`font-semibold tracking-tight text-zinc-900 dark:text-white text-center transition-all duration-300 truncate ${isScrolled ? 'text-[13px]' : 'text-[15px] md:text-[17px]'}`}>
                         {groupInfo}
                     </span>
                 </div>
