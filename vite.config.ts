@@ -13,7 +13,8 @@ function vercelApiDev(env: Record<string, string>): Plugin {
       server.middlewares.use('/api/gemini-live-token', async (req, res) => {
         // Inject env vars so the handler can read them via process.env
         const envKeys = [
-          'GOOGLE_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_AI_STUDIO_API_KEY', 'GEMINI_LIVE_MODEL'
+          'VOICE_ASSIST_API_KEY', 'GOOGLE_API_KEY', 'GEMINI_API_KEY', 'GOOGLE_AI_STUDIO_API_KEY', 'GEMINI_LIVE_MODEL',
+          'VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY'
         ];
         for (const key of envKeys) {
           if (env[key] && !process.env[key]) process.env[key] = env[key];

@@ -47,15 +47,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+        // getUser() validates the JWT against the auth server — the anon key suffices,
+        // no service role needed. Fail closed: without config no token is issued.
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+            || process.env.VITE_SUPABASE_ANON_KEY
+            || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+            || '';
 
-        if (supabaseUrl && supabaseServiceKey) {
-            const supabase = createClient(supabaseUrl, supabaseServiceKey);
-            const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-            if (authError || !user) {
-                setCors(res, corsOrigin);
-                return res.status(401).json({ error: 'Invalid or expired session' });
-            }
+        if (!supabaseUrl || !supabaseKey) {
+            console.error('[voice-token] Supabase env vars missing — refusing to issue token');
+            setCors(res, corsOrigin);
+            return res.status(500).json({ error: 'Voice auth is not configured' });
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+        if (authError || !user) {
+            setCors(res, corsOrigin);
+            return res.status(401).json({ error: 'Invalid or expired session' });
         }
 
         // --- Token generation ---
