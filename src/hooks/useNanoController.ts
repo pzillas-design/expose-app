@@ -236,8 +236,12 @@ export const useNanoController = () => {
             }
 
             const currentFetchedTotal = currentOffset + batchSize;
-            
-            if (currentFetchedTotal >= rawCount) {
+
+            // A short page (fewer images than requested) is the reliable end-of-list
+            // signal. rawCount comes from `count: 'estimated'` and can be wildly off
+            // (Postgres table statistics), which previously left hasMore stuck true
+            // forever — "scroll for more" showed but no new images ever loaded.
+            if (batchSize < PAGE_SIZE || currentFetchedTotal >= rawCount) {
                 setHasMore(false);
             }
 
