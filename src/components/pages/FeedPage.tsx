@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
-import { Loader2, Plus, Layers, Upload, Download, X, ImagePlus } from 'lucide-react';
+import { Loader2, Plus, Layers, SquaresSubtract, Upload, Download, X, ImagePlus } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -738,7 +738,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                 style={{ aspectRatio: `${displayImages[0].width} / ${displayImages[0].height}`, width: '100%', height: 'auto' }}
                                                 className="relative bg-zinc-100 dark:bg-zinc-900/50 flex flex-col items-center justify-center gap-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60 transition-colors"
                                             >
-                                                <Layers className="w-7 h-7" strokeWidth={1.5} />
+                                                <SquaresSubtract className="w-7 h-7" strokeWidth={1.5} />
                                                 <span className="text-xs font-medium px-2 text-center leading-tight">
                                                     {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
                                                 </span>
