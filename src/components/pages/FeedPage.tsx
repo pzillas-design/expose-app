@@ -758,7 +758,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 </div>
 
                 {/* Infinite scroll sentinel + loading indicator */}
-                {(hasMore || isFetchingMore) && (
+                {!effectiveGroupId && (hasMore || isFetchingMore) && (
                     <div ref={sentinelRef} className="flex flex-col items-center justify-center min-h-[8rem] py-8 gap-4">
                         <div className={`transition-all duration-1000 ease-in-out flex flex-col items-center ${ (isLoading || isFetchingMore) ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none' }`}>
                             <Loader2 className="w-10 h-10 animate-[spin_3s_linear_infinite] text-zinc-300 dark:text-zinc-800" />
