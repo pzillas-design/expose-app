@@ -207,6 +207,13 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         </div>
                     )}
 
+                    {/* Upload-in-progress — corner spinner while the local blob is persisted to storage */}
+                    {!isGen && !isSource && !img.storage_path && img.src?.startsWith('blob:') && (
+                        <div className="absolute top-2 right-2 z-20 w-6 h-6 rounded-full flex items-center justify-center bg-white/85 dark:bg-zinc-800/85 shadow-sm pointer-events-none">
+                            <Loader2 className="w-[14px] h-[14px] animate-[spin_3s_linear_infinite] text-zinc-700 dark:text-zinc-200" />
+                        </div>
+                    )}
+
                     {/* Group count badge — hidden for now (A/B test without counter) */}
                     {/* {isGroup && !isGen && (
                         <div className={`absolute bottom-2 right-2 z-10 flex items-center justify-center gap-1 bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium pointer-events-none leading-none shadow-sm backdrop-blur-sm ${groupCount < 10 && !hasGenerating ? 'w-5 h-5 rounded-full' : 'rounded-full px-2 py-[3px]'}`}>
