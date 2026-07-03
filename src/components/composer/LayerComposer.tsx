@@ -244,11 +244,11 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 )}
             </div>
 
-            {/* Resize handle — carries the divider line on its canvas-facing (left)
-                edge so there's no gap between the line and the panel. */}
+            {/* Resize handle — blends into the panel by default (no standout line),
+                only reveals a divider colour on hover. */}
             <div
                 onMouseDown={() => setIsResizing(true)}
-                className="w-1.5 shrink-0 cursor-col-resize border-l border-zinc-200 dark:border-zinc-800 bg-transparent hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+                className="w-1.5 shrink-0 cursor-col-resize bg-transparent hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
             />
 
             {/* Right layer panel — resizable, SideSheet-like. Divider line lives on
@@ -329,7 +329,7 @@ const LayerCard: React.FC<{
         <div
             onClick={onSelect}
             className={`group relative w-full rounded-lg overflow-hidden cursor-pointer transition-all ${
-                isActive ? 'ring-1 ring-white opacity-100'
+                isActive ? 'ring-1 ring-zinc-900 dark:ring-white opacity-100'
                 : `ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700 ${isVisible ? 'opacity-75 hover:opacity-100' : 'opacity-35 hover:opacity-50'}`
             }`}
             style={{ aspectRatio: `${ar}` }}
