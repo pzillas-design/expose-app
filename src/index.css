@@ -217,6 +217,19 @@ html:not(.dark) {
   }
 }
 
+/* Snappy step-in for the credits top-up flow (slight upward + scale overshoot) */
+@keyframes credits-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes logo-spin {
 
   0%,

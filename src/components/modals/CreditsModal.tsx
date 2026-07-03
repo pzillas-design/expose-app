@@ -66,8 +66,8 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
         <Modal isOpen={isOpen} onClose={onClose} title={t('balance') || 'Guthaben'}>
             <div className={`p-8 flex flex-col ${isTopUpExpanded ? 'gap-2' : 'gap-8'}`}>
                 <div className={`text-center space-y-2 ${isTopUpExpanded ? 'py-1' : 'py-6'}`}>
-                    <div className={`font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100`}
-                        style={{ 
+                    <div className={`font-mono font-medium tracking-tight text-zinc-900 dark:text-zinc-100 transition-all duration-300 ease-out`}
+                        style={{
                             fontSize: isTopUpExpanded 
                                 ? (isMobile ? '1.05rem' : '1.35rem') 
                                 : (isMobile ? '2.625rem' : '3.375rem'), 
@@ -92,8 +92,8 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                             {t('top_up') || 'Guthaben aufladen'}
                         </Button>
                     ) : (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="py-2">
+                        <div className="space-y-4">
+                            <div className="py-2" style={{ animation: 'credits-step-in 320ms cubic-bezier(0.34,1.56,0.64,1) both' }}>
                                 <div className="flex items-center justify-center gap-1 py-2 bg-transparent transition-colors">
                                     <Plus className="w-10 h-10 text-zinc-300 dark:text-zinc-700 font-light shrink-0" />
                                     <div className="relative flex items-baseline">
@@ -123,8 +123,8 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-3">
-                                {showMinError && <p className="text-[10px] text-red-500 text-center font-medium animate-in fade-in slide-in-from-bottom-1">{t('checkout_min_amount') || 'Mindestbetrag ist 5.00 €'}</p>}
+                            <div className="flex flex-col gap-3" style={{ animation: 'credits-step-in 320ms 80ms cubic-bezier(0.34,1.56,0.64,1) both' }}>
+                                {showMinError && <p className="text-[10px] text-red-500 text-center font-medium" style={{ animation: 'credits-step-in 200ms ease-out both' }}>{t('checkout_min_amount') || 'Mindestbetrag ist 5.00 €'}</p>}
                                 <Button
                                     onClick={handleAddFundsConfirm}
                                     className="w-full h-12"
