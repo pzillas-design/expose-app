@@ -4,6 +4,7 @@ import { CanvasImage } from '@/types';
 import { Theme, Tooltip, Button, RoundIconButton } from '@/components/ui/DesignSystem';
 import { useLayerCompositing } from './useLayerCompositing';
 import type { ComposerLayer } from './useLayerCompositing';
+import { useMobile } from '@/hooks/useMobile';
 
 interface LayerComposerProps {
     stack: CanvasImage[];
@@ -19,6 +20,7 @@ const MIN_W = 300;
 const MAX_W = 600;
 
 export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBaseId, title, onClose, onSave, isDe }) => {
+    const isMobile = useMobile();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [saving, setSaving] = useState(false);
     const [panelWidth, setPanelWidth] = useState(MIN_W);
@@ -276,6 +278,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                                 onToggle={() => comp.toggleVisible(id)}
                                 onMove={(d) => comp.moveLayer(id, d)}
                                 isDe={isDe}
+                                isMobile={isMobile}
                             />
                         );
                     })}
@@ -305,7 +308,8 @@ const LayerCard: React.FC<{
     onToggle: () => void;
     onMove: (dir: -1 | 1) => void;
     isDe: boolean;
-}> = ({ id, img, isActive, isVisible, isTop, isBottom, revision, ready, drawThumb, onSelect, onToggle, onMove, isDe }) => {
+    isMobile?: boolean;
+}> = ({ id, img, isActive, isVisible, isTop, isBottom, revision, ready, drawThumb, onSelect, onToggle, onMove, isDe, isMobile }) => {
     const thumbRef = useRef<HTMLCanvasElement>(null);
     const ar = (img.realWidth && img.realHeight) ? img.realWidth / img.realHeight
         : (img.width && img.height ? img.width / img.height : 1);
@@ -332,8 +336,8 @@ const LayerCard: React.FC<{
         >
             <canvas ref={thumbRef} className="block w-full h-full" />
 
-            {/* Visibility toggle — top-left, revealed on hover */}
-            <div className="absolute top-1.5 left-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Visibility toggle — top-left; always shown on touch (no hover) */}
+            <div className={`absolute top-1.5 left-1.5 flex items-center gap-1 transition-opacity ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                 <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="top">
                     <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={overlayBtn}>
                         {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -341,8 +345,8 @@ const LayerCard: React.FC<{
                 </Tooltip>
             </div>
 
-            {/* Reorder — top-right, revealed on hover */}
-            <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Reorder — top-right; always shown on touch (no hover) */}
+            <div className={`absolute top-1.5 right-1.5 flex items-center gap-1 transition-opacity ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                 <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="top">
                     <button onClick={(e) => { e.stopPropagation(); onMove(1); }} disabled={isTop} className={overlayBtn}><ChevronUp className="w-4 h-4" /></button>
                 </Tooltip>
