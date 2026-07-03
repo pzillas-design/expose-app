@@ -21,7 +21,7 @@ const MAX_W = 600;
 export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBaseId, title, onClose, onSave, isDe }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [saving, setSaving] = useState(false);
-    const [panelWidth, setPanelWidth] = useState(360);
+    const [panelWidth, setPanelWidth] = useState(MIN_W);
     const [isResizing, setIsResizing] = useState(false);
 
     const layers: ComposerLayer[] = useMemo(() => {
@@ -191,19 +191,22 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 {/* Bottom toolbar — styled like the annotation toolbar */}
                 {comp.ready && (
                     <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full pointer-events-auto`}>
-                        {/* Add / Remove */}
-                        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 rounded-full p-1">
+                        {/* Add / Remove — no container bg, only the active icon is filled
+                            (mirrors the annotation toolbar) */}
+                        <div className="flex items-center gap-1">
                             <Tooltip text={isDe ? 'Hinzufügen' : 'Add'} side="top">
-                                <button onClick={() => comp.setMode('add')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'add' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'}`}>
+                                <button onClick={() => comp.setMode('add')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'add' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
                                     <Plus className="w-5 h-5" />
                                 </button>
                             </Tooltip>
                             <Tooltip text={isDe ? 'Entfernen' : 'Remove'} side="top">
-                                <button onClick={() => comp.setMode('remove')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'remove' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'}`}>
+                                <button onClick={() => comp.setMode('remove')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'remove' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
                                     <Minus className="w-5 h-5" />
                                 </button>
                             </Tooltip>
                         </div>
+
+                        <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-0.5" />
 
                         {/* Brush size */}
                         <div className="flex items-center gap-2 px-2">
@@ -214,6 +217,8 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                                 onTouchStart={() => setIsAdjusting(true)} onTouchEnd={() => setIsAdjusting(false)}
                                 className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
                         </div>
+
+                        <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-0.5" />
 
                         {/* Edge softness (per stroke) */}
                         <div className="flex items-center gap-2 px-2">
@@ -278,7 +283,8 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     );
 };
 
-const ctlBtn = 'w-8 h-8 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-white transition-colors disabled:opacity-30 disabled:pointer-events-none';
+// Overlay control button: transparent by default, subtle backdrop only on hover.
+const overlayBtn = 'w-8 h-8 rounded-full flex items-center justify-center bg-transparent text-white/90 hover:bg-black/40 hover:backdrop-blur-sm hover:text-white transition-colors disabled:opacity-30 disabled:pointer-events-none';
 
 /** One layer: controls row on top, masked thumbnail below. */
 const LayerCard: React.FC<{
@@ -310,33 +316,36 @@ const LayerCard: React.FC<{
     }, [id, revision, ready, ar, drawThumb]);
 
     return (
-        <div className="flex flex-col gap-2">
-            {/* Controls above the thumbnail — visibility left, reorder right */}
-            <div className="flex items-center gap-1.5">
+        // Controls overlaid on the thumbnail; buttons have no persistent bg (hover only),
+        // and the thumbnail sits at 75% so the active/hover state reads clearly.
+        <div
+            onClick={onSelect}
+            className={`group relative w-full rounded-lg overflow-hidden cursor-pointer transition-all ${
+                isActive ? 'ring-2 ring-orange-500'
+                : 'ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
+            } ${isVisible ? 'opacity-75 hover:opacity-100' : 'opacity-35 hover:opacity-50'}`}
+            style={{ aspectRatio: `${ar}` }}
+        >
+            <canvas ref={thumbRef} className="block w-full h-full" />
+
+            {/* Visibility toggle — top-left */}
+            <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
                 <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="top">
-                    <button onClick={onToggle} className={`${ctlBtn} ${isVisible ? '' : 'ring-1 ring-zinc-300 dark:ring-zinc-600'}`}>
+                    <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={overlayBtn}>
                         {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
                 </Tooltip>
-                <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="top">
-                    <button onClick={() => onMove(1)} disabled={isTop} className={`${ctlBtn} ml-auto`}><ChevronUp className="w-4 h-4" /></button>
-                </Tooltip>
-                <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="top">
-                    <button onClick={() => onMove(-1)} disabled={isBottom} className={ctlBtn}><ChevronDown className="w-4 h-4" /></button>
-                </Tooltip>
             </div>
 
-            {/* Masked thumbnail (transparent where erased → panel bg shows through) */}
-            <button
-                onClick={onSelect}
-                className={`relative w-full rounded-lg overflow-hidden transition-all ${
-                    isActive ? 'ring-2 ring-orange-500'
-                    : 'ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
-                } ${isVisible ? '' : 'opacity-40'}`}
-                style={{ aspectRatio: `${ar}` }}
-            >
-                <canvas ref={thumbRef} className="block w-full h-full" />
-            </button>
+            {/* Reorder — top-right */}
+            <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+                <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="top">
+                    <button onClick={(e) => { e.stopPropagation(); onMove(1); }} disabled={isTop} className={overlayBtn}><ChevronUp className="w-4 h-4" /></button>
+                </Tooltip>
+                <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="top">
+                    <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} disabled={isBottom} className={overlayBtn}><ChevronDown className="w-4 h-4" /></button>
+                </Tooltip>
+            </div>
         </div>
     );
 };

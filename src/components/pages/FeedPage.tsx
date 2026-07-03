@@ -433,6 +433,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // useLayoutEffect fires synchronously before paint so the first visible frame
     // already has scale(1.1) applied — avoids the "normal→big→small" zapple.
     const [returnCoverId, setReturnCoverId] = React.useState<string | null>(null);
+    // Reveal a specific tile (e.g. a freshly saved layer composite) with the same
+    // zoom-return animation used when navigating back — works inside a stack too.
+    const [revealId, setRevealId] = React.useState<string | null>(null);
     const prevExpandedGroupId = React.useRef<string | null>(null);
     React.useLayoutEffect(() => {
         if (prevExpandedGroupId.current && !expandedGroupId) {
@@ -719,7 +722,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                     onExpandedGroupChange(row.id);
                                                 } : undefined}
                                                 staggerDelay={(effectiveGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
-                                                isLastViewed={!effectiveGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? '')}
+                                                isLastViewed={img.id === revealId || (!effectiveGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? ''))}
                                                 isNew={isNew}
                                                 daysRemaining={daysLeft}
                                                 currentLang={state?.currentLang}
@@ -900,9 +903,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     title={rows.find(r => r.id === effectiveGroupId)?.title || ''}
                     onClose={closeComposer}
                     onSave={async (base, dataUrl, w, h) => {
-                        await actions?.handleSaveComposite?.(base, dataUrl, w, h);
+                        const newId = await actions?.handleSaveComposite?.(base, dataUrl, w, h);
                         // Nach dem Speichern immer in der Stapel-Ansicht landen, nicht im Detail
                         if (effectiveGroupId) onExpandedGroupChange(effectiveGroupId);
+                        // Neues Composite mit Zoom-Return-Reveal hervorheben (Indikator)
+                        if (newId) { setRevealId(newId); setTimeout(() => setRevealId(null), 600); }
                     }}
                     t={t}
                     isDe={state?.currentLang === 'de'}
