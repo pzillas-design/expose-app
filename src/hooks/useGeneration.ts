@@ -437,7 +437,15 @@ export const useGeneration = ({
             if (!i) return false;
             return (i.folderId ?? i.id) === sourceFolderId;
         });
-        const maxVersion = siblings.reduce((max, item) => Math.max(max, item.version || 1), 0);
+        // Derive the next version from the visible "_vN" in the *titles*, not the
+        // `version` column — persisted generations get a global counter in that
+        // column (e.g. 21, 22), which would make titles jump to "_v22" instead of
+        // the expected per-stack "_v3". Mirrors handleSaveComposite().
+        const parseVer = (t?: string) => {
+            const m = (t || '').match(/_v(\d+)$/);
+            return m ? parseInt(m[1], 10) : 1;
+        };
+        const maxVersion = siblings.reduce((max, item) => Math.max(max, parseVer(item.title)), 0);
         const newVersion = maxVersion + 1;
         const currentAnnotations = sourceImage.annotations || [];
 
