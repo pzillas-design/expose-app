@@ -882,11 +882,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                                             else window.location.href = '/';
                                                         }
                                                     },
-                                                    ...columnAdjusterItem,
                                                     { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                                     ...voiceMenuItem,
-                                                    { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
-                                                    { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
+                                                    ...columnAdjusterItem,
+                                                    { label: t('nav_contact') || 'Kontakt', onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                                    { label: t('nav_logout') || 'Ausloggen', danger: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                                 ]}
                                             />
                                         </div>
