@@ -942,11 +942,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     </div>{/* closes image container */}
 
                     {/* Bottom Area: Fixed space so canvas never jumps (desktop only in brush mode; mobile uses fixed toolbar) */}
-                    <div className={`${state.sideSheetMode === 'brush' && !isMobile ? 'h-20' : state.sideSheetMode !== 'brush' ? 'h-0' : 'h-0'} md:h-20 shrink-0 relative z-30 w-full overflow-visible`}>
-                        {/* Thumbnail Strip — desktop only */}
+                    <div className={`${state.sideSheetMode !== 'brush' ? 'h-20' : (isMobile ? 'h-0' : 'h-20')} shrink-0 relative z-30 w-full overflow-visible`}>
+                        {/* Thumbnail Strip — width is capped to a fixed thumb count
+                            (11 desktop / 5 mobile), centered. Cell = 36px thumb + 8px gap = 44px. */}
                         <div
                             ref={thumbStripRef}
-                            className={`absolute inset-0 hidden md:flex items-center overflow-x-auto no-scrollbar bg-zinc-50 dark:bg-zinc-950 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
+                            className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-[220px] md:max-w-[484px] flex items-center overflow-x-auto no-scrollbar bg-zinc-50 dark:bg-zinc-950 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
                             style={{
                                 maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
                                 WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
