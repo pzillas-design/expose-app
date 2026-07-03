@@ -136,7 +136,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
         <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
 
             {/* Standard header: back · title · download · save */}
-            <header className="relative shrink-0 h-14 flex items-center px-3 bg-white dark:bg-zinc-950 border-b border-black/[0.04] dark:border-white/[0.06]">
+            <header className="relative shrink-0 h-14 flex items-center px-3 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800">
                 <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onClose} variant="ghost" />
                 <h2 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-black dark:text-white truncate max-w-[40%]">
                     {title || (isDe ? 'Ebenen' : 'Layers')}
@@ -233,15 +233,17 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 )}
             </div>
 
-            {/* Resize handle */}
+            {/* Resize handle — carries the divider line on its canvas-facing (left)
+                edge so there's no gap between the line and the panel. */}
             <div
                 onMouseDown={() => setIsResizing(true)}
-                className="w-1.5 shrink-0 cursor-col-resize bg-transparent hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+                className="w-1.5 shrink-0 cursor-col-resize border-l border-zinc-200 dark:border-zinc-800 bg-transparent hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
             />
 
-            {/* Right layer panel — resizable, SideSheet-like */}
+            {/* Right layer panel — resizable, SideSheet-like. Divider line lives on
+                the resize handle now, so no border-l here. */}
             <div
-                className="shrink-0 h-full flex flex-col border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
+                className="shrink-0 h-full flex flex-col bg-white dark:bg-zinc-950"
                 style={{ width: `${panelWidth}px` }}
             >
                 <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4 flex flex-col gap-5">

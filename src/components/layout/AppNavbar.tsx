@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff, Layers } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff, Folder } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -397,15 +397,12 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : isGroupDrillDown && groupInfo ? (
         <div className="flex items-center gap-1.5">
+            {groupItemCount && groupItemCount > 1 ? (
+                <Folder className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
+            ) : null}
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
                 {groupInfo}
             </span>
-            {groupItemCount && groupItemCount > 1 ? (
-                <span className="flex items-center gap-0.5 text-[11px] font-medium text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
-                    <Layers className="w-3 h-3" strokeWidth={2} />
-                    {groupItemCount}
-                </span>
-            ) : null}
         </div>
     ) : (
         <button
@@ -444,9 +441,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 },
                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                 ...voiceMenuItem,
-                                { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                 ...columnAdjusterItem,
-                                { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
+                                { label: t('nav_contact') || 'Kontakt', onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                { label: t('nav_logout') || 'Ausloggen', danger: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                             ]}
                         />
                     </div>
@@ -618,9 +615,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                                 },
                                                 { label: t('nav_settings') || 'Einstellungen', icon: <Settings2 className="w-4 h-4" />, onClick: () => { setIsGridMenuOpen(false); onToggleSettings?.(); } },
                                                 ...voiceMenuItem,
-                                                { label: t('nav_contact') || 'Kontakt', separator: true, onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
                                                 ...columnAdjusterItem,
-                                                { label: t('nav_logout') || 'Ausloggen', danger: true, separator: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
+                                                { label: t('nav_contact') || 'Kontakt', onClick: () => { setIsGridMenuOpen(false); window.location.href = '/contact'; } },
+                                                { label: t('nav_logout') || 'Ausloggen', danger: true, onClick: () => { setIsGridMenuOpen(false); onSignOut?.(); } },
                                             ]}
                                 />
                             </div>
@@ -930,18 +927,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     {progressRing}
                 </div>
 
-                {/* CENTER: Group title — same font as the detail view; a subtle
-                    variant count is the minimal "this is a stack" signal. */}
+                {/* CENTER: Group title — same font as the detail view; a folder icon
+                    to the left of the title is the minimal "this is a stack" signal. */}
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-10 max-w-[60%]">
+                    {groupItemCount && groupItemCount > 1 ? (
+                        <Folder className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
+                    ) : null}
                     <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                         {groupInfo}
                     </span>
-                    {groupItemCount && groupItemCount > 1 ? (
-                        <span className="flex items-center gap-0.5 text-[11px] font-medium text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
-                            <Layers className="w-3 h-3" strokeWidth={2} />
-                            {groupItemCount}
-                        </span>
-                    ) : null}
                 </div>
 
                 {/* RIGHT: balance + menu — the layer composer is now entered via the
