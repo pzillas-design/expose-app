@@ -287,8 +287,8 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     );
 };
 
-// Overlay control button: transparent by default, subtle dark fill on hover (no blur).
-const overlayBtn = 'w-8 h-8 rounded-full flex items-center justify-center bg-transparent text-white/90 hover:bg-black/40 hover:text-white transition-colors disabled:opacity-30 disabled:pointer-events-none';
+// Overlay control button: persistent dark circular fill (no blur), darker on hover.
+const overlayBtn = 'w-8 h-8 rounded-full flex items-center justify-center bg-black/40 text-white hover:bg-black/60 transition-colors disabled:opacity-30 disabled:pointer-events-none';
 
 /** One layer: controls row on top, masked thumbnail below. */
 const LayerCard: React.FC<{
