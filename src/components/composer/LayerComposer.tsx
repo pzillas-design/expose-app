@@ -336,17 +336,17 @@ const LayerCard: React.FC<{
             {/* Vertical control column — up arrow / eye / down arrow. Arrows are
                 permanent on the active layer and hover-only otherwise; the eye
                 stays visible on every layer. */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 pointer-events-none">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none">
                 <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
-                    <button onClick={(e) => { e.stopPropagation(); onMove(1); }} disabled={isTop} className={`${overlayBtn} pointer-events-auto transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-70' : 'opacity-0'}`}><ChevronUp className="w-5 h-5" /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onMove(1); }} disabled={isTop} className={`${overlayBtn} pointer-events-auto transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-90' : 'opacity-0'}`}><ChevronUp className="w-5 h-5" /></button>
                 </Tooltip>
                 <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
-                    <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={`${overlayBtn} pointer-events-auto opacity-70 group-hover:opacity-100 transition-opacity`}>
+                    <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={`${overlayBtn} pointer-events-auto opacity-90 group-hover:opacity-100 transition-opacity`}>
                         {isVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                     </button>
                 </Tooltip>
                 <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="left">
-                    <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} disabled={isBottom} className={`${overlayBtn} pointer-events-auto transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-70' : 'opacity-0'}`}><ChevronDown className="w-5 h-5" /></button>
+                    <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} disabled={isBottom} className={`${overlayBtn} pointer-events-auto transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-90' : 'opacity-0'}`}><ChevronDown className="w-5 h-5" /></button>
                 </Tooltip>
             </div>
         </div>
