@@ -324,13 +324,18 @@ const LayerCard: React.FC<{
         // hidden until you hover the card (no icons cluttering the thumbnails).
         <div
             onClick={onSelect}
-            className={`group relative w-full rounded-lg overflow-hidden cursor-pointer transition-all ${
-                isActive ? 'ring-1 ring-zinc-900 dark:ring-white opacity-100'
-                : `ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700 ${isVisible ? 'opacity-75 hover:opacity-100' : 'opacity-35 hover:opacity-50'}`
+            className={`group relative w-full rounded-lg overflow-hidden cursor-pointer transition-all ring-1 ${
+                isActive ? 'ring-zinc-900 dark:ring-white'
+                : 'ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
             }`}
             style={{ aspectRatio: `${ar}` }}
         >
-            <canvas ref={thumbRef} className="block w-full h-full" />
+            {/* Dimming lives on the canvas (not the card) so the control buttons
+                keep a uniform opacity on active and inactive tiles. */}
+            <canvas ref={thumbRef} className={`block w-full h-full transition-opacity ${
+                isActive ? 'opacity-100'
+                : (isVisible ? 'opacity-75 group-hover:opacity-100' : 'opacity-35 group-hover:opacity-50')
+            }`} />
 
             {/* Vertical control column — up arrow / eye / down arrow. Arrows are
                 permanent on the active layer and hover-only otherwise; the eye
@@ -339,17 +344,17 @@ const LayerCard: React.FC<{
                 {/* Empty slot keeps the eye vertically centered when an arrow is unavailable */}
                 {isTop ? <div className="w-9 h-9 shrink-0" /> : (
                     <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
-                        <button onClick={(e) => { e.stopPropagation(); onMove(1); }} className={`${overlayBtn} pointer-events-auto transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-90' : 'opacity-0'}`}><ChevronUp className="w-5 h-5" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); onMove(1); }} className={`${overlayBtn} pointer-events-auto opacity-100`}><ChevronUp className="w-5 h-5" /></button>
                     </Tooltip>
                 )}
                 <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
-                    <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={`${overlayBtn} pointer-events-auto opacity-90 group-hover:opacity-100 transition-opacity`}>
+                    <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={`${overlayBtn} pointer-events-auto opacity-100`}>
                         {isVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                     </button>
                 </Tooltip>
                 {isBottom ? <div className="w-9 h-9 shrink-0" /> : (
                     <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="left">
-                        <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} className={`${overlayBtn} pointer-events-auto transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-90' : 'opacity-0'}`}><ChevronDown className="w-5 h-5" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} className={`${overlayBtn} pointer-events-auto opacity-100`}><ChevronDown className="w-5 h-5" /></button>
                     </Tooltip>
                 )}
             </div>
