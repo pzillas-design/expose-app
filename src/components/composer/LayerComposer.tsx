@@ -372,7 +372,7 @@ const LayerCard: React.FC<{
             {/* Vertical control column — up arrow / eye / down arrow. Arrows are
                 permanent on the active layer and hover-only otherwise; the eye
                 stays visible on every layer. */}
-            <div className="absolute inset-0 flex flex-col items-end justify-center gap-3 pr-1.5 pointer-events-none">
+            <div className="absolute inset-0 flex flex-col items-end justify-center gap-3 pr-3 pointer-events-none">
                 {/* Empty slot keeps the eye vertically centered when an arrow is unavailable */}
                 {isTop ? <div className="w-9 h-9 shrink-0" /> : (
                     <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
