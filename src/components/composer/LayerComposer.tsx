@@ -341,8 +341,8 @@ const LayerCard: React.FC<{
                 </Tooltip>
             </div>
 
-            {/* Reorder — top-right; permanently visible, full on hover */}
-            <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+            {/* Reorder — top-right; permanent on the active layer, hover-only otherwise */}
+            <div className={`absolute top-1.5 right-1.5 flex items-center gap-1 transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-70' : 'opacity-0'}`}>
                 <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="top">
                     <button onClick={(e) => { e.stopPropagation(); onMove(1); }} disabled={isTop} className={overlayBtn}><ChevronUp className="w-4 h-4" /></button>
                 </Tooltip>
