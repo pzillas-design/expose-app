@@ -4,7 +4,6 @@ import { CanvasImage } from '@/types';
 import { Theme, Tooltip, Button, RoundIconButton } from '@/components/ui/DesignSystem';
 import { useLayerCompositing } from './useLayerCompositing';
 import type { ComposerLayer } from './useLayerCompositing';
-import { useMobile } from '@/hooks/useMobile';
 
 interface LayerComposerProps {
     stack: CanvasImage[];
@@ -20,7 +19,6 @@ const MIN_W = 300;
 const MAX_W = 600;
 
 export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBaseId, title, onClose, onSave, isDe }) => {
-    const isMobile = useMobile();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [saving, setSaving] = useState(false);
     const [panelWidth, setPanelWidth] = useState(MIN_W);
@@ -278,7 +276,6 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                                 onToggle={() => comp.toggleVisible(id)}
                                 onMove={(d) => comp.moveLayer(id, d)}
                                 isDe={isDe}
-                                isMobile={isMobile}
                             />
                         );
                     })}
@@ -290,8 +287,8 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     );
 };
 
-// Overlay control button: transparent by default, subtle backdrop only on hover.
-const overlayBtn = 'w-8 h-8 rounded-full flex items-center justify-center bg-transparent text-white/90 hover:bg-black/40 hover:backdrop-blur-sm hover:text-white transition-colors disabled:opacity-30 disabled:pointer-events-none';
+// Overlay control button: transparent by default, subtle dark fill on hover (no blur).
+const overlayBtn = 'w-8 h-8 rounded-full flex items-center justify-center bg-transparent text-white/90 hover:bg-black/40 hover:text-white transition-colors disabled:opacity-30 disabled:pointer-events-none';
 
 /** One layer: controls row on top, masked thumbnail below. */
 const LayerCard: React.FC<{
@@ -308,8 +305,7 @@ const LayerCard: React.FC<{
     onToggle: () => void;
     onMove: (dir: -1 | 1) => void;
     isDe: boolean;
-    isMobile?: boolean;
-}> = ({ id, img, isActive, isVisible, isTop, isBottom, revision, ready, drawThumb, onSelect, onToggle, onMove, isDe, isMobile }) => {
+}> = ({ id, img, isActive, isVisible, isTop, isBottom, revision, ready, drawThumb, onSelect, onToggle, onMove, isDe }) => {
     const thumbRef = useRef<HTMLCanvasElement>(null);
     const ar = (img.realWidth && img.realHeight) ? img.realWidth / img.realHeight
         : (img.width && img.height ? img.width / img.height : 1);
@@ -336,8 +332,8 @@ const LayerCard: React.FC<{
         >
             <canvas ref={thumbRef} className="block w-full h-full" />
 
-            {/* Visibility toggle — top-left; always shown on touch (no hover) */}
-            <div className={`absolute top-1.5 left-1.5 flex items-center gap-1 transition-opacity ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+            {/* Visibility toggle — top-left; permanently visible at 50%, full on hover */}
+            <div className="absolute top-1.5 left-1.5 flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
                 <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="top">
                     <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={overlayBtn}>
                         {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -345,8 +341,8 @@ const LayerCard: React.FC<{
                 </Tooltip>
             </div>
 
-            {/* Reorder — top-right; always shown on touch (no hover) */}
-            <div className={`absolute top-1.5 right-1.5 flex items-center gap-1 transition-opacity ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+            {/* Reorder — top-right; permanently visible at 50%, full on hover */}
+            <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
                 <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="top">
                     <button onClick={(e) => { e.stopPropagation(); onMove(1); }} disabled={isTop} className={overlayBtn}><ChevronUp className="w-4 h-4" /></button>
                 </Tooltip>
