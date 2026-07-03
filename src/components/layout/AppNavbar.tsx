@@ -398,7 +398,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     ) : isGroupDrillDown && groupInfo ? (
         <div className="flex items-center gap-1.5">
             {groupItemCount && groupItemCount > 1 ? (
-                <Folder className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
+                <Folder className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
             ) : null}
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
                 {groupInfo}
@@ -931,7 +931,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     to the left of the title is the minimal "this is a stack" signal. */}
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-10 max-w-[60%]">
                     {groupItemCount && groupItemCount > 1 ? (
-                        <Folder className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
+                        <Folder className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
                     ) : null}
                     <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                         {groupInfo}
