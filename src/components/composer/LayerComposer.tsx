@@ -335,7 +335,7 @@ const LayerCard: React.FC<{
             {/* Vertical control column — up arrow / eye / down arrow. Arrows are
                 permanent on the active layer and hover-only otherwise; the eye
                 stays visible on every layer. */}
-            <div className="absolute top-1.5 right-1.5 flex flex-col items-center gap-1">
+            <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1">
                 <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
                     <button onClick={(e) => { e.stopPropagation(); onMove(1); }} disabled={isTop} className={`${overlayBtn} transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-70' : 'opacity-0'}`}><ChevronUp className="w-4 h-4" /></button>
                 </Tooltip>
