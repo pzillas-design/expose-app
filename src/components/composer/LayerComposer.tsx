@@ -287,9 +287,8 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     );
 };
 
-// Overlay control button: persistent circular fill (no blur). Light mode uses a
-// light fill with dark icon; dark mode a dark fill with white icon.
-const overlayBtn = 'w-9 h-9 rounded-full flex items-center justify-center bg-white/70 dark:bg-black/40 text-zinc-900 dark:text-white hover:bg-white/90 dark:hover:bg-black/60 transition-colors disabled:opacity-30 disabled:pointer-events-none';
+// Overlay control button: persistent dark circular fill with white icon (no blur).
+const overlayBtn = 'w-9 h-9 rounded-full flex items-center justify-center bg-black/40 text-white hover:bg-black/60 transition-colors disabled:opacity-30 disabled:pointer-events-none';
 
 /** One layer: controls row on top, masked thumbnail below. */
 const LayerCard: React.FC<{
