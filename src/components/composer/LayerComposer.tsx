@@ -376,7 +376,7 @@ const LayerCard: React.FC<{
                 {/* Empty slot keeps the eye vertically centered when an arrow is unavailable */}
                 {isTop ? <div className="w-9 h-9 shrink-0" /> : (
                     <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
-                        <button onClick={(e) => { e.stopPropagation(); onMove(1); }} className={`${overlayBtn} pointer-events-auto opacity-100`}><ChevronUp className="w-5 h-5" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); onMove(1); }} className={`${overlayBtn} pointer-events-auto transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-100' : 'opacity-0'}`}><ChevronUp className="w-5 h-5" /></button>
                     </Tooltip>
                 )}
                 <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
@@ -386,7 +386,7 @@ const LayerCard: React.FC<{
                 </Tooltip>
                 {isBottom ? <div className="w-9 h-9 shrink-0" /> : (
                     <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="left">
-                        <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} className={`${overlayBtn} pointer-events-auto opacity-100`}><ChevronDown className="w-5 h-5" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} className={`${overlayBtn} pointer-events-auto transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-100' : 'opacity-0'}`}><ChevronDown className="w-5 h-5" /></button>
                     </Tooltip>
                 )}
             </div>
