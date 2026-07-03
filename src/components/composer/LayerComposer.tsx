@@ -318,10 +318,10 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     );
 };
 
-// Overlay control button. Default: faint black icon, no fill. When the mouse is
-// anywhere over the layer panel (group/sheet) every card lights up: dark circular
-// fill appears, icon turns white, full opacity.
-const overlayBtn = 'w-9 h-9 rounded-full flex items-center justify-center bg-transparent text-zinc-900 opacity-40 transition-all group-hover/sheet:bg-black/40 group-hover/sheet:text-white group-hover/sheet:opacity-100 disabled:opacity-30 disabled:pointer-events-none';
+// Overlay control button. Default: faint dark icon, no fill. On panel hover
+// (group/sheet) the icons reach full opacity inside a light pill. On direct hover
+// over the pill (group/pill) each icon gets a dark round fill + white glyph.
+const overlayBtn = 'w-9 h-9 rounded-full flex items-center justify-center bg-transparent text-zinc-900 dark:text-zinc-100 opacity-40 transition-all group-hover/sheet:opacity-100 group-hover/pill:bg-zinc-900 group-hover/pill:text-white dark:group-hover/pill:bg-white dark:group-hover/pill:text-zinc-900 disabled:opacity-30 disabled:pointer-events-none';
 
 /** One layer: controls row on top, masked thumbnail below. */
 const LayerCard: React.FC<{
@@ -374,23 +374,27 @@ const LayerCard: React.FC<{
             {/* Vertical control column — up arrow / eye / down arrow. Arrows are
                 permanent on the active layer and hover-only otherwise; the eye
                 stays visible on every layer. */}
-            <div className="absolute inset-0 flex flex-col items-end justify-center gap-3 pr-3 pointer-events-none">
-                {/* Empty slot keeps the eye vertically centered when an arrow is unavailable */}
-                {isTop ? <div className="w-9 h-9 shrink-0" /> : (
-                    <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
-                        <button onClick={(e) => { e.stopPropagation(); onMove(1); }} className={`${overlayBtn} pointer-events-auto`}><ChevronUp className="w-6 h-6" /></button>
+            <div className="absolute inset-0 flex flex-col items-end justify-center pr-3 pointer-events-none">
+                {/* Pill container appears on panel hover (white in light mode); the round
+                    icon fills appear on direct hover over the pill (group/pill). */}
+                <div className="group/pill pointer-events-auto flex flex-col items-center gap-2 rounded-full p-1 transition-all group-hover/sheet:bg-white/85 dark:group-hover/sheet:bg-zinc-900/85 group-hover/sheet:shadow-sm">
+                    {/* Empty slot keeps the eye vertically centered when an arrow is unavailable */}
+                    {isTop ? <div className="w-9 h-9 shrink-0" /> : (
+                        <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
+                            <button onClick={(e) => { e.stopPropagation(); onMove(1); }} className={overlayBtn}><ChevronUp className="w-6 h-6" /></button>
+                        </Tooltip>
+                    )}
+                    <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
+                        <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={overlayBtn}>
+                            {isVisible ? <Eye className="w-6 h-6" /> : <EyeOff className="w-6 h-6" />}
+                        </button>
                     </Tooltip>
-                )}
-                <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
-                    <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={`${overlayBtn} pointer-events-auto`}>
-                        {isVisible ? <Eye className="w-6 h-6" /> : <EyeOff className="w-6 h-6" />}
-                    </button>
-                </Tooltip>
-                {isBottom ? <div className="w-9 h-9 shrink-0" /> : (
-                    <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="left">
-                        <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} className={`${overlayBtn} pointer-events-auto`}><ChevronDown className="w-6 h-6" /></button>
-                    </Tooltip>
-                )}
+                    {isBottom ? <div className="w-9 h-9 shrink-0" /> : (
+                        <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="left">
+                            <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} className={overlayBtn}><ChevronDown className="w-6 h-6" /></button>
+                        </Tooltip>
+                    )}
+                </div>
             </div>
         </div>
     );
