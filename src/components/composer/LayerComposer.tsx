@@ -332,22 +332,20 @@ const LayerCard: React.FC<{
         >
             <canvas ref={thumbRef} className="block w-full h-full" />
 
-            {/* Visibility toggle — top-left; permanently visible, full on hover */}
-            <div className="absolute top-1.5 left-1.5 flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="top">
-                    <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={overlayBtn}>
+            {/* Vertical control column — up arrow / eye / down arrow. Arrows are
+                permanent on the active layer and hover-only otherwise; the eye
+                stays visible on every layer. */}
+            <div className="absolute top-1.5 right-1.5 flex flex-col items-center gap-1">
+                <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
+                    <button onClick={(e) => { e.stopPropagation(); onMove(1); }} disabled={isTop} className={`${overlayBtn} transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-70' : 'opacity-0'}`}><ChevronUp className="w-4 h-4" /></button>
+                </Tooltip>
+                <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
+                    <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={`${overlayBtn} opacity-70 group-hover:opacity-100 transition-opacity`}>
                         {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
                 </Tooltip>
-            </div>
-
-            {/* Reorder — top-right; permanent on the active layer, hover-only otherwise */}
-            <div className={`absolute top-1.5 right-1.5 flex items-center gap-1 transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-70' : 'opacity-0'}`}>
-                <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="top">
-                    <button onClick={(e) => { e.stopPropagation(); onMove(1); }} disabled={isTop} className={overlayBtn}><ChevronUp className="w-4 h-4" /></button>
-                </Tooltip>
-                <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="top">
-                    <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} disabled={isBottom} className={overlayBtn}><ChevronDown className="w-4 h-4" /></button>
+                <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="left">
+                    <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} disabled={isBottom} className={`${overlayBtn} transition-opacity group-hover:opacity-100 ${isActive ? 'opacity-70' : 'opacity-0'}`}><ChevronDown className="w-4 h-4" /></button>
                 </Tooltip>
             </div>
         </div>
