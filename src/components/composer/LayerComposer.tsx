@@ -183,12 +183,12 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                         animation: comp.ready ? 'detail-img-in 260ms cubic-bezier(0.25,1,0.5,1) both' : undefined,
                     }}
                 />
-                <BrushCursor canvasRef={canvasRef} size={displayBrush} innerRatio={innerRatio} enabled={!!comp.activeId} hidden={isAdjusting} />
+                <BrushCursor canvasRef={canvasRef} size={displayBrush} innerRatio={innerRatio} enabled={!!comp.activeId} hidden={isAdjusting} mode={comp.mode} />
 
                 {/* Centered brush preview while dragging a slider */}
                 {comp.ready && comp.activeId && isAdjusting && (
                     <div className="pointer-events-none absolute left-1/2 top-1/2 z-30" style={{ transform: 'translate(-50%, -50%)' }}>
-                        <BrushRing size={displayBrush} innerRatio={innerRatio} />
+                        <BrushRing size={displayBrush} innerRatio={innerRatio} mode={comp.mode} />
                     </div>
                 )}
 
@@ -359,15 +359,23 @@ const LayerCard: React.FC<{
  * white inner circle = where the soft falloff begins. The gap between them grows
  * with edge softness. Plain white lines, no shadow — like the annotation editor.
  */
-const BrushRing: React.FC<{ size: number; innerRatio: number }> = ({ size, innerRatio }) => {
+const BrushRing: React.FC<{ size: number; innerRatio: number; mode?: 'add' | 'remove' }> = ({ size, innerRatio, mode }) => {
     const s = Math.max(10, size);
     const c = s / 2;
     const outer = Math.max(1, c - 1);
     const inner = Math.max(0.5, outer * innerRatio);
+    const arm = Math.max(4, Math.min(8, s * 0.12)); // centered +/- glyph
     return (
         <svg width={s} height={s} className="block overflow-visible">
             <circle cx={c} cy={c} r={outer} fill="none" stroke="#fff" strokeWidth={1.5} strokeDasharray="4 4" />
             {innerRatio < 0.95 && <circle cx={c} cy={c} r={inner} fill="none" stroke="#fff" strokeWidth={1.5} />}
+            {/* Mode indicator: white + (add) or − (remove) in the center */}
+            {mode && (
+                <g stroke="#fff" strokeWidth={2} strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5))' }}>
+                    <line x1={c - arm} y1={c} x2={c + arm} y2={c} />
+                    {mode === 'add' && <line x1={c} y1={c - arm} x2={c} y2={c + arm} />}
+                </g>
+            )}
         </svg>
     );
 };
@@ -379,7 +387,8 @@ const BrushCursor: React.FC<{
     innerRatio: number;
     enabled: boolean;
     hidden?: boolean;
-}> = ({ canvasRef, size, innerRatio, enabled, hidden }) => {
+    mode?: 'add' | 'remove';
+}> = ({ canvasRef, size, innerRatio, enabled, hidden, mode }) => {
     // Fixed-position cursor in viewport coords — independent of canvas layout/
     // letterboxing, so it always lines up with the pointer.
     const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -400,7 +409,7 @@ const BrushCursor: React.FC<{
     if (!pos || hidden) return null;
     return (
         <div className="pointer-events-none fixed z-[110]" style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}>
-            <BrushRing size={size} innerRatio={innerRatio} />
+            <BrushRing size={size} innerRatio={innerRatio} mode={mode} />
         </div>
     );
 };
