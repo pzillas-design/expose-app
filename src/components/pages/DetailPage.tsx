@@ -65,8 +65,9 @@ const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: b
         const collapseEase = 'cubic-bezier(0.4, 0, 0.2, 1)';
         // Width/margin: entering thumbs jump instantly to full size so offsetLeft is immediately
         // correct for scroll centering. Only leaving thumbs animate width to 0.
-        const wrapperWidth = leaving ? '0px' : '50px';
-        const wrapperMargin = leaving ? '0px' : '8px';
+        const wrapperWidth = leaving ? '0px' : '36px';
+        // Wider gap (not bigger thumbs) so ~30% fewer fit across the strip.
+        const wrapperMargin = leaving ? '0px' : '26px';
         const active = mounted && !leaving;
         const invisible = thumbOpacity === 0;
         const displayOpacity = leaving ? 0 : (isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity);
@@ -75,7 +76,7 @@ const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: b
             : 'opacity 300ms ease, transform 150ms ease';
         return (
             <div
-                className="shrink-0 overflow-visible h-[50px] flex items-center"
+                className="shrink-0 overflow-visible h-9 flex items-center"
                 style={{
                     width: wrapperWidth,
                     marginRight: wrapperMargin,
@@ -94,7 +95,7 @@ const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: b
                         transition: btnTransition,
                         pointerEvents: leaving ? 'none' : undefined,
                     }}
-                    className={`relative h-[50px] w-[50px] rounded-[3px] overflow-hidden outline-none${isActive && !leaving ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black z-10' : ''}${invisible ? ' pointer-events-none' : ''}`}
+                    className={`relative h-9 w-9 rounded-[3px] overflow-hidden outline-none${isActive && !leaving ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black z-10' : ''}${invisible ? ' pointer-events-none' : ''}`}
                 >
                     <img src={src} decoding="async" className="w-full h-full object-cover" />
                     {isNew && (
@@ -123,10 +124,10 @@ const GeneratingThumb = memo<{ id: string; pSrc?: string; isActive: boolean; thu
             // Wrapper is full-width immediately so offsetLeft is stable for scroll centering.
             // Visual animation runs on the button via opacity/scale only.
             <div
-                className="shrink-0 overflow-visible h-[50px] flex items-center"
+                className="shrink-0 overflow-visible h-9 flex items-center"
                 style={{
-                    width: '50px',
-                    marginRight: '8px',
+                    width: '36px',
+                    marginRight: '26px',
                     transition: 'none',
                     scrollSnapAlign: 'center',
                 }}
@@ -141,7 +142,7 @@ const GeneratingThumb = memo<{ id: string; pSrc?: string; isActive: boolean; thu
                         transform: `scale(${mounted ? (isActive ? 1.1 : 0.9) : 0.6})`,
                         transition: `opacity 300ms ease, transform 320ms ${springEase}`,
                     }}
-                    className={`relative h-[50px] w-[50px] rounded-[3px] overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black z-10' : ''}${invisible ? ' pointer-events-none' : ''}`}
+                    className={`relative h-9 w-9 rounded-[3px] overflow-hidden outline-none${isActive ? ' ring-2 ring-orange-600 ring-offset-2 ring-offset-white dark:ring-offset-black z-10' : ''}${invisible ? ' pointer-events-none' : ''}`}
                 >
                     {pSrc ? (
                         <img src={pSrc} className="w-full h-full object-cover blur-sm brightness-75 scale-110" alt="" />
@@ -362,7 +363,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         const inner = thumbStripInnerRef.current;
         if (!strip || !inner) return;
         const updatePadding = () => {
-            const halfPad = Math.max(0, Math.floor(strip.clientWidth / 2) - 25);
+            const halfPad = Math.max(0, Math.floor(strip.clientWidth / 2) - 18);
             inner.style.paddingLeft = `${halfPad}px`;
             inner.style.paddingRight = `${halfPad}px`;
         };
@@ -471,7 +472,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             // Lazy-load near the end of the strip.
             if (hasMore && onLoadMore) {
                 const remaining = strip.scrollWidth - strip.clientWidth - strip.scrollLeft;
-                if (remaining < 3 * 58) onLoadMore();
+                if (remaining < 3 * 62) onLoadMore();
             }
             // RAF-coalesce: at most one update per frame.
             if (pending) return;
