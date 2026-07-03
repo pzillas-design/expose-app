@@ -66,8 +66,7 @@ const ThumbButton = memo<{ id: string; src: string; isActive: boolean; isNew?: b
         // Width/margin: entering thumbs jump instantly to full size so offsetLeft is immediately
         // correct for scroll centering. Only leaving thumbs animate width to 0.
         const wrapperWidth = leaving ? '0px' : '36px';
-        // Wider gap (not bigger thumbs) so ~30% fewer fit across the strip.
-        const wrapperMargin = leaving ? '0px' : '26px';
+        const wrapperMargin = leaving ? '0px' : '8px';
         const active = mounted && !leaving;
         const invisible = thumbOpacity === 0;
         const displayOpacity = leaving ? 0 : (isActive ? 1 : hovered ? Math.max(thumbOpacity, 0.85) : thumbOpacity);
@@ -127,7 +126,7 @@ const GeneratingThumb = memo<{ id: string; pSrc?: string; isActive: boolean; thu
                 className="shrink-0 overflow-visible h-9 flex items-center"
                 style={{
                     width: '36px',
-                    marginRight: '26px',
+                    marginRight: '8px',
                     transition: 'none',
                     scrollSnapAlign: 'center',
                 }}
@@ -472,7 +471,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             // Lazy-load near the end of the strip.
             if (hasMore && onLoadMore) {
                 const remaining = strip.scrollWidth - strip.clientWidth - strip.scrollLeft;
-                if (remaining < 3 * 62) onLoadMore();
+                if (remaining < 3 * 44) onLoadMore();
             }
             // RAF-coalesce: at most one update per frame.
             if (pending) return;

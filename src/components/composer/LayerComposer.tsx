@@ -199,12 +199,12 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                             (mirrors the annotation toolbar) */}
                         <div className="flex items-center gap-1">
                             <Tooltip text={isDe ? 'Hinzufügen' : 'Add'} side="top">
-                                <button onClick={() => comp.setMode('add')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'add' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
+                                <button onClick={() => comp.setMode('add')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'add' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
                                     <Plus className="w-5 h-5" />
                                 </button>
                             </Tooltip>
                             <Tooltip text={isDe ? 'Entfernen' : 'Remove'} side="top">
-                                <button onClick={() => comp.setMode('remove')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'remove' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
+                                <button onClick={() => comp.setMode('remove')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'remove' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
                                     <Minus className="w-5 h-5" />
                                 </button>
                             </Tooltip>
@@ -320,20 +320,20 @@ const LayerCard: React.FC<{
     }, [id, revision, ready, ar, drawThumb]);
 
     return (
-        // Controls overlaid on the thumbnail; buttons have no persistent bg (hover only),
-        // and the thumbnail sits at 75% so the active/hover state reads clearly.
+        // Clean thumbnail: active = full opacity + thin white border. Controls stay
+        // hidden until you hover the card (no icons cluttering the thumbnails).
         <div
             onClick={onSelect}
             className={`group relative w-full rounded-lg overflow-hidden cursor-pointer transition-all ${
-                isActive ? 'ring-2 ring-orange-500'
-                : 'ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
-            } ${isVisible ? 'opacity-75 hover:opacity-100' : 'opacity-35 hover:opacity-50'}`}
+                isActive ? 'ring-1 ring-white opacity-100'
+                : `ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700 ${isVisible ? 'opacity-75 hover:opacity-100' : 'opacity-35 hover:opacity-50'}`
+            }`}
             style={{ aspectRatio: `${ar}` }}
         >
             <canvas ref={thumbRef} className="block w-full h-full" />
 
-            {/* Visibility toggle — top-left */}
-            <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
+            {/* Visibility toggle — top-left, revealed on hover */}
+            <div className="absolute top-1.5 left-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="top">
                     <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={overlayBtn}>
                         {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -341,8 +341,8 @@ const LayerCard: React.FC<{
                 </Tooltip>
             </div>
 
-            {/* Reorder — top-right */}
-            <div className="absolute top-1.5 right-1.5 flex items-center gap-1">
+            {/* Reorder — top-right, revealed on hover */}
+            <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="top">
                     <button onClick={(e) => { e.stopPropagation(); onMove(1); }} disabled={isTop} className={overlayBtn}><ChevronUp className="w-4 h-4" /></button>
                 </Tooltip>
