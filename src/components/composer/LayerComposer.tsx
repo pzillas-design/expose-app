@@ -364,7 +364,7 @@ const BrushRing: React.FC<{ size: number; innerRatio: number; mode?: 'add' | 're
     const c = s / 2;
     const outer = Math.max(1, c - 1);
     const inner = Math.max(0.5, outer * innerRatio);
-    const arm = Math.max(4, Math.min(8, s * 0.12)); // centered +/- glyph
+    const arm = Math.max(3, Math.min(6, s * 0.09)); // centered +/- glyph
     return (
         <svg width={s} height={s} className="block overflow-visible">
             <circle cx={c} cy={c} r={outer} fill="none" stroke="#fff" strokeWidth={1.5} strokeDasharray="4 4" />

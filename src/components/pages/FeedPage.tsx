@@ -366,9 +366,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const targetId = selectedIds[0];
             let retryCount = 0;
             const scrollFn = () => {
-                const el = gridRef.current?.querySelector(`[data-image-id="${targetId}"]`);
-                if (el) {
-                    el.scrollIntoView({ block: 'center', behavior: 'instant' });
+                const el = gridRef.current?.querySelector(`[data-image-id="${targetId}"]`) as HTMLElement | null;
+                const sc = scrollRef.current;
+                if (el && sc) {
+                    // Align to the FIRST visible row (just below the fixed navbar),
+                    // not centered — so the first selected image lands at the top.
+                    const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
+                    sc.scrollTo({ top: Math.max(0, top - 72), behavior: 'instant' as ScrollBehavior });
                 } else if (retryCount < 10) {
                     retryCount++;
                     requestAnimationFrame(scrollFn);
