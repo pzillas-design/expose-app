@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, Plus, Minus, ChevronUp, ChevronDown, Eye, EyeOff, Loader2, Circle, Download } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { Theme, Tooltip, Button, RoundIconButton } from '@/components/ui/DesignSystem';
@@ -132,6 +132,33 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
 
     const panelOrder = useMemo(() => [...comp.order].reverse(), [comp.order]);
 
+    // FLIP animation: when layers reorder (arrow buttons), slide the cards from
+    // their previous positions to the new ones instead of jumping.
+    const layerListRef = useRef<HTMLDivElement>(null);
+    const prevTopsRef = useRef<Map<string, number>>(new Map());
+    useLayoutEffect(() => {
+        const container = layerListRef.current;
+        if (!container) return;
+        const cards = Array.from(container.querySelectorAll('[data-layer-id]')) as HTMLElement[];
+        cards.forEach(card => {
+            const id = card.dataset.layerId!;
+            const newTop = card.getBoundingClientRect().top;
+            const prevTop = prevTopsRef.current.get(id);
+            if (prevTop !== undefined && Math.abs(prevTop - newTop) > 1) {
+                card.style.transition = 'none';
+                card.style.transform = `translateY(${prevTop - newTop}px)`;
+                requestAnimationFrame(() => {
+                    card.style.transition = 'transform 280ms cubic-bezier(0.25,1,0.5,1)';
+                    card.style.transform = '';
+                    window.setTimeout(() => { card.style.transition = ''; card.style.transform = ''; }, 320);
+                });
+            }
+        });
+        const map = new Map<string, number>();
+        cards.forEach(card => map.set(card.dataset.layerId!, card.getBoundingClientRect().top));
+        prevTopsRef.current = map;
+    }, [comp.order]);
+
     return (
         <div className="fixed inset-0 z-[100] flex flex-col overflow-hidden bg-zinc-50 dark:bg-black animate-in fade-in duration-150">
 
@@ -255,7 +282,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 className="shrink-0 h-full flex flex-col bg-white dark:bg-zinc-950"
                 style={{ width: `${panelWidth}px` }}
             >
-                <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4 flex flex-col gap-5">
+                <div ref={layerListRef} className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4 flex flex-col gap-5">
                     {panelOrder.map((id) => {
                         const img = imageById.get(id);
                         if (!img) return null;
@@ -323,6 +350,7 @@ const LayerCard: React.FC<{
         // Clean thumbnail: active = full opacity + thin white border. Controls stay
         // hidden until you hover the card (no icons cluttering the thumbnails).
         <div
+            data-layer-id={id}
             onClick={onSelect}
             className={`group relative w-full rounded-lg overflow-hidden cursor-pointer transition-all ring-1 ${
                 isActive ? 'ring-zinc-900 dark:ring-white'
