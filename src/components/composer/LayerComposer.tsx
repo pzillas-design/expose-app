@@ -286,7 +286,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 className="shrink-0 h-full flex flex-col bg-white dark:bg-zinc-950"
                 style={{ width: `${panelWidth}px` }}
             >
-                <div ref={layerListRef} className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4 flex flex-col gap-5">
+                <div ref={layerListRef} className="group/sheet flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4 flex flex-col gap-5">
                     {panelOrder.map((id) => {
                         const img = imageById.get(id);
                         if (!img) return null;
@@ -318,8 +318,10 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     );
 };
 
-// Overlay control button: persistent dark circular fill with white icon (no blur).
-const overlayBtn = 'w-9 h-9 rounded-full flex items-center justify-center bg-black/40 text-white hover:bg-black/60 transition-colors disabled:opacity-30 disabled:pointer-events-none';
+// Overlay control button. Default: faint black icon, no fill. When the mouse is
+// anywhere over the layer panel (group/sheet) every card lights up: dark circular
+// fill appears, icon turns white, full opacity.
+const overlayBtn = 'w-9 h-9 rounded-full flex items-center justify-center bg-transparent text-zinc-900 opacity-40 transition-all group-hover/sheet:bg-black/40 group-hover/sheet:text-white group-hover/sheet:opacity-100 disabled:opacity-30 disabled:pointer-events-none';
 
 /** One layer: controls row on top, masked thumbnail below. */
 const LayerCard: React.FC<{
@@ -362,11 +364,11 @@ const LayerCard: React.FC<{
             }`}
             style={{ aspectRatio: `${ar}` }}
         >
-            {/* Dimming lives on the canvas (not the card) so the control buttons
-                keep a uniform opacity on active and inactive tiles. */}
+            {/* Dimming lives on the canvas; hovering anywhere over the panel
+                (group/sheet) brings every thumbnail to full opacity. */}
             <canvas ref={thumbRef} className={`block w-full h-full transition-opacity ${
                 isActive ? 'opacity-100'
-                : (isVisible ? 'opacity-75 group-hover:opacity-100' : 'opacity-35 group-hover:opacity-50')
+                : (isVisible ? 'opacity-75 group-hover/sheet:opacity-100' : 'opacity-35 group-hover/sheet:opacity-100')
             }`} />
 
             {/* Vertical control column — up arrow / eye / down arrow. Arrows are
@@ -376,17 +378,17 @@ const LayerCard: React.FC<{
                 {/* Empty slot keeps the eye vertically centered when an arrow is unavailable */}
                 {isTop ? <div className="w-9 h-9 shrink-0" /> : (
                     <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
-                        <button onClick={(e) => { e.stopPropagation(); onMove(1); }} className={`${overlayBtn} pointer-events-auto opacity-100`}><ChevronUp className="w-5 h-5" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); onMove(1); }} className={`${overlayBtn} pointer-events-auto`}><ChevronUp className="w-6 h-6" /></button>
                     </Tooltip>
                 )}
                 <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
-                    <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={`${overlayBtn} pointer-events-auto opacity-100`}>
-                        {isVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                    <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={`${overlayBtn} pointer-events-auto`}>
+                        {isVisible ? <Eye className="w-6 h-6" /> : <EyeOff className="w-6 h-6" />}
                     </button>
                 </Tooltip>
                 {isBottom ? <div className="w-9 h-9 shrink-0" /> : (
                     <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="left">
-                        <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} className={`${overlayBtn} pointer-events-auto opacity-100`}><ChevronDown className="w-5 h-5" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} className={`${overlayBtn} pointer-events-auto`}><ChevronDown className="w-6 h-6" /></button>
                     </Tooltip>
                 )}
             </div>
