@@ -140,23 +140,27 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
         const container = layerListRef.current;
         if (!container) return;
         const cards = Array.from(container.querySelectorAll('[data-layer-id]')) as HTMLElement[];
+        // Clear any in-flight FLIP transform first so measurements reflect the
+        // settled layout — otherwise a repeated (reverse) swap reads stale positions
+        // and computes a ~0 delta, skipping the animation.
+        cards.forEach(card => { card.style.transition = 'none'; card.style.transform = ''; });
+        const newTops = new Map<string, number>();
+        cards.forEach(card => newTops.set(card.dataset.layerId!, card.getBoundingClientRect().top));
         cards.forEach(card => {
             const id = card.dataset.layerId!;
-            const newTop = card.getBoundingClientRect().top;
             const prevTop = prevTopsRef.current.get(id);
+            const newTop = newTops.get(id)!;
             if (prevTop !== undefined && Math.abs(prevTop - newTop) > 1) {
-                card.style.transition = 'none';
                 card.style.transform = `translateY(${prevTop - newTop}px)`;
                 requestAnimationFrame(() => {
                     card.style.transition = 'transform 280ms cubic-bezier(0.25,1,0.5,1)';
                     card.style.transform = '';
-                    window.setTimeout(() => { card.style.transition = ''; card.style.transform = ''; }, 320);
+                    window.setTimeout(() => { card.style.transition = ''; card.style.transform = ''; }, 300);
                 });
             }
         });
-        const map = new Map<string, number>();
-        cards.forEach(card => map.set(card.dataset.layerId!, card.getBoundingClientRect().top));
-        prevTopsRef.current = map;
+        // Record the settled (pre-transform) positions for the next reorder.
+        prevTopsRef.current = newTops;
     }, [comp.order]);
 
     return (
