@@ -244,11 +244,11 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 )}
             </div>
 
-            {/* Resize handle — blends into the panel by default (no standout line),
-                only reveals a divider colour on hover. */}
+            {/* Resize handle — fine divider border + panel-coloured fill (white in
+                light mode, not grey); only greys out on hover. */}
             <div
                 onMouseDown={() => setIsResizing(true)}
-                className="w-1.5 shrink-0 cursor-col-resize bg-transparent hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+                className="w-1.5 shrink-0 cursor-col-resize border-l border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
             />
 
             {/* Right layer panel — resizable, SideSheet-like. Divider line lives on
