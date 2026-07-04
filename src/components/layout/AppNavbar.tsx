@@ -711,44 +711,48 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     ) : (
                         user && (
                             <>
-                                <button
-                                    className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
-                                        ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                        : isMobile
-                                            ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                            : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
-                                        }`}
-                                    onClick={onHeroUploadClick}
-                                >
-                                    <Upload className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
-                                    <div
-                                        className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                <Tooltip text={lang === 'de' ? 'Fotos hochladen' : 'Upload photos'} side="bottom">
+                                    <button
+                                        className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                            ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                            : isMobile
+                                                ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                                : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
                                             }`}
+                                        onClick={onHeroUploadClick}
                                     >
-                                        <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
-                                            {t('nav_upload') || 'Hochladen'}
-                                        </span>
-                                    </div>
-                                </button>
-                                <button
-                                    className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
-                                        ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                        : isMobile
-                                            ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
-                                            : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
-                                        }`}
-                                    onClick={onCreate}
-                                >
-                                    <Plus className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
-                                    <div
-                                        className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                        <Upload className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                        <div
+                                            className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                                }`}
+                                        >
+                                            <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                                {t('nav_upload') || 'Hochladen'}
+                                            </span>
+                                        </div>
+                                    </button>
+                                </Tooltip>
+                                <Tooltip text={lang === 'de' ? 'Neues Bild generieren' : 'Generate a new image'} side="bottom">
+                                    <button
+                                        className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
+                                            ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                            : isMobile
+                                                ? 'h-10 w-10 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'
+                                                : 'h-10 px-5 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-2'
                                             }`}
+                                        onClick={onCreate}
                                     >
-                                        <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
-                                            {t('nav_create') || 'Generieren'}
-                                        </span>
-                                    </div>
-                                </button>
+                                        <Plus className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                        <div
+                                            className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                                }`}
+                                        >
+                                            <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 hidden md:inline">
+                                                {t('nav_create') || 'Generieren'}
+                                            </span>
+                                        </div>
+                                    </button>
+                                </Tooltip>
                             </>
                         )
                     )}

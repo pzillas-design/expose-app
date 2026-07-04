@@ -286,7 +286,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                 className="shrink-0 h-full flex flex-col bg-white dark:bg-zinc-950"
                 style={{ width: `${panelWidth}px` }}
             >
-                <div ref={layerListRef} className="group/sheet flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4 flex flex-col gap-5">
+                <div ref={layerListRef} className="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 py-4 flex flex-col gap-5">
                     {panelOrder.map((id) => {
                         const img = imageById.get(id);
                         if (!img) return null;
@@ -318,10 +318,8 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     );
 };
 
-// Overlay control button. Default: faint dark icon, no fill. On panel hover
-// (group/sheet) the icons reach full opacity inside a light pill. On direct hover
-// over the pill (group/pill) each icon gets a dark round fill + white glyph.
-const overlayBtn = 'w-9 h-9 rounded-full flex items-center justify-center bg-transparent text-zinc-900 dark:text-zinc-100 opacity-40 transition-all group-hover/sheet:opacity-100 group-hover/pill:bg-zinc-900 group-hover/pill:text-white dark:group-hover/pill:bg-white dark:group-hover/pill:text-zinc-900 disabled:opacity-30 disabled:pointer-events-none';
+// Overlay control button — subtle muted icon; a gentle tint appears on direct hover.
+const overlayBtn = 'w-8 h-8 rounded-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-900/[0.06] dark:hover:bg-white/10 transition-colors disabled:opacity-30 disabled:pointer-events-none';
 
 /** One layer: controls row on top, masked thumbnail below. */
 const LayerCard: React.FC<{
@@ -353,49 +351,36 @@ const LayerCard: React.FC<{
     }, [id, revision, ready, ar, drawThumb]);
 
     return (
-        // Clean thumbnail: active = full opacity + thin white border. Controls stay
-        // hidden until you hover the card (no icons cluttering the thumbnails).
-        <div
-            data-layer-id={id}
-            onClick={onSelect}
-            className={`group relative w-full rounded-lg overflow-hidden cursor-pointer transition-all ring-1 ${
-                isActive ? 'ring-zinc-900 dark:ring-white'
-                : 'ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
-            }`}
-            style={{ aspectRatio: `${ar}` }}
-        >
-            {/* Dimming lives on the canvas; hovering anywhere over the panel
-                (group/sheet) brings every thumbnail to full opacity. */}
-            <canvas ref={thumbRef} className={`block w-full h-full transition-opacity ${
-                isActive ? 'opacity-100'
-                : (isVisible ? 'opacity-75 group-hover/sheet:opacity-100' : 'opacity-35 group-hover/sheet:opacity-100')
-            }`} />
-
-            {/* Vertical control column — up arrow / eye / down arrow. Arrows are
-                permanent on the active layer and hover-only otherwise; the eye
-                stays visible on every layer. */}
-            <div className="absolute inset-0 flex flex-col items-end justify-center pr-3 pointer-events-none">
-                {/* Pill container appears on panel hover (white in light mode); the round
-                    icon fills appear on direct hover over the pill (group/pill). */}
-                <div className="group/pill pointer-events-auto flex flex-col items-center gap-2 rounded-full p-1 transition-all group-hover/sheet:bg-white/85 dark:group-hover/sheet:bg-zinc-900/85 group-hover/sheet:shadow-sm">
-                    {/* Empty slot keeps the eye vertically centered when an arrow is unavailable */}
-                    {isTop ? <div className="w-9 h-9 shrink-0" /> : (
-                        <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="left">
-                            <button onClick={(e) => { e.stopPropagation(); onMove(1); }} className={overlayBtn}><ChevronUp className="w-6 h-6" /></button>
-                        </Tooltip>
-                    )}
-                    <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="left">
-                        <button onClick={(e) => { e.stopPropagation(); onToggle(); }} className={overlayBtn}>
-                            {isVisible ? <Eye className="w-6 h-6" /> : <EyeOff className="w-6 h-6" />}
-                        </button>
-                    </Tooltip>
-                    {isBottom ? <div className="w-9 h-9 shrink-0" /> : (
-                        <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="left">
-                            <button onClick={(e) => { e.stopPropagation(); onMove(-1); }} className={overlayBtn}><ChevronDown className="w-6 h-6" /></button>
-                        </Tooltip>
-                    )}
-                </div>
+        // One simple pattern: a control row above the thumbnail, always visible with
+        // muted icons; a soft round tint appears only on direct button hover.
+        <div data-layer-id={id} className="flex flex-col gap-1">
+            <div className="flex items-center justify-end">
+                <Tooltip text={isVisible ? (isDe ? 'Ausblenden' : 'Hide') : (isDe ? 'Einblenden' : 'Show')} side="top">
+                    <button onClick={onToggle} className={`${overlayBtn} mr-auto`}>
+                        {isVisible ? <Eye className="w-[17px] h-[17px]" strokeWidth={1.5} /> : <EyeOff className="w-[17px] h-[17px]" strokeWidth={1.5} />}
+                    </button>
+                </Tooltip>
+                <Tooltip text={isDe ? 'Nach oben' : 'Move up'} side="top">
+                    <button onClick={() => onMove(1)} disabled={isTop} className={overlayBtn}><ChevronUp className="w-[17px] h-[17px]" strokeWidth={1.5} /></button>
+                </Tooltip>
+                <Tooltip text={isDe ? 'Nach unten' : 'Move down'} side="top">
+                    <button onClick={() => onMove(-1)} disabled={isBottom} className={overlayBtn}><ChevronDown className="w-[17px] h-[17px]" strokeWidth={1.5} /></button>
+                </Tooltip>
             </div>
+
+            <button
+                onClick={onSelect}
+                className={`relative w-full rounded-lg overflow-hidden transition-all ring-1 ${
+                    isActive ? 'ring-zinc-900 dark:ring-white'
+                    : 'ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
+                }`}
+                style={{ aspectRatio: `${ar}` }}
+            >
+                <canvas ref={thumbRef} className={`block w-full h-full transition-opacity ${
+                    isActive ? 'opacity-100'
+                    : (isVisible ? 'opacity-75 hover:opacity-100' : 'opacity-35 hover:opacity-50')
+                }`} />
+            </button>
         </div>
     );
 };
