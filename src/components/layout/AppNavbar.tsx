@@ -250,7 +250,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         disabled={(gridColumns ?? 2) >= 8}
                         className="w-8 h-7 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-base font-medium disabled:opacity-30 disabled:pointer-events-none"
                     >−</button>
-                    <div className="w-px h-4 bg-zinc-300/80 dark:bg-zinc-600/80" />
+                    <div className="self-stretch w-1 bg-white dark:bg-black" />
                     <button
                         onClick={(e) => { e.stopPropagation(); onAdjustColumns(-1); }}
                         disabled={(gridColumns ?? 2) <= 1}
