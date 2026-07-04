@@ -241,19 +241,20 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         render: (
             <div className="flex items-center justify-between px-4 py-2.5">
                 <span className="text-xs font-normal text-zinc-700 dark:text-zinc-300 font-medium">
-                    {lang === 'de' ? 'Raster' : 'Grid'}
+                    Zoom
                 </span>
-                <div className="flex items-center gap-1.5">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onAdjustColumns(-1); }}
-                        disabled={(gridColumns ?? 2) <= 1}
-                        className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-sm font-medium disabled:opacity-30 disabled:pointer-events-none"
-                    >−</button>
-                    <span className="w-4 text-center text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">{gridColumns}</span>
+                {/* Pill with a thin break between the two buttons */}
+                <div className="flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
                     <button
                         onClick={(e) => { e.stopPropagation(); onAdjustColumns(1); }}
                         disabled={(gridColumns ?? 2) >= 8}
-                        className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-sm font-medium disabled:opacity-30 disabled:pointer-events-none"
+                        className="w-8 h-7 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-base font-medium disabled:opacity-30 disabled:pointer-events-none"
+                    >−</button>
+                    <div className="w-px h-4 bg-zinc-300/80 dark:bg-zinc-600/80" />
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onAdjustColumns(-1); }}
+                        disabled={(gridColumns ?? 2) <= 1}
+                        className="w-8 h-7 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-base font-medium disabled:opacity-30 disabled:pointer-events-none"
                     >+</button>
                 </div>
             </div>
