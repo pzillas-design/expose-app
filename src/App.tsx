@@ -1171,7 +1171,7 @@ export function App() {
                     gridColumns={columnsOverride ?? state.gridColumns ?? undefined}
                     onAdjustColumns={(delta) => {
                         const current = columnsOverride ?? state.gridColumns ?? 2;
-                        const next = Math.max(1, Math.min(8, current + delta));
+                        const next = Math.max(2, Math.min(6, current + delta));
                         setColumnsOverride(next);
                         localStorage.setItem('expose_grid_columns', String(next));
                     }}

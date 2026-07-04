@@ -247,13 +247,13 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <div className="flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
                     <button
                         onClick={(e) => { e.stopPropagation(); onAdjustColumns(1); }}
-                        disabled={(gridColumns ?? 2) >= 8}
+                        disabled={(gridColumns ?? 2) >= 6}
                         className="w-8 h-7 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-base font-medium disabled:opacity-30 disabled:pointer-events-none"
                     >−</button>
-                    <div className="self-stretch w-1 bg-white dark:bg-black" />
+                    <div className="self-stretch w-px bg-white dark:bg-black" />
                     <button
                         onClick={(e) => { e.stopPropagation(); onAdjustColumns(-1); }}
-                        disabled={(gridColumns ?? 2) <= 1}
+                        disabled={(gridColumns ?? 2) <= 2}
                         className="w-8 h-7 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-base font-medium disabled:opacity-30 disabled:pointer-events-none"
                     >+</button>
                 </div>
