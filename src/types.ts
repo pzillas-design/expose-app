@@ -173,8 +173,8 @@ export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
 // Margins target ~75% against fal.ai costs (NB2: $0.06/0.08/0.12/0.16,
 // NB Pro: $0.15/0.15/0.30, GPT high: $0.21/~0.25/0.40).
 export const NB2_PRICES_USD: Record<string, number> = {
-  'nb2-05k': 0.25,
-  'nb2-1k':  0.30,
+  'nb2-05k': 0.15,
+  'nb2-1k':  0.18,
   'nb2-2k':  0.50,
   'nb2-4k':  0.65,
 };

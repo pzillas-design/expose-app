@@ -1,8 +1,8 @@
 import React from 'react';
 
 const TIERS = [
-    { res: '0.5 K', price: '0.25 €', label: 'up to 512 × 512 px' },
-    { res: '1 K',   price: '0.30 €', label: 'up to 1024 × 1024 px' },
+    { res: '0.5 K', price: '0.15 €', label: 'up to 512 × 512 px' },
+    { res: '1 K',   price: '0.18 €', label: 'up to 1024 × 1024 px' },
     { res: '2 K',   price: '0.50 €', label: 'up to 2048 × 2048 px' },
     { res: '4 K',   price: '0.65 €', label: 'up to 4096 × 4096 px' },
 ];
