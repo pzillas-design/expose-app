@@ -6,7 +6,8 @@ import { generateMaskFromAnnotations } from '@/utils/maskGenerator';
 import { generateAnnotationImage } from '@/utils/annotationUtils';
 import { compressImage } from '@/utils/imageUtils';
 import { generateId } from '@/utils/ids';
-import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, StructuredReference } from '@/types';
+import { CanvasImage, ImageRow, GenerationQuality, StructuredGenerationRequest, StructuredReference, getGenerationPriceUsd } from '@/types';
+import { loadGenerationSettings } from '@/utils/generationSettings';
 import { sendGenerationCompleteNotification } from '@/utils/notifications';
 import { trackImageGenerated } from '@/utils/analytics';
 import { logError } from '@/services/errorLogger';
@@ -36,11 +37,12 @@ interface UseGenerationProps {
     onSignIn?: () => void;
 }
 
-const COSTS: Record<string, number> = {
-    'nb2-05k': 0.05,
-    'nb2-1k': 0.10,
-    'nb2-2k': 0.20,
-    'nb2-4k': 0.40,
+// Client-side pre-check price. Mirrors the server's provider-aware billing
+// (Edge Function COSTS/GPT_COSTS) via the shared price matrix in types.ts —
+// the server remains the source of truth and re-checks before charging.
+const estimateCost = (resolution: string): number => {
+    const s = loadGenerationSettings();
+    return getGenerationPriceUsd(s.provider, resolution, s.quality);
 };
 
 // ETA matrix — drives the progress bar's fill speed. Calibrated against the last
@@ -416,7 +418,7 @@ export const useGeneration = ({
         }
 
         const effectiveQuality = qualityMode;
-        const cost = COSTS[effectiveQuality];
+        const cost = estimateCost(effectiveQuality);
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
@@ -715,7 +717,7 @@ export const useGeneration = ({
 
     const performNewGeneration = useCallback(async (prompt: string, modelId: string, ratio: string, attachments: string[] = []) => {
         const effectiveModelId = modelId;
-        const cost = COSTS[effectiveModelId] || 0;
+        const cost = estimateCost(effectiveModelId);
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
         if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
