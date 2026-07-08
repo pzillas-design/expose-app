@@ -11,7 +11,6 @@ import { loadGenerationSettings } from '@/utils/generationSettings';
 import { sendGenerationCompleteNotification } from '@/utils/notifications';
 import { trackImageGenerated } from '@/utils/analytics';
 import { logError } from '@/services/errorLogger';
-import { loadGenerationSettings } from '@/utils/generationSettings';
 
 interface UseGenerationProps {
     rows: ImageRow[];
