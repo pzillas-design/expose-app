@@ -43,6 +43,12 @@ export interface CanvasImage {
   generationStartTime?: number;
   originalSrc?: string;
 
+  // Upload pipeline state (client-only, never persisted): uploads run through a
+  // sequential queue — 'queued' items show a plain spinner, the single
+  // 'uploading' item shows a circular progress ring driven by uploadProgress.
+  uploadStatus?: 'queued' | 'uploading';
+  uploadProgress?: number; // 0–100, only meaningful while uploadStatus === 'uploading'
+
   parentId?: string;
   folderId?: string; // Immutable root of the stack — shared by all variants
   generationPrompt?: string;

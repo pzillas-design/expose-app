@@ -11,7 +11,41 @@ export const storageService = {
      * @param userIdentifier User email (preferred) or user ID
      * @returns The storage path (e.g. 'user@email.com/board-name/img_456.png')
      */
-    async uploadImage(imageSrc: string, userIdentifier: string, customFileName?: string, subfolder?: string): Promise<{ path: string; thumbPath?: string } | null> {
+    /**
+     * XHR-based storage upload so we can report real byte progress —
+     * supabase-js .upload() offers no progress callback. Same endpoint,
+     * headers and upsert semantics as the SDK.
+     */
+    async _uploadWithProgress(filePath: string, blob: Blob, mimeType: string, onProgress: (pct: number) => void): Promise<{ path: string }> {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token || (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
+        const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/user-content/${filePath}`;
+
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', url);
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+            xhr.setRequestHeader('apikey', (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim());
+            xhr.setRequestHeader('x-upsert', 'true');
+            xhr.setRequestHeader('cache-control', '3600');
+            xhr.setRequestHeader('Content-Type', mimeType);
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+            };
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    onProgress(100);
+                    resolve({ path: filePath });
+                } else {
+                    reject(new Error(`Storage upload failed: HTTP ${xhr.status} — ${(xhr.responseText || '').slice(0, 200)}`));
+                }
+            };
+            xhr.onerror = () => reject(new Error('Storage upload failed: network error'));
+            xhr.send(blob);
+        });
+    },
+
+    async uploadImage(imageSrc: string, userIdentifier: string, customFileName?: string, subfolder?: string, onProgress?: (pct: number) => void): Promise<{ path: string; thumbPath?: string } | null> {
         try {
             // 1. Optimize Image (Resize to 4K max & Compress)
             // Skip optimization for thumbnails (already small)
@@ -50,7 +84,13 @@ export const storageService = {
 
             console.log(`[Storage] Uploading to: ${filePath} (${mimeType})`);
 
-            // 4. Upload Main Image
+            // 4. Upload Main Image — XHR path when the caller wants progress,
+            // otherwise the plain SDK call.
+            if (onProgress) {
+                const data = await storageService._uploadWithProgress(filePath, blob, mimeType, onProgress);
+                return { path: data.path };
+            }
+
             const { data, error } = await supabase.storage
                 .from('user-content')
                 .upload(filePath, blob, {

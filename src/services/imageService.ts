@@ -38,7 +38,7 @@ export const imageService = {
      * Saves a newly generated image to Storage and DB.
      * This is intended to be called in the background (fire and forget from UI perspective).
      */
-    async persistImage(image: CanvasImage, userId: string, userEmail?: string): Promise<{ success: boolean; error?: string; storage_path?: string }> {
+    async persistImage(image: CanvasImage, userId: string, userEmail?: string, onProgress?: (pct: number) => void): Promise<{ success: boolean; error?: string; storage_path?: string }> {
         console.log(`Deep Sync: Persisting image ${image.id} for user ${userId}...`);
 
         // 1. Determine path+filename
@@ -49,7 +49,7 @@ export const imageService = {
         const storageIdentifier = userEmail || userId;
 
         // 2. Upload Image (Compressed to 4K max via uploadImage)
-        const uploadResult = await storageService.uploadImage(image.src, storageIdentifier, customFileName, subfolder);
+        const uploadResult = await storageService.uploadImage(image.src, storageIdentifier, customFileName, subfolder, onProgress);
         if (!uploadResult) {
             console.warn('Deep Sync: Storage upload failed. Skipping DB insert.');
             return { success: false, error: 'Upload Failed' };

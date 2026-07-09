@@ -66,6 +66,32 @@ export const revertProviderToNB2Once = (): { ran: boolean; migrated: boolean } =
     }
 };
 
+/**
+ * Targeted one-shot upgrade to Nano Banana Pro for specific users who reported
+ * that the old beta (Gemini 3 Pro Image direct) produced better results — NB Pro
+ * is that same model family via fal. Runs once per browser after login; the user
+ * can still switch models freely afterwards.
+ */
+const NB_PRO_UPGRADE_KEY = 'expose:provider-migration:nbpro-upgrade-v1';
+const NB_PRO_UPGRADE_USER_IDS = new Set([
+    'ebb6f93f-9906-4d26-b53f-1c9df514bfaa', // barbara.mair — missed beta's Gemini-Pro quality
+]);
+export const upgradeUserToNBProOnce = (userId: string | undefined | null): { ran: boolean; migrated: boolean } => {
+    try {
+        if (typeof window === 'undefined' || !userId) return { ran: false, migrated: false };
+        if (!NB_PRO_UPGRADE_USER_IDS.has(userId)) return { ran: false, migrated: false };
+        if (window.localStorage.getItem(NB_PRO_UPGRADE_KEY)) return { ran: false, migrated: false };
+
+        const current = loadGenerationSettings();
+        const changed = current.provider !== 'nano-banana-pro';
+        if (changed) saveGenerationSettings({ ...current, provider: 'nano-banana-pro' });
+        window.localStorage.setItem(NB_PRO_UPGRADE_KEY, new Date().toISOString());
+        return { ran: true, migrated: changed };
+    } catch (_) {
+        return { ran: false, migrated: false };
+    }
+};
+
 /** @deprecated Use revertProviderToNB2Once. Kept for older callers / no-op safety. */
 export const migrateProviderToOpenAIOnce = (): { ran: boolean; migrated: boolean } => {
     // The original openai migration is intentionally a no-op now — we reverted

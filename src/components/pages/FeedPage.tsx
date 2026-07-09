@@ -206,10 +206,22 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         </div>
                     )}
 
-                    {/* Upload-in-progress — corner spinner while the local blob is persisted to storage */}
+                    {/* Upload state — queued items spin without progress; the single
+                        actively uploading item fills a clock-style progress ring 0→100. */}
                     {!isGen && !isSource && !img.storage_path && img.src?.startsWith('blob:') && (
                         <div className="absolute top-2 right-2 z-20 w-6 h-6 rounded-full flex items-center justify-center bg-white/85 dark:bg-zinc-800/85 shadow-sm pointer-events-none">
-                            <Loader2 className="w-[14px] h-[14px] animate-[spin_3s_linear_infinite] text-zinc-700 dark:text-zinc-200" />
+                            {img.uploadStatus === 'uploading' ? (
+                                <svg viewBox="0 0 20 20" className="w-[16px] h-[16px] -rotate-90">
+                                    <circle cx="10" cy="10" r="8" fill="none" strokeWidth="2.5"
+                                        className="stroke-zinc-200 dark:stroke-zinc-600" />
+                                    <circle cx="10" cy="10" r="8" fill="none" strokeWidth="2.5" strokeLinecap="round"
+                                        className="stroke-zinc-700 dark:stroke-zinc-200 transition-[stroke-dashoffset] duration-200"
+                                        strokeDasharray={2 * Math.PI * 8}
+                                        strokeDashoffset={(2 * Math.PI * 8) * (1 - Math.min(100, img.uploadProgress ?? 0) / 100)} />
+                                </svg>
+                            ) : (
+                                <Loader2 className="w-[14px] h-[14px] animate-[spin_3s_linear_infinite] text-zinc-700 dark:text-zinc-200" />
+                            )}
                         </div>
                     )}
 

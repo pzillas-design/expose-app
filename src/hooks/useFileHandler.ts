@@ -14,6 +14,14 @@ interface UseFileHandlerProps {
     t: (key: any) => string;
 }
 
+// Sequential upload queue (module-level so it survives re-renders): each
+// persistImage waits for the previous one. Queued items show a plain spinner,
+// the single active item drives a circular progress ring via uploadProgress.
+let uploadChain: Promise<void> = Promise.resolve();
+const enqueueUpload = (job: () => Promise<void>): void => {
+    uploadChain = uploadChain.then(job, job);
+};
+
 export const useFileHandler = ({
     user,
     isAuthDisabled,
@@ -104,7 +112,9 @@ export const useFileHandler = ({
 
                         processedCount++;
 
-                        // IMMEDIATE PERSISTENCE (Background)
+                        // IMMEDIATE PERSISTENCE — sequential queue: one upload at a
+                        // time, so each image shows real progress instead of all
+                        // spinning at once.
                         if (user && !isAuthDisabled) {
                             const finalImage: CanvasImage = {
                                 id: skeletonId,
@@ -123,23 +133,42 @@ export const useFileHandler = ({
                                 storage_path: '',
                             };
 
-                            imageService.persistImage(finalImage, user.id, user.email).then(async res => {
-                                if (res.success && res.storage_path) {
-                                    // Get a signed URL so the image can be used as a source for edits
-                                    // without needing a page reload (blob URLs can't be fetched server-side)
-                                    const signedUrl = await storageService.getSignedUrl(res.storage_path);
-                                    setRows(prev => prev.map(row => ({
-                                        ...row,
-                                        items: row.items.map(item => item.id === skeletonId ? {
-                                            ...item,
+                            const patchItem = (patch: Partial<CanvasImage>) => {
+                                setRows(prev => prev.map(row => ({
+                                    ...row,
+                                    items: row.items.map(item => item.id === skeletonId ? { ...item, ...patch } : item)
+                                })));
+                            };
+
+                            patchItem({ uploadStatus: 'queued', uploadProgress: 0 });
+
+                            enqueueUpload(async () => {
+                                patchItem({ uploadStatus: 'uploading', uploadProgress: 0 });
+                                try {
+                                    const res = await imageService.persistImage(
+                                        finalImage, user.id, user.email,
+                                        (pct) => patchItem({ uploadProgress: pct }),
+                                    );
+                                    if (res.success && res.storage_path) {
+                                        // Get a signed URL so the image can be used as a source for edits
+                                        // without needing a page reload (blob URLs can't be fetched server-side)
+                                        const signedUrl = await storageService.getSignedUrl(res.storage_path);
+                                        patchItem({
                                             storage_path: res.storage_path,
+                                            uploadStatus: undefined,
+                                            uploadProgress: undefined,
                                             ...(signedUrl ? {
                                                 src: signedUrl,
                                                 originalSrc: signedUrl,
                                                 thumbSrc: signedUrl
                                             } : {})
-                                        } : item)
-                                    })));
+                                        });
+                                    } else {
+                                        patchItem({ uploadStatus: undefined, uploadProgress: undefined });
+                                    }
+                                } catch (e) {
+                                    console.error('Queued upload failed:', e);
+                                    patchItem({ uploadStatus: undefined, uploadProgress: undefined });
                                 }
                             });
                         }
