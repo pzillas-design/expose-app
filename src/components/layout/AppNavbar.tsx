@@ -648,10 +648,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         : 'h-[88px] md:h-[148px] backdrop-blur-none border-transparent pointer-events-none'
                     }`}
             >
-                {/* LEFT: Upload + Create (with labels when expanded) — pinned to a
-                    fixed h-14 top row so the controls sit at the same height as in
-                    the detail view instead of centering in the tall hero header. */}
-                <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0 self-start h-14">
+                {/* LEFT: Upload + Create (with labels when expanded) */}
+                <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
                     {isBlogPost ? (
                         <button
                             className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
@@ -788,8 +786,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     </div>
                 </div>
 
-                {/* RIGHT: System Actions / Login — same fixed h-14 top row as LEFT */}
-                <div className="flex-1 basis-0 grow flex items-center justify-end pointer-events-auto min-w-0 self-start h-14">
+                {/* RIGHT: System Actions / Login */}
+                <div className="flex-1 basis-0 grow flex items-center justify-end pointer-events-auto min-w-0">
                     <div className="flex items-center gap-1.5">
                         {isPublic ? (
                             <>
@@ -912,20 +910,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const isGroupHeroMode = isGroupDrillDown && !isSelectMode && !isDetail && !isCreate && groupHeroProgress !== undefined;
 
     if (isGroupHeroMode) {
-        const hp = groupHeroProgress!;
-        const isScrolled = hp > 0.4;
-        const showBorder = hp > 0.9;
-
+        // The batch header is always the compact bar — no hero expansion,
+        // scrolling has no effect. Matches the detail view's header exactly
+        // so navigating between the levels never jumps.
         return (
             <header
-                className={`fixed top-0 left-0 right-0 z-50 flex items-center px-4 md:px-6 transition-all duration-300 border-b ${showBorder
-                    ? 'border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/85'
-                    : 'border-transparent bg-white/0 dark:bg-zinc-950/0'
-                } ${isScrolled ? 'h-14' : 'h-[88px] md:h-[108px]'}`}
+                className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6 transition-all duration-300"
             >
-                {/* LEFT: Back button (always compact) — pinned to a fixed h-14 top
-                    row so the chevron sits at the same height as in the detail view. */}
-                <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto self-start h-14">
+                {/* LEFT: Back button */}
+                <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
                     <button
                         className="relative flex items-center justify-center rounded-full transition-all duration-300 group h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         onClick={onCloseGroup}
@@ -937,7 +930,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
                 {/* CENTER: Group title — same font as the detail view; a folder icon
                     to the left of the title is the minimal "this is a stack" signal. */}
-                <div className="absolute left-1/2 top-0 h-14 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-10 max-w-[60%]">
+                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-10 max-w-[60%]">
                     {groupItemCount && groupItemCount > 1 ? (
                         <Folder className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
                     ) : null}
@@ -947,9 +940,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </div>
 
                 {/* RIGHT: balance + menu — the layer composer is now entered via the
-                    "Ebenen kombinieren" tile in the grid, so no navbar button here.
-                    Same fixed h-14 top row as LEFT. */}
-                <div className="flex-1 basis-0 grow flex items-center gap-2 justify-end relative z-10 pointer-events-auto self-start h-14">
+                    "Ebenen kombinieren" tile in the grid, so no navbar button here. */}
+                <div className="flex-1 basis-0 grow flex items-center gap-2 justify-end relative z-10 pointer-events-auto">
                     {rightContent}
                 </div>
             </header>
