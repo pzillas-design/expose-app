@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase, initialUrlHashType } from '../services/supabaseClient';
+import { supabase, initialUrlHashType, initialUrlErrorCode, initialUrlErrorDescription } from '../services/supabaseClient';
 import { imageService } from '../services/imageService';
 import { ImageRow } from '../types';
 import { LocaleKey } from '../data/locales';
@@ -110,14 +110,19 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         if (isRecoveryFlowRef.current) {
             setAuthModalMode('update-password');
             setIsAuthModalOpen(true);
-        } else if (window.location.hash) {
-            const params = new URLSearchParams(window.location.hash.substring(1));
-            const errorMsg = params.get('error_description');
-            if (errorMsg) {
-                setAuthError(errorMsg.replace(/\+/g, ' '));
-                setIsAuthModalOpen(true);
-                window.history.replaceState(null, '', window.location.pathname);
-            }
+        } else if (initialUrlErrorCode === 'otp_expired' || initialUrlErrorCode === 'access_denied') {
+            // Expired or already-consumed recovery link (e.g. corporate mail scanners
+            // prefetch the link and burn the token). Without this the app just loads
+            // normally and the user thinks the link "does nothing". Open the reset
+            // form directly so they can request a fresh link in one step.
+            setAuthModalMode('reset');
+            setAuthError(t('auth_error_link_expired'));
+            setIsAuthModalOpen(true);
+            window.history.replaceState(null, '', window.location.pathname);
+        } else if (initialUrlErrorDescription) {
+            setAuthError(initialUrlErrorDescription.replace(/\+/g, ' '));
+            setIsAuthModalOpen(true);
+            window.history.replaceState(null, '', window.location.pathname);
         }
 
         // Get initial session — skip if this is a recovery redirect (user must set new password first)
