@@ -21,6 +21,7 @@ import { CreatePage } from '@/components/pages/CreatePage';
 // Lazy loaded pages
 const HomePage = React.lazy(() => import('@/components/pages/HomePage').then(m => ({ default: m.HomePage })));
 const ImpressumPage = React.lazy(() => import('@/components/pages/ImpressumPage').then(m => ({ default: m.ImpressumPage })));
+import { AuthConfirmPage } from '@/components/pages/AuthConfirmPage';
 const ContactPage = React.lazy(() => import('@/components/pages/ContactPage').then(m => ({ default: m.ContactPage })));
 const BlogPage = React.lazy(() => import('@/components/pages/BlogPage').then(m => ({ default: m.BlogPage })));
 const BlogPostPage = React.lazy(() => import('@/components/pages/BlogPostPage').then(m => ({ default: m.BlogPostPage })));
@@ -175,6 +176,17 @@ export function App() {
         pathnameRef.current = location.pathname;
         // Route sync — no createMode to manage anymore
     }, [location.pathname, location.search]);
+
+    // ?reset=1 — the confirmation page sends users here when a recovery link is
+    // expired/consumed so they can request a fresh one. Open the reset form and
+    // strip the param so it doesn't re-fire.
+    useEffect(() => {
+        if (new URLSearchParams(location.search).get('reset') === '1') {
+            setAuthModalMode('reset');
+            setIsAuthModalOpen(true);
+            navigate(location.pathname, { replace: true });
+        }
+    }, [location.search, location.pathname, setAuthModalMode, setIsAuthModalOpen, navigate]);
 
     // Logic to sync URL with App State (activeId and expandedGroupId)
     useEffect(() => {
@@ -1419,6 +1431,8 @@ export function App() {
                         />} />
                         <Route path="/legal" element={<Navigate to="/impressum" replace />} />
                         <Route path="/about-v2" element={<Navigate to="/about" replace />} />
+                        {/* Confirmation-page recovery flow — defeats mail-scanner link prefetch */}
+                        <Route path="/auth/confirm" element={<AuthConfirmPage t={t} />} />
 
                         <Route path="/s/:slug" element={
                             <SharedTemplatePage
