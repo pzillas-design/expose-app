@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Lock, Loader2, ArrowRight, CheckCircle2, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Lock, Loader2, ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/services/supabaseClient';
 import { Button, Theme, Typo, Input } from '@/components/ui/DesignSystem';
 import { BrandLogo } from '@/components/ui/BrandLogo';
@@ -87,10 +87,8 @@ export const AuthConfirmPage: React.FC<{ t: TranslationFunction }> = ({ t }) => 
                 {/* GATE — nothing has happened yet; the token is untouched until the click */}
                 {stage === 'gate' && (
                     <>
-                        <ShieldCheck className="w-8 h-8 text-zinc-400 mb-3" />
                         <h2 className={Typo.H1}>{t('auth_reset_password')}</h2>
-                        <p className={`${Typo.Micro} mt-2 mb-6`}>{t('auth_confirm_desc')}</p>
-                        <Button variant="primary" className="w-full justify-center" onClick={handleConfirm}>
+                        <Button variant="primary" className="w-full justify-center mt-6" onClick={handleConfirm}>
                             <span>{t('auth_confirm_btn')}</span>
                         </Button>
                     </>
