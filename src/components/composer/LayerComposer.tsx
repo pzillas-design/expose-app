@@ -214,7 +214,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                         animation: comp.ready ? 'detail-img-in 260ms cubic-bezier(0.25,1,0.5,1) both' : undefined,
                     }}
                 />
-                <BrushCursor canvasRef={canvasRef} size={displayBrush} innerRatio={innerRatio} enabled={!!comp.activeId} hidden={isAdjusting} mode={comp.mode} />
+                <BrushCursor canvasRef={canvasRef} brushSize={comp.brushSize} refW={comp.refDims.w} innerRatio={innerRatio} enabled={!!comp.activeId} hidden={isAdjusting} mode={comp.mode} />
 
                 {/* Centered brush preview while dragging a slider */}
                 {comp.ready && comp.activeId && isAdjusting && (
@@ -397,7 +397,9 @@ const BrushRing: React.FC<{ size: number; innerRatio: number; mode?: 'add' | 're
     const inner = Math.max(0.5, outer * innerRatio);
     const arm = Math.max(3, Math.min(6, s * 0.09)); // centered +/- glyph
     return (
-        <svg width={s} height={s} className="block overflow-visible">
+        // drop-shadow gives the white rings a dark halo so the cursor stays
+        // visible on light images (previously invisible → "blind" brushing).
+        <svg width={s} height={s} className="block overflow-visible" style={{ filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.9))' }}>
             <circle cx={c} cy={c} r={outer} fill="none" stroke="#fff" strokeWidth={1.5} strokeDasharray="4 4" />
             {innerRatio < 0.95 && <circle cx={c} cy={c} r={inner} fill="none" stroke="#fff" strokeWidth={1.5} />}
             {/* Mode indicator: white + (add) or − (remove) in the center */}
@@ -414,33 +416,39 @@ const BrushRing: React.FC<{ size: number; innerRatio: number; mode?: 'add' | 're
 /** Brush ring that follows the pointer over the canvas. */
 const BrushCursor: React.FC<{
     canvasRef: React.RefObject<HTMLCanvasElement>;
-    size: number;
+    brushSize: number;   // mask-space brush size
+    refW: number;        // mask-space width (reference dims)
     innerRatio: number;
     enabled: boolean;
     hidden?: boolean;
     mode?: 'add' | 'remove';
-}> = ({ canvasRef, size, innerRatio, enabled, hidden, mode }) => {
+}> = ({ canvasRef, brushSize, refW, innerRatio, enabled, hidden, mode }) => {
     // Fixed-position cursor in viewport coords — independent of canvas layout/
-    // letterboxing, so it always lines up with the pointer.
-    const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+    // letterboxing, so it always lines up with the pointer. The display size is
+    // derived from the LIVE canvas rect on every move, so it stays in sync with
+    // the brush size even when the canvas is resized (panel drag, window resize)
+    // without a React re-render.
+    const [state, setState] = useState<{ x: number; y: number; size: number } | null>(null);
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas || !enabled) { setPos(null); return; }
+        if (!canvas || !enabled) { setState(null); return; }
         const move = (e: PointerEvent) => {
             const rect = canvas.getBoundingClientRect();
             const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
-            setPos(inside ? { x: e.clientX, y: e.clientY } : null);
+            if (!inside) { setState(null); return; }
+            const scale = refW ? rect.width / refW : 1;
+            setState({ x: e.clientX, y: e.clientY, size: brushSize * scale });
         };
-        const leave = () => setPos(null);
+        const leave = () => setState(null);
         canvas.addEventListener('pointermove', move);
         canvas.addEventListener('pointerleave', leave);
         return () => { canvas.removeEventListener('pointermove', move); canvas.removeEventListener('pointerleave', leave); };
-    }, [canvasRef, enabled]);
+    }, [canvasRef, enabled, brushSize, refW]);
 
-    if (!pos || hidden) return null;
+    if (!state || hidden) return null;
     return (
-        <div className="pointer-events-none fixed z-[110]" style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -50%)' }}>
-            <BrushRing size={size} innerRatio={innerRatio} mode={mode} />
+        <div className="pointer-events-none fixed z-[110]" style={{ left: state.x, top: state.y, transform: 'translate(-50%, -50%)' }}>
+            <BrushRing size={state.size} innerRatio={innerRatio} mode={mode} />
         </div>
     );
 };
