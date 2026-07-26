@@ -697,10 +697,13 @@ Deno.serve(async (req) => {
         apiRequestPayload.storageLatencyMs = Date.now() - storageStart;
 
         // ── Insert images row ──────────────────────────────────────────────
-        const displayW = Math.round(sourceImage?.width || falResult.width || 1024);
-        const displayH = Math.round(sourceImage?.height || falResult.height || 1024);
-        const realW = Math.round(sourceImage?.realWidth || falResult.width || displayW);
-        const realH = Math.round(sourceImage?.realHeight || falResult.height || displayH);
+        // Record fal's ACTUAL output dimensions (fixed per-tier size at the
+        // snapped aspect ratio), not the source's — otherwise the stored aspect
+        // disagrees with the real file and it renders/exports stretched.
+        const displayW = Math.round(falResult.width || sourceImage?.width || 1024);
+        const displayH = Math.round(falResult.height || sourceImage?.height || 1024);
+        const realW = Math.round(falResult.width || sourceImage?.realWidth || displayW);
+        const realH = Math.round(falResult.height || sourceImage?.realHeight || displayH);
         const parentId = (requestType === 'edit' || sourceImage?.id) ? (sourceImage?.id || null) : null;
 
         const newImage = {
