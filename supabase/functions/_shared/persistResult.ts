@@ -127,10 +127,16 @@ export async function persistFalResult(
     if (upErr) return { ok: false, error: `storage upload: ${upErr.message}` };
 
     // ── Insert images row ──────────────────────────────────────────────────
-    const displayW = Math.round(src.width || fal.width || 1024);
-    const displayH = Math.round(src.height || fal.height || 1024);
-    const realW = Math.round(src.realWidth || fal.width || displayW);
-    const realH = Math.round(src.realHeight || fal.height || displayH);
+    // Record fal's ACTUAL output dimensions, not the source's. fal returns a
+    // fixed per-tier size at the snapped aspect ratio (e.g. 2K@3:2 ≈ 2048×1365),
+    // which differs slightly from the source. Copying the source dims made the
+    // stored aspect disagree with the real file → the image was rendered/exported
+    // stretched (visible on non-standard crops). Prefer fal.*; fall back to the
+    // source only when fal didn't report dimensions.
+    const displayW = Math.round(fal.width || src.width || 1024);
+    const displayH = Math.round(fal.height || src.height || 1024);
+    const realW = Math.round(fal.width || src.realWidth || displayW);
+    const realH = Math.round(fal.height || src.realHeight || displayH);
     const parentId = (ctx.requestType === 'edit' || src.id) ? (src.id || null) : null;
     const modelVersion = ctx.provider === 'openai' ? 'gpt-image-2'
         : ctx.provider === 'nano-banana-pro' ? 'nano-banana-pro'
