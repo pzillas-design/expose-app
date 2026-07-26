@@ -126,7 +126,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
 
     // Inner (hard-core) radius fraction — the dashed outer ring is the full brush,
     // the solid inner ring shows where the soft falloff begins.
-    const innerRatio = Math.min(0.98, 1 - comp.softness / 100);
+    const soft = Math.min(1, Math.max(0, comp.softness / 100));
     // While dragging a slider, show a centered preview (like the annotation editor).
     const [isAdjusting, setIsAdjusting] = useState(false);
 
@@ -214,12 +214,12 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                         animation: comp.ready ? 'detail-img-in 260ms cubic-bezier(0.25,1,0.5,1) both' : undefined,
                     }}
                 />
-                <BrushCursor canvasRef={canvasRef} brushSize={comp.brushSize} refW={comp.refDims.w} innerRatio={innerRatio} enabled={!!comp.activeId} hidden={isAdjusting} mode={comp.mode} />
+                <BrushCursor canvasRef={canvasRef} brushSize={comp.brushSize} refW={comp.refDims.w} soft={soft} enabled={!!comp.activeId} hidden={isAdjusting} mode={comp.mode} />
 
                 {/* Centered brush preview while dragging a slider */}
                 {comp.ready && comp.activeId && isAdjusting && (
                     <div className="pointer-events-none absolute left-1/2 top-1/2 z-30" style={{ transform: 'translate(-50%, -50%)' }}>
-                        <BrushRing size={displayBrush} innerRatio={innerRatio} mode={comp.mode} />
+                        <BrushRing coreSize={displayBrush} soft={soft} mode={comp.mode} />
                     </div>
                 )}
 
@@ -386,22 +386,25 @@ const LayerCard: React.FC<{
 };
 
 /**
- * Brush ring: a dashed white outer circle = the full brush extent, and a solid
- * white inner circle = where the soft falloff begins. The gap between them grows
- * with edge softness. Plain white lines, no shadow — like the annotation editor.
+ * Brush ring (user model): a SOLID white inner circle = the hard core (= the set
+ * brush size), and a dashed white outer circle = the feathered halo that extends
+ * OUTWARD with softness. At softness ~0 the two coincide, so only the dashed ring
+ * shows. Plain white lines like the annotation editor.
  */
-const BrushRing: React.FC<{ size: number; innerRatio: number; mode?: 'add' | 'remove' }> = ({ size, innerRatio, mode }) => {
-    const s = Math.max(10, size);
+const BrushRing: React.FC<{ coreSize: number; soft: number; mode?: 'add' | 'remove' }> = ({ coreSize, soft, mode }) => {
+    const coreR = Math.max(5, coreSize / 2);
+    const sf = Math.min(1, Math.max(0, soft));
+    const outerR = coreR * (1 + sf);
+    const pad = 2;
+    const s = Math.ceil(outerR * 2) + pad * 2;
     const c = s / 2;
-    const outer = Math.max(1, c - 1);
-    const inner = Math.max(0.5, outer * innerRatio);
-    const arm = Math.max(3, Math.min(6, s * 0.09)); // centered +/- glyph
+    const arm = Math.max(3, Math.min(6, coreR * 0.18)); // centered +/- glyph
     return (
-        // drop-shadow gives the white rings a dark halo so the cursor stays
-        // visible on light images (previously invisible → "blind" brushing).
-        <svg width={s} height={s} className="block overflow-visible" style={{ filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.9))' }}>
-            <circle cx={c} cy={c} r={outer} fill="none" stroke="#fff" strokeWidth={1.5} strokeDasharray="4 4" />
-            {innerRatio < 0.95 && <circle cx={c} cy={c} r={inner} fill="none" stroke="#fff" strokeWidth={1.5} />}
+        <svg width={s} height={s} className="block overflow-visible">
+            {/* dashed outer = the feathered extent (grows with softness) */}
+            <circle cx={c} cy={c} r={outerR} fill="none" stroke="#fff" strokeWidth={1.5} strokeDasharray="4 4" />
+            {/* solid inner = the hard core = the set brush size (hidden when no feather) */}
+            {sf > 0.02 && <circle cx={c} cy={c} r={coreR} fill="none" stroke="#fff" strokeWidth={1.5} />}
             {/* Mode indicator: white + (add) or − (remove) in the center */}
             {mode && (
                 <g stroke="#fff" strokeWidth={2} strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5))' }}>
@@ -416,39 +419,62 @@ const BrushRing: React.FC<{ size: number; innerRatio: number; mode?: 'add' | 're
 /** Brush ring that follows the pointer over the canvas. */
 const BrushCursor: React.FC<{
     canvasRef: React.RefObject<HTMLCanvasElement>;
-    brushSize: number;   // mask-space brush size
+    brushSize: number;   // mask-space brush size (hard core)
     refW: number;        // mask-space width (reference dims)
-    innerRatio: number;
+    soft: number;        // 0..1 edge softness
     enabled: boolean;
     hidden?: boolean;
     mode?: 'add' | 'remove';
-}> = ({ canvasRef, brushSize, refW, innerRatio, enabled, hidden, mode }) => {
-    // Fixed-position cursor in viewport coords — independent of canvas layout/
-    // letterboxing, so it always lines up with the pointer. The display size is
-    // derived from the LIVE canvas rect on every move, so it stays in sync with
-    // the brush size even when the canvas is resized (panel drag, window resize)
-    // without a React re-render.
-    const [state, setState] = useState<{ x: number; y: number; size: number } | null>(null);
+}> = ({ canvasRef, brushSize, refW, soft, enabled, hidden, mode }) => {
+    // The follower is positioned by mutating the DOM node directly on every
+    // pointer event — NOT through React state — so it never lags behind the
+    // pointer even while the canvas is busy compositing each dab. The previous
+    // setState-per-move version stalled under that load and could vanish
+    // mid-stroke ("blind" brushing). Only the ring *size* (which changes rarely)
+    // goes through React state.
+    const wrapRef = useRef<HTMLDivElement>(null);
+    const [coreSize, setCoreSize] = useState(0);
+    const bsRef = useRef(brushSize); bsRef.current = brushSize;
+    const rwRef = useRef(refW); rwRef.current = refW;
+    const hidRef = useRef(!!hidden); hidRef.current = !!hidden;
+
+    // Hide at once when a slider takes over (isAdjusting) — the centered preview
+    // shows instead; don't wait for the next pointer move to hide.
+    useEffect(() => { if (hidden && wrapRef.current) wrapRef.current.style.display = 'none'; }, [hidden]);
+
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas || !enabled) { setState(null); return; }
-        const move = (e: PointerEvent) => {
+        if (!canvas || !enabled) { if (wrapRef.current) wrapRef.current.style.display = 'none'; return; }
+        const apply = (clientX: number, clientY: number) => {
+            const el = wrapRef.current;
+            if (!el) return;
             const rect = canvas.getBoundingClientRect();
-            const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
-            if (!inside) { setState(null); return; }
-            const scale = refW ? rect.width / refW : 1;
-            setState({ x: e.clientX, y: e.clientY, size: brushSize * scale });
+            const inside = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+            if (!inside || hidRef.current) { el.style.display = 'none'; return; }
+            el.style.display = 'block';
+            el.style.left = `${clientX}px`;
+            el.style.top = `${clientY}px`;
+            const scale = rwRef.current ? rect.width / rwRef.current : 1;
+            const next = bsRef.current * scale;
+            setCoreSize(prev => (Math.abs(prev - next) < 0.5 ? prev : next));
         };
-        const leave = () => setState(null);
+        const move = (e: PointerEvent) => apply(e.clientX, e.clientY);
+        const down = (e: PointerEvent) => apply(e.clientX, e.clientY); // show at once on press
+        const leave = () => { if (wrapRef.current) wrapRef.current.style.display = 'none'; };
         canvas.addEventListener('pointermove', move);
+        canvas.addEventListener('pointerdown', down);
         canvas.addEventListener('pointerleave', leave);
-        return () => { canvas.removeEventListener('pointermove', move); canvas.removeEventListener('pointerleave', leave); };
-    }, [canvasRef, enabled, brushSize, refW]);
+        return () => {
+            canvas.removeEventListener('pointermove', move);
+            canvas.removeEventListener('pointerdown', down);
+            canvas.removeEventListener('pointerleave', leave);
+        };
+    }, [canvasRef, enabled]);
 
-    if (!state || hidden) return null;
+    if (!enabled) return null;
     return (
-        <div className="pointer-events-none fixed z-[110]" style={{ left: state.x, top: state.y, transform: 'translate(-50%, -50%)' }}>
-            <BrushRing size={state.size} innerRatio={innerRatio} mode={mode} />
+        <div ref={wrapRef} className="pointer-events-none fixed z-[110]" style={{ left: 0, top: 0, display: 'none', transform: 'translate(-50%, -50%)' }}>
+            {coreSize > 0 && <BrushRing coreSize={coreSize} soft={soft} mode={mode} />}
         </div>
     );
 };
