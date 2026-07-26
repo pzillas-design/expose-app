@@ -211,32 +211,40 @@ export const useLayerCompositing = (
         const mctx = mask.getContext('2d')!;
         mctx.globalCompositeOperation = mode === 'add' ? 'source-over' : 'destination-out';
 
-        const size = Math.max(2, Math.round(brushSize));
+        const size = Math.max(2, Math.round(brushSize)); // hard-core diameter (fully opaque)
         const r = size / 2;
         const soft = Math.min(1, Math.max(0, softnessRef.current / 100));
+        // The set size is the SOLID core; softness adds a feathered halo that
+        // extends OUTWARD beyond it, so the total painted footprint grows with
+        // blur (core stays fully covered at the chosen size).
+        const outerR = r * (1 + soft);
+        const spriteSize = Math.max(2, Math.ceil(outerR * 2));
+        const half = spriteSize / 2;
 
         // Build the brush sprite once per (size, softness) and stamp it with
         // drawImage — far cheaper than creating a radial gradient on every dab.
         let s = stampRef.current;
         if (!s || s.size !== size || s.soft !== soft) {
             const cnv = s?.canvas ?? document.createElement('canvas');
-            cnv.width = size; cnv.height = size;
+            cnv.width = spriteSize; cnv.height = spriteSize;
             const sctx = cnv.getContext('2d')!;
-            sctx.clearRect(0, 0, size, size);
+            sctx.clearRect(0, 0, spriteSize, spriteSize);
             if (soft <= 0.01) {
                 sctx.fillStyle = '#fff';
+                sctx.beginPath(); sctx.arc(half, half, r, 0, Math.PI * 2); sctx.fill();
             } else {
-                const g = sctx.createRadialGradient(r, r, r * (1 - soft), r, r, r);
+                // Opaque out to the core radius r, then fade to 0 at outerR.
+                const g = sctx.createRadialGradient(half, half, r, half, half, outerR);
                 g.addColorStop(0, 'rgba(255,255,255,1)');
                 g.addColorStop(1, 'rgba(255,255,255,0)');
                 sctx.fillStyle = g;
+                sctx.beginPath(); sctx.arc(half, half, outerR, 0, Math.PI * 2); sctx.fill();
             }
-            sctx.beginPath(); sctx.arc(r, r, r, 0, Math.PI * 2); sctx.fill();
             s = { canvas: cnv, size, soft };
             stampRef.current = s;
         }
         const sprite = s.canvas;
-        const place = (cx: number, cy: number) => mctx.drawImage(sprite, cx - r, cy - r, size, size);
+        const place = (cx: number, cy: number) => mctx.drawImage(sprite, cx - half, cy - half, spriteSize, spriteSize);
 
         if (prevX != null && prevY != null) {
             const dx = x - prevX, dy = y - prevY;
