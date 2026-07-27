@@ -1,11 +1,25 @@
 name: Deploy Edge Functions
 
+# Auto-deploys Supabase Edge Functions on every push to main that touches
+# function code. The native Supabase↔GitHub integration was NOT deploying these
+# (functions stayed on old versions after pushes), so this workflow is the
+# source of truth for edge-function deploys.
+#
+# Requires repo secret SUPABASE_ACCESS_TOKEN (a personal access token, sbp_…).
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      # Job-level so EVERY step is authenticated (the old workflow only set it on
+      # one step, so the other deploy failed auth).
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -13,10 +27,20 @@ jobs:
         with:
           version: latest
 
-      - name: Deploy generate-image-fal
-        run: supabase functions deploy generate-image-fal --project-ref rhocpnetpxficxnrprsq --no-verify-jwt
+      # Public endpoints & webhooks — must be deployed WITHOUT JWT verification.
+      - name: Deploy no-JWT functions
+        run: |
+          for fn in generate-image-fal fal-webhook stripe-webhook stripe-checkout admin-stats admin-refund cleanup-expired-images; do
+            echo "::group::deploy $fn"
+            supabase functions deploy "$fn" --project-ref rhocpnetpxficxnrprsq --no-verify-jwt
+            echo "::endgroup::"
+          done
 
-      - name: Deploy generate-image (legacy shim)
-        run: supabase functions deploy generate-image --project-ref rhocpnetpxficxnrprsq --no-verify-jwt
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # Functions that require a valid Supabase JWT (default behaviour).
+      - name: Deploy JWT functions
+        run: |
+          for fn in generate-image delete-user; do
+            echo "::group::deploy $fn"
+            supabase functions deploy "$fn" --project-ref rhocpnetpxficxnrprsq
+            echo "::endgroup::"
+          done

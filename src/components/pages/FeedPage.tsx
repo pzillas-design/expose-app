@@ -453,6 +453,26 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // zoom-return animation used when navigating back — works inside a stack too.
     const [revealId, setRevealId] = React.useState<string | null>(null);
     const prevExpandedGroupId = React.useRef<string | null>(null);
+
+    // Scroll a tile to the FIRST visible row (just below the fixed navbar), so the
+    // origin you came from lands at the TOP of the viewport — not merely 'nearest',
+    // which leaves an already-visible tile wherever it happened to be. Retries until
+    // the grid has re-rendered the tile.
+    const scrollTileToTop = React.useCallback((tileId: string) => {
+        const start = Date.now();
+        const tryScroll = () => {
+            const el = gridRef.current?.querySelector(`[data-image-id="${tileId}"]`) as HTMLElement | null;
+            const sc = scrollRef.current;
+            if (el && sc) {
+                const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
+                sc.scrollTo({ top: Math.max(0, top - 72), behavior: 'instant' as ScrollBehavior });
+            } else if (Date.now() - start < 500) {
+                requestAnimationFrame(tryScroll);
+            }
+        };
+        requestAnimationFrame(tryScroll);
+    }, []);
+
     React.useLayoutEffect(() => {
         if (prevExpandedGroupId.current && !expandedGroupId) {
             const row = rows.find(r => r.id === prevExpandedGroupId.current);
@@ -460,21 +480,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             if (cover) {
                 setReturnCoverId(cover.id);
                 setTimeout(() => setReturnCoverId(null), 500);
-                // Scroll cover into view after grid re-renders
-                const start = Date.now();
-                const tryScroll = () => {
-                    const el = document.querySelector(`[data-image-id="${cover.id}"]`);
-                    if (el) {
-                        el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
-                    } else if (Date.now() - start < 500) {
-                        requestAnimationFrame(tryScroll);
-                    }
-                };
-                requestAnimationFrame(tryScroll);
+                // Scroll the origin stack's cover to the top row after re-render.
+                scrollTileToTop(cover.id);
             }
         }
         prevExpandedGroupId.current = expandedGroupId;
-    }, [expandedGroupId, rows]);
+    }, [expandedGroupId, rows, scrollTileToTop]);
 
     // Resolve lastViewedId → the cover tile of whichever row contains it
     const lastViewedRowCoverId = React.useMemo(() => {
@@ -499,18 +510,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const didScrollRef = React.useRef(false);
     React.useEffect(() => {
         if (!lastViewedRowCoverId || didScrollRef.current) return;
-        const start = Date.now();
-        const tryScroll = () => {
-            const el = document.querySelector(`[data-image-id="${lastViewedRowCoverId}"]`);
-            if (el) {
-                didScrollRef.current = true;
-                el.scrollIntoView({ block: 'nearest', behavior: 'instant' });
-            } else if (Date.now() - start < 500) {
-                requestAnimationFrame(tryScroll);
-            }
-        };
-        requestAnimationFrame(tryScroll);
-    }, [lastViewedRowCoverId, displayImages]);
+        // Return from detail view → put the origin row at the top of the viewport.
+        didScrollRef.current = true;
+        scrollTileToTop(lastViewedRowCoverId);
+    }, [lastViewedRowCoverId, displayImages, scrollTileToTop]);
 
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
