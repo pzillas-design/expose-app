@@ -1493,7 +1493,11 @@ export function App() {
 
             {/* Modals */}
             <AuthModal
-                isOpen={isAuthModalOpen}
+                // Never over the dedicated /auth/* pages — the recovery page has its
+                // own password form. verifyOtp creates a real session, so the app
+                // (and the user's gallery) renders behind it; the modal's blurred
+                // backdrop on top of that looked like "back at the login screen".
+                isOpen={isAuthModalOpen && !location.pathname.startsWith('/auth/')}
                 onClose={() => setIsAuthModalOpen(false)}
                 error={authError}
                 onClearError={() => setAuthError(null)}

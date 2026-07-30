@@ -80,7 +80,8 @@ export const AuthConfirmPage: React.FC<{ t: TranslationFunction }> = ({ t }) => 
     };
 
     return (
-        <div className="fixed inset-0 z-[70] bg-white dark:bg-zinc-950 flex flex-col items-center justify-center p-4">
+        // z above every app overlay so nothing can stack on top of the recovery form.
+        <div className="fixed inset-0 z-[130] bg-white dark:bg-zinc-950 flex flex-col items-center justify-center p-4">
             <div className={`w-full max-w-md ${Theme.Colors.PanelBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} p-8 pt-10 flex flex-col items-center text-center animate-in zoom-in-95 duration-200`}>
                 <BrandLogo className="w-28 h-28 mb-4" />
 
