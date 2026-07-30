@@ -376,7 +376,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
         if ((isEntering || isFirstSelection) && selectedIds.length > 0) {
             const targetId = selectedIds[0];
-            let retryCount = 0;
+            // Time-based retry: the grid content is swapped ~160ms after the mode
+            // flips (fade-out → swap → fade-in), so a frame-count retry could give
+            // up before the tile exists.
+            const start = Date.now();
             const scrollFn = () => {
                 const el = gridRef.current?.querySelector(`[data-image-id="${targetId}"]`) as HTMLElement | null;
                 const sc = scrollRef.current;
@@ -385,8 +388,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     // not centered — so the first selected image lands at the top.
                     const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
                     sc.scrollTo({ top: Math.max(0, top - 72), behavior: 'instant' as ScrollBehavior });
-                } else if (retryCount < 10) {
-                    retryCount++;
+                } else if (Date.now() - start < 600) {
                     requestAnimationFrame(scrollFn);
                 }
             };
@@ -435,15 +437,32 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
     // What to render: level 1 = newest item per group as cover, level 2 = all items of expanded group,
     // select mode = all individual images (stacks dissolved)
+    // Smooth select-mode transition. Entering/leaving select mode swaps the grid
+    // from stack covers to every single image — doing that instantly looked like
+    // a chaotic reload. `renderSelectMode` lags behind the real flag: the grid
+    // first fades OUT, the content is swapped while invisible, then it fades back
+    // IN (with the just-checked tile leading, see staggerDelay below).
+    const [renderSelectMode, setRenderSelectMode] = React.useState(!!isSelectMode);
+    const [isGridFading, setIsGridFading] = React.useState(false);
+    React.useEffect(() => {
+        if (!!isSelectMode === renderSelectMode) return;
+        setIsGridFading(true);
+        const t = setTimeout(() => {
+            setRenderSelectMode(!!isSelectMode);
+            setIsGridFading(false);
+        }, 160);
+        return () => clearTimeout(t);
+    }, [isSelectMode, renderSelectMode]);
+
     const displayImages = useMemo(() => {
         if (effectiveGroupId) {
             return rows.find(r => r.id === effectiveGroupId)?.items || [];
         }
-        if (isSelectMode) {
+        if (renderSelectMode) {
             return rows.flatMap(r => r.items);
         }
         return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
-    }, [effectiveGroupId, isSelectMode, rows]);
+    }, [effectiveGroupId, renderSelectMode, rows]);
 
     // Track which cover tile to animate when closing a group.
     // useLayoutEffect fires synchronously before paint so the first visible frame
@@ -693,7 +712,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     </div>
                 )}
                 {/* Fixed spacer so content starts below the expanded hero header */}
-                {!effectiveGroupId && !isSelectMode && images.length > 0 && onScrollProgress && (
+                {/* renderSelectMode (not isSelectMode) so the hero disappears together
+                    with the grid swap instead of jumping mid-fade. */}
+                {!effectiveGroupId && !renderSelectMode && images.length > 0 && onScrollProgress && (
                     <FeedHeroSection />
                 )}
                 <div className="flex-1 flex flex-col">
@@ -701,14 +722,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                         {displayImages.length > 0 ? (
                             <>
                                 <div
-                                    key={`${effectiveGroupId ?? 'root'}-${isSelectMode ? 'select' : 'normal'}`}
+                                    key={`${effectiveGroupId ?? 'root'}-${renderSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-end gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-end gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out transition-opacity ${isGridFading ? 'opacity-0' : 'opacity-100'} ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 style={columnsOverride ? { gridTemplateColumns: `repeat(${columnsOverride}, minmax(0, 1fr))` } : undefined}
                                 >
                                     {displayImages.map((img, idx) => {
-                                        const gc = (effectiveGroupId || isSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
-                                        const row = (effectiveGroupId || isSelectMode) ? null : groupRowMap.get(img.id);
+                                        const gc = (effectiveGroupId || renderSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
+                                        const row = (effectiveGroupId || renderSelectMode) ? null : groupRowMap.get(img.id);
                                         const hasGen = row?.items.some(i => i.isGenerating) ?? false;
                                         const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
                                         const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
@@ -740,12 +761,18 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                     actions?.markGroupSeen?.(row.items.map(i => i.id));
                                                     onExpandedGroupChange(row.id);
                                                 } : undefined}
-                                                staggerDelay={(effectiveGroupId || isSelectMode) ? Math.min(idx * 35, 350) : undefined}
-                                                isLastViewed={img.id === revealId || (!effectiveGroupId && !isSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? ''))}
+                                                staggerDelay={
+                                                    renderSelectMode
+                                                        // In select mode the tile the user just checked leads, the rest
+                                                        // follow a beat later so the eye keeps its anchor.
+                                                        ? (selectedIdSet.has(img.id) ? 0 : 90 + Math.min(idx * 22, 260))
+                                                        : effectiveGroupId ? Math.min(idx * 35, 350) : undefined
+                                                }
+                                                isLastViewed={img.id === revealId || (!effectiveGroupId && !renderSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? ''))}
                                                 isNew={isNew}
                                                 daysRemaining={daysLeft}
                                                 currentLang={state?.currentLang}
-                                                isSource={!img.parentId && !img.isGenerating && (!!effectiveGroupId || isSelectMode)}
+                                                isSource={!img.parentId && !img.isGenerating && (!!effectiveGroupId || renderSelectMode)}
                                             />
                                         );
                                     })}
