@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, initialUrlHashType, initialUrlErrorCode, initialUrlErrorDescription } from '../services/supabaseClient';
 import { imageService } from '../services/imageService';
-import { ImageRow } from '../types';
+import { ImageRow, formatPriceEur } from '../types';
 import { LocaleKey } from '../data/locales';
 import { useToast } from '../components/ui/Toast';
 import { isCreditToastSuppressed } from '../services/creditToastGuard';
@@ -187,6 +187,26 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         return () => subscription.unsubscribe();
     }, [isAuthDisabled, fetchProfile]);
 
+    // Always-current balance without putting `credits` in effect deps — otherwise
+    // the realtime channel was torn down and re-subscribed on every balance change
+    // (events could be lost in the gap).
+    const creditsRef = useRef(credits);
+    useEffect(() => { creditsRef.current = credits; }, [credits]);
+
+    /**
+     * Announce a genuine top-up. The local balance is maintained by repeated float
+     * subtraction and drifts ~1e-16 below the exact DB value, so a naked `new > old`
+     * reported phantom increases — rendered as the reported "0,00 € hinzugefügt"
+     * right after a user spent their last credits. Round to cents and require at
+     * least one cent before saying anything.
+     */
+    const announceCreditIncrease = useCallback((newCredits: number) => {
+        const delta = Math.round((newCredits - creditsRef.current) * 100) / 100;
+        if (delta >= 0.01 && !isCreditToastSuppressed()) {
+            showToast(`${formatPriceEur(delta)} ${t('credits_added_success')}`, 'success', 5000);
+        }
+    }, [showToast, t]);
+
     // Refresh credits when tab becomes visible (e.g., returning from Stripe checkout)
     useEffect(() => {
         if (isAuthDisabled || !user) return;
@@ -202,17 +222,10 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
                         .single();
 
                     if (profile) {
-                        const oldCredits = credits;
                         const newCredits = profile.credits ?? 0;
-
+                        announceCreditIncrease(newCredits);
                         setCredits(newCredits);
                         setUserProfile(profile);
-
-                        // Show toast if credits increased (but not for internal refunds)
-                        if (newCredits > oldCredits && !isCreditToastSuppressed()) {
-                            const amount = (newCredits - oldCredits).toFixed(2);
-                            showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
-                        }
                     }
                 } catch (err) {
                     console.error('Failed to refresh credits:', err);
@@ -222,7 +235,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-    }, [isAuthDisabled, user, credits, showToast, t]);
+    }, [isAuthDisabled, user, announceCreditIncrease]);
 
     // Real-time Credit Updates
     useEffect(() => {
@@ -237,17 +250,13 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
                 filter: `id=eq.${user.id}`
             }, (payload) => {
                 if (payload.new && typeof payload.new.credits === 'number') {
-                    const oldCredits = credits;
                     const newCredits = payload.new.credits;
-
+                    // Same rounding + suppression guard as the visibility path — the
+                    // realtime path previously had no guard at all, so a server-side
+                    // refund after a failed generation was announced as a top-up.
+                    announceCreditIncrease(newCredits);
                     setCredits(newCredits);
                     setUserProfile(payload.new);
-
-                    // Show toast if credits increased (payment received)
-                    if (newCredits > oldCredits) {
-                        const amount = (newCredits - oldCredits).toFixed(2);
-                        showToast(`€${amount} ${t('credits_added_success')}`, 'success', 5000);
-                    }
                 }
             })
             .subscribe();
@@ -255,7 +264,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [user, isAuthDisabled, credits, showToast, t]);
+    }, [user, isAuthDisabled, announceCreditIncrease]);
 
     // Payment Success Redirect
     useEffect(() => {

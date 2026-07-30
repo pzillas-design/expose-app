@@ -422,7 +422,13 @@ export const useGeneration = ({
         const cost = estimateCost(effectiveQuality);
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
-        if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
+        if (!isPro && credits < cost) {
+            // Previously this opened the settings modal with no explanation —
+            // the user just saw a mystery dialog after running out of credits.
+            showToast(t('error_insufficient_credits'), 'error');
+            setIsSettingsOpen(true);
+            return;
+        }
 
         const rowIndex = rows.findIndex(row => row.items.some(item => item.id === sourceImage.id));
         if (rowIndex === -1) return;
@@ -636,18 +642,21 @@ export const useGeneration = ({
                     }
 
                     if (!isPro && cost > 0) {
-                        setCredits(prev => prev - cost);
+                        setCredits(prev => Math.round((prev - cost) * 100) / 100);
                     }
 
                     onImageSaved?.();
                     onGenerationComplete?.(newId);
                     trackImageGenerated();
-                    showToast('Bild generiert', 'success', 6000);
+                    // No toast: the finished image is already on screen and the view
+                    // navigates to it. In a batch this fired once per image, stacking
+                    // N identical toasts. Desktop notification still covers the
+                    // tab-in-background case.
                 } else {
                     // Async pattern: Edge Function accepted job, background processing started.
                     // pollForJob (via useEffect) handles completion, credit deduction, and toast.
                     if (!isPro && cost > 0) {
-                        setCredits(prev => prev - cost);
+                        setCredits(prev => Math.round((prev - cost) * 100) / 100);
                     }
                 }
             } catch (error: any) {
@@ -705,6 +714,9 @@ export const useGeneration = ({
                 }
 
                 const translated = translateError(error.message || String(error), t);
+                // Server refunds on failure; suppress the balance toast so the
+                // refund isn't announced as if it were a top-up.
+                suppressCreditToast(8000);
                 showToast(translated, "error");
                 // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
@@ -721,7 +733,13 @@ export const useGeneration = ({
         const cost = estimateCost(effectiveModelId);
         const isPro = userProfile?.role === 'pro' || userProfile?.role === 'admin';
 
-        if (!isPro && credits < cost) { setIsSettingsOpen(true); return; }
+        if (!isPro && credits < cost) {
+            // Previously this opened the settings modal with no explanation —
+            // the user just saw a mystery dialog after running out of credits.
+            showToast(t('error_insufficient_credits'), 'error');
+            setIsSettingsOpen(true);
+            return;
+        }
 
         if (!prompt?.trim() && !attachments.length) {
             showToast(t('error_prompt_required') || 'Bitte gib einen Prompt oder ein Bild an.', 'error');
@@ -825,18 +843,19 @@ export const useGeneration = ({
                     }
 
                     if (!isPro && cost > 0) {
-                        setCredits(prev => prev - cost);
+                        setCredits(prev => Math.round((prev - cost) * 100) / 100);
                     }
 
                     onImageSaved?.();
                     onGenerationComplete?.(newId);
                     trackImageGenerated();
+                    // Desktop notification only — the image is already visible on
+                    // screen, so an extra toast per image just stacks up in batches.
                     sendGenerationCompleteNotification(t('notification_generation_done'));
-                    showToast('Bild generiert', 'success', 6000);
                 } else {
                     // Async pattern: background processing started, pollForJob handles completion
                     if (!isPro && cost > 0) {
-                        setCredits(prev => prev - cost);
+                        setCredits(prev => Math.round((prev - cost) * 100) / 100);
                     }
                 }
             } catch (error: any) {
@@ -877,6 +896,9 @@ export const useGeneration = ({
                 }
 
                 const translated = translateError(error.message || "", t);
+                // Server refunds on failure; suppress the balance toast so the
+                // refund isn't announced as if it were a top-up.
+                suppressCreditToast(8000);
                 showToast(translated, "error");
                 // Credits were NOT deducted locally (upfront) — server handles refund automatically.
             }
