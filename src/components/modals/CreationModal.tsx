@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button, Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
-import { TranslationFunction, PromptTemplate } from '@/types';
+import { TranslationFunction, PromptTemplate, getGenerationPriceUsd, formatPriceEur } from '@/types';
+import { loadGenerationSettings } from '@/utils/generationSettings';
 import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip, Trash, Camera } from 'lucide-react';
 import { getCurrentProviderTierLabel } from '@/utils/modelLabels';
 
@@ -42,10 +43,17 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     lang,
     initialTemplate
 }) => {
+    // Prices come from the shared matrix for the user's actual provider/quality —
+    // these used to be hardcoded at the long-obsolete 0.10/0.20/0.40 tariff.
+    const genSettings = loadGenerationSettings();
+    const priceFor = (res: string) => formatPriceEur(
+        getGenerationPriceUsd(genSettings.provider, res, genSettings.quality),
+        lang as 'de' | 'en',
+    );
     const MODELS = [
-        { id: 'nb2-1k', name: getCurrentProviderTierLabel('nb2-1k'), price: '0.10 €', res: '1024 px · schnell' },
-        { id: 'nb2-2k', name: getCurrentProviderTierLabel('nb2-2k'), price: '0.20 €', res: '2048 px · schnell' },
-        { id: 'nb2-4k', name: getCurrentProviderTierLabel('nb2-4k'), price: '0.40 €', res: '4096 px · schnell' },
+        { id: 'nb2-1k', name: getCurrentProviderTierLabel('nb2-1k'), price: priceFor('nb2-1k'), res: '1024 px · schnell' },
+        { id: 'nb2-2k', name: getCurrentProviderTierLabel('nb2-2k'), price: priceFor('nb2-2k'), res: '2048 px · schnell' },
+        { id: 'nb2-4k', name: getCurrentProviderTierLabel('nb2-4k'), price: priceFor('nb2-4k'), res: '4096 px · schnell' },
     ];
 
     const [prompt, setPrompt] = useState('');

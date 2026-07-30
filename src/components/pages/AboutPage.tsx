@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { getPublicPriceTiers, getLowestPublicPrice } from '@/types';
 import { ArrowRight, Layers, Mic, Zap, SlidersHorizontal, Euro, Cpu, Clock, Palette, ChevronRight, X, Grip, Banana, AudioWaveform, SquareStack } from 'lucide-react';
 import { Button } from '@/components/ui/DesignSystem';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
@@ -45,7 +46,7 @@ const CARDS: CardDef[] = [
     {
         type: 'usp', accent: 'orange',
         icon: <Euro className="w-8 h-8 text-white/80" strokeWidth={1.5} />,
-        en: 'From 0.05 €', de: 'Ab 0,05 €',
+        en: `From ${getLowestPublicPrice('en')}`, de: `Ab ${getLowestPublicPrice('de')}`,
     },
     {
         type: 'usp', accent: 'dark',
@@ -846,12 +847,9 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
                         </p>
                     </div>
                     <div className="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                        {([
-                            { res: '0.5 K', price: '0.05 €', label: 'up to 512 × 512 px'   },
-                            { res: '1 K',   price: '0.10 €', label: 'up to 1024 × 1024 px' },
-                            { res: '2 K',   price: '0.20 €', label: 'up to 2048 × 2048 px' },
-                            { res: '4 K',   price: '0.40 €', label: 'up to 4096 × 4096 px' },
-                        ] as { res: string; price: string; label: string }[]).map((tier, i) => (
+                        {/* Derived from the shared price matrix — these were hardcoded at the
+                            obsolete 0.05–0.40 tariff while we actually charged 0.15–0.65. */}
+                        {getPublicPriceTiers(de ? 'de' : 'en').map((tier, i) => (
                             <div key={i} className="flex items-center justify-between py-4">
                                 <div className="flex items-center gap-5">
                                     <span className="font-kumbh font-semibold text-zinc-900 dark:text-white w-10 text-sm">{tier.res}</span>
