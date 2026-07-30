@@ -185,13 +185,18 @@ export const NB2_PRICES_USD: Record<string, number> = {
   'nb2-4k':  0.65,
 };
 
+// NB Pro renders 0.5K as 1K (see generate-image-fal: resolution '0.5K' → '1K'),
+// so it costs us the same as 1K and must be priced the same — otherwise 0.5K
+// would be sold below cost. Same reasoning for GPT (long edge 1024 for 0.5K).
 export const NB_PRO_PRICES_USD: Record<string, number> = {
+  'nb2-05k': 0.60,
   'nb2-1k': 0.60,
   'nb2-2k': 0.60,
   'nb2-4k': 1.20,
 };
 
 export const GPT_PRICES_USD: Record<string, Record<ImageQualityLevel, number>> = {
+  'nb2-05k': { low: 0.05, medium: 0.20, high: 0.85 },
   'nb2-1k': { low: 0.05, medium: 0.20, high: 0.85 },
   'nb2-2k': { low: 0.10, medium: 0.30, high: 1.00 },
   'nb2-4k': { low: 0.20, medium: 0.50, high: 1.60 },
@@ -210,6 +215,39 @@ export const getGenerationPriceUsd = (
 // Legacy export — keeps callers that only know per-resolution pricing working.
 // Prefer getGenerationPriceUsd() in new code.
 export const RESOLUTION_PRICES_USD: Record<string, number> = NB2_PRICES_USD;
+
+/**
+ * Single formatter for every price shown in the UI. German uses a comma,
+ * English a dot — both always 2 decimals + € sign.
+ */
+export const formatPriceEur = (value: number, lang: 'de' | 'en' = 'de'): string => {
+  const s = value.toFixed(2);
+  return `${lang === 'de' ? s.replace('.', ',') : s} €`;
+};
+
+/** Resolution tiers in display order, with px labels. */
+export const RESOLUTION_TIERS: { id: GenerationQuality; label: string; px: number }[] = [
+  { id: 'nb2-05k', label: '0.5 K', px: 512 },
+  { id: 'nb2-1k', label: '1 K', px: 1024 },
+  { id: 'nb2-2k', label: '2 K', px: 2048 },
+  { id: 'nb2-4k', label: '4 K', px: 4096 },
+];
+
+/**
+ * Public/marketing price list — the entry-level (NB2) tariff every user gets by
+ * default. Marketing pages MUST derive from this instead of hardcoding, so the
+ * advertised price can never drift from what we actually charge.
+ */
+export const getPublicPriceTiers = (lang: 'de' | 'en' = 'de') =>
+  RESOLUTION_TIERS.map(t => ({
+    res: t.label,
+    price: formatPriceEur(NB2_PRICES_USD[t.id] ?? 0, lang),
+    label: `${lang === 'de' ? 'bis' : 'up to'} ${t.px} × ${t.px} px`,
+  }));
+
+/** Cheapest price across the default (NB2) tariff — for "from X €" claims. */
+export const getLowestPublicPrice = (lang: 'de' | 'en' = 'de'): string =>
+  formatPriceEur(Math.min(...Object.values(NB2_PRICES_USD)), lang);
 
 // --- ADMIN TYPES ---
 

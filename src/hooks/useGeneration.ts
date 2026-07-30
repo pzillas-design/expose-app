@@ -395,7 +395,9 @@ export const useGeneration = ({
         const annotations = sourceImage.annotations || [];
         const hasAnnotation = annotations.some(a => a.type !== 'reference_image');
         const hasReferenceImage = annotations.some(a => a.type === 'reference_image' && a.referenceImage);
-        const hasVariables = variableValues && Object.keys(variableValues).length > 0;
+        // Only count variables that actually carry values — a map of empty arrays
+        // (left behind by deselecting) must not pass as "user provided input".
+        const hasVariables = !!variableValues && Object.values(variableValues).some(v => Array.isArray(v) && v.length > 0);
 
         if (hasImage) {
             // Edit mode: need at least one instruction (prompt, annotation, variable, or reference image)

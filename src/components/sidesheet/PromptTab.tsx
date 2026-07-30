@@ -10,7 +10,8 @@ import { useItemDialog } from '@/components/ui/Dialog';
 import { TwoDotsVertical } from '@/components/ui/CustomIcons';
 import { getCurrentProviderTierLabel } from '@/utils/modelLabels';
 import { GenerationSettingsModal } from '@/components/modals/GenerationSettingsModal';
-import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from '@/types';
+import { DEFAULT_GENERATION_SETTINGS, getGenerationPriceUsd, formatPriceEur, type GenerationSettings } from '@/types';
+import { loadGenerationSettings, saveGenerationSettings } from '@/utils/generationSettings';
 import { useToast } from '@/components/ui/Toast';
 import { Edit2, Check as CheckIcon } from 'lucide-react';
 import { downloadImage } from '@/utils/imageUtils';
@@ -86,16 +87,36 @@ export const PromptTab: React.FC<PromptTabProps> = ({
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
 
-    // PREVIEW: local state for the new GenerationSettingsModal — pure UI, not yet
-    // wired to the actual generation pipeline. Lets us iterate on the design first.
+    // Generation settings: hydrate from localStorage (same store imageService reads
+    // at invoke time) and persist on change, so this panel can never disagree with
+    // what actually gets billed.
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-    const [previewSettings, setPreviewSettings] = useState<GenerationSettings>(DEFAULT_GENERATION_SETTINGS);
+    const [previewSettings, setPreviewSettings] = useState<GenerationSettings>(() => {
+        const saved = loadGenerationSettings();
+        return { ...saved, resolution: qualityMode || saved.resolution };
+    });
+    React.useEffect(() => {
+        setPreviewSettings(prev => prev.resolution === qualityMode ? prev : { ...prev, resolution: qualityMode });
+    }, [qualityMode]);
+    const handleSettingsChange = (next: GenerationSettings) => {
+        setPreviewSettings(next);
+        saveGenerationSettings(next);
+        if (next.resolution !== qualityMode) onQualityModeChange(next.resolution);
+    };
+
+    // Prices are derived from the SAME matrix the edge function bills with, for the
+    // user's actual provider/quality — hardcoding them here meant Nano Banana Pro
+    // and GPT users saw the (much cheaper) NB2 tariff while being charged more.
+    const priceFor = (res: GenerationQuality) => formatPriceEur(
+        getGenerationPriceUsd(previewSettings.provider, res, previewSettings.quality),
+        currentLang as 'de' | 'en',
+    );
 
     const MODES: { id: GenerationQuality, label: string, desc: string, price: string }[] = [
-        ...(PRIMARY_PROVIDER === 'kie' ? [] : [{ id: 'nb2-05k' as GenerationQuality, label: getCurrentProviderTierLabel('nb2-05k'), desc: `512 px · ${t('quality_faster')}`, price: '0.15 €' }]),
-        { id: 'nb2-1k', label: getCurrentProviderTierLabel('nb2-1k'), desc: `1024 px · ${t('quality_faster')}`, price: '0.18 €' },
-        { id: 'nb2-2k', label: getCurrentProviderTierLabel('nb2-2k'), desc: `2048 px · ${t('quality_faster')}`, price: '0.50 €' },
-        { id: 'nb2-4k', label: getCurrentProviderTierLabel('nb2-4k'), desc: `4096 px · ${t('quality_faster')}`, price: '0.65 €' },
+        ...(PRIMARY_PROVIDER === 'kie' ? [] : [{ id: 'nb2-05k' as GenerationQuality, label: getCurrentProviderTierLabel('nb2-05k'), desc: `512 px · ${t('quality_faster')}`, price: priceFor('nb2-05k') }]),
+        { id: 'nb2-1k', label: getCurrentProviderTierLabel('nb2-1k'), desc: `1024 px · ${t('quality_faster')}`, price: priceFor('nb2-1k') },
+        { id: 'nb2-2k', label: getCurrentProviderTierLabel('nb2-2k'), desc: `2048 px · ${t('quality_faster')}`, price: priceFor('nb2-2k') },
+        { id: 'nb2-4k', label: getCurrentProviderTierLabel('nb2-4k'), desc: `4096 px · ${t('quality_faster')}`, price: priceFor('nb2-4k') },
     ];
 
     const currentResolution = (qualityMode.split('-')[1] ?? '2k') as '05k' | '1k' | '2k' | '4k';
@@ -767,7 +788,7 @@ export const PromptTab: React.FC<PromptTabProps> = ({
                         isOpen={isSettingsModalOpen}
                         onClose={() => setIsSettingsModalOpen(false)}
                         value={previewSettings}
-                        onChange={setPreviewSettings}
+                        onChange={handleSettingsChange}
                         lang={currentLang as 'de' | 'en'}
                     />
 

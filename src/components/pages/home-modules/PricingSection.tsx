@@ -1,11 +1,9 @@
 import React from 'react';
+import { getPublicPriceTiers } from '@/types';
 
-const TIERS = [
-    { res: '0.5 K', price: '0.15 €', label: 'up to 512 × 512 px' },
-    { res: '1 K',   price: '0.18 €', label: 'up to 1024 × 1024 px' },
-    { res: '2 K',   price: '0.50 €', label: 'up to 2048 × 2048 px' },
-    { res: '4 K',   price: '0.65 €', label: 'up to 4096 × 4096 px' },
-];
+// Derived from the shared price matrix — never hardcode advertised prices, or
+// they drift away from what we actually charge.
+const TIERS = getPublicPriceTiers('en');
 
 export const PricingSection: React.FC = () => (
     <section className="w-full px-5 sm:px-8 py-20 sm:py-28 bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-800/60">

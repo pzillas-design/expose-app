@@ -449,12 +449,11 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     };
 
     const handleClearControl = (controlId: string) => {
-        setControlValues(prev => {
-            const newState = { ...prev };
-            delete newState[controlId];
-            onUpdateVariables?.(selectedImage?.id || '', activeTemplate?.id, newState);
-            return newState;
-        });
+        // Side effect outside the updater (updaters must stay pure).
+        const newState = { ...controlValues };
+        delete newState[controlId];
+        setControlValues(newState);
+        onUpdateVariables?.(selectedImage?.id || '', activeTemplate?.id, newState);
         setHiddenControlIds(prev => [...prev, controlId]);
     };
 
@@ -554,30 +553,35 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         // but the prompt asked specifically to just paste the content.
         // If we set activeTemplateId = tpl.id, it will load its variables, but it won't show as active if we removed the check.
         setActiveTemplateId(tpl.id);
-        if (tpl.controls?.length) {
-            setControlValues(prev => ({ ...prev }));
-            if (selectedImage) onUpdateVariables(selectedImage.id, tpl.id, controlValues);
-        }
+        // Switching templates must DROP the previous template's values. Only the
+        // new template's controls are rendered, so leftover keys are invisible in
+        // the UI but were still passed to onGenerate and appended to the prompt
+        // by the edge function (with the raw control id as label).
+        setControlValues({});
+        if (selectedImage) onUpdateVariables(selectedImage.id, tpl.id, {});
         textareaRef.current?.focus();
     };
 
     const toggleControlOption = (controlId: string, value: string) => {
-        setControlValues(prev => {
-            const cur = prev[controlId] || [];
-            const displayControls = activeTemplate?.controls ?? standaloneControls;
-            const isSingle = displayControls?.find(c => c.id === controlId)?.type === 'single';
+        const cur = controlValues[controlId] || [];
+        const displayControls = activeTemplate?.controls ?? standaloneControls;
+        const isSingle = displayControls?.find(c => c.id === controlId)?.type === 'single';
 
-            let updated: string[];
-            if (isSingle) {
-                updated = cur.includes(value) ? [] : [value];
-            } else {
-                updated = cur.includes(value) ? cur.filter(v => v !== value) : [...cur, value];
-            }
+        const updated: string[] = isSingle
+            ? (cur.includes(value) ? [] : [value])
+            : (cur.includes(value) ? cur.filter(v => v !== value) : [...cur, value]);
 
-            const next = { ...prev, [controlId]: updated };
-            if (selectedImage) onUpdateVariables(selectedImage.id, activeTemplate?.id, next);
-            return next;
-        });
+        // Deselecting the last value must REMOVE the key, not leave an empty array:
+        // an all-empty map still counts as "has variables" in the generate gate and
+        // is persisted onto the job, so a removed variable kept showing up.
+        const next = { ...controlValues };
+        if (updated.length > 0) next[controlId] = updated;
+        else delete next[controlId];
+
+        // Side effect stays OUT of the state updater — updaters must be pure
+        // (React may re-invoke them, which double-fired the persist call).
+        setControlValues(next);
+        if (selectedImage) onUpdateVariables(selectedImage.id, activeTemplate?.id, next);
     };
 
     // ── Reference Image ──

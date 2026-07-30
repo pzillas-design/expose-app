@@ -48,9 +48,12 @@ export const usePersistence = ({ user, isAuthDisabled, setRows }: UsePersistence
             ...row,
             items: row.items.map(item => item.id === id ? { ...item, activeTemplateId: templateId, variableValues, updatedAt: Date.now() } : item)
         })));
-        scheduleSave(id, {
-            generation_params: JSON.stringify({ activeTemplateId: templateId, variableValues })
-        });
+        // Must use the CanvasImage field names — imageService.updateImage maps
+        // activeTemplateId/variableValues into generation_params itself. Passing a
+        // pre-built `generation_params` key was silently dropped (no matching
+        // mapping → empty dbUpdates → early return), so variable changes never
+        // reached the DB and reappeared after a reload.
+        scheduleSave(id, { activeTemplateId: templateId, variableValues });
     }, [setRows, scheduleSave]);
 
     const handleUpdateImageTitle = useCallback((id: string, title: string) => {
