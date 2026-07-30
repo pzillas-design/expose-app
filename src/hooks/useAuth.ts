@@ -172,8 +172,14 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
                 if (session?.user?.email) {
                     setAuthEmail(session.user.email);
                 }
-                setAuthModalMode('update-password');
-                setIsAuthModalOpen(true);
+                // The /auth/confirm page owns the recovery UI (own password form).
+                // Opening the global modal there stacks two password dialogs.
+                const onAuthPage = typeof window !== 'undefined'
+                    && window.location.pathname.startsWith('/auth/');
+                if (!onAuthPage) {
+                    setAuthModalMode('update-password');
+                    setIsAuthModalOpen(true);
+                }
                 setIsAuthLoading(false);
             }
         });
