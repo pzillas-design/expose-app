@@ -16,12 +16,12 @@
 // Usage:
 //   POST /cleanup-expired-images            → deletes
 //   POST /cleanup-expired-images?dryRun=1   → reports only, changes nothing
-//   Optional: ?ttlDays=30  ?tempHours=6
+//   Optional: ?ttlDays=14  ?tempHours=6
 // -----------------------------------------------------------------------------
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const DEFAULT_TTL_DAYS = 30;
+const DEFAULT_TTL_DAYS = 14;
 const DEFAULT_TEMP_HOURS = 6;      // temp uploads are consumed within minutes
 const ROOT_BATCH = 200;            // roots pulled per pass
 const STORAGE_BATCH = 100;         // storage remove() payload limit

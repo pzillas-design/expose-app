@@ -35,14 +35,14 @@ export function daysUntil(date: Date | string | number): number {
 }
 
 /**
- * Calculate days until board deletion (30 days after last activity)
+ * Calculate days until board deletion (14 days after last activity)
  * 
  * @param lastActivityAt - Last activity timestamp (Date, string, or number)
  * @returns Number of days until deletion (0 if already expired)
  */
 export function daysUntilBoardDeletion(lastActivityAt: Date | string | number): number {
     const lastActivity = new Date(lastActivityAt);
-    const deleteAt = new Date(lastActivity.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const deleteAt = new Date(lastActivity.getTime() + 14 * 24 * 60 * 60 * 1000);
     const days = daysUntil(deleteAt);
     return Math.max(0, days);
 }

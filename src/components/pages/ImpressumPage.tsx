@@ -153,7 +153,7 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
 
                     <h3 className={h3Class}>7. Speicherdauer</h3>
                     <p>
-                        Hochgeladene und generierte Bilder werden grundsätzlich nach 30 Tagen automatisch gelöscht. Davon unberührt bleiben Daten, die wir aus gesetzlichen Gründen länger aufbewahren müssen, sowie abrechnungs- und sicherheitsrelevante Protokolldaten, soweit deren weitere Speicherung erforderlich ist.
+                        Hochgeladene und generierte Bilder werden grundsätzlich nach 14 Tagen automatisch gelöscht. Davon unberührt bleiben Daten, die wir aus gesetzlichen Gründen länger aufbewahren müssen, sowie abrechnungs- und sicherheitsrelevante Protokolldaten, soweit deren weitere Speicherung erforderlich ist.
                     </p>
 
                     <h3 className={h3Class}>8. Internationale Datenübermittlungen</h3>
@@ -203,7 +203,7 @@ export const ImpressumPage: React.FC<ImpressumPageProps> = ({ user, userProfile,
 
                     <h3 className={h3Class}>5. Verfügbarkeit und Speicherdauer von Inhalten</h3>
                     <p>
-                        Exposé ist kein unbegrenzter Archivdienst. Hochgeladene und generierte Bilder können nach 30 Tagen automatisch gelöscht werden. Nutzer sind daher selbst dafür verantwortlich, wichtige Inhalte rechtzeitig zu exportieren oder herunterzuladen.
+                        Exposé ist kein unbegrenzter Archivdienst. Hochgeladene und generierte Bilder können nach 14 Tagen automatisch gelöscht werden. Nutzer sind daher selbst dafür verantwortlich, wichtige Inhalte rechtzeitig zu exportieren oder herunterzuladen.
                     </p>
 
                     <h3 className={h3Class}>6. Nutzungsrechte an generierten Inhalten</h3>

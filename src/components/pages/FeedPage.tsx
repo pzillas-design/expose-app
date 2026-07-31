@@ -12,8 +12,10 @@ import { FeedHeroSection } from '../layout/FeedHeroSection';
 import { LayerComposer } from '@/components/composer/LayerComposer';
 
 /* ── TTL helpers ── */
-const TTL_DAYS = 30;
-const WARNING_DAYS = 7;
+// Muss mit DEFAULT_TTL_DAYS in supabase/functions/cleanup-expired-images
+// übereinstimmen — sonst zeigt der Countdown eine Frist an, die nicht gilt.
+const TTL_DAYS = 14;
+const WARNING_DAYS = 5;
 
 function getDaysRemaining(createdAt: string | number | undefined): number | null {
     if (!createdAt) return null;
