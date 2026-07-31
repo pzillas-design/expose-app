@@ -81,8 +81,14 @@ Deno.serve(async (req) => {
     const started = Date.now();
     const url = new URL(req.url);
     const dryRun = url.searchParams.get('dryRun') === '1';
-    const ttlDays = Number(url.searchParams.get('ttlDays') ?? DEFAULT_TTL_DAYS);
-    const tempHours = Number(url.searchParams.get('tempHours') ?? DEFAULT_TEMP_HOURS);
+    // The endpoint runs without JWT verification (the cron cannot hold a user
+    // token), so query params must never be able to WIDEN the deletion: an
+    // attacker passing ?ttlDays=0 would otherwise wipe every image. Overrides may
+    // only ever make the window LONGER, never shorter than the configured TTL.
+    const rawTtl = Number(url.searchParams.get('ttlDays'));
+    const ttlDays = Number.isFinite(rawTtl) ? Math.max(rawTtl, DEFAULT_TTL_DAYS) : DEFAULT_TTL_DAYS;
+    const rawTemp = Number(url.searchParams.get('tempHours'));
+    const tempHours = Number.isFinite(rawTemp) ? Math.max(rawTemp, 1) : DEFAULT_TEMP_HOURS;
 
     try {
         const admin = createClient(
