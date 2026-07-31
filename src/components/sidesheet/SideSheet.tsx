@@ -505,7 +505,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
             && typeof selectedImage.src === 'string'
             && selectedImage.src.startsWith('blob:');
         if (stillUploading) {
-            showToast(t('image_still_uploading'), 'error');
+            showToast(t('image_still_uploading'), 'info');
             return;
         }
         let finalPrompt = prompt.trim();

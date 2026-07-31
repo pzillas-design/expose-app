@@ -1,7 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Plus, Upload } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { compressImage } from '@/utils/imageUtils';
+import { Button } from '@/components/ui/DesignSystem';
 
 const ASPECT_RATIOS = [
     { label: '16:9', value: '16:9' },
@@ -52,6 +55,8 @@ const Swoosh = () => (
 
 interface CreatePageProps {
     onCreateNew: (prompt: string, model: string, ratio: string, attachments: string[]) => void;
+    /** Hand picked files to the normal upload pipeline (same as the feed's upload). */
+    onUpload?: (files: File[]) => void;
     onBack: () => void;
     state: any;
     actions: any;
@@ -59,9 +64,18 @@ interface CreatePageProps {
 }
 
 export const CreatePage: React.FC<CreatePageProps> = ({
-    onCreateNew, onBack, state, actions, t
+    onCreateNew, onUpload, onBack, state, actions, t
 }) => {
     const isMobile = useMobile();
+    const [searchParams] = useSearchParams();
+    // Entry screen: the navbar now has a single button that lands here, and the
+    // choice between uploading and generating is made inside the canvas — so the
+    // user is already "in the editor" (canvas + side sheet) when deciding.
+    // `?m=create` jumps straight to the artboard (used by voice/deep links).
+    const [mode, setMode] = useState<'choose' | 'create'>(
+        searchParams.get('m') === 'create' ? 'create' : 'choose'
+    );
+    const uploadRef = useRef<HTMLInputElement>(null);
     const [selectedRatio, setSelectedRatio] = useState('4:3');
     const [isGenerating, setIsGenerating] = useState(false);
     const [referenceFiles, setReferenceFiles] = useState<string[]>([]); // base64 data URLs
@@ -131,7 +145,47 @@ export const CreatePage: React.FC<CreatePageProps> = ({
             <div className="md:flex-1 relative overflow-hidden"
                 style={isMobile ? { height: `calc(100vw * ${ratioH} / ${ratioW})`, minHeight: 200, maxHeight: '55vw' } : undefined}
             >
-                <div ref={canvasAreaRef} className="absolute inset-0 flex items-center justify-center p-6 md:p-12 bg-zinc-100 dark:bg-zinc-950">
+                <div ref={canvasAreaRef} className={`absolute inset-0 flex items-center justify-center p-6 md:p-12 dark:bg-black ${mode === 'choose' ? 'bg-white dark:bg-zinc-950' : 'bg-zinc-100 dark:bg-zinc-950'}`}>
+                    {/* Hidden picker — the "Hochladen" pill triggers it. */}
+                    <input
+                        ref={uploadRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (files.length) {
+                                onUpload?.(files);
+                                onBack(); // uploads land in the feed
+                            }
+                            e.target.value = '';
+                        }}
+                    />
+
+                    {mode === 'choose' ? (
+                        /* ── Entry choice, inside the canvas area ── */
+                        <div className="flex flex-col items-center justify-center gap-10 w-full max-w-[320px] mx-auto text-center animate-in fade-in zoom-in-95 duration-300">
+                            <div className="flex flex-col w-full gap-3">
+                                <Button
+                                    variant="primary-mono"
+                                    size="l"
+                                    onClick={() => uploadRef.current?.click()}
+                                    icon={<Upload className="w-5 h-5" />}
+                                >
+                                    {t('action_upload') || 'Hochladen'}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="l"
+                                    onClick={() => setMode('create')}
+                                    icon={<Plus className="w-5 h-5" />}
+                                >
+                                    {t('action_generate') || 'Bild generieren'}
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
                     <div
                         className="relative rounded-2xl bg-white dark:bg-zinc-900 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 overflow-visible"
                         style={previewSize
@@ -169,6 +223,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                         </div>
 
                     </div>
+                    )}
                 </div>
             </div>
 
