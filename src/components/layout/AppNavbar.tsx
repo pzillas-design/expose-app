@@ -351,7 +351,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             icon={<Plus className="w-5 h-5" />}
                             onClick={onCreate}
                             variant="ghost"
-                            tooltip={t('nav_create')}
+                            tooltip={t('nav_create_tooltip')}
                         />
                     )}
                 </>
@@ -710,7 +710,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 {/* One entry point only — upload vs. generate is chosen
                                     inside the create canvas. Users kept pressing
                                     "Neu erstellen" when they meant to upload. */}
-                                <Tooltip text={lang === 'de' ? 'Bild hinzufügen' : 'Add an image'} side="bottom">
+                                <Tooltip text={t('nav_create_tooltip')} side="bottom">
                                     <button
                                         className={`relative flex items-center justify-center rounded-full transition-all duration-300 group ${isScrolled
                                             ? 'h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 gap-0'

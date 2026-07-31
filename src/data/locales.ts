@@ -492,6 +492,7 @@ export const translations = {
 
     // AppNavbar
     nav_create: "Create",
+    nav_create_tooltip: "Upload or generate an image",
     nav_generate_new: "Generate new image",
     nav_upload: "Upload",
     nav_menu: "Menu",
@@ -1050,6 +1051,7 @@ export const translations = {
 
     // AppNavbar
     nav_create: "Erstellen",
+    nav_create_tooltip: "Bild hochladen oder generieren",
     nav_generate_new: "Neues Bild generieren",
     nav_upload: "Hochladen",
     nav_menu: "Menü",
