@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Shield, Clock, Lock, ArrowRight, Trash, Pencil, Loader2, CreditCard, RotateCcw, ExternalLink } from 'lucide-react';
-import { AdminUser, TranslationFunction } from '@/types';
+import { AdminUser, TranslationFunction, formatPriceEur } from '@/types';
 import { Typo, IconButton, Button, Input, SectionHeader } from '@/components/ui/DesignSystem';
 import { adminService } from '@/services/adminService';
 
@@ -42,7 +42,7 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
      // Result is clamped to >= 0 server-side equivalent (we floor at 0 here too).
      const result = await prompt({
          title: `${t('admin_add_funds')} (±)`,
-         description: `${t('admin_balance')}: ${user.credits.toFixed(2)} €. + addiert, − zieht ab.`,
+         description: `${t('admin_balance')}: ${formatPriceEur(user.credits)}. + addiert, − zieht ab.`,
          placeholder: '+1.00 / -1.00',
          confirmLabel: 'Anwenden',
          suffix: '€',
@@ -56,10 +56,10 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
      onUpdateUser(user.id, { credits: next });
 
      if (delta > 0) {
-         showToast(t('admin_add_credits_success').replace('{{amount}}', delta.toFixed(2)), 'success');
+         showToast(t('admin_add_credits_success').replace('{{amount}}', formatPriceEur(delta)), 'success');
      } else {
          const removed = Math.abs(delta);
-         showToast(`${removed.toFixed(2)} € abgezogen — neuer Saldo ${next.toFixed(2)} €`, 'success');
+         showToast(`${formatPriceEur(removed)} abgezogen — neuer Saldo ${formatPriceEur(next)}`, 'success');
      }
  };
 
@@ -78,19 +78,19 @@ export const AdminUserDetail: React.FC<AdminUserDetailProps> = ({
 
  const handleRefund = async (paymentIntentId: string, amountEur: number) => {
      const confirmed = await confirm({
-         title: `Refund ${amountEur.toFixed(2)} €?`,
+         title: `Rückerstattung über ${formatPriceEur(amountEur)}?`,
          description: `Payment Intent: ${paymentIntentId}`,
-         confirmLabel: 'Refund',
+         confirmLabel: 'Erstatten',
          variant: 'danger',
      });
      if (!confirmed) return;
      setRefundingId(paymentIntentId);
      try {
          await adminService.createStripeRefund(paymentIntentId);
-         showToast(`Refund von ${amountEur.toFixed(2)} € ausgelöst`, 'success');
+         showToast(`Rückerstattung über ${formatPriceEur(amountEur)} veranlasst`, 'success');
          setPayments(prev => prev.filter(p => p.id !== paymentIntentId));
      } catch (e: any) {
-         showToast(e.message || 'Refund fehlgeschlagen', 'error');
+         showToast(e.message || 'Rückerstattung fehlgeschlagen', 'error');
      } finally {
          setRefundingId(null);
      }

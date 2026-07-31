@@ -1423,6 +1423,7 @@ export function App() {
                             }}>
                                 <CreatePage
                                     onCreateNew={handleCreateNew}
+                                    onUpload={actions.handleProcessFiles}
                                     onBack={() => navigate('/')}
                                     state={state}
                                     actions={actions}

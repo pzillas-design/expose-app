@@ -25,7 +25,7 @@ interface UseGenerationProps {
     /** Always-current ref to the active (detail-view) image ID — null when in feed view */
     activeIdRef: React.RefObject<string | null>;
     setIsSettingsOpen: (open: boolean) => void;
-    showToast: (msg: string, type: "success" | "error", duration?: number, onClick?: () => void) => void;
+    showToast: (msg: string, type: "success" | "error" | "info", duration?: number, onClick?: () => void) => void;
     t: (key: any) => string;
     confirm: (options: { title?: string; description?: string; confirmLabel?: string; cancelLabel?: string; variant?: 'danger' | 'primary' }) => Promise<boolean>;
     /** Called when a generation completes and the image is saved to DB — used to increment total image count */
@@ -402,18 +402,18 @@ export const useGeneration = ({
         if (hasImage) {
             // Edit mode: need at least one instruction (prompt, annotation, variable, or reference image)
             if (!hasPrompt && !hasAnnotation && !hasVariables && !hasReferenceImage) {
-                showToast(t('error_no_input'), 'error');
+                showToast(t('error_no_input'), 'info');
                 return;
             }
             // Gemini needs text — reference image alone without prompt won't work
             if (!hasPrompt && hasReferenceImage && !hasAnnotation && !hasVariables) {
-                showToast(t('error_no_input'), 'error');
+                showToast(t('error_no_input'), 'info');
                 return;
             }
         } else {
             // Create mode (no source image): must have a prompt
             if (!hasPrompt) {
-                showToast(t('error_no_input'), 'error');
+                showToast(t('error_no_input'), 'info');
                 return;
             }
         }
@@ -425,7 +425,7 @@ export const useGeneration = ({
         if (!isPro && credits < cost) {
             // Previously this opened the settings modal with no explanation —
             // the user just saw a mystery dialog after running out of credits.
-            showToast(t('error_insufficient_credits'), 'error');
+            showToast(t('error_insufficient_credits'), 'info');
             setIsSettingsOpen(true);
             return;
         }
@@ -605,7 +605,7 @@ export const useGeneration = ({
                                 source: 'silent',
                                 context: `edit:${newId}:user=${currentUser.id}`,
                             });
-                            showToast(`Job-Tracking fehlgeschlagen (${error.code ?? 'unknown'}) — generiere trotzdem, kontaktiere Admin`, 'error', 8000);
+                            // Not user-actionable (already captured via logError above).
                         }
                     });
                 }
@@ -736,13 +736,13 @@ export const useGeneration = ({
         if (!isPro && credits < cost) {
             // Previously this opened the settings modal with no explanation —
             // the user just saw a mystery dialog after running out of credits.
-            showToast(t('error_insufficient_credits'), 'error');
+            showToast(t('error_insufficient_credits'), 'info');
             setIsSettingsOpen(true);
             return;
         }
 
         if (!prompt?.trim() && !attachments.length) {
-            showToast(t('error_prompt_required') || 'Bitte gib einen Prompt oder ein Bild an.', 'error');
+            showToast(t('error_prompt_required'), 'info');
             return;
         }
 
@@ -802,7 +802,7 @@ export const useGeneration = ({
                                 source: 'silent',
                                 context: `create:${newId}:user=${user.id}`,
                             });
-                            showToast(`Job-Tracking fehlgeschlagen (${error.code ?? 'unknown'}) — generiere trotzdem, kontaktiere Admin`, 'error', 8000);
+                            // Not user-actionable (already captured via logError above).
                         }
                     });
                 }
