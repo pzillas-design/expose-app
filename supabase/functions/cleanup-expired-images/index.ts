@@ -117,10 +117,15 @@ Deno.serve(async (req) => {
 
         // Loop passes until nothing expired is left or the time budget runs out.
         while (Date.now() - started < TIME_BUDGET_MS) {
+            // Start from EVERY expired image, not just parent_id IS NULL. Two
+            // reasons: (a) a variant can be orphaned when its root vanished, and
+            // as a non-root it would then never be reached again — the first
+            // production run left 217 such rows behind; (b) it makes the pass
+            // independent of tree shape. Descendants are still pulled in below so
+            // a stack always disappears as a unit.
             const { data: roots, error: rootsErr } = await admin
                 .from('images')
                 .select('id')
-                .is('parent_id', null)
                 .lt('created_at', cutoff)
                 .limit(ROOT_BATCH);
 
@@ -136,10 +141,20 @@ Deno.serve(async (req) => {
             while (frontier.length) {
                 const kids: any[] = [];
                 for (const part of chunked(frontier)) {
-                    const { data, error: kidsErr } = await admin
-                        .from('images').select('id').in('parent_id', part);
-                    if (kidsErr) throw new Error(`children query: ${kidsErr.message}`);
-                    if (data?.length) kids.push(...data);
+                    // Paginate: PostgREST caps a response at ~1000 rows, so a wide
+                    // stack would silently lose descendants — exactly how the
+                    // orphans above were created.
+                    let from = 0;
+                    while (true) {
+                        const { data, error: kidsErr } = await admin
+                            .from('images').select('id').in('parent_id', part)
+                            .range(from, from + 999);
+                        if (kidsErr) throw new Error(`children query: ${kidsErr.message}`);
+                        if (!data?.length) break;
+                        kids.push(...data);
+                        if (data.length < 1000) break;
+                        from += 1000;
+                    }
                 }
                 if (!kids.length) break;
                 frontier = kids.map((k: any) => k.id).filter((id: string) => !ids.has(id));
