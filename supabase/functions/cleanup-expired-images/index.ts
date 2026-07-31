@@ -1,164 +1,190 @@
 // @ts-nocheck
+// -----------------------------------------------------------------------------
+// cleanup-expired-images — enforces the image retention window.
+// -----------------------------------------------------------------------------
+// HISTORY / WHY THIS WAS REWRITTEN
+// The previous version queried `canvas_images`, a legacy table with 0 rows — the
+// app writes to `images`. So the nightly cron ran, found nothing and exited: the
+// 30-day TTL had never deleted anything since launch, while the UI showed users
+// an "expires in X days" countdown. This version targets the real table and also
+// clears the temp-upload scratch space, which was never cleaned either.
+//
+// Reference images are NOT separate storage objects — they live inline as base64
+// inside the (double-encoded) annotations JSON, so they vanish with the row and
+// need no separate deletion.
+//
+// Usage:
+//   POST /cleanup-expired-images            → deletes
+//   POST /cleanup-expired-images?dryRun=1   → reports only, changes nothing
+//   Optional: ?ttlDays=30  ?tempHours=6
+// -----------------------------------------------------------------------------
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const TTL_DAYS = 30;
-const BATCH_SIZE = 50; // delete in batches to avoid timeouts
+const DEFAULT_TTL_DAYS = 30;
+const DEFAULT_TEMP_HOURS = 6;      // temp uploads are consumed within minutes
+const ROOT_BATCH = 200;            // roots pulled per pass
+const STORAGE_BATCH = 100;         // storage remove() payload limit
+const TIME_BUDGET_MS = 110_000;    // stay well inside the function wall-clock
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-Deno.serve(async (req) => {
-    if (req.method === 'OPTIONS') {
-        return new Response('ok', { headers: corsHeaders });
+/** thumb_<file> sibling that the app generates next to each image. */
+const thumbPathFor = (p: string) => {
+    const parts = p.split('/');
+    return [...parts.slice(0, -1), `thumb_${parts[parts.length - 1]}`].join('/');
+};
+
+/** Remove old scratch files under _temp_fal/ and _temp_kie/. */
+async function cleanupTempFiles(admin: any, olderThanMs: number, dryRun: boolean) {
+    let found = 0, removed = 0;
+    for (const prefix of ['_temp_fal', '_temp_kie']) {
+        let offset = 0;
+        while (true) {
+            const { data: files, error } = await admin.storage
+                .from('user-content')
+                .list(prefix, { limit: 1000, offset });
+            if (error) { console.error(`[cleanup] list ${prefix} failed:`, error.message); break; }
+            if (!files || files.length === 0) break;
+
+            const stale = files
+                .filter((f: any) => {
+                    const ts = new Date(f.created_at ?? f.updated_at ?? 0).getTime();
+                    return ts > 0 && Date.now() - ts > olderThanMs;
+                })
+                .map((f: any) => `${prefix}/${f.name}`);
+
+            found += stale.length;
+            if (stale.length && !dryRun) {
+                for (let i = 0; i < stale.length; i += STORAGE_BATCH) {
+                    const chunk = stale.slice(i, i + STORAGE_BATCH);
+                    const { error: rmErr } = await admin.storage
+                        .from('user-content').remove(chunk);
+                    if (rmErr) console.error('[cleanup] temp remove failed:', rmErr.message);
+                    else removed += chunk.length;
+                }
+            }
+            if (files.length < 1000) break;
+            offset += files.length;
+        }
     }
+    return { found, removed };
+}
+
+Deno.serve(async (req) => {
+    if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+    const started = Date.now();
+    const url = new URL(req.url);
+    const dryRun = url.searchParams.get('dryRun') === '1';
+    const ttlDays = Number(url.searchParams.get('ttlDays') ?? DEFAULT_TTL_DAYS);
+    const tempHours = Number(url.searchParams.get('tempHours') ?? DEFAULT_TEMP_HOURS);
 
     try {
-        const supabaseAdmin = createClient(
+        const admin = createClient(
             Deno.env.get('SUPABASE_URL')!,
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
         );
 
-        const cutoff = new Date(Date.now() - TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
-        console.log(`[cleanup] Finding root images older than ${cutoff} (${TTL_DAYS} days)`);
+        const cutoff = new Date(Date.now() - ttlDays * 86_400_000).toISOString();
+        console.log(`[cleanup] ttl=${ttlDays}d cutoff=${cutoff} dryRun=${dryRun}`);
 
-        // 1. Find expired root images (no parent_id)
-        const { data: expiredRoots, error: rootsError } = await supabaseAdmin
-            .from('canvas_images')
-            .select('id')
-            .is('parent_id', null)
-            .lt('created_at', cutoff)
-            .limit(BATCH_SIZE);
+        let rootsSeen = 0, rowsDeleted = 0, filesDeleted = 0, filesFailed = 0;
 
-        if (rootsError) {
-            console.error('[cleanup] Error finding expired roots:', rootsError);
-            return new Response(JSON.stringify({ error: rootsError.message }), {
-                status: 500,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            });
-        }
-
-        if (!expiredRoots || expiredRoots.length === 0) {
-            console.log('[cleanup] No expired images found');
-            return new Response(JSON.stringify({ deleted: 0 }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            });
-        }
-
-        const rootIds = expiredRoots.map(r => r.id);
-        console.log(`[cleanup] Found ${rootIds.length} expired root images`);
-
-        // 2. Find all descendants (children, grandchildren, etc.)
-        const allIdsToDelete = [...rootIds];
-        let parentIds = rootIds;
-
-        // Walk the parent_id chain to collect all descendants
-        while (parentIds.length > 0) {
-            const { data: children, error: childError } = await supabaseAdmin
-                .from('canvas_images')
+        // Loop passes until nothing expired is left or the time budget runs out.
+        while (Date.now() - started < TIME_BUDGET_MS) {
+            const { data: roots, error: rootsErr } = await admin
+                .from('images')
                 .select('id')
-                .in('parent_id', parentIds);
+                .is('parent_id', null)
+                .lt('created_at', cutoff)
+                .limit(ROOT_BATCH);
 
-            if (childError) {
-                console.error('[cleanup] Error finding children:', childError);
-                break;
+            if (rootsErr) throw new Error(`roots query: ${rootsErr.message}`);
+            if (!roots?.length) break;
+
+            rootsSeen += roots.length;
+
+            // Collect the whole edit tree — variants must go with their original,
+            // otherwise children would be left pointing at a deleted parent.
+            const ids = new Set<string>(roots.map((r: any) => r.id));
+            let frontier: string[] = roots.map((r: any) => r.id);
+            while (frontier.length) {
+                const { data: kids, error: kidsErr } = await admin
+                    .from('images').select('id').in('parent_id', frontier);
+                if (kidsErr) { console.error('[cleanup] children:', kidsErr.message); break; }
+                if (!kids?.length) break;
+                frontier = kids.map((k: any) => k.id).filter((id: string) => !ids.has(id));
+                frontier.forEach((id: string) => ids.add(id));
+            }
+            const allIds = [...ids];
+
+            // Storage paths (+ thumbnails) must be read BEFORE the rows disappear.
+            const { data: pathRows } = await admin
+                .from('images').select('storage_path')
+                .in('id', allIds).not('storage_path', 'is', null);
+            const paths = (pathRows ?? []).map((r: any) => r.storage_path).filter(Boolean);
+            const allPaths = [...paths, ...paths.map(thumbPathFor)];
+
+            if (dryRun) {
+                rowsDeleted += allIds.length;
+                filesDeleted += allPaths.length;
+                break; // one representative pass is enough for a report
             }
 
-            if (!children || children.length === 0) break;
-
-            const childIds = children.map(c => c.id);
-            allIdsToDelete.push(...childIds);
-            parentIds = childIds;
-        }
-
-        console.log(`[cleanup] Total images to delete: ${allIdsToDelete.length} (${rootIds.length} roots + ${allIdsToDelete.length - rootIds.length} variants)`);
-
-        // 3. Fetch storage paths before deletion
-        const { data: storagePaths } = await supabaseAdmin
-            .from('canvas_images')
-            .select('storage_path')
-            .in('id', allIdsToDelete)
-            .not('storage_path', 'is', null);
-
-        const paths = (storagePaths || [])
-            .map(r => r.storage_path)
-            .filter(Boolean);
-
-        // Also collect thumbnail paths
-        const thumbPaths = paths.map(p => {
-            const parts = p.split('/');
-            const filename = parts[parts.length - 1];
-            return [...parts.slice(0, -1), `thumb_${filename}`].join('/');
-        });
-
-        const allPaths = [...paths, ...thumbPaths];
-
-        // 4. Delete from canvas_images table
-        const { error: deleteError, count: deleteCount } = await supabaseAdmin
-            .from('canvas_images')
-            .delete({ count: 'exact' })
-            .in('id', allIdsToDelete);
-
-        if (deleteError) {
-            console.error('[cleanup] Error deleting from DB:', deleteError);
-            return new Response(JSON.stringify({ error: deleteError.message }), {
-                status: 500,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            });
-        }
-
-        console.log(`[cleanup] Deleted ${deleteCount} records from canvas_images`);
-
-        // 5. Delete from storage (in batches of 100)
-        let storageDeleted = 0;
-        for (let i = 0; i < allPaths.length; i += 100) {
-            const batch = allPaths.slice(i, i + 100);
-            const { error: storageError } = await supabaseAdmin.storage
-                .from('user-content')
-                .remove(batch);
-
-            if (storageError) {
-                console.error(`[cleanup] Storage batch ${i / 100 + 1} error:`, storageError);
-            } else {
-                storageDeleted += batch.length;
+            // Files first: if this fails we still hold the rows, so the next run
+            // retries instead of silently orphaning the objects.
+            for (let i = 0; i < allPaths.length; i += STORAGE_BATCH) {
+                const chunk = allPaths.slice(i, i + STORAGE_BATCH);
+                const { error: rmErr } = await admin.storage.from('user-content').remove(chunk);
+                if (rmErr) { filesFailed += chunk.length; console.error('[cleanup] storage:', rmErr.message); }
+                else filesDeleted += chunk.length;
             }
+
+            const { error: delErr, count } = await admin
+                .from('images').delete({ count: 'exact' }).in('id', allIds);
+            if (delErr) throw new Error(`row delete: ${delErr.message}`);
+            rowsDeleted += count ?? 0;
+
+            console.log(`[cleanup] pass: ${roots.length} roots → ${allIds.length} rows, ${allPaths.length} files`);
         }
 
-        console.log(`[cleanup] Deleted ${storageDeleted} files from storage`);
-
-        // 6. Clean up orphaned generation_jobs (optional)
-        const { error: jobsError, count: jobsCount } = await supabaseAdmin
-            .from('generation_jobs')
-            .delete({ count: 'exact' })
-            .lt('created_at', cutoff)
-            .in('status', ['completed', 'failed']);
-
-        if (jobsError) {
-            console.warn('[cleanup] generation_jobs cleanup error (non-fatal):', jobsError);
-        } else {
-            console.log(`[cleanup] Cleaned up ${jobsCount} old generation_jobs`);
+        // Old finished jobs (bookkeeping only, no user-visible content).
+        let jobsCleaned = 0;
+        if (!dryRun) {
+            const { count } = await admin.from('generation_jobs')
+                .delete({ count: 'exact' })
+                .lt('created_at', cutoff)
+                .in('status', ['completed', 'failed']);
+            jobsCleaned = count ?? 0;
         }
+
+        const temp = await cleanupTempFiles(admin, tempHours * 3_600_000, dryRun);
 
         const result = {
-            expired_roots: rootIds.length,
-            total_deleted: deleteCount,
-            storage_files_deleted: storageDeleted,
-            jobs_cleaned: jobsCount || 0
+            dryRun, ttlDays,
+            expired_roots: rootsSeen,
+            rows_deleted: rowsDeleted,
+            files_deleted: filesDeleted,
+            files_failed: filesFailed,
+            temp_files_found: temp.found,
+            temp_files_removed: temp.removed,
+            jobs_cleaned: jobsCleaned,
+            duration_ms: Date.now() - started,
         };
-
-        console.log('[cleanup] Done:', JSON.stringify(result));
-
+        console.log('[cleanup] done:', JSON.stringify(result));
         return new Response(JSON.stringify(result), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
 
     } catch (err) {
-        console.error('[cleanup] Unexpected error:', err);
-        return new Response(JSON.stringify({ error: err.message }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        console.error('[cleanup] failed:', err?.message || err);
+        return new Response(JSON.stringify({ error: err?.message || String(err) }), {
+            status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
     }
 });
