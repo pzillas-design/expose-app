@@ -351,6 +351,27 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const prevSelectModeRef = React.useRef(false);
     const prevSelectedCountRef = React.useRef(0);
     const lastSelectImageRef = React.useRef<string | null>(null);
+    // Set when entering select mode — the scroll for it fires once the grid has
+    // actually swapped to the select-mode layout (see renderSelectMode below).
+    const pendingSelectScrollRef = React.useRef<string | null>(null);
+
+    // Time-based retry: waits for the tile to exist in the DOM (up to 600ms)
+    // before scrolling. Aligns it to the FIRST visible row (just below the
+    // fixed navbar), not centered — so the selected image lands at the top.
+    const scrollGridToTile = React.useCallback((targetId: string) => {
+        const start = Date.now();
+        const scrollFn = () => {
+            const el = gridRef.current?.querySelector(`[data-image-id="${targetId}"]`) as HTMLElement | null;
+            const sc = scrollRef.current;
+            if (el && sc) {
+                const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
+                sc.scrollTo({ top: Math.max(0, top - 72), behavior: 'instant' as ScrollBehavior });
+            } else if (Date.now() - start < 600) {
+                requestAnimationFrame(scrollFn);
+            }
+        };
+        requestAnimationFrame(scrollFn);
+    }, []);
 
     // When entering select mode, scroll to the first selected image (which may have
     // shifted position because the grid re-mounts with all individual images ungrouped)
@@ -374,25 +395,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             lastSelectImageRef.current = selectedIds[selectedIds.length - 1];
         }
 
-        if ((isEntering || isFirstSelection) && selectedIds.length > 0) {
-            const targetId = selectedIds[0];
-            // Time-based retry: the grid content is swapped ~160ms after the mode
-            // flips (fade-out → swap → fade-in), so a frame-count retry could give
-            // up before the tile exists.
-            const start = Date.now();
-            const scrollFn = () => {
-                const el = gridRef.current?.querySelector(`[data-image-id="${targetId}"]`) as HTMLElement | null;
-                const sc = scrollRef.current;
-                if (el && sc) {
-                    // Align to the FIRST visible row (just below the fixed navbar),
-                    // not centered — so the first selected image lands at the top.
-                    const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
-                    sc.scrollTo({ top: Math.max(0, top - 72), behavior: 'instant' as ScrollBehavior });
-                } else if (Date.now() - start < 600) {
-                    requestAnimationFrame(scrollFn);
-                }
-            };
-            requestAnimationFrame(scrollFn);
+        if (isEntering && selectedIds.length > 0) {
+            // The grid hasn't swapped to the ungrouped select-mode layout yet (fade
+            // transition, ~160ms — see renderSelectMode below). If the selected
+            // tile happens to already be a stack cover, it exists in the OLD
+            // (still-showing) grid too, so scrolling immediately would land against
+            // stale coordinates that the swap invalidates a moment later — the
+            // tile ends up out of view. Defer until the swap actually happened.
+            pendingSelectScrollRef.current = selectedIds[0];
+        } else if (isFirstSelection && selectedIds.length > 0) {
+            // Already showing the select-mode grid — safe to scroll right away.
+            scrollGridToTile(selectedIds[0]);
         }
 
         // Scroll to the cover tile of the last selected image's group when exiting select mode
@@ -413,7 +426,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             requestAnimationFrame(tryScroll);
             lastSelectImageRef.current = null;
         }
-    }, [isSelectMode, selectedIds, effectiveGroupId, rows]);
+    }, [isSelectMode, selectedIds, effectiveGroupId, rows, scrollGridToTile]);
 
     // Map: cover image id → row (for quick group lookup)
     // Cover = newest item (first in row, items sorted newest→oldest)
@@ -453,6 +466,16 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         }, 160);
         return () => clearTimeout(t);
     }, [isSelectMode, renderSelectMode]);
+
+    // Fires the scroll deferred above once the grid has actually swapped to the
+    // select-mode (ungrouped) layout, so it targets the tile's FINAL position
+    // instead of a pre-swap layout that's about to shift underneath it.
+    React.useEffect(() => {
+        if (!renderSelectMode || !pendingSelectScrollRef.current) return;
+        const targetId = pendingSelectScrollRef.current;
+        pendingSelectScrollRef.current = null;
+        scrollGridToTile(targetId);
+    }, [renderSelectMode, scrollGridToTile]);
 
     const displayImages = useMemo(() => {
         if (effectiveGroupId) {
