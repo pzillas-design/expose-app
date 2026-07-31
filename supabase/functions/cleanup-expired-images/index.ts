@@ -25,7 +25,21 @@ const DEFAULT_TTL_DAYS = 30;
 const DEFAULT_TEMP_HOURS = 6;      // temp uploads are consumed within minutes
 const ROOT_BATCH = 200;            // roots pulled per pass
 const STORAGE_BATCH = 100;         // storage remove() payload limit
+const ID_BATCH = 80;               // ids per .in() — see chunked() below
 const TIME_BUDGET_MS = 110_000;    // stay well inside the function wall-clock
+
+/**
+ * PostgREST puts .in() values in the URL query string, so a few hundred UUIDs
+ * blow past the URL length limit and the request silently returns nothing.
+ * That is not theoretical: a dry run reported 423 rows to delete but 0 files,
+ * because the storage_path lookup came back empty — which would have deleted
+ * the rows and orphaned every file. All .in() calls must go through here.
+ */
+const chunked = <T,>(arr: T[], size = ID_BATCH): T[][] => {
+    const out: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+};
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -120,20 +134,33 @@ Deno.serve(async (req) => {
             const ids = new Set<string>(roots.map((r: any) => r.id));
             let frontier: string[] = roots.map((r: any) => r.id);
             while (frontier.length) {
-                const { data: kids, error: kidsErr } = await admin
-                    .from('images').select('id').in('parent_id', frontier);
-                if (kidsErr) { console.error('[cleanup] children:', kidsErr.message); break; }
-                if (!kids?.length) break;
+                const kids: any[] = [];
+                for (const part of chunked(frontier)) {
+                    const { data, error: kidsErr } = await admin
+                        .from('images').select('id').in('parent_id', part);
+                    if (kidsErr) throw new Error(`children query: ${kidsErr.message}`);
+                    if (data?.length) kids.push(...data);
+                }
+                if (!kids.length) break;
                 frontier = kids.map((k: any) => k.id).filter((id: string) => !ids.has(id));
                 frontier.forEach((id: string) => ids.add(id));
             }
             const allIds = [...ids];
 
             // Storage paths (+ thumbnails) must be read BEFORE the rows disappear.
-            const { data: pathRows } = await admin
-                .from('images').select('storage_path')
-                .in('id', allIds).not('storage_path', 'is', null);
-            const paths = (pathRows ?? []).map((r: any) => r.storage_path).filter(Boolean);
+            // A failure here must abort the pass — deleting rows without their
+            // paths would orphan the files permanently.
+            const paths: string[] = [];
+            for (const part of chunked(allIds)) {
+                const { data, error: pathErr } = await admin
+                    .from('images').select('storage_path')
+                    .in('id', part).not('storage_path', 'is', null);
+                if (pathErr) throw new Error(`storage_path query: ${pathErr.message}`);
+                paths.push(...(data ?? []).map((r: any) => r.storage_path).filter(Boolean));
+            }
+            if (paths.length === 0 && allIds.length > 0) {
+                throw new Error(`sanity check: ${allIds.length} rows but 0 storage paths — aborting to avoid orphaning files`);
+            }
             const allPaths = [...paths, ...paths.map(thumbPathFor)];
 
             if (dryRun) {
@@ -151,10 +178,12 @@ Deno.serve(async (req) => {
                 else filesDeleted += chunk.length;
             }
 
-            const { error: delErr, count } = await admin
-                .from('images').delete({ count: 'exact' }).in('id', allIds);
-            if (delErr) throw new Error(`row delete: ${delErr.message}`);
-            rowsDeleted += count ?? 0;
+            for (const part of chunked(allIds)) {
+                const { error: delErr, count } = await admin
+                    .from('images').delete({ count: 'exact' }).in('id', part);
+                if (delErr) throw new Error(`row delete: ${delErr.message}`);
+                rowsDeleted += count ?? 0;
+            }
 
             console.log(`[cleanup] pass: ${roots.length} roots → ${allIds.length} rows, ${allPaths.length} files`);
         }
