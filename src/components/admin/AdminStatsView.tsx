@@ -402,8 +402,9 @@ export const AdminStatsView: React.FC<AdminStatsViewProps> = ({ t }) => {
                         {/* Provider performance sub-stats — per-provider Ø-time, success-rate, jobs. */}
                         {(() => {
                             const providerRows = [
-                                { key: 'nb2',    label: 'NB2'   },
-                                { key: 'gpt2',   label: 'GPT-2' },
+                                { key: 'nb2',    label: 'NB2'    },
+                                { key: 'nbpro',  label: 'NB Pro' },
+                                { key: 'gpt2',   label: 'GPT-2'  },
                             ];
                             const stats = providerRows.map(row => {
                                 const s = providerStats.find((p: any) => p.key === row.key);
