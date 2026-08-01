@@ -231,11 +231,12 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                     // 'fal' (legacy) and 'fal-nb2' both = Nano Banana 2 via fal.
                                                     // 'openai' = gpt-image-2 via fal.
                                                     const isFalNb2 = j.provider === 'fal' || j.provider === 'fal-nb2';
+                                                    const isNbPro = j.provider === 'nano-banana-pro';
                                                     const isOpenAI = j.provider === 'openai';
                                                     const isKie = typeof j.provider === 'string' && j.provider.startsWith('kie');
                                                     const isGoogle = typeof j.provider === 'string' && j.provider.startsWith('google');
                                                     // null provider = failure before provider was recorded. Don't mislabel as Google.
-                                                    const hasKnownProvider = isFalNb2 || isOpenAI || isKie || isGoogle;
+                                                    const hasKnownProvider = isFalNb2 || isNbPro || isOpenAI || isKie || isGoogle;
 
                                                     // Resolution badge
                                                     const m = j.qualityMode || j.model || '';
@@ -280,6 +281,8 @@ export const AdminJobsView: React.FC<AdminJobsViewProps> = ({ t }) => {
                                                                 )}
                                                                 {isFalNb2
                                                                     ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200" title="Nano Banana 2 via fal">NB2</span>
+                                                                    : isNbPro
+                                                                    ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200" title="Nano Banana Pro via fal">NB Pro</span>
                                                                     : isOpenAI
                                                                     ? <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" title="GPT Image 2 via fal">GPT-2</span>
                                                                     : isKie

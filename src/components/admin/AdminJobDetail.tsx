@@ -17,11 +17,12 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
  const formatModel = (m: string) => {
   if (!m || m === 'unknown') return '–';
   const value = m.toLowerCase();
-  const isNb2 =
+  const isNbPro = value.includes('nano-banana-pro');
+  const isNb2 = !isNbPro && (
    value.startsWith('nb2') ||
    value.includes('nano-banana-2') ||
-   value.includes('gemini-3.1-flash-image-preview');
-  const tier = isNb2 ? 'NB2' : m;
+   value.includes('gemini-3.1-flash-image-preview'));
+  const tier = isNbPro ? 'NB Pro' : isNb2 ? 'NB2' : m;
   const res = value.includes('4k') ? '4K' : value.includes('2k') ? '2K' : value.includes('1k') ? '1K' : null;
   return res ? `${tier} · ${res}` : tier;
  };
@@ -48,6 +49,7 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
  // 'fal' (legacy) and 'fal-nb2' both = Nano Banana 2 via fal.
  // 'openai' = gpt-image-2 via fal.
  const isFalNb2 = payload.provider === 'fal' || payload.provider === 'fal-nb2';
+ const isNbPro = payload.provider === 'nano-banana-pro';
  const isOpenAI = payload.provider === 'openai';
  const kieProvider: string | null = typeof payload.provider === 'string' && payload.provider.startsWith('kie')
   ? payload.provider
@@ -55,6 +57,8 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
  const isGoogleFallback = payload.provider === 'google_fallback';
  const provider = isFalNb2
   ? 'fal-nb2'
+  : isNbPro
+  ? 'nano-banana-pro'
   : isOpenAI
   ? 'openai'
   : kieProvider
@@ -71,6 +75,8 @@ export const AdminJobDetail: React.FC<AdminJobDetailProps> = ({ job, onClose, t,
   : null;
  const providerDisplayLabel: React.ReactNode = isFalNb2
   ? <span className="font-semibold text-yellow-600 dark:text-yellow-400">fal.ai · Nano Banana 2</span>
+  : isNbPro
+  ? <span className="font-semibold text-amber-600 dark:text-amber-400">fal.ai · Nano Banana Pro</span>
   : isOpenAI
   ? <span className="font-semibold text-emerald-500">fal.ai · GPT Image 2</span>
   : kieProviderLabel
