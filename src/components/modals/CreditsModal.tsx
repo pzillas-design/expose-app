@@ -7,6 +7,9 @@ import { X, Loader2, Plus } from 'lucide-react';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 import { useMobile } from '@/hooks/useMobile';
 
+/** Gängige Aufladebeträge — decken die üblichen Fälle mit einem Klick ab. */
+const QUICK_AMOUNTS = [10, 20, 50];
+
 interface CreditsModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -26,6 +29,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
 }) => {
     const isMobile = useMobile();
     const [customAmount, setCustomAmount] = useState('');
+    const [isCustomEntry, setIsCustomEntry] = useState(false);
     const [isTopUpExpanded, setIsTopUpExpanded] = useState(false);
     const [showMinError, setShowMinError] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -39,6 +43,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
             const timer = setTimeout(() => {
                 setIsTopUpExpanded(false);
                 setCustomAmount('');
+                setIsCustomEntry(false);
                 setShowMinError(false);
             }, 300); // Wait for close animation
             return () => clearTimeout(timer);
@@ -57,6 +62,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
             trackCreditsPurchased(finalAmount);
             setIsTopUpExpanded(false);
             setCustomAmount('');
+            setIsCustomEntry(false);
         } finally {
             setIsProcessing(false);
         }
@@ -93,6 +99,35 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                         </Button>
                     ) : (
                         <div className="space-y-4">
+                            {/* Feste Beträge zuerst: Das freie Eingabefeld allein wurde
+                                oft nicht als solches erkannt. Ein Klick genügt jetzt;
+                                „Anderer Betrag" öffnet weiterhin die Tastatureingabe. */}
+                            {!isCustomEntry && (
+                                <div className="grid grid-cols-3 gap-2" style={{ animation: 'credits-step-in 320ms cubic-bezier(0.34,1.56,0.64,1) both' }}>
+                                    {QUICK_AMOUNTS.map(amount => (
+                                        <button
+                                            key={amount}
+                                            onClick={() => { setCustomAmount(String(amount)); setShowMinError(false); }}
+                                            className={`h-14 rounded-2xl border text-lg font-mono font-medium transition-colors ${
+                                                parseFloat(customAmount.replace(',', '.')) === amount
+                                                    ? 'border-zinc-900 dark:border-white bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+                                                    : 'border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 hover:border-zinc-400 dark:hover:border-zinc-600'
+                                            }`}
+                                        >
+                                            {amount} €
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {!isCustomEntry ? (
+                                <button
+                                    onClick={() => { setIsCustomEntry(true); setCustomAmount(''); }}
+                                    className="w-full text-center text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors underline underline-offset-4"
+                                >
+                                    {t('credits_custom_amount')}
+                                </button>
+                            ) : (
                             <div className="py-2" style={{ animation: 'credits-step-in 320ms cubic-bezier(0.34,1.56,0.64,1) both' }}>
                                 <div className="flex items-center justify-center gap-1 py-2 bg-transparent transition-colors">
                                     <Plus className="w-10 h-10 text-zinc-300 dark:text-zinc-700 font-light shrink-0" />
@@ -122,6 +157,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                     </div>
                                 </div>
                             </div>
+                            )}
 
                             <div className="flex flex-col gap-3" style={{ animation: 'credits-step-in 320ms 80ms cubic-bezier(0.34,1.56,0.64,1) both' }}>
                                 {showMinError && <p className="text-[10px] text-red-500 text-center font-medium" style={{ animation: 'credits-step-in 200ms ease-out both' }}>{t('checkout_min_amount') || 'Mindestbetrag ist 5.00 €'}</p>}

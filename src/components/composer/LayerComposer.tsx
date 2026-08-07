@@ -230,12 +230,12 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                             (mirrors the annotation toolbar) */}
                         <div className="flex items-center gap-1">
                             <Tooltip text={isDe ? 'Hinzufügen' : 'Add'} side="top">
-                                <button onClick={() => comp.setMode('add')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'add' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
+                                <button onClick={() => comp.setMode('add')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'add' ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
                                     <Plus className="w-5 h-5" />
                                 </button>
                             </Tooltip>
                             <Tooltip text={isDe ? 'Entfernen' : 'Remove'} side="top">
-                                <button onClick={() => comp.setMode('remove')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'remove' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
+                                <button onClick={() => comp.setMode('remove')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${comp.mode === 'remove' ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
                                     <Minus className="w-5 h-5" />
                                 </button>
                             </Tooltip>
@@ -370,9 +370,9 @@ const LayerCard: React.FC<{
 
             <button
                 onClick={onSelect}
-                className={`relative w-full rounded-lg overflow-hidden transition-all ring-1 ${
-                    isActive ? 'ring-zinc-900 dark:ring-white'
-                    : 'ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
+                className={`relative w-full rounded-lg overflow-hidden transition-all ${
+                    isActive ? 'ring-2 ring-zinc-900 dark:ring-white'
+                    : 'ring-1 ring-zinc-200 dark:ring-zinc-800 hover:ring-zinc-300 dark:hover:ring-zinc-700'
                 }`}
                 style={{ aspectRatio: `${ar}` }}
             >

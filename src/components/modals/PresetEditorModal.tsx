@@ -119,6 +119,13 @@ const LanguageForm = ({
                     <label className={`${Typo.Label} text-zinc-500 dark:text-zinc-400 font-bold ml-2`}>
                         {t('variables_label')}
                     </label>
+                    {/* Anlegen-Button direkt unter der Überschrift statt am Listenende —
+                        bei vielen Variablen war er sonst weit weggescrollt. */}
+                    {!isAddingControl && !editingControlId && (
+                        <button onClick={() => setIsAddingControl(true)} className={`w-full py-3 flex items-center justify-center gap-2 border border-transparent bg-zinc-50 dark:bg-zinc-900/30 rounded-full text-zinc-500 font-medium ${Theme.Colors.SurfaceHover} transition-colors hover:text-zinc-900 dark:hover:text-zinc-100`}>
+                            <Plus className="w-4 h-4" /> {t('add_variable')}
+                        </button>
+                    )}
                     <div className="space-y-3">
                         {controls.map((ctrl) => (
                             <React.Fragment key={ctrl.id}>
@@ -204,11 +211,7 @@ const LanguageForm = ({
                                 </div>
                             </div>
                         ) : (
-                            !editingControlId && (
-                                <button onClick={() => setIsAddingControl(true)} className={`w-full py-3 flex items-center justify-center gap-2 border border-transparent bg-zinc-50 dark:bg-zinc-900/30 rounded-full text-zinc-500 font-medium ${Theme.Colors.SurfaceHover} transition-colors hover:text-zinc-900 dark:hover:text-zinc-100`}>
-                                    <Plus className="w-4 h-4" /> {t('add_variable')}
-                                </button>
-                            )
+                            null
                         )}
                     </div>
                 </div>

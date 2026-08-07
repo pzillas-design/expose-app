@@ -244,7 +244,9 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
             return;
         }
 
-        const initialSelected = initialTemplateId || null;
+        // Ohne Vorgabe die erste Vorlage vorauswählen — sonst öffnete sich der
+        // Editor mit einem leeren Bereich und man musste erst blind klicken.
+        const initialSelected = initialTemplateId || templates[0]?.id || null;
         setSelectedId(initialSelected);
         if (isMobile && initialSelected) {
             setMobileView('editor');
