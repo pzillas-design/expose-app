@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Plus, Upload } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { compressImage } from '@/utils/imageUtils';
@@ -68,13 +68,16 @@ export const CreatePage: React.FC<CreatePageProps> = ({
 }) => {
     const isMobile = useMobile();
     const [searchParams] = useSearchParams();
-    // Entry screen: the navbar now has a single button that lands here, and the
-    // choice between uploading and generating is made inside the canvas — so the
-    // user is already "in the editor" (canvas + side sheet) when deciding.
-    // `?m=create` jumps straight to the artboard (used by voice/deep links).
-    const [mode, setMode] = useState<'choose' | 'create'>(
-        searchParams.get('m') === 'create' ? 'create' : 'choose'
-    );
+    const navigate = useNavigate();
+    // Entry screen: the navbar has a single button that lands here, and the choice
+    // between uploading and generating is made inside the canvas — so the user is
+    // already "in the editor" (canvas + side sheet) when deciding.
+    // The step lives in the URL (?m=create) rather than local state so the navbar's
+    // back button can return to the choice screen instead of leaving for the
+    // gallery, and so the browser's own back button behaves the same way.
+    const mode: 'choose' | 'create' = searchParams.get('m') === 'create' ? 'create' : 'choose';
+    const setMode = (next: 'choose' | 'create') =>
+        navigate(next === 'create' ? '/create?m=create' : '/create');
     const uploadRef = useRef<HTMLInputElement>(null);
     const [selectedRatio, setSelectedRatio] = useState('4:3');
     const [isGenerating, setIsGenerating] = useState(false);

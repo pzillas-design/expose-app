@@ -386,6 +386,7 @@ export const translations = {
     more: "More",
     save_error: "Error while saving",
     delete_error: "Error while deleting",
+    credits_custom_amount: "Enter a different amount",
     credits_payment_note: "Credits are available immediately after payment.",
     save_annotations: "Save annotations?",
     save_discard_changes: "Save or discard changes?",
@@ -491,7 +492,7 @@ export const translations = {
     clear_all_annotations_desc: "Do you really want to remove all annotations from the canvas? This action cannot be undone.",
 
     // AppNavbar
-    nav_create: "Create",
+    nav_create: "New",
     nav_create_tooltip: "Upload or generate an image",
     nav_generate_new: "Generate new image",
     nav_upload: "Upload",
@@ -945,6 +946,7 @@ export const translations = {
     more: "Mehr",
     save_error: "Fehler beim Speichern",
     delete_error: "Fehler beim Löschen",
+    credits_custom_amount: "Anderen Betrag eingeben",
     credits_payment_note: "Guthaben ist sofort nach Abschluss der Zahlung verfügbar.",
     save_annotations: "Anmerkungen speichern?",
     save_discard_changes: "Änderungen speichern oder verwerfen?",
@@ -1050,7 +1052,7 @@ export const translations = {
     clear_all_annotations_desc: "Möchtest du wirklich alle Anmerkungen aus dem Canvas entfernen? Diese Aktion kann nicht rückgängig gemacht werden.",
 
     // AppNavbar
-    nav_create: "Erstellen",
+    nav_create: "Neu",
     nav_create_tooltip: "Bild hochladen oder generieren",
     nav_generate_new: "Neues Bild generieren",
     nav_upload: "Hochladen",

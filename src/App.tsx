@@ -102,6 +102,27 @@ export function App() {
         const stored = localStorage.getItem('expose_grid_columns');
         return stored ? Number(stored) : null;
     });
+    // Without an override the grid renders via responsive Tailwind classes
+    // (2 / sm:3 / md:4 / xl:5). The zoom control used to assume 2 in that case,
+    // so on a wide screen "+" sat disabled although 5 columns were visible, and
+    // "−" (zoom out) jumped from 5 straight to 3 — making the images BIGGER.
+    // Mirror the breakpoints here so the first press continues from what is
+    // actually on screen.
+    const responsiveColumns = React.useCallback(() => {
+        if (typeof window === 'undefined') return 4;
+        const w = window.innerWidth;
+        if (w < 640) return 2;
+        if (w < 768) return 3;
+        if (w < 1280) return 4;
+        return 5;
+    }, []);
+    const [viewportColumns, setViewportColumns] = React.useState(responsiveColumns);
+    React.useEffect(() => {
+        const onResize = () => setViewportColumns(responsiveColumns());
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, [responsiveColumns]);
+    const effectiveColumns = columnsOverride ?? viewportColumns;
     const [voiceAdminConfig, setVoiceAdminConfig] = React.useState(() => loadVoiceAdminConfig());
     const [voiceDiagnostics, setVoiceDiagnostics] = React.useState<VoiceDiagnostics>(() => {
         const empty = getEmptyVoiceDiagnostics();
@@ -1142,7 +1163,15 @@ export function App() {
                     })()}
                     isGroupDrillDown={!!expandedGroupId}
                     onCloseGroup={() => navigate('/')}
-                    onBack={handleBackToFeed}
+                    onBack={() => {
+                        // On the create flow, "back" walks one step of the flow:
+                        // format picker → upload/generate choice → gallery.
+                        if (location.pathname === '/create' && new URLSearchParams(location.search).get('m') === 'create') {
+                            navigate('/create');
+                            return;
+                        }
+                        handleBackToFeed();
+                    }}
                     onDetailRename={() => {
                         if (location.pathname.startsWith('/image/')) {
                             const id = location.pathname.split('/').pop();
@@ -1186,10 +1215,10 @@ export function App() {
                     groupHeroProgress={expandedGroupId ? feedHeroProgress : undefined}
                     onOpenLayerComposer={() => setComposerOpen(true)}
                     canOpenLayerComposer={!!expandedGroupId && (state.rows.find((r: any) => r.id === expandedGroupId)?.items?.length ?? 0) >= 2}
-                    gridColumns={columnsOverride ?? state.gridColumns ?? undefined}
+                    gridColumns={effectiveColumns}
                     onAdjustColumns={(delta) => {
-                        const current = columnsOverride ?? state.gridColumns ?? 2;
-                        const next = Math.max(2, Math.min(6, current + delta));
+                        const next = Math.max(2, Math.min(6, effectiveColumns + delta));
+                        if (next === effectiveColumns) return;
                         setColumnsOverride(next);
                         localStorage.setItem('expose_grid_columns', String(next));
                     }}
