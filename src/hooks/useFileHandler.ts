@@ -32,7 +32,12 @@ export const useFileHandler = ({
     t
 }: UseFileHandlerProps) => {
 
-    const processFiles = useCallback((files: File[]): string[] => {
+    /**
+     * @param targetFolderId Wenn gesetzt, landen die Bilder in diesem Stapel
+     *   (Drop in einen geöffneten Batch) statt jeweils einen neuen anzulegen.
+     *   Rows sind nach folder_id gruppiert, also ist die Row-ID die Ordner-ID.
+     */
+    const processFiles = useCallback((files: File[], targetFolderId?: string): string[] => {
         const newImageIds: string[] = [];
         let processedCount = 0;
 
@@ -54,15 +59,27 @@ export const useFileHandler = ({
                 version: 1,
                 isGenerating: true, // This triggers the skeleton/shimmer UI
                 createdAt: Date.now(),
-                updatedAt: Date.now()
+                updatedAt: Date.now(),
+                ...(targetFolderId ? { folderId: targetFolderId } : {}),
             };
 
-            setRows(prev => [{
-                id: generateId(),
-                title: baseName,
-                items: [skeleton],
-                createdAt: Date.now()
-            }, ...prev]);
+            setRows(prev => {
+                if (targetFolderId) {
+                    const idx = prev.findIndex(r => r.id === targetFolderId);
+                    if (idx !== -1) {
+                        // In den offenen Stapel einreihen (neueste zuerst, wie sonst auch).
+                        const next = [...prev];
+                        next[idx] = { ...next[idx], items: [skeleton, ...next[idx].items] };
+                        return next;
+                    }
+                }
+                return [{
+                    id: generateId(),
+                    title: baseName,
+                    items: [skeleton],
+                    createdAt: Date.now()
+                }, ...prev];
+            });
 
             newImageIds.push(skeletonId);
 
@@ -131,6 +148,9 @@ export const useFileHandler = ({
                                 createdAt: Date.now(),
                                 updatedAt: Date.now(),
                                 storage_path: '',
+                                // Ohne das würde persistImage folder_id auf die eigene
+                                // ID setzen und das Bild bekäme einen eigenen Stapel.
+                                ...(targetFolderId ? { folderId: targetFolderId } : {}),
                             };
 
                             const patchItem = (patch: Partial<CanvasImage>) => {

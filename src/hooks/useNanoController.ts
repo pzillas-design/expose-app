@@ -547,10 +547,10 @@ export const useNanoController = () => {
         return newId;
     }, [user, rows, setRows, setAuthModalMode, setIsAuthModalOpen, showToast, currentLang]);
 
-    const handleProcessFiles = useCallback((files: FileList | DataTransferItemList | File[]) => {
+    const handleProcessFiles = useCallback((files: FileList | DataTransferItemList | File[], targetFolderId?: string) => {
         const fileArray = (Array.from(files as any) as any[]).map(f => f instanceof File ? f : f.getAsFile?.()).filter((f): f is File => !!f && f.type.startsWith('image/'));
         if (fileArray.length === 0) return;
-        processFiles(fileArray);
+        processFiles(fileArray, targetFolderId);
     }, [processFiles]);
 
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {
