@@ -722,7 +722,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 className="hidden"
                 accept="image/*"
                 multiple
-                onChange={(e) => { if (e.target.files?.length) onUpload?.(e.target.files); e.target.value = ''; }}
+                // Gleiche Regel wie beim Drop: Ist ein Stapel geöffnet, landen die
+                // Bilder dort statt in einem neuen.
+                onChange={(e) => { if (e.target.files?.length) onUpload?.(e.target.files, effectiveGroupId || undefined); e.target.value = ''; }}
             />
             <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar bg-white dark:bg-zinc-950 relative flex flex-col">
 
