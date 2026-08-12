@@ -262,7 +262,7 @@ interface FeedPageProps {
     onSelectImage: (id: string) => void;
     onCreateNew: () => void;
     onGenerate?: () => void;
-    onUpload?: (files?: FileList) => void;
+    onUpload?: (files?: FileList, targetFolderId?: string) => void;
     onLoadMore: () => void;
     isFetchingMore?: boolean;
     isSelectMode?: boolean;
@@ -602,9 +602,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
         const files = e.dataTransfer.files;
         if (files?.length && onUpload) {
-            onUpload(files);
+            // Drop innerhalb eines geöffneten Stapels: Bilder dort einsortieren
+            // statt für jedes einen neuen Stapel anzulegen.
+            onUpload(files, effectiveGroupId || undefined);
         }
-    }, [onUpload, actions]);
+    }, [onUpload, actions, effectiveGroupId]);
 
     // Dynamically calculate columns based on actual DOM layout
     const [columns, setColumns] = React.useState(2);
