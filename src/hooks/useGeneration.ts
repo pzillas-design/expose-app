@@ -187,11 +187,47 @@ export const useGeneration = ({
      * 1. User is still in detail view (activeIdRef.current !== null)
      * 2. User is still on the source image OR already on the placeholder/result
      */
+    /**
+     * True while the user is composing text (prompt field, title rename, …).
+     * Auto-navigating then swaps the side sheet to the finished image and pulls
+     * the caret out of the field mid-sentence — helpful behaviour turning into
+     * an interruption. The result is not lost: it stays in the stack and keeps
+     * its "new" marker, and the completion toast/notification still fires.
+     */
+    const isUserTyping = (): boolean => {
+        if (typeof document === 'undefined') return false;
+        const el = document.activeElement as HTMLElement | null;
+        if (!el) return false;
+        const tag = el.tagName;
+        return tag === 'TEXTAREA'
+            || (tag === 'INPUT' && !['checkbox', 'radio', 'button', 'submit', 'range', 'file'].includes((el as HTMLInputElement).type))
+            || el.isContentEditable;
+    };
+
     const shouldAutoNavigate = (newId: string): boolean => {
         const current = activeIdRef.current;
         if (current === null) return false; // user went to feed view
+        if (isUserTyping()) return false;   // don't yank focus out of a text field
         const sourceId = generationSourceIds.current[newId] ?? null;
         return current === sourceId || current === newId;
+    };
+
+    /**
+     * Jump to the finished image — unless the user is mid-sentence. In that case
+     * the jump is offered as a tappable toast instead of being forced, so the
+     * help stays available without stealing the caret.
+     */
+    const revealWhenReady = (id: string) => {
+        if (shouldAutoNavigate(id)) {
+            setTimeout(() => selectAndSnapRef.current(id, false, false), 200);
+            return;
+        }
+        const current = activeIdRef.current;
+        const sourceId = generationSourceIds.current[id] ?? null;
+        const wouldHaveNavigated = current !== null && (current === sourceId || current === id);
+        if (wouldHaveNavigated && isUserTyping()) {
+            showToast(t('generation_done_show'), 'success', 8000, () => selectAndSnapRef.current(id, false, false));
+        }
     };
 
     const pollForJob = useCallback(async (jobId: string, quality?: string) => {
@@ -258,9 +294,7 @@ export const useGeneration = ({
                 // Auto-navigate to finished image — only if still in detail view on source/placeholder
                 if (navigateOnCompleteIds.current.has(jobId)) {
                     navigateOnCompleteIds.current.delete(jobId);
-                    if (shouldAutoNavigate(jobId)) {
-                        setTimeout(() => selectAndSnapRef.current(jobId, false, false), 200);
-                    }
+                    revealWhenReady(jobId);
                 }
                 // Legacy callback support
                 const onComplete = jobCompleteCallbacks.current[jobId];
@@ -637,9 +671,7 @@ export const useGeneration = ({
 
                     // Clean up and navigate — only if still in detail view on source/placeholder
                     navigateOnCompleteIds.current.delete(newId);
-                    if (shouldAutoNavigate(newId)) {
-                        setTimeout(() => selectAndSnapRef.current(newId, false, false), 200);
-                    }
+                    revealWhenReady(newId);
 
                     if (!isPro && cost > 0) {
                         setCredits(prev => Math.round((prev - cost) * 100) / 100);
@@ -838,9 +870,7 @@ export const useGeneration = ({
                     setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
 
                     navigateOnCompleteIds.current.delete(newId);
-                    if (shouldAutoNavigate(newId)) {
-                        setTimeout(() => selectAndSnapRef.current(newId, false, false), 200);
-                    }
+                    revealWhenReady(newId);
 
                     if (!isPro && cost > 0) {
                         setCredits(prev => Math.round((prev - cost) * 100) / 100);
