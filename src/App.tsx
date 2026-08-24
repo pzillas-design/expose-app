@@ -381,6 +381,12 @@ export function App() {
             e.preventDefault();
             const files = (Array.from(e.dataTransfer?.files || []) as File[]).filter(f => f.type.startsWith('image/'));
             if (files.length === 0) return;
+            // Auf der Erstellen-Seite ist ein fallengelassenes Bild eine Referenz,
+            // kein neuer Upload — sonst tauchte es in der Galerie auf statt rechts.
+            if (locationRef2.current.startsWith('/create')) {
+                document.dispatchEvent(new CustomEvent('paste-reference-image', { detail: files[0] }));
+                return;
+            }
             files.forEach(f => actionsRef.current.processFile(f));
         };
         document.addEventListener('dragenter', onEnter);
@@ -426,8 +432,10 @@ export function App() {
             const isTextField = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable;
             if (isTextField && hasText) return;
 
-            // On detail view → add as reference image instead of uploading
-            if (loc.startsWith('/image/')) {
+            // Detail view AND create page → add as reference image instead of
+            // uploading. Ohne /create landete ein eingefügtes Referenzbild als
+            // neues Bild in der Galerie statt in der Referenzliste rechts.
+            if (loc.startsWith('/image/') || loc.startsWith('/create')) {
                 e.preventDefault();
                 document.dispatchEvent(new CustomEvent('paste-reference-image', { detail: imageFiles[0] }));
                 return;

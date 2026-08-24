@@ -589,7 +589,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     React.useEffect(() => {
         const handler = (e: Event) => {
             const file = (e as CustomEvent<File>).detail;
-            if (!file || !selectedImage) return;
+            if (!file) return;
+            // Erstellen-Ansicht: dort gibt es kein ausgewähltes Bild, das Referenzbild
+            // geht direkt in die Liste der Referenzen (createReferenceFiles). Vorher
+            // stieg der Handler hier aus und der globale Upload-Pfad legte
+            // stattdessen ein neues Bild in der Galerie an.
+            if (!selectedImage) {
+                if (props.onAddReference) props.onAddReference(file);
+                return;
+            }
             const reader = new FileReader();
             reader.onload = ev => {
                 if (typeof ev.target?.result === 'string') {
