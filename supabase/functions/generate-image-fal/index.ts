@@ -420,17 +420,25 @@ Deno.serve(async (req) => {
             : (COSTS[qualityMode] || 0);
         let { data: profile } = await supabaseAdmin
             .from('profiles')
-            .select('credits, role')
+            .select('credits, role, is_blocked')
             .eq('id', user.id)
             .maybeSingle();
         if (!profile) {
+            // Zweiter Bonus-Pfad: Das Startguthaben kommt aus derselben Richtlinie
+            // wie im handle_new_user-Trigger — sonst wäre dieser Zweig ein
+            // Schlupfloch, über das gesperrte Domains ihre 2 € doch bekämen.
+            const { data: bonus } = await supabaseAdmin
+                .rpc('signup_bonus_for_email', { p_email: user.email });
             const { data: newProfile } = await supabaseAdmin
                 .from('profiles')
-                .insert({ id: user.id, email: user.email, full_name: 'User', credits: 2 })
+                .insert({ id: user.id, email: user.email, full_name: 'User', credits: bonus ?? 0 })
                 .select()
                 .single();
             profile = newProfile;
         }
+        // Gesperrte Konten (Wegwerf-Domains) dürfen keine Generierung auslösen —
+        // hier fließt echtes Geld an fal/OpenAI ab.
+        if (profile?.is_blocked) throw new Error('Account blocked');
         const isPro = profile.role === 'pro' || profile.role === 'admin';
         const balance = Math.round((profile.credits || 0) * 100) / 100;
         if (!isPro && balance < cost) throw new Error('Insufficient credits');
