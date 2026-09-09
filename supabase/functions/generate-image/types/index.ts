@@ -40,6 +40,36 @@ export const COSTS: Record<string, number> = {
     'nb2-4k': 0.65,
 };
 
+// EINKAUFSPREISE (was fal/OpenAI uns je Bild berechnet) — Gegenstück zu COSTS.
+// Wird bei jedem Job in generation_jobs.api_cost geschrieben, damit die echte
+// Marge messbar ist statt nur der Verkaufspreis.
+//
+// Quelle: die oben dokumentierten fal-Preise. Bei Tarifänderungen von fal MUSS
+// diese Matrix nachgezogen werden — sonst rechnet die Auswertung still falsch.
+// Stand: 09/2026.
+export const API_COSTS: Record<string, number> = {
+    'fast': 0.00,
+    // NB Pro rendert 0.5K intern als 1K — gleicher Einkaufspreis.
+    'pro-05k': 0.15,
+    'pro-1k': 0.15,
+    'pro-2k': 0.15,
+    'pro-4k': 0.30,
+    'nb2-05k': 0.06,
+    'nb2-1k': 0.08,
+    'nb2-2k': 0.12,
+    'nb2-4k': 0.16,
+};
+
+// GPT Image 2: nur die high-Werte sind von fal dokumentiert. low/medium sind
+// aus der Zielmarge (75 %) abgeleitet und daher SCHÄTZUNGEN — bei der nächsten
+// fal-Rechnung gegenprüfen und ersetzen.
+export const GPT_API_COSTS: Record<string, Record<string, number>> = {
+    'nb2-05k': { low: 0.0125, medium: 0.05,  high: 0.21 },
+    'nb2-1k':  { low: 0.0125, medium: 0.05,  high: 0.21 },
+    'nb2-2k':  { low: 0.025,  medium: 0.075, high: 0.25 },
+    'nb2-4k':  { low: 0.05,   medium: 0.125, high: 0.40 },
+};
+
 // GPT Image 2 is the only model where quality affects price
 // (fal bills low/medium/high differently: e.g. high $0.21 at 1K, $0.40 at 4K).
 export const GPT_COSTS: Record<string, Record<string, number>> = {

@@ -14,7 +14,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { decodeBase64, encodeBase64 } from 'https://deno.land/std@0.207.0/encoding/base64.ts';
 import { findClosestValidRatio, getClosestAspectRatioFromDims } from '../generate-image/utils/aspectRatio.ts';
 import { extractBase64FromDataUrl } from '../generate-image/utils/imageProcessing.ts';
-import { COSTS, GPT_COSTS } from '../generate-image/types/index.ts';
+import { COSTS, GPT_COSTS, API_COSTS, GPT_API_COSTS } from '../generate-image/types/index.ts';
 import { verifyJwtSignature } from '../_shared/auth.ts';
 
 const corsHeaders = {
@@ -418,6 +418,13 @@ Deno.serve(async (req) => {
             : provider === 'nano-banana-pro'
             ? (COSTS[qualityMode.replace('nb2-', 'pro-')] ?? COSTS[qualityMode] ?? 0)
             : (COSTS[qualityMode] || 0);
+        // Einkaufspreis parallel zum Verkaufspreis bestimmen — dieselbe
+        // Fallunterscheidung, damit beide Zahlen immer zusammenpassen.
+        const apiCost = provider === 'openai'
+            ? (GPT_API_COSTS[qualityMode]?.[userQuality] ?? API_COSTS[qualityMode] ?? 0)
+            : provider === 'nano-banana-pro'
+            ? (API_COSTS[qualityMode.replace('nb2-', 'pro-')] ?? API_COSTS[qualityMode] ?? 0)
+            : (API_COSTS[qualityMode] || 0);
         let { data: profile } = await supabaseAdmin
             .from('profiles')
             .select('credits, role, is_blocked')
@@ -545,7 +552,7 @@ Deno.serve(async (req) => {
             ...(activeTemplateId ? { activeTemplateId } : {}),
         };
         const preUpdateRes = await supabaseAdmin.from('generation_jobs')
-            .update({ request_payload: apiRequestPayload })
+            .update({ request_payload: apiRequestPayload, api_cost: apiCost })
             .eq('id', newId)
             .select('id');
         if (!preUpdateRes.error && Array.isArray(preUpdateRes.data) && preUpdateRes.data.length === 0) {
@@ -828,6 +835,10 @@ Deno.serve(async (req) => {
                     status: 'failed',
                     error: errorMsg,
                     duration_ms: elapsedMs,
+                    // Der Nutzer wurde erstattet und fal berechnet fehlgeschlagene
+                    // Läufe nicht — sonst würde die Auswertung Kosten ausweisen,
+                    // die nie angefallen sind.
+                    api_cost: 0,
                     request_payload: { provider: 'fal', current_stage: 'failed', failed: true },
                 }).eq('id', newId);
             } catch (e) {
