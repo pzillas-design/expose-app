@@ -10,6 +10,8 @@
  * Ablauf:
  *   1. Bilder nach shootout/input/ legen (JPG/PNG).
  *   2. Schlüssel setzen (siehe MODELS unten), mindestens FAL_API_KEY.
+ *      GEMINI_API_KEY kommt aus dem AI Studio (aistudio.google.com/apikey),
+ *      nicht aus der Cloud Console — dafür braucht es kein GCP-Projekt.
  *   3. node scripts/model-shootout.mjs
  *   4. shootout/report.html öffnen — Blindvergleich, Modelle als A/B/C.
  *      Die Zuordnung steht in shootout/schluessel.json, erst danach ansehen.
@@ -91,6 +93,13 @@ const MODELS = [
         run: (img, prompt, key) => fal('fal-ai/nano-banana-pro/edit', img, prompt, key),
     },
     {
+        key: 'gemini-direkt',
+        name: 'Nano Banana 2 (Google direkt)',
+        note: 'Gleiches Modell wie über fal — misst den Aufpreis des Vermittlers',
+        env: 'GEMINI_API_KEY',
+        run: (img, prompt, key) => gemini('gemini-3.1-flash-image-preview', img, prompt, key),
+    },
+    {
         key: 'mai-flash',
         name: 'MAI-Image-2.6-Flash',
         note: 'Kandidat — laut Rangliste besser bei ¼ Preis',
@@ -169,6 +178,43 @@ async function openrouter(model, dataUrl, prompt, apiKey) {
         throw new Error(`openrouter ${model}: keine Bild-URL gefunden. Rohantwort: ${dump}`);
     }
     return url;
+}
+
+/* ── Adapter: Google direkt (Gemini Developer API) ──────────────────────────
+   Bewusst NICHT Vertex AI: Der Developer-Zugang braucht nur einen Schlüssel
+   aus dem AI Studio — kein GCP-Projekt, keine Dienstkonten, keine IAM-Rollen.
+   Endpunktform gegen die Live-API geprüft (403 statt 404 ohne Schlüssel). */
+async function gemini(model, dataUrl, prompt, apiKey) {
+    const [meta, b64] = dataUrl.split(',');
+    const mime = meta.match(/data:([^;]+)/)?.[1] || 'image/jpeg';
+
+    const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+            method: 'POST',
+            headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inline_data: { mime_type: mime, data: b64 } },
+                    ],
+                }],
+            }),
+        },
+    );
+    if (!res.ok) throw new Error(`gemini ${model}: HTTP ${res.status} — ${(await res.text()).slice(0, 200)}`);
+    const data = await res.json();
+
+    const parts = data?.candidates?.[0]?.content?.parts ?? [];
+    const part = parts.find((x) => x?.inline_data?.data || x?.inlineData?.data);
+    const inline = part?.inline_data || part?.inlineData;
+    if (!inline?.data) {
+        const dump = path.join(ROOT, `antwort-${model}.json`);
+        await writeFile(dump, JSON.stringify(data, null, 2)).catch(() => {});
+        throw new Error(`gemini ${model}: kein Bild in der Antwort. Rohantwort: ${dump}`);
+    }
+    return `data:${inline.mime_type || inline.mimeType || 'image/png'};base64,${inline.data}`;
 }
 
 /* ── Hilfsfunktionen ───────────────────────────────────────────────────────── */
