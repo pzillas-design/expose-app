@@ -148,9 +148,26 @@ async function openrouter(model, dataUrl, prompt, apiKey) {
     });
     if (!res.ok) throw new Error(`openrouter ${model}: HTTP ${res.status} — ${(await res.text()).slice(0, 200)}`);
     const data = await res.json();
-    const img = data?.choices?.[0]?.message?.images?.[0];
-    const url = img?.image_url?.url || img?.url;
-    if (!url) throw new Error(`openrouter ${model}: keine Bild-URL in ${JSON.stringify(data).slice(0, 300)}`);
+
+    // OpenRouter reicht die Antwort des jeweiligen Anbieters durch, die Form
+    // ist deshalb nicht über alle Modelle identisch. Lieber ein paar bekannte
+    // Stellen abklopfen, als den Lauf an einer Formalie scheitern lassen.
+    const msg = data?.choices?.[0]?.message;
+    const img = msg?.images?.[0];
+    const url =
+        img?.image_url?.url ||
+        img?.url ||
+        (typeof img === 'string' ? img : null) ||
+        data?.data?.[0]?.url ||
+        (data?.data?.[0]?.b64_json ? `data:image/png;base64,${data.data[0].b64_json}` : null);
+
+    if (!url) {
+        // Rohantwort ablegen — daraus lässt sich der fehlende Pfad ergänzen,
+        // ohne den ganzen Lauf zu wiederholen.
+        const dump = path.join(ROOT, `antwort-${model.replace(/\W+/g, '-')}.json`);
+        await writeFile(dump, JSON.stringify(data, null, 2)).catch(() => {});
+        throw new Error(`openrouter ${model}: keine Bild-URL gefunden. Rohantwort: ${dump}`);
+    }
     return url;
 }
 
