@@ -136,6 +136,10 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
     // their previous positions to the new ones instead of jumping.
     const layerListRef = useRef<HTMLDivElement>(null);
     const prevTopsRef = useRef<Map<string, number>>(new Map());
+    // Zuletzt per Pfeiltaste verschobene Ebene. Sie wird beim Neuordnen als Anker
+    // an ihrer Bildschirmposition festgehalten (siehe unten), damit der Mauszeiger
+    // über demselben Knopf stehen bleibt.
+    const moveAnchorRef = useRef<string | null>(null);
     useLayoutEffect(() => {
         const container = layerListRef.current;
         if (!container) return;
@@ -144,8 +148,37 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
         // settled layout — otherwise a repeated (reverse) swap reads stale positions
         // and computes a ~0 delta, skipping the animation.
         cards.forEach(card => { card.style.transition = 'none'; card.style.transform = ''; });
-        const newTops = new Map<string, number>();
-        cards.forEach(card => newTops.set(card.dataset.layerId!, card.getBoundingClientRect().top));
+        const measure = () => {
+            const m = new Map<string, number>();
+            cards.forEach(card => m.set(card.dataset.layerId!, card.getBoundingClientRect().top));
+            return m;
+        };
+        let newTops = measure();
+
+        // Anker: Die verschobene Karte soll dort stehen bleiben, wo sie war —
+        // sonst wandert der Knopf unter dem Mauszeiger weg und man muss ihn für
+        // jeden weiteren Schritt neu ansteuern. Statt die Karte festzunageln
+        // (im Listenfluss unmöglich) verschieben wir die Liste per scrollTop
+        // gegen die Bewegung. Am oberen/unteren Ende ist der Scrollbereich
+        // erschöpft; dann bleibt die Restbewegung sichtbar — genau wie erwartet.
+        const anchorId = moveAnchorRef.current;
+        moveAnchorRef.current = null;
+        if (anchorId) {
+            const prevTop = prevTopsRef.current.get(anchorId);
+            const newTop = newTops.get(anchorId);
+            if (prevTop !== undefined && newTop !== undefined) {
+                const drift = newTop - prevTop;
+                if (Math.abs(drift) > 1) {
+                    const maxScroll = container.scrollHeight - container.clientHeight;
+                    const target = Math.max(0, Math.min(maxScroll, container.scrollTop + drift));
+                    if (target !== container.scrollTop) {
+                        container.scrollTop = target;
+                        newTops = measure();
+                    }
+                }
+            }
+        }
+
         cards.forEach(card => {
             const id = card.dataset.layerId!;
             const prevTop = prevTopsRef.current.get(id);
@@ -153,9 +186,9 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
             if (prevTop !== undefined && Math.abs(prevTop - newTop) > 1) {
                 card.style.transform = `translateY(${prevTop - newTop}px)`;
                 requestAnimationFrame(() => {
-                    card.style.transition = 'transform 280ms cubic-bezier(0.25,1,0.5,1)';
+                    card.style.transition = 'transform 420ms cubic-bezier(0.25,1,0.5,1)';
                     card.style.transform = '';
-                    window.setTimeout(() => { card.style.transition = ''; card.style.transform = ''; }, 300);
+                    window.setTimeout(() => { card.style.transition = ''; card.style.transform = ''; }, 440);
                 });
             }
         });
@@ -250,7 +283,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                                 value={comp.brushSize} onChange={(e) => comp.setBrushSize(Number(e.target.value))}
                                 onMouseDown={() => setIsAdjusting(true)} onMouseUp={() => setIsAdjusting(false)}
                                 onTouchStart={() => setIsAdjusting(true)} onTouchEnd={() => setIsAdjusting(false)}
-                                className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
+                                className="w-36 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
                         </div>
 
                         <div className="w-px h-6 bg-zinc-200 dark:bg-zinc-800 mx-0.5" />
@@ -267,7 +300,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                                 value={comp.softness} onChange={(e) => comp.setSoftness(Number(e.target.value))}
                                 onMouseDown={() => setIsAdjusting(true)} onMouseUp={() => setIsAdjusting(false)}
                                 onTouchStart={() => setIsAdjusting(true)} onTouchEnd={() => setIsAdjusting(false)}
-                                className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
+                                className="w-36 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full appearance-none cursor-pointer accent-zinc-500" />
                         </div>
                     </div>
                 )}
@@ -305,7 +338,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                                 drawThumb={comp.drawLayerThumb}
                                 onSelect={() => comp.setActiveId(id)}
                                 onToggle={() => comp.toggleVisible(id)}
-                                onMove={(d) => comp.moveLayer(id, d)}
+                                onMove={(d) => { moveAnchorRef.current = id; comp.moveLayer(id, d); }}
                                 isDe={isDe}
                             />
                         );
