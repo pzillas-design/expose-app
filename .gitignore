@@ -32,3 +32,4 @@ stripe
 *.backup
 .worktrees/
 .superpowers/
+shootout/
