@@ -69,8 +69,22 @@ Deno.serve(async (req) => {
 
         if (status === 'ERROR') {
             const errMsg = (typeof body?.error === 'string' ? body.error : JSON.stringify(body?.error || 'fal error')).slice(0, 500);
+            // body.error ist nur fals Kurzfassung ("Unexpected status code: 422").
+            // Die Begründung steckt im Rest der Antwort — ohne die lässt sich
+            // hinterher nicht unterscheiden, ob ein Bild abgelehnt wurde, ein
+            // Limit griff oder der Anbieter gestört war. Deshalb vollständig
+            // sichern, neben dem bisherigen Kontext.
+            const falError = {
+                at: new Date().toISOString(),
+                summary: errMsg,
+                body: JSON.stringify(body ?? null).slice(0, 4000),
+            };
             await supabaseAdmin.from('generation_jobs')
-                .update({ status: 'failed', error: errMsg })
+                .update({
+                    status: 'failed',
+                    error: errMsg,
+                    request_payload: { ...(job.request_payload ?? {}), falError },
+                })
                 .eq('id', jobId);
             await refundCredits(supabaseAdmin, ctx.userId, ctx.cost);
             console.warn(`[fal-webhook] job ${jobId} ERROR: ${errMsg}`);
