@@ -113,6 +113,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
     const userInitial = user?.email?.[0]?.toUpperCase() || 'U';
 
+    // app_metadata.providers listet die verknüpften Anmeldewege. Steht dort nur
+    // ein OAuth-Anbieter, existiert kein Passwort, das man ändern könnte.
+    const linkedProviders: string[] = (user?.app_metadata?.providers as string[] | undefined)
+        ?? (user?.app_metadata?.provider ? [user.app_metadata.provider as string] : []);
+    const hasPassword = linkedProviders.length === 0 || linkedProviders.includes('email');
+
     // ── Shared styles ──────────────────────────────────────────────
     // Dropdown trigger: subtle fill, no border
     const trigger = "w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-800/70 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 transition-all";
@@ -149,10 +155,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </div>
                         <div className="min-w-0">
                             <p className="text-sm text-zinc-800 dark:text-zinc-200 truncate">{user?.email}</p>
+                            {/* Wer sich per Google registriert hat, besitzt gar kein
+                                Passwort — "Passwort ändern" klingt dann nach einer
+                                Einstellung, die einen nichts angeht, und wird nie
+                                angeklickt. Genau daran ist eine zahlende Kundin
+                                wochenlang hängen geblieben. */}
                             <button
                                 onClick={onChangePassword}
                                 className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors mt-0.5">
-                                {t('settings_change_password')}
+                                {hasPassword ? t('settings_change_password') : t('settings_set_password')}
                             </button>
                         </div>
                     </div>
