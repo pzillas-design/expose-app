@@ -841,7 +841,7 @@ export const translations = {
     auth_resend_link: "Erneut senden",
     auth_error_password_same: "Neues Passwort muss sich vom alten unterscheiden",
     auth_error_password_mismatch: "Passwörter stimmen nicht überein",
-    auth_error_invalid_credentials: "Ungültige E-Mail oder Passwort. Falls Sie sich mit Google registriert haben, nutzen Sie unten „Mit Google anmelden" — dieses Konto hat kein Passwort.",
+    auth_error_invalid_credentials: "Ungültige E-Mail oder Passwort. Falls Sie sich mit Google registriert haben, nutzen Sie unten „Mit Google anmelden“ — dieses Konto hat kein Passwort.",
     auth_error_user_exists: "Ein Konto mit dieser E-Mail existiert bereits",
     auth_error_invalid_link: "Ungültiger oder abgelaufener Link",
     auth_error_schema: "Anmeldung ist wegen eines Server-Konfigurationsproblems momentan nicht verfügbar.",
