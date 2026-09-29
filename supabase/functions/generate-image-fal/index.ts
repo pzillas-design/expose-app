@@ -34,6 +34,8 @@ const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2/edit';
 
 // Nano Banana Pro (Gemini 3 Pro Image) — the higher-fidelity Google tier.
 // Same input shape as NB2 (prompt, image_urls, resolution, aspect_ratio).
+const SD_ENDPOINT_CREATE = 'fal-ai/bytedance/seedream/v5/lite/text-to-image';
+const SD_ENDPOINT_EDIT   = 'fal-ai/bytedance/seedream/v5/lite/edit';
 const PRO_ENDPOINT_CREATE = 'fal-ai/nano-banana-pro';
 const PRO_ENDPOINT_EDIT = 'fal-ai/nano-banana-pro/edit';
 
@@ -413,10 +415,15 @@ Deno.serve(async (req) => {
         // ── Credits ────────────────────────────────────────────────────────
         // Price depends on the provider: NB Pro has its own (higher) per-resolution
         // tariff, GPT Image 2 is the only model where quality affects the price.
+        // Seedream kennt kein 4K — für die Abrechnung auf die 2K-Pauschale
+        // abbilden, passend zu dem, was der Zweig oben tatsächlich anfordert.
+        const sdKey = qualityMode === 'nb2-4k' ? 'sd-2k' : qualityMode.replace('nb2-', 'sd-');
         const cost = provider === 'openai'
             ? (GPT_COSTS[qualityMode]?.[userQuality] ?? COSTS[qualityMode] ?? 0)
             : provider === 'nano-banana-pro'
             ? (COSTS[qualityMode.replace('nb2-', 'pro-')] ?? COSTS[qualityMode] ?? 0)
+            : provider === 'seedream-lite'
+            ? (COSTS[sdKey] ?? COSTS['sd-2k'] ?? 0)
             : (COSTS[qualityMode] || 0);
         // Einkaufspreis parallel zum Verkaufspreis bestimmen — dieselbe
         // Fallunterscheidung, damit beide Zahlen immer zusammenpassen.
@@ -424,6 +431,8 @@ Deno.serve(async (req) => {
             ? (GPT_API_COSTS[qualityMode]?.[userQuality] ?? API_COSTS[qualityMode] ?? 0)
             : provider === 'nano-banana-pro'
             ? (API_COSTS[qualityMode.replace('nb2-', 'pro-')] ?? API_COSTS[qualityMode] ?? 0)
+            : provider === 'seedream-lite'
+            ? (API_COSTS[sdKey] ?? API_COSTS['sd-2k'] ?? 0)
             : (API_COSTS[qualityMode] || 0);
         let { data: profile } = await supabaseAdmin
             .from('profiles')
@@ -512,6 +521,19 @@ Deno.serve(async (req) => {
             falInput = {
                 prompt,
                 resolution: falResolution === '0.5K' ? '1K' : falResolution,
+                aspect_ratio: aspectRatio,
+                output_format: 'jpeg',
+                num_images: 1,
+            };
+            if (hasSource) falInput.image_urls = imageUrls;
+        } else if (provider === 'seedream-lite') {
+            // Seedream 5.0 Lite rendert höchstens 3K. Eine hereingereichte
+            // 4K-Anforderung wird auf 2K begrenzt, statt eine Auflösung zu
+            // versprechen, die das Modell nicht liefert.
+            endpoint = hasSource ? SD_ENDPOINT_EDIT : SD_ENDPOINT_CREATE;
+            falInput = {
+                prompt,
+                resolution: falResolution === '4K' ? '2K' : falResolution,
                 aspect_ratio: aspectRatio,
                 output_format: 'jpeg',
                 num_images: 1,

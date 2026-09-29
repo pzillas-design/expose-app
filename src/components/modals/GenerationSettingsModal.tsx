@@ -23,11 +23,12 @@ interface GenerationSettingsModalProps {
 
 // ── Generation mode — encodes provider + quality in one pick ───────────────
 
-type GenerationMode = 'nb2' | 'nb2-pro' | 'gpt-low' | 'gpt-mid' | 'gpt-high';
+type GenerationMode = 'nb2' | 'nb2-pro' | 'seedream' | 'gpt-low' | 'gpt-mid' | 'gpt-high';
 
 const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quality: ImageQualityLevel }> = {
     'nb2':      { provider: 'fal-nb2',          quality: 'low'    },
     'nb2-pro':  { provider: 'nano-banana-pro',   quality: 'high'   },
+    'seedream': { provider: 'seedream-lite',     quality: 'low'    },
     'gpt-low':  { provider: 'openai',            quality: 'low'    },
     'gpt-mid':  { provider: 'openai',            quality: 'medium' },
     'gpt-high': { provider: 'openai',            quality: 'high'   },
@@ -39,6 +40,7 @@ const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quali
 const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[] = [
     { value: 'nb2',      label: 'Nano Banana 2',     hint: 'schnell & günstig' },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',   hint: 'beste Qualität'    },
+    { value: 'seedream', label: 'Seedream 5 Lite',   hint: 'sparsam, bis 2K'   },
     { value: 'gpt-low',  label: 'GPT Image Niedrig', hint: 'schnelle Entwürfe' },
     { value: 'gpt-mid',  label: 'GPT Image Mittel',  hint: 'ausgewogen'        },
     { value: 'gpt-high', label: 'GPT Image Hoch',    hint: 'sehr präzise'      },
@@ -47,6 +49,7 @@ const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[]
 const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[] = [
     { value: 'nb2',      label: 'Nano Banana 2',    hint: 'fast & affordable' },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',  hint: 'best quality'      },
+    { value: 'seedream', label: 'Seedream 5 Lite',  hint: 'budget, up to 2K'  },
     { value: 'gpt-low',  label: 'GPT Image Low',    hint: 'quick drafts'      },
     { value: 'gpt-mid',  label: 'GPT Image Medium', hint: 'balanced'          },
     { value: 'gpt-high', label: 'GPT Image High',   hint: 'very precise'      },
@@ -54,6 +57,7 @@ const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[]
 
 function detectMode(s: GenerationSettings): GenerationMode {
     if (s.provider === 'nano-banana-pro') return 'nb2-pro';
+    if (s.provider === 'seedream-lite') return 'seedream';
     if (s.provider === 'fal-nb2') return 'nb2';
     if (s.quality === 'low') return 'gpt-low';
     if (s.quality === 'medium') return 'gpt-mid';
@@ -238,6 +242,15 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
     };
 
     const mode = detectMode(local);
+    // Seedream 5 Lite rendert höchstens 3K. Statt 3K als "4K" zu verkaufen,
+    // entfällt die Stufe — und eine bereits gewählte 4K wandert auf 2K, sonst
+    // stünde im Feld ein Wert, den das Modell nicht liefern kann.
+    const supports4k = local.provider !== 'seedream-lite';
+    const resOptions = supports4k ? RES_OPTIONS : RES_OPTIONS.filter(o => o.value !== 'nb2-4k');
+    React.useEffect(() => {
+        if (!supports4k && local.resolution === 'nb2-4k') update('resolution', 'nb2-2k');
+    }, [supports4k, local.resolution]);
+
     const price = getGenerationPriceUsd(local.provider, local.resolution, local.quality);
     const priceFormatted = price.toFixed(2).replace('.', ',') + ' €';
 
@@ -274,7 +287,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                     </span>
                     <Dropdown
                         value={local.resolution}
-                        options={RES_OPTIONS}
+                        options={resOptions}
                         onChange={v => update('resolution', v)}
                     />
                 </div>
