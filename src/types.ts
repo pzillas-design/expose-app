@@ -152,7 +152,7 @@ export type ImageQualityLevel = 'low' | 'medium' | 'high';
 export type ImageAspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '3:2' | '2:3' | '21:9' | '5:4' | '4:5';
 export type ImageOutputFormat = 'jpeg' | 'png' | 'webp';
 
-export type ImageModelProvider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-pro' | 'nano-banana-21';
+export type ImageModelProvider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream' | 'nano-banana-21';
 
 export interface GenerationSettings {
   provider: ImageModelProvider;        // 'openai' (gpt-image-2) | 'fal-nb2' (Google Nano Banana 2)
@@ -195,10 +195,10 @@ export const NB_PRO_PRICES_USD: Record<string, number> = {
   'nb2-4k': 1.20,
 };
 
-// Seedream 5.0 Pro: fal staffelt den Einkauf — 0,0675 $ bis 1536x1536,
-// 0,135 $ bis 2048x2048. Der Verkauf folgt derselben Staffel bei rund 73 %
-// Marge. Pro ist kein Sparmodell: In der Bearbeitungs-Rangliste liegt es mit
-// Elo 1099 praktisch gleichauf mit NB2 (1102).
+// Seedream 5.0 Flash: fal berechnet pauschal 0,027 $ je Bild, gleich für 1K,
+// 1.5K und 2K. Pauschaler Einkauf, pauschaler Verkauf — 0,12 € bei rund 78 %
+// Marge. Flash ist die schnelle, günstige Stufe der Reihe; Pro brauchte bei
+// uns 140 s und war damit unbrauchbar.
 //
 // 4K fehlt: Das Modell rendert höchstens 2K. Die Stufe wird in der Oberfläche
 // ausgeblendet und serverseitig begrenzt.
@@ -214,10 +214,10 @@ export const NB21_PRICES_USD: Record<string, number> = {
   'nb2-4k':  0.65,
 };
 
-export const SEEDREAM_PRO_PRICES_USD: Record<string, number> = {
-  'nb2-05k': 0.25,
-  'nb2-1k':  0.25,
-  'nb2-2k':  0.50,
+export const SEEDREAM_PRICES_USD: Record<string, number> = {
+  'nb2-05k': 0.12,
+  'nb2-1k':  0.12,
+  'nb2-2k':  0.12,
 };
 
 // GPT Image 2.5 Flare. Der alte 0,85-€-Preis trug einen Einkauf von 0,21 $;
@@ -239,7 +239,7 @@ export const getGenerationPriceUsd = (
   provider === 'openai'            ? (GPT_PRICES_USD[resolution]?.[quality] ?? 0)
   : provider === 'nano-banana-pro' ? (NB_PRO_PRICES_USD[resolution] ?? 0)
   // 4K auf 2K abbilden: Seedream kann kein 4K, wir rechnen den Pauschalpreis.
-  : provider === 'seedream-pro'   ? (SEEDREAM_PRO_PRICES_USD[resolution] ?? SEEDREAM_PRO_PRICES_USD['nb2-2k'])
+  : provider === 'seedream'   ? (SEEDREAM_PRICES_USD[resolution] ?? SEEDREAM_PRICES_USD['nb2-2k'])
   : provider === 'nano-banana-21'  ? (NB21_PRICES_USD[resolution] ?? 0)
   : (NB2_PRICES_USD[resolution] ?? 0);
 

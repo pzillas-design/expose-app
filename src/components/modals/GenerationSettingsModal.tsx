@@ -28,7 +28,7 @@ type GenerationMode = 'nb21' | 'nb2-pro' | 'seedream' | 'gpt';
 const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quality: ImageQualityLevel }> = {
     'nb21':     { provider: 'nano-banana-21',    quality: 'low'    },
     'nb2-pro':  { provider: 'nano-banana-pro',   quality: 'high'   },
-    'seedream': { provider: 'seedream-pro',     quality: 'low'    },
+    'seedream': { provider: 'seedream',     quality: 'low'    },
     // Drei GPT-Stufen hatten in sieben Monaten 96 Bilder und 31 € Umsatz —
     // drei Menüeinträge für 1,8 % des Geschäfts. Jetzt eine Stufe auf
     // 2.5 Flare, intern fest auf 'high'.
@@ -43,14 +43,14 @@ const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quali
 const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[] = [
     { value: 'nb21',     label: 'Nano Banana 2.1',   hint: 'Google'    },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',   hint: 'Google'    },
-    { value: 'seedream', label: 'Seedream 5 Pro',    hint: 'ByteDance' },
+    { value: 'seedream', label: 'Seedream 5 Flash',  hint: 'ByteDance' },
     { value: 'gpt',      label: 'GPT Image 2.5',     hint: 'OpenAI'    },
 ];
 
 const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[] = [
     { value: 'nb21',     label: 'Nano Banana 2.1',  hint: 'Google'    },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',  hint: 'Google'    },
-    { value: 'seedream', label: 'Seedream 5 Pro',   hint: 'ByteDance' },
+    { value: 'seedream', label: 'Seedream 5 Flash', hint: 'ByteDance' },
     { value: 'gpt',      label: 'GPT Image 2.5',    hint: 'OpenAI'    },
 ];
 
@@ -59,7 +59,7 @@ function detectMode(s: GenerationSettings): GenerationMode {
     // 'fal-nb2' ist abgekündigt und nicht mehr wählbar. Eine noch gespeicherte
     // Einstellung zeigt auf 2.1, damit die Auswahl nicht leer bleibt.
     if (s.provider === 'nano-banana-21' || s.provider === 'fal-nb2') return 'nb21';
-    if (s.provider === 'seedream-pro') return 'seedream';
+    if (s.provider === 'seedream') return 'seedream';
     return 'gpt';
 }
 
@@ -233,7 +233,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
     // Seedream 5 Lite rendert höchstens 3K. Statt 3K als "4K" zu verkaufen,
     // entfällt die Stufe — und eine bereits gewählte 4K wandert auf 2K, sonst
     // stünde im Feld ein Wert, den das Modell nicht liefern kann.
-    const supports4k = local.provider !== 'seedream-pro';
+    const supports4k = local.provider !== 'seedream';
     const resOptions = supports4k ? RES_OPTIONS : RES_OPTIONS.filter(o => o.value !== 'nb2-4k');
     React.useEffect(() => {
         if (!supports4k && local.resolution === 'nb2-4k') update('resolution', 'nb2-2k');
