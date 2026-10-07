@@ -138,8 +138,14 @@ export async function persistFalResult(
     const realW = Math.round(fal.width || src.realWidth || displayW);
     const realH = Math.round(fal.height || src.realHeight || displayH);
     const parentId = (ctx.requestType === 'edit' || src.id) ? (src.id || null) : null;
-    const modelVersion = ctx.provider === 'openai' ? 'gpt-image-2'
+    // Dritte Stelle mit derselben Zuordnung (neben Provider-Normalisierung und
+    // modelVersion in generate-image-fal). Fehlt ein Anbieter hier, stimmt die
+    // Auswertung nicht mehr: Das Bild wird als nano-banana-2 protokolliert,
+    // obwohl ein anderes Modell es erzeugt hat.
+    const modelVersion = ctx.provider === 'openai' ? 'gpt-image-2.5-flare'
         : ctx.provider === 'nano-banana-pro' ? 'nano-banana-pro'
+        : ctx.provider === 'seedream-lite' ? 'seedream-5-lite'
+        : ctx.provider === 'nano-banana-21' ? 'nano-banana-2.1'
         : 'nano-banana-2';
 
     const newImage = {
