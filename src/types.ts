@@ -189,10 +189,10 @@ export const NB2_PRICES_USD: Record<string, number> = {
 // so it costs us the same as 1K and must be priced the same — otherwise 0.5K
 // would be sold below cost. Same reasoning for GPT (long edge 1024 for 0.5K).
 export const NB_PRO_PRICES_USD: Record<string, number> = {
-  'nb2-05k': 0.60,
-  'nb2-1k': 0.60,
-  'nb2-2k': 0.60,
-  'nb2-4k': 1.20,
+  'nb2-05k': 0.50,
+  'nb2-1k': 0.50,
+  'nb2-2k': 0.50,
+  'nb2-4k': 1.00,
 };
 
 // Seedream 5.0 Flash: fal berechnet pauschal 0,027 $ je Bild, gleich für 1K,
@@ -208,26 +208,26 @@ export const NB_PRO_PRICES_USD: Record<string, number> = {
 // bei 1K fällt — die Marge dort steigt damit von 56 % auf 81 %.
 // Keine 0.5K-Stufe mehr; sie wird auf 1K gehoben und wie 1K bepreist.
 export const NB21_PRICES_USD: Record<string, number> = {
-  'nb2-05k': 0.18,
-  'nb2-1k':  0.18,
+  'nb2-05k': 0.24,
+  'nb2-1k':  0.24,
   'nb2-2k':  0.50,
   'nb2-4k':  0.65,
 };
 
 export const SEEDREAM_PRICES_USD: Record<string, number> = {
-  'nb2-05k': 0.12,
-  'nb2-1k':  0.12,
-  'nb2-2k':  0.12,
+  'nb2-05k': 0.18,
+  'nb2-1k':  0.18,
+  'nb2-2k':  0.18,
 };
 
 // GPT Image 2.5 Flare. Der alte 0,85-€-Preis trug einen Einkauf von 0,21 $;
 // 2.5 Flare kostet auf 'high' nur 0,053 $. Der Verkaufspreis sinkt deshalb
 // auf das Niveau der früheren Mittelstufe — bei besserer Marge als vorher.
 export const GPT_PRICES_USD: Record<string, Record<ImageQualityLevel, number>> = {
-  'nb2-05k': { low: 0.20, medium: 0.20, high: 0.20 },
-  'nb2-1k': { low: 0.20, medium: 0.20, high: 0.20 },
-  'nb2-2k': { low: 0.30, medium: 0.30, high: 0.30 },
-  'nb2-4k': { low: 0.50, medium: 0.50, high: 0.50 },
+  'nb2-05k': { low: 0.30, medium: 0.30, high: 0.30 },
+  'nb2-1k': { low: 0.30, medium: 0.30, high: 0.30 },
+  'nb2-2k': { low: 0.65, medium: 0.65, high: 0.65 },
+  'nb2-4k': { low: 0.85, medium: 0.85, high: 0.85 },
 };
 
 /** Price for a (provider × resolution × quality) combination. Defaults to 0 if unknown. */

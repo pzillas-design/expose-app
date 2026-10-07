@@ -28,29 +28,35 @@ export interface GenerationConfig {
 // NB Pro and GPT render 0.5K at 1K internally, so 0.5K costs us the same as 1K
 // and is priced the same — otherwise it would be sold below cost. Must stay in
 // sync with src/types.ts (NB2_PRICES_USD / NB_PRO_PRICES_USD / GPT_PRICES_USD).
+// Verkaufspreise. Die Staffel bildet die Qualität ab, nicht nur die Kosten:
+// GPT 2.5 Flare liegt in der Arena vor 2.1 (1481 zu 1428) und kostet deshalb
+// mehr; Nano Banana Pro liegt darunter und darf nicht das teuerste sein.
+// Alle Beträge auf 0 oder 5 Cent gerundet.
 export const COSTS: Record<string, number> = {
     'fast': 0.00,
-    'pro-05k': 0.60,
-    'pro-1k': 0.60,
-    'pro-2k': 0.60,
-    'pro-4k': 1.20,
+    // Sonderfall: liegt unter 2.1, der Preis darf das nicht verschweigen.
+    'pro-05k': 0.50,
+    'pro-1k': 0.50,
+    'pro-2k': 0.50,
+    'pro-4k': 1.00,
+    // Abgekündigt (Google schaltet das Modell am 29.10.2026 ab), nicht mehr
+    // wählbar. Werte bleiben, bis der Zweig entfällt.
     'nb2-05k': 0.15,
     'nb2-1k': 0.18,
     'nb2-2k': 0.50,
     'nb2-4k': 0.65,
-    // Seedream 5.0 Lite: fal berechnet pauschal, also verkaufen wir pauschal.
-    // Kein 4K — das Modell rendert höchstens 3K, die Stufe wird auf 2K begrenzt.
-    // Nano Banana 2.1 — Nachfolger von NB2. Verkaufspreise bewusst identisch
-    // zu NB2: Für Kunden ändert sich nichts, der Einkauf halbiert sich.
-    'nb21-05k': 0.18,
-    'nb21-1k': 0.18,
+    // Standard. 2K unverändert — die meistgenutzte Stufe, Kunden zahlen sie
+    // seit Monaten. 1K von 0,18 auf 0,24: Der Sprung auf 0,50 war bei nur
+    // 50 % Mehrkosten nicht erklärbar.
+    'nb21-05k': 0.24,
+    'nb21-1k': 0.24,
     'nb21-2k': 0.50,
     'nb21-4k': 0.65,
-    // Seedream 5.0 Flash. Pauschaler Einkauf über alle Stufen bis 2K, also
-    // auch pauschaler Verkauf. Kein 4K — die Stufe wird begrenzt.
-    'sd-05k': 0.12,
-    'sd-1k': 0.12,
-    'sd-2k': 0.12,
+    // Sparstufe. 0,18 statt 0,12 — genug Abstand nach unten, ohne die
+    // Standardstufe zu untergraben.
+    'sd-05k': 0.18,
+    'sd-1k': 0.18,
+    'sd-2k': 0.18,
 };
 
 // EINKAUFSPREISE (was fal/OpenAI uns je Bild berechnet) — Gegenstück zu COSTS.
@@ -99,9 +105,11 @@ export const GPT_API_COSTS: Record<string, Record<string, number>> = {
 
 // GPT Image 2 is the only model where quality affects price
 // (fal bills low/medium/high differently: e.g. high $0.21 at 1K, $0.40 at 4K).
+// Premiumstufe: bestes Modell im Angebot, daher über 2.1. Wir fahren nur
+// 'high', die anderen Spalten sind gleichgesetzt statt tote Werte zu halten.
 export const GPT_COSTS: Record<string, Record<string, number>> = {
-    'nb2-05k': { low: 0.05, medium: 0.20, high: 0.85 },
-    'nb2-1k': { low: 0.05, medium: 0.20, high: 0.85 },
-    'nb2-2k': { low: 0.10, medium: 0.30, high: 1.00 },
-    'nb2-4k': { low: 0.20, medium: 0.50, high: 1.60 },
+    'nb2-05k': { low: 0.30, medium: 0.30, high: 0.30 },
+    'nb2-1k': { low: 0.30, medium: 0.30, high: 0.30 },
+    'nb2-2k': { low: 0.65, medium: 0.65, high: 0.65 },
+    'nb2-4k': { low: 0.85, medium: 0.85, high: 0.85 },
 };
