@@ -33,14 +33,14 @@ const TIER_RES: Record<string, string> = {
 const PROVIDER_DISPLAY_NAME: Record<ImageProviderKey, string> = {
     'fal-nb2':         'Nano Banana',
     'nano-banana-pro': 'Nano Banana Pro',
-    'openai':          'GPT Image',
+    'openai':          'GPT Image 2.5',
     'seedream-lite':   'Seedream 5 Lite',
     'nano-banana-21':  'Nano Banana 2.1',
 };
 
 /** Map a stored DB `model_version` (e.g. 'gpt-image-2', 'nano-banana-pro') to a provider key. */
 export const modelVersionToProvider = (modelVersion?: string | null): ImageProviderKey => {
-    if (modelVersion === 'gpt-image-2') return 'openai';
+    if (modelVersion?.startsWith('gpt-image')) return 'openai';
     if (modelVersion === 'nano-banana-pro') return 'nano-banana-pro';
     // fal meldet den Modellnamen mit Versionspfad zurück, daher Präfixprüfung.
     if (modelVersion?.startsWith('seedream')) return 'seedream-lite';

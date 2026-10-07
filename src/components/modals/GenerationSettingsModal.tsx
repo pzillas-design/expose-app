@@ -23,16 +23,17 @@ interface GenerationSettingsModalProps {
 
 // ── Generation mode — encodes provider + quality in one pick ───────────────
 
-type GenerationMode = 'nb2' | 'nb21' | 'nb2-pro' | 'seedream' | 'gpt-low' | 'gpt-mid' | 'gpt-high';
+type GenerationMode = 'nb2' | 'nb21' | 'nb2-pro' | 'seedream' | 'gpt';
 
 const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quality: ImageQualityLevel }> = {
     'nb2':      { provider: 'fal-nb2',          quality: 'low'    },
     'nb21':     { provider: 'nano-banana-21',    quality: 'low'    },
     'nb2-pro':  { provider: 'nano-banana-pro',   quality: 'high'   },
     'seedream': { provider: 'seedream-lite',     quality: 'low'    },
-    'gpt-low':  { provider: 'openai',            quality: 'low'    },
-    'gpt-mid':  { provider: 'openai',            quality: 'medium' },
-    'gpt-high': { provider: 'openai',            quality: 'high'   },
+    // Drei GPT-Stufen hatten in sieben Monaten 96 Bilder und 31 € Umsatz —
+    // drei Menüeinträge für 1,8 % des Geschäfts. Jetzt eine Stufe auf
+    // 2.5 Flare, intern fest auf 'high'.
+    'gpt':      { provider: 'openai',            quality: 'high'   },
 };
 
 // Hints reflect each model's documented edge: NB2 = speed/price at ~90% of Pro
@@ -43,9 +44,7 @@ const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[]
     { value: 'nb21',     label: 'Nano Banana 2.1',   hint: 'neu, Nachfolger'   },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',   hint: 'beste Qualität'    },
     { value: 'seedream', label: 'Seedream 5 Lite',   hint: 'sparsam, bis 2K'   },
-    { value: 'gpt-low',  label: 'GPT Image Niedrig', hint: 'schnelle Entwürfe' },
-    { value: 'gpt-mid',  label: 'GPT Image Mittel',  hint: 'ausgewogen'        },
-    { value: 'gpt-high', label: 'GPT Image Hoch',    hint: 'sehr präzise'      },
+    { value: 'gpt',      label: 'GPT Image 2.5',     hint: 'sehr präzise'      },
 ];
 
 const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[] = [
@@ -53,9 +52,7 @@ const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[]
     { value: 'nb21',     label: 'Nano Banana 2.1',  hint: 'new, successor'    },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',  hint: 'best quality'      },
     { value: 'seedream', label: 'Seedream 5 Lite',  hint: 'budget, up to 2K'  },
-    { value: 'gpt-low',  label: 'GPT Image Low',    hint: 'quick drafts'      },
-    { value: 'gpt-mid',  label: 'GPT Image Medium', hint: 'balanced'          },
-    { value: 'gpt-high', label: 'GPT Image High',   hint: 'very precise'      },
+    { value: 'gpt',      label: 'GPT Image 2.5',    hint: 'very precise'      },
 ];
 
 function detectMode(s: GenerationSettings): GenerationMode {
@@ -63,9 +60,7 @@ function detectMode(s: GenerationSettings): GenerationMode {
     if (s.provider === 'nano-banana-pro') return 'nb2-pro';
     if (s.provider === 'seedream-lite') return 'seedream';
     if (s.provider === 'fal-nb2') return 'nb2';
-    if (s.quality === 'low') return 'gpt-low';
-    if (s.quality === 'medium') return 'gpt-mid';
-    return 'gpt-high';
+    return 'gpt';
 }
 
 // ── Resolution options ─────────────────────────────────────────────────────

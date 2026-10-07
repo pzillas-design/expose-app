@@ -84,11 +84,15 @@ export const API_COSTS: Record<string, number> = {
 // GPT Image 2: nur die high-Werte sind von fal dokumentiert. low/medium sind
 // aus der Zielmarge (75 %) abgeleitet und daher SCHÄTZUNGEN — bei der nächsten
 // fal-Rechnung gegenprüfen und ersetzen.
+// GPT Image 2.5 Flare, Preise von fals Modellseite (Stand 10.09.2026), je
+// 1024x1024: low 0,00588 / medium 0,01317 / high 0,05268 / max 0,21072.
+// Wir fahren 'high' als einzige Stufe. Die 2K- und 4K-Werte sind aus dem
+// 1K-Preis hochgerechnet — fal listet nur 1024er und 3840x2160 vollständig.
 export const GPT_API_COSTS: Record<string, Record<string, number>> = {
-    'nb2-05k': { low: 0.0125, medium: 0.05,  high: 0.21 },
-    'nb2-1k':  { low: 0.0125, medium: 0.05,  high: 0.21 },
-    'nb2-2k':  { low: 0.025,  medium: 0.075, high: 0.25 },
-    'nb2-4k':  { low: 0.05,   medium: 0.125, high: 0.40 },
+    'nb2-05k': { low: 0.0059, medium: 0.0132, high: 0.0527 },
+    'nb2-1k':  { low: 0.0059, medium: 0.0132, high: 0.0527 },
+    'nb2-2k':  { low: 0.0080, medium: 0.0220, high: 0.0900 },
+    'nb2-4k':  { low: 0.0111, medium: 0.0380, high: 0.1600 },
 };
 
 // GPT Image 2 is the only model where quality affects price

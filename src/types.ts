@@ -220,11 +220,14 @@ export const SEEDREAM_LITE_PRICES_USD: Record<string, number> = {
   'nb2-2k':  0.15,
 };
 
+// GPT Image 2.5 Flare. Der alte 0,85-€-Preis trug einen Einkauf von 0,21 $;
+// 2.5 Flare kostet auf 'high' nur 0,053 $. Der Verkaufspreis sinkt deshalb
+// auf das Niveau der früheren Mittelstufe — bei besserer Marge als vorher.
 export const GPT_PRICES_USD: Record<string, Record<ImageQualityLevel, number>> = {
-  'nb2-05k': { low: 0.05, medium: 0.20, high: 0.85 },
-  'nb2-1k': { low: 0.05, medium: 0.20, high: 0.85 },
-  'nb2-2k': { low: 0.10, medium: 0.30, high: 1.00 },
-  'nb2-4k': { low: 0.20, medium: 0.50, high: 1.60 },
+  'nb2-05k': { low: 0.20, medium: 0.20, high: 0.20 },
+  'nb2-1k': { low: 0.20, medium: 0.20, high: 0.20 },
+  'nb2-2k': { low: 0.30, medium: 0.30, high: 0.30 },
+  'nb2-4k': { low: 0.50, medium: 0.50, high: 0.50 },
 };
 
 /** Price for a (provider × resolution × quality) combination. Defaults to 0 if unknown. */

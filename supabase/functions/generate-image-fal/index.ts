@@ -29,8 +29,11 @@ const FAL_ENDPOINT_EDIT = 'fal-ai/nano-banana-2/edit';
 
 // A/B provider parallel rollout. Default = NB2 (production). Staging passes
 // `provider: 'openai'` to route to OpenAI's gpt-image-2 via fal.
-const OPENAI_ENDPOINT_CREATE = 'fal-ai/gpt-image-2';
-const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2/edit';
+// GPT Image 2.5 Flare: laut OpenAI bessere Qualität als GPT Image 2 bei halber
+// Latenz. Das zählt hier besonders — GPT Image 2 lag in unserer Produktion bei
+// 110 s Median und war damit interaktiv unbrauchbar.
+const OPENAI_ENDPOINT_CREATE = 'openai/gpt-image-2.5/flare/text-to-image';
+const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2.5/flare/edit';
 
 // Nano Banana Pro (Gemini 3 Pro Image) — the higher-fidelity Google tier.
 // Same input shape as NB2 (prompt, image_urls, resolution, aspect_ratio).
@@ -321,7 +324,7 @@ Deno.serve(async (req) => {
             : rawProvider === 'seedream-lite' ? 'seedream-lite'
             : rawProvider === 'nano-banana-21' ? 'nano-banana-21'
             : 'fal-nb2';
-        const modelVersion = provider === 'openai' ? 'gpt-image-2'
+        const modelVersion = provider === 'openai' ? 'gpt-image-2.5-flare'
             : provider === 'nano-banana-pro' ? 'nano-banana-pro'
             : provider === 'seedream-lite' ? 'seedream-5-lite'
             : provider === 'nano-banana-21' ? 'nano-banana-2.1'
