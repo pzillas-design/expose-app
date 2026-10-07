@@ -36,23 +36,25 @@ const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quali
     'gpt':      { provider: 'openai',            quality: 'high'   },
 };
 
-// Hints reflect each model's documented edge: NB2 = speed/price at ~90% of Pro
-// quality, NB Pro = top image quality & typography, GPT Image = prompt
-// adherence (low = cheap drafts, high = max precision).
+// Der graue Zusatz nennt den Anbieter hinter dem Modell, nicht dessen
+// Verkaufsargument. Werbetexte wie "beste Qualität" halten dem Vergleich
+// ohnehin nicht stand — NB Pro liegt bei Bildbearbeitung unter NB2 — und die
+// Herkunft ist die Information, die bei der Wahl tatsächlich weiterhilft.
+// Anbieternamen sind Eigennamen und in beiden Sprachen gleich.
 const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[] = [
-    { value: 'nb2',      label: 'Nano Banana 2',     hint: 'schnell & günstig' },
-    { value: 'nb21',     label: 'Nano Banana 2.1',   hint: 'neu, Nachfolger'   },
-    { value: 'nb2-pro',  label: 'Nano Banana Pro',   hint: 'beste Qualität'    },
-    { value: 'seedream', label: 'Seedream 5 Pro',    hint: 'Alternative, bis 2K' },
-    { value: 'gpt',      label: 'GPT Image 2.5',     hint: 'sehr präzise'      },
+    { value: 'nb2',      label: 'Nano Banana 2',     hint: 'Google'    },
+    { value: 'nb21',     label: 'Nano Banana 2.1',   hint: 'Google'    },
+    { value: 'nb2-pro',  label: 'Nano Banana Pro',   hint: 'Google'    },
+    { value: 'seedream', label: 'Seedream 5 Pro',    hint: 'ByteDance' },
+    { value: 'gpt',      label: 'GPT Image 2.5',     hint: 'OpenAI'    },
 ];
 
 const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[] = [
-    { value: 'nb2',      label: 'Nano Banana 2',    hint: 'fast & affordable' },
-    { value: 'nb21',     label: 'Nano Banana 2.1',  hint: 'new, successor'    },
-    { value: 'nb2-pro',  label: 'Nano Banana Pro',  hint: 'best quality'      },
-    { value: 'seedream', label: 'Seedream 5 Pro',   hint: 'alternative, to 2K' },
-    { value: 'gpt',      label: 'GPT Image 2.5',    hint: 'very precise'      },
+    { value: 'nb2',      label: 'Nano Banana 2',    hint: 'Google'    },
+    { value: 'nb21',     label: 'Nano Banana 2.1',  hint: 'Google'    },
+    { value: 'nb2-pro',  label: 'Nano Banana Pro',  hint: 'Google'    },
+    { value: 'seedream', label: 'Seedream 5 Pro',   hint: 'ByteDance' },
+    { value: 'gpt',      label: 'GPT Image 2.5',    hint: 'OpenAI'    },
 ];
 
 function detectMode(s: GenerationSettings): GenerationMode {
