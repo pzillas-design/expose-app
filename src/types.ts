@@ -152,7 +152,7 @@ export type ImageQualityLevel = 'low' | 'medium' | 'high';
 export type ImageAspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '3:2' | '2:3' | '21:9' | '5:4' | '4:5';
 export type ImageOutputFormat = 'jpeg' | 'png' | 'webp';
 
-export type ImageModelProvider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-lite';
+export type ImageModelProvider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-lite' | 'nano-banana-21';
 
 export interface GenerationSettings {
   provider: ImageModelProvider;        // 'openai' (gpt-image-2) | 'fal-nb2' (Google Nano Banana 2)
@@ -202,6 +202,18 @@ export const NB_PRO_PRICES_USD: Record<string, number> = {
 // 4K fehlt bewusst: Das Modell rendert höchstens 3K. Die Stufe wird in der
 // Oberfläche ausgeblendet und serverseitig auf 2K begrenzt, statt 3K als 4K
 // auszugeben.
+// Nano Banana 2.1 — Nachfolger von NB2 (Google schaltet gemini-3.1-flash-image
+// laut Ankündigung vom 06.10.2026 ab). Verkaufspreise absichtlich identisch zu
+// NB2: Für Kunden ändert sich nichts, während der Einkauf von 0,08 auf 0,034 $
+// bei 1K fällt — die Marge dort steigt damit von 56 % auf 81 %.
+// Keine 0.5K-Stufe mehr; sie wird auf 1K gehoben und wie 1K bepreist.
+export const NB21_PRICES_USD: Record<string, number> = {
+  'nb2-05k': 0.18,
+  'nb2-1k':  0.18,
+  'nb2-2k':  0.50,
+  'nb2-4k':  0.65,
+};
+
 export const SEEDREAM_LITE_PRICES_USD: Record<string, number> = {
   'nb2-05k': 0.15,
   'nb2-1k':  0.15,
@@ -225,6 +237,7 @@ export const getGenerationPriceUsd = (
   : provider === 'nano-banana-pro' ? (NB_PRO_PRICES_USD[resolution] ?? 0)
   // 4K auf 2K abbilden: Seedream kann kein 4K, wir rechnen den Pauschalpreis.
   : provider === 'seedream-lite'   ? (SEEDREAM_LITE_PRICES_USD[resolution] ?? SEEDREAM_LITE_PRICES_USD['nb2-2k'])
+  : provider === 'nano-banana-21'  ? (NB21_PRICES_USD[resolution] ?? 0)
   : (NB2_PRICES_USD[resolution] ?? 0);
 
 // Legacy export — keeps callers that only know per-resolution pricing working.

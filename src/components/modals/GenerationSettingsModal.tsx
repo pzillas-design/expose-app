@@ -23,10 +23,11 @@ interface GenerationSettingsModalProps {
 
 // ── Generation mode — encodes provider + quality in one pick ───────────────
 
-type GenerationMode = 'nb2' | 'nb2-pro' | 'seedream' | 'gpt-low' | 'gpt-mid' | 'gpt-high';
+type GenerationMode = 'nb2' | 'nb21' | 'nb2-pro' | 'seedream' | 'gpt-low' | 'gpt-mid' | 'gpt-high';
 
 const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quality: ImageQualityLevel }> = {
     'nb2':      { provider: 'fal-nb2',          quality: 'low'    },
+    'nb21':     { provider: 'nano-banana-21',    quality: 'low'    },
     'nb2-pro':  { provider: 'nano-banana-pro',   quality: 'high'   },
     'seedream': { provider: 'seedream-lite',     quality: 'low'    },
     'gpt-low':  { provider: 'openai',            quality: 'low'    },
@@ -39,6 +40,7 @@ const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quali
 // adherence (low = cheap drafts, high = max precision).
 const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[] = [
     { value: 'nb2',      label: 'Nano Banana 2',     hint: 'schnell & günstig' },
+    { value: 'nb21',     label: 'Nano Banana 2.1',   hint: 'neu, Nachfolger'   },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',   hint: 'beste Qualität'    },
     { value: 'seedream', label: 'Seedream 5 Lite',   hint: 'sparsam, bis 2K'   },
     { value: 'gpt-low',  label: 'GPT Image Niedrig', hint: 'schnelle Entwürfe' },
@@ -48,6 +50,7 @@ const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[]
 
 const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[] = [
     { value: 'nb2',      label: 'Nano Banana 2',    hint: 'fast & affordable' },
+    { value: 'nb21',     label: 'Nano Banana 2.1',  hint: 'new, successor'    },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',  hint: 'best quality'      },
     { value: 'seedream', label: 'Seedream 5 Lite',  hint: 'budget, up to 2K'  },
     { value: 'gpt-low',  label: 'GPT Image Low',    hint: 'quick drafts'      },
@@ -56,6 +59,7 @@ const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[]
 ];
 
 function detectMode(s: GenerationSettings): GenerationMode {
+    if (s.provider === 'nano-banana-21') return 'nb21';
     if (s.provider === 'nano-banana-pro') return 'nb2-pro';
     if (s.provider === 'seedream-lite') return 'seedream';
     if (s.provider === 'fal-nb2') return 'nb2';

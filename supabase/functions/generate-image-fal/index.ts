@@ -34,12 +34,16 @@ const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2/edit';
 
 // Nano Banana Pro (Gemini 3 Pro Image) — the higher-fidelity Google tier.
 // Same input shape as NB2 (prompt, image_urls, resolution, aspect_ratio).
+// Nachfolger von nano-banana-2. Google schaltet gemini-3.1-flash-image laut
+// Ankündigung vom 06.10.2026 am 29.10.2026 ab; 2.1 ist der genannte Umstieg.
+const NB21_ENDPOINT_CREATE = 'google/nano-banana-2.1';
+const NB21_ENDPOINT_EDIT   = 'google/nano-banana-2.1/edit';
 const SD_ENDPOINT_CREATE = 'fal-ai/bytedance/seedream/v5/lite/text-to-image';
 const SD_ENDPOINT_EDIT   = 'fal-ai/bytedance/seedream/v5/lite/edit';
 const PRO_ENDPOINT_CREATE = 'fal-ai/nano-banana-pro';
 const PRO_ENDPOINT_EDIT = 'fal-ai/nano-banana-pro/edit';
 
-type Provider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-lite';
+type Provider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-lite' | 'nano-banana-21';
 
 /**
  * Build GPT-Image-2's `image_size` from our nb2-* tier + aspect ratio.
@@ -315,10 +319,12 @@ Deno.serve(async (req) => {
         const provider: Provider = rawProvider === 'openai' ? 'openai'
             : rawProvider === 'nano-banana-pro' ? 'nano-banana-pro'
             : rawProvider === 'seedream-lite' ? 'seedream-lite'
+            : rawProvider === 'nano-banana-21' ? 'nano-banana-21'
             : 'fal-nb2';
         const modelVersion = provider === 'openai' ? 'gpt-image-2'
             : provider === 'nano-banana-pro' ? 'nano-banana-pro'
             : provider === 'seedream-lite' ? 'seedream-5-lite'
+            : provider === 'nano-banana-21' ? 'nano-banana-2.1'
             : 'nano-banana-2';
         // gpt-image-2 'quality' from the new settings modal. Falls back to 'high'
         // (sweet-spot detail/adherence) if the client didn't send it.
@@ -424,12 +430,16 @@ Deno.serve(async (req) => {
         // Seedream kennt kein 4K — für die Abrechnung auf die 2K-Pauschale
         // abbilden, passend zu dem, was der Zweig oben tatsächlich anfordert.
         const sdKey = qualityMode === 'nb2-4k' ? 'sd-2k' : qualityMode.replace('nb2-', 'sd-');
+        // 2.1 hat keine 0.5K-Stufe — auf 1K abbilden, passend zum Zweig unten.
+        const nb21Key = qualityMode === 'nb2-05k' ? 'nb21-1k' : qualityMode.replace('nb2-', 'nb21-');
         const cost = provider === 'openai'
             ? (GPT_COSTS[qualityMode]?.[userQuality] ?? COSTS[qualityMode] ?? 0)
             : provider === 'nano-banana-pro'
             ? (COSTS[qualityMode.replace('nb2-', 'pro-')] ?? COSTS[qualityMode] ?? 0)
             : provider === 'seedream-lite'
             ? (COSTS[sdKey] ?? COSTS['sd-2k'] ?? 0)
+            : provider === 'nano-banana-21'
+            ? (COSTS[nb21Key] ?? COSTS[qualityMode] ?? 0)
             : (COSTS[qualityMode] || 0);
         // Einkaufspreis parallel zum Verkaufspreis bestimmen — dieselbe
         // Fallunterscheidung, damit beide Zahlen immer zusammenpassen.
@@ -439,6 +449,8 @@ Deno.serve(async (req) => {
             ? (API_COSTS[qualityMode.replace('nb2-', 'pro-')] ?? API_COSTS[qualityMode] ?? 0)
             : provider === 'seedream-lite'
             ? (API_COSTS[sdKey] ?? API_COSTS['sd-2k'] ?? 0)
+            : provider === 'nano-banana-21'
+            ? (API_COSTS[nb21Key] ?? API_COSTS[qualityMode] ?? 0)
             : (API_COSTS[qualityMode] || 0);
         let { data: profile } = await supabaseAdmin
             .from('profiles')
@@ -524,6 +536,18 @@ Deno.serve(async (req) => {
         } else if (provider === 'nano-banana-pro') {
             // Pro shares NB2's input shape; resolution enum is 1K/2K/4K.
             endpoint = hasSource ? PRO_ENDPOINT_EDIT : PRO_ENDPOINT_CREATE;
+            falInput = {
+                prompt,
+                resolution: falResolution === '0.5K' ? '1K' : falResolution,
+                aspect_ratio: aspectRatio,
+                output_format: 'jpeg',
+                num_images: 1,
+            };
+            if (hasSource) falInput.image_urls = imageUrls;
+        } else if (provider === 'nano-banana-21') {
+            // Gleiche Eingabeform wie NB2. 2.1 kennt keine 512px-Stufe mehr,
+            // 0.5K wird deshalb wie bei Pro auf 1K gehoben.
+            endpoint = hasSource ? NB21_ENDPOINT_EDIT : NB21_ENDPOINT_CREATE;
             falInput = {
                 prompt,
                 resolution: falResolution === '0.5K' ? '1K' : falResolution,

@@ -40,6 +40,12 @@ export const COSTS: Record<string, number> = {
     'nb2-4k': 0.65,
     // Seedream 5.0 Lite: fal berechnet pauschal, also verkaufen wir pauschal.
     // Kein 4K — das Modell rendert höchstens 3K, die Stufe wird auf 2K begrenzt.
+    // Nano Banana 2.1 — Nachfolger von NB2. Verkaufspreise bewusst identisch
+    // zu NB2: Für Kunden ändert sich nichts, der Einkauf halbiert sich.
+    'nb21-05k': 0.18,
+    'nb21-1k': 0.18,
+    'nb21-2k': 0.50,
+    'nb21-4k': 0.65,
     'sd-05k': 0.15,
     'sd-1k': 0.15,
     'sd-2k': 0.15,
@@ -63,6 +69,12 @@ export const API_COSTS: Record<string, number> = {
     'nb2-1k': 0.08,
     'nb2-2k': 0.12,
     'nb2-4k': 0.16,
+    // 2.1 kostet laut Gemini-Preisliste etwa die Hälfte von NB2.
+    // 0.5K entfällt und wird auf 1K gehoben.
+    'nb21-05k': 0.0336,
+    'nb21-1k': 0.0336,
+    'nb21-2k': 0.0504,
+    'nb21-4k': 0.0756,
     // Pauschal bis 3K laut fal — gleiche Zahl auf allen Stufen.
     'sd-05k': 0.035,
     'sd-1k': 0.035,
