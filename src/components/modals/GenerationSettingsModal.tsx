@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal } from '@/components/ui/Modal';
-import { Button, Tooltip } from '@/components/ui/DesignSystem';
-import { ChevronDown, Check, Info } from 'lucide-react';
+import { Button } from '@/components/ui/DesignSystem';
+import { ChevronDown, Check } from 'lucide-react';
 import {
     GenerationSettings,
     DEFAULT_GENERATION_SETTINGS,
@@ -207,17 +207,6 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
     );
 }
 
-// ── Building blocks ────────────────────────────────────────────────────────
-
-const HeadingWithInfo: React.FC<{ heading: string; info: string }> = ({ heading, info }) => (
-    <div className="flex items-center gap-1.5">
-        <span className="text-sm font-semibold text-zinc-900 dark:text-white">{heading}</span>
-        <Tooltip text={info} side="top">
-            <Info className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-help shrink-0" />
-        </Tooltip>
-    </div>
-);
-
 // ── Modal ──────────────────────────────────────────────────────────────────
 
 export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = ({
@@ -266,12 +255,9 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
 
                 {/* Mode (model + quality combined) */}
                 <div className="flex flex-col gap-2">
-                    <HeadingWithInfo
-                        heading={isDe ? 'KI-Modell' : 'AI model'}
-                        info={isDe
-                            ? 'Nano Banana 2 und Nano Banana Pro nutzen Googles Modell. GPT-Image-Modi nutzen OpenAIs GPT Image 2.'
-                            : "Nano Banana 2 and Nano Banana Pro use Google's model. GPT Image modes use OpenAI's GPT Image 2."}
-                    />
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                        {isDe ? 'KI-Modell' : 'AI model'}
+                    </span>
                     <Dropdown
                         value={mode}
                         options={isDe ? MODE_OPTIONS_DE : MODE_OPTIONS_EN}
