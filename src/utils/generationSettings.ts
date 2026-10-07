@@ -92,6 +92,31 @@ export const upgradeUserToNBProOnce = (userId: string | undefined | null): { ran
     }
 };
 
+/**
+ * Umstieg auf Nano Banana 2.1. Google hat am 06.10.2026 angekündigt,
+ * gemini-3.1-flash-image — das Modell hinter 'fal-nb2' — am 29.10.2026
+ * abzuschalten. Wer die alte Einstellung gespeichert hat, würde danach ins
+ * Leere laufen, deshalb einmalig umhängen.
+ *
+ * Nur 'fal-nb2' wandert. Wer bewusst Pro, Seedream oder GPT gewählt hat,
+ * behält seine Wahl.
+ */
+const NB21_MIGRATION_KEY = 'expose:provider-migration:nb21-v1';
+export const migrateProviderToNB21Once = (): { ran: boolean; migrated: boolean } => {
+    try {
+        if (typeof window === 'undefined') return { ran: false, migrated: false };
+        if (window.localStorage.getItem(NB21_MIGRATION_KEY)) return { ran: false, migrated: false };
+
+        const current = loadGenerationSettings();
+        const changed = current.provider === 'fal-nb2';
+        if (changed) saveGenerationSettings({ ...current, provider: 'nano-banana-21' });
+        window.localStorage.setItem(NB21_MIGRATION_KEY, new Date().toISOString());
+        return { ran: true, migrated: changed };
+    } catch (_) {
+        return { ran: false, migrated: false };
+    }
+};
+
 /** @deprecated Use revertProviderToNB2Once. Kept for older callers / no-op safety. */
 export const migrateProviderToOpenAIOnce = (): { ran: boolean; migrated: boolean } => {
     // The original openai migration is intentionally a no-op now — we reverted

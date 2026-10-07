@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense, useCallback } from 'react';
-import { Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import { RotateCw, Download, Info, Trash2, Loader2, Upload, ImageIcon } from 'lucide-react';
 import { RoundIconButton, Theme, Typo } from '@/components/ui/DesignSystem';
 import { useModalStack } from '@/components/ui/ModalStack';
@@ -34,7 +34,7 @@ const AboutPage = React.lazy(() => import('@/components/pages/AboutPage').then(m
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage, persistToolCallLog, persistTranscriptLog } from '@/services/voiceAdminService';
-import { loadGenerationSettings, saveGenerationSettings, revertProviderToNB2Once, upgradeUserToNBProOnce } from '@/utils/generationSettings';
+import { loadGenerationSettings, saveGenerationSettings, revertProviderToNB2Once, upgradeUserToNBProOnce, migrateProviderToNB21Once } from '@/utils/generationSettings';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
     // React 19 ships no .d.ts — declare props explicitly so TS finds it
@@ -68,6 +68,8 @@ export function App() {
     const { confirm } = useItemDialog();
     const navigate = useNavigate();
     const location = useLocation();
+    // 'POP' heißt: Vor/Zurück im Browser. Siehe Richtungsregel weiter unten.
+    const navigationType = useNavigationType();
 
     const {
         user, isAuthLoading, isAuthModalOpen, authError, authEmail, authModalMode,
@@ -196,6 +198,9 @@ export function App() {
     // GPT Image 2 after this runs are safe — the flag prevents re-revert.
     useEffect(() => {
         revertProviderToNB2Once();
+        // Danach aufrufen: Die Rückmigration setzt ggf. erst auf fal-nb2, von dort
+        // geht es weiter auf 2.1. Umgekehrte Reihenfolge würde das rückgängig machen.
+        migrateProviderToNB21Once();
     }, []);
 
     // Targeted one-shot: upgrade specific users to Nano Banana Pro (see
@@ -247,7 +252,17 @@ export function App() {
         }
         const urlId = location.pathname.split('/').pop();
         if (urlId && urlId !== state.activeId && !isNavigatingProgrammatically.current) {
-            if (state.activeId && allImages.some(i => i.id === state.activeId)) {
+            // Stimmen URL und activeId nicht überein, muss entschieden werden,
+            // welches von beiden gilt. Die alte Regel ("activeId gewinnt, wenn
+            // das Bild noch existiert") hat geraten — und bei Vor/Zurück im
+            // Browser regelmäßig falsch geraten: Der Nutzer blätterte zurück,
+            // die App sprang sofort wieder vorwärts.
+            //
+            // Bei POP (Vor/Zurück-Taste) gewinnt immer die URL. Das ist die
+            // einzige Navigation, die der Nutzer nachweislich selbst ausgelöst
+            // hat, und sie darf nie überschrieben werden.
+            const userWentBack = navigationType === 'POP';
+            if (!userWentBack && state.activeId && allImages.some(i => i.id === state.activeId)) {
                 // activeId changed programmatically (e.g. generation snap) — update URL to follow
                 isNavigatingProgrammatically.current = true;
                 navigate(`/image/${state.activeId}`, { replace: true });
@@ -260,7 +275,7 @@ export function App() {
 
         // Reset voice highlight on navigation
         setVoiceFocusIndex(null);
-    }, [location.pathname, state.activeId, actions, expandedGroupId]);
+    }, [location.pathname, navigationType, state.activeId, actions, expandedGroupId]);
 
 
     // Reset user navigation ref when active image changes
@@ -319,7 +334,13 @@ export function App() {
     const handleDetailDelete = React.useCallback(async (id: string) => {
         const flat = state.allImages;
         const currentIdx = flat.findIndex(i => i.id === id);
-        const nextImg = flat[currentIdx + 1] || flat[currentIdx - 1];
+        // Ohne diese Prüfung ergibt findIndex -1 den Ausdruck flat[0] — beim
+        // Löschen eines Bildes, das nicht in der flachen Liste steht (etwa in
+        // einem eingeklappten Stapel), landete man dadurch unvermittelt beim
+        // ERSTEN Bild der Galerie statt beim Nachbarn.
+        const nextImg = currentIdx === -1
+            ? undefined
+            : (flat[currentIdx + 1] || flat[currentIdx - 1]);
         await actions.handleDeleteImage(id, false, () => {
             // Called after confirm but BEFORE setRows — navigate while img still exists
             isNavigatingProgrammatically.current = true;

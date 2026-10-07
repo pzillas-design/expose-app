@@ -74,6 +74,12 @@ const PRICE_1K = {
     'mai-flash': 0.0195,
     'mai-26': 0.0389,
     'gemini-direkt': 0.067,
+    // Seedream Lite ist pauschal bis 3K — keine Auflösungsstufen.
+    'seedream5-lite': 0.035,
+    // Grok berechnet Ausgabe UND jedes Eingabebild. Hier nur die Ausgabe bei
+    // 2K; im Produktivbetrieb kommen je Eingabebild 0,01 $ obendrauf, und
+    // unsere Pipeline schickt Original plus Annotation plus Referenzen.
+    'grok-imagine': 0.060,
 };
 
 /* ── Modelle ──────────────────────────────────────────────────────────────── */
@@ -98,6 +104,22 @@ const MODELS = [
         note: 'Gleiches Modell wie über fal — misst den Aufpreis des Vermittlers',
         env: 'GEMINI_API_KEY',
         run: (img, prompt, key) => gemini('gemini-3.1-flash-image-preview', img, prompt, key),
+    },
+    {
+        key: 'seedream5-lite',
+        name: 'Seedream 5.0 Lite (fal)',
+        note: 'Pauschal bis 3K, nimmt bis zu 14 Referenzbilder',
+        env: 'FAL_API_KEY',
+        // Endpunktnamen bei fal vor dem ersten Lauf gegenprüfen — sie ändern
+        // sich mit den Modellversionen. Bei 404 nennt die Fehlermeldung den Pfad.
+        run: (img, prompt, key) => fal('fal-ai/bytedance/seedream/v5/lite/edit', img, prompt, key),
+    },
+    {
+        key: 'grok-imagine',
+        name: 'Grok Imagine (fal)',
+        note: 'Günstig, aber höchstens 5 Eingabebilder',
+        env: 'FAL_API_KEY',
+        run: (img, prompt, key) => fal('fal-ai/xai/grok-imagine/image/edit', img, prompt, key),
     },
     {
         key: 'mai-flash',

@@ -152,7 +152,7 @@ export type ImageQualityLevel = 'low' | 'medium' | 'high';
 export type ImageAspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '3:2' | '2:3' | '21:9' | '5:4' | '4:5';
 export type ImageOutputFormat = 'jpeg' | 'png' | 'webp';
 
-export type ImageModelProvider = 'fal-nb2' | 'nano-banana-pro' | 'openai';
+export type ImageModelProvider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-pro' | 'nano-banana-21';
 
 export interface GenerationSettings {
   provider: ImageModelProvider;        // 'openai' (gpt-image-2) | 'fal-nb2' (Google Nano Banana 2)
@@ -167,7 +167,7 @@ export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
   // NB2 is faster, cheaper, and produces consistently usable real-estate edits.
   // Users who prefer GPT Image 2 can switch in the settings modal; once they do,
   // the migration flag prevents auto-revert on next reload.
-  provider:     'fal-nb2',
+  provider:     'nano-banana-21',
   resolution:   'nb2-1k',
   quality:      'high',
   aspectRatio:  'auto',
@@ -195,11 +195,39 @@ export const NB_PRO_PRICES_USD: Record<string, number> = {
   'nb2-4k': 1.20,
 };
 
+// Seedream 5.0 Pro: fal staffelt den Einkauf — 0,0675 $ bis 1536x1536,
+// 0,135 $ bis 2048x2048. Der Verkauf folgt derselben Staffel bei rund 73 %
+// Marge. Pro ist kein Sparmodell: In der Bearbeitungs-Rangliste liegt es mit
+// Elo 1099 praktisch gleichauf mit NB2 (1102).
+//
+// 4K fehlt: Das Modell rendert höchstens 2K. Die Stufe wird in der Oberfläche
+// ausgeblendet und serverseitig begrenzt.
+// Nano Banana 2.1 — Nachfolger von NB2 (Google schaltet gemini-3.1-flash-image
+// laut Ankündigung vom 06.10.2026 ab). Verkaufspreise absichtlich identisch zu
+// NB2: Für Kunden ändert sich nichts, während der Einkauf von 0,08 auf 0,034 $
+// bei 1K fällt — die Marge dort steigt damit von 56 % auf 81 %.
+// Keine 0.5K-Stufe mehr; sie wird auf 1K gehoben und wie 1K bepreist.
+export const NB21_PRICES_USD: Record<string, number> = {
+  'nb2-05k': 0.18,
+  'nb2-1k':  0.18,
+  'nb2-2k':  0.50,
+  'nb2-4k':  0.65,
+};
+
+export const SEEDREAM_PRO_PRICES_USD: Record<string, number> = {
+  'nb2-05k': 0.25,
+  'nb2-1k':  0.25,
+  'nb2-2k':  0.50,
+};
+
+// GPT Image 2.5 Flare. Der alte 0,85-€-Preis trug einen Einkauf von 0,21 $;
+// 2.5 Flare kostet auf 'high' nur 0,053 $. Der Verkaufspreis sinkt deshalb
+// auf das Niveau der früheren Mittelstufe — bei besserer Marge als vorher.
 export const GPT_PRICES_USD: Record<string, Record<ImageQualityLevel, number>> = {
-  'nb2-05k': { low: 0.05, medium: 0.20, high: 0.85 },
-  'nb2-1k': { low: 0.05, medium: 0.20, high: 0.85 },
-  'nb2-2k': { low: 0.10, medium: 0.30, high: 1.00 },
-  'nb2-4k': { low: 0.20, medium: 0.50, high: 1.60 },
+  'nb2-05k': { low: 0.20, medium: 0.20, high: 0.20 },
+  'nb2-1k': { low: 0.20, medium: 0.20, high: 0.20 },
+  'nb2-2k': { low: 0.30, medium: 0.30, high: 0.30 },
+  'nb2-4k': { low: 0.50, medium: 0.50, high: 0.50 },
 };
 
 /** Price for a (provider × resolution × quality) combination. Defaults to 0 if unknown. */
@@ -208,8 +236,11 @@ export const getGenerationPriceUsd = (
   resolution: string,
   quality: ImageQualityLevel,
 ): number =>
-  provider === 'openai'          ? (GPT_PRICES_USD[resolution]?.[quality] ?? 0)
+  provider === 'openai'            ? (GPT_PRICES_USD[resolution]?.[quality] ?? 0)
   : provider === 'nano-banana-pro' ? (NB_PRO_PRICES_USD[resolution] ?? 0)
+  // 4K auf 2K abbilden: Seedream kann kein 4K, wir rechnen den Pauschalpreis.
+  : provider === 'seedream-pro'   ? (SEEDREAM_PRO_PRICES_USD[resolution] ?? SEEDREAM_PRO_PRICES_USD['nb2-2k'])
+  : provider === 'nano-banana-21'  ? (NB21_PRICES_USD[resolution] ?? 0)
   : (NB2_PRICES_USD[resolution] ?? 0);
 
 // Legacy export — keeps callers that only know per-resolution pricing working.
@@ -239,15 +270,17 @@ export const RESOLUTION_TIERS: { id: GenerationQuality; label: string; px: numbe
  * advertised price can never drift from what we actually charge.
  */
 export const getPublicPriceTiers = (lang: 'de' | 'en' = 'de') =>
-  RESOLUTION_TIERS.map(t => ({
+  // 2.1 kennt keine 512px-Stufe — sie wird intern auf 1K gehoben und wäre in
+  // einer öffentlichen Preisliste eine zweite Zeile zum selben Preis.
+  RESOLUTION_TIERS.filter(t => t.id !== 'nb2-05k').map(t => ({
     res: t.label,
-    price: formatPriceEur(NB2_PRICES_USD[t.id] ?? 0, lang),
+    price: formatPriceEur(NB21_PRICES_USD[t.id] ?? 0, lang),
     label: `${lang === 'de' ? 'bis' : 'up to'} ${t.px} × ${t.px} px`,
   }));
 
 /** Cheapest price across the default (NB2) tariff — for "from X €" claims. */
 export const getLowestPublicPrice = (lang: 'de' | 'en' = 'de'): string =>
-  formatPriceEur(Math.min(...Object.values(NB2_PRICES_USD)), lang);
+  formatPriceEur(Math.min(...Object.values(NB21_PRICES_USD)), lang);
 
 // --- ADMIN TYPES ---
 
