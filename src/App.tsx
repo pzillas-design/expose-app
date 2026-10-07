@@ -47,8 +47,6 @@ class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, 
 
 const ProtectedRoute = ({ user, isAuthLoading, children, onAuthRequired }: { user: any, isAuthLoading: boolean, children: React.ReactNode, onAuthRequired: () => void }) => {
     const location = useLocation();
-    // 'POP' heißt: Vor/Zurück im Browser. Siehe Richtungsregel weiter unten.
-    const navigationType = useNavigationType();
     useEffect(() => {
         if (!isAuthLoading && !user) {
             onAuthRequired();
@@ -70,6 +68,8 @@ export function App() {
     const { confirm } = useItemDialog();
     const navigate = useNavigate();
     const location = useLocation();
+    // 'POP' heißt: Vor/Zurück im Browser. Siehe Richtungsregel weiter unten.
+    const navigationType = useNavigationType();
 
     const {
         user, isAuthLoading, isAuthModalOpen, authError, authEmail, authModalMode,
