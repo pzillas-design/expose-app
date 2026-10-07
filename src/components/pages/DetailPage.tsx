@@ -309,7 +309,17 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             navHappenedDuringGenRef.current = false;
             if (userNavigated) return;
             const finishedImage = imageMap.get(childId);
-            if (finishedImage && !finishedImage.isGenerating) {
+            // Schreibt der Nutzer gerade (Prompt, Titel), nicht wegspringen —
+            // der Cursor würde mitten im Satz aus dem Feld gerissen. Gleiche
+            // Regel wie in useGeneration; dies ist der zweite, unabhängige
+            // Sprungpfad und muss sie ebenfalls befolgen.
+            const el = typeof document !== 'undefined' ? document.activeElement as HTMLElement | null : null;
+            const isTyping = !!el && (
+                el.tagName === 'TEXTAREA' ||
+                (el.tagName === 'INPUT' && !['checkbox','radio','button','submit','range','file'].includes((el as HTMLInputElement).type)) ||
+                el.isContentEditable
+            );
+            if (finishedImage && !finishedImage.isGenerating && !isTyping) {
                 setIsSideSheetVisible(false);
                 onSelectImage(childId);
             }

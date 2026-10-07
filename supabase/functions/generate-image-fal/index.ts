@@ -39,7 +39,7 @@ const SD_ENDPOINT_EDIT   = 'fal-ai/bytedance/seedream/v5/lite/edit';
 const PRO_ENDPOINT_CREATE = 'fal-ai/nano-banana-pro';
 const PRO_ENDPOINT_EDIT = 'fal-ai/nano-banana-pro/edit';
 
-type Provider = 'fal-nb2' | 'nano-banana-pro' | 'openai';
+type Provider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-lite';
 
 /**
  * Build GPT-Image-2's `image_size` from our nb2-* tier + aspect ratio.
@@ -308,11 +308,17 @@ Deno.serve(async (req) => {
             sourceStoragePath,
             provider: rawProvider,
         } = payload;
+        // Jeder neue Anbieter MUSS hier eintragen werden. Fehlt er, fällt die
+        // Anfrage still auf NB2 zurück: Der Nutzer bekommt ein anderes Modell
+        // als gewählt, wird aber zum Preis des gewählten abgerechnet — ein
+        // Fehler, der ohne Blick in die Datenbank unsichtbar bleibt.
         const provider: Provider = rawProvider === 'openai' ? 'openai'
             : rawProvider === 'nano-banana-pro' ? 'nano-banana-pro'
+            : rawProvider === 'seedream-lite' ? 'seedream-lite'
             : 'fal-nb2';
         const modelVersion = provider === 'openai' ? 'gpt-image-2'
             : provider === 'nano-banana-pro' ? 'nano-banana-pro'
+            : provider === 'seedream-lite' ? 'seedream-5-lite'
             : 'nano-banana-2';
         // gpt-image-2 'quality' from the new settings modal. Falls back to 'high'
         // (sweet-spot detail/adherence) if the client didn't send it.
