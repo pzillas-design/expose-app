@@ -46,11 +46,11 @@ export const COSTS: Record<string, number> = {
     'nb21-1k': 0.18,
     'nb21-2k': 0.50,
     'nb21-4k': 0.65,
-    // Seedream 5.0 Pro. Gestaffelter Einkauf, also auch gestaffelter Verkauf.
-    // Kein 4K — das Modell rendert höchstens 2K, die Stufe wird begrenzt.
-    'sd-05k': 0.25,
-    'sd-1k': 0.25,
-    'sd-2k': 0.50,
+    // Seedream 5.0 Flash. Pauschaler Einkauf über alle Stufen bis 2K, also
+    // auch pauschaler Verkauf. Kein 4K — die Stufe wird begrenzt.
+    'sd-05k': 0.12,
+    'sd-1k': 0.12,
+    'sd-2k': 0.12,
 };
 
 // EINKAUFSPREISE (was fal/OpenAI uns je Bild berechnet) — Gegenstück zu COSTS.
@@ -77,10 +77,10 @@ export const API_COSTS: Record<string, number> = {
     'nb21-1k': 0.0336,
     'nb21-2k': 0.0504,
     'nb21-4k': 0.0756,
-    // fal: 0,0675 \$ bis 1536x1536, 0,135 \$ bis 2048x2048.
-    'sd-05k': 0.0675,
-    'sd-1k': 0.0675,
-    'sd-2k': 0.1350,
+    // fal: 0,027 \$ je Bild, gleich für 1K, 1.5K und 2K.
+    'sd-05k': 0.027,
+    'sd-1k': 0.027,
+    'sd-2k': 0.027,
 };
 
 // GPT Image 2: nur die high-Werte sind von fal dokumentiert. low/medium sind
