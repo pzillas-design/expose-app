@@ -41,12 +41,12 @@ const OPENAI_ENDPOINT_EDIT = 'openai/gpt-image-2.5/flare/edit';
 // Ankündigung vom 06.10.2026 am 29.10.2026 ab; 2.1 ist der genannte Umstieg.
 const NB21_ENDPOINT_CREATE = 'google/nano-banana-2.1';
 const NB21_ENDPOINT_EDIT   = 'google/nano-banana-2.1/edit';
-const SD_ENDPOINT_CREATE = 'fal-ai/bytedance/seedream/v5/lite/text-to-image';
-const SD_ENDPOINT_EDIT   = 'fal-ai/bytedance/seedream/v5/lite/edit';
+const SD_ENDPOINT_CREATE = 'bytedance/seedream/v5/pro/text-to-image';
+const SD_ENDPOINT_EDIT   = 'bytedance/seedream/v5/pro/edit';
 const PRO_ENDPOINT_CREATE = 'fal-ai/nano-banana-pro';
 const PRO_ENDPOINT_EDIT = 'fal-ai/nano-banana-pro/edit';
 
-type Provider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-lite' | 'nano-banana-21';
+type Provider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-pro' | 'nano-banana-21';
 
 /**
  * Build GPT-Image-2's `image_size` from our nb2-* tier + aspect ratio.
@@ -321,12 +321,12 @@ Deno.serve(async (req) => {
         // Fehler, der ohne Blick in die Datenbank unsichtbar bleibt.
         const provider: Provider = rawProvider === 'openai' ? 'openai'
             : rawProvider === 'nano-banana-pro' ? 'nano-banana-pro'
-            : rawProvider === 'seedream-lite' ? 'seedream-lite'
+            : rawProvider === 'seedream-pro' ? 'seedream-pro'
             : rawProvider === 'nano-banana-21' ? 'nano-banana-21'
             : 'fal-nb2';
         const modelVersion = provider === 'openai' ? 'gpt-image-2.5-flare'
             : provider === 'nano-banana-pro' ? 'nano-banana-pro'
-            : provider === 'seedream-lite' ? 'seedream-5-lite'
+            : provider === 'seedream-pro' ? 'seedream-5-pro'
             : provider === 'nano-banana-21' ? 'nano-banana-2.1'
             : 'nano-banana-2';
         // gpt-image-2 'quality' from the new settings modal. Falls back to 'high'
@@ -430,8 +430,11 @@ Deno.serve(async (req) => {
         // ── Credits ────────────────────────────────────────────────────────
         // Price depends on the provider: NB Pro has its own (higher) per-resolution
         // tariff, GPT Image 2 is the only model where quality affects the price.
-        // Seedream kennt kein 4K — für die Abrechnung auf die 2K-Pauschale
-        // abbilden, passend zu dem, was der Zweig oben tatsächlich anfordert.
+        // Seedream Pro kennt kein 4K — für die Abrechnung auf 2K abbilden,
+        // passend zu dem, was der Zweig unten tatsächlich anfordert. Anders als
+        // bei Lite ist der Einkauf gestaffelt: bis 1536px eine Stufe, darüber
+        // die doppelte. Referenzbilder kosten je 0,0045 $ zusätzlich; bei
+        // unserem Anteil von 4 % der Aufträge nicht eingepreist.
         const sdKey = qualityMode === 'nb2-4k' ? 'sd-2k' : qualityMode.replace('nb2-', 'sd-');
         // 2.1 hat keine 0.5K-Stufe — auf 1K abbilden, passend zum Zweig unten.
         const nb21Key = qualityMode === 'nb2-05k' ? 'nb21-1k' : qualityMode.replace('nb2-', 'nb21-');
@@ -439,7 +442,7 @@ Deno.serve(async (req) => {
             ? (GPT_COSTS[qualityMode]?.[userQuality] ?? COSTS[qualityMode] ?? 0)
             : provider === 'nano-banana-pro'
             ? (COSTS[qualityMode.replace('nb2-', 'pro-')] ?? COSTS[qualityMode] ?? 0)
-            : provider === 'seedream-lite'
+            : provider === 'seedream-pro'
             ? (COSTS[sdKey] ?? COSTS['sd-2k'] ?? 0)
             : provider === 'nano-banana-21'
             ? (COSTS[nb21Key] ?? COSTS[qualityMode] ?? 0)
@@ -450,7 +453,7 @@ Deno.serve(async (req) => {
             ? (GPT_API_COSTS[qualityMode]?.[userQuality] ?? API_COSTS[qualityMode] ?? 0)
             : provider === 'nano-banana-pro'
             ? (API_COSTS[qualityMode.replace('nb2-', 'pro-')] ?? API_COSTS[qualityMode] ?? 0)
-            : provider === 'seedream-lite'
+            : provider === 'seedream-pro'
             ? (API_COSTS[sdKey] ?? API_COSTS['sd-2k'] ?? 0)
             : provider === 'nano-banana-21'
             ? (API_COSTS[nb21Key] ?? API_COSTS[qualityMode] ?? 0)
@@ -559,9 +562,9 @@ Deno.serve(async (req) => {
                 num_images: 1,
             };
             if (hasSource) falInput.image_urls = imageUrls;
-        } else if (provider === 'seedream-lite') {
-            // Seedream 5.0 Lite rendert höchstens 3K. Eine hereingereichte
-            // 4K-Anforderung wird auf 2K begrenzt, statt eine Auflösung zu
+        } else if (provider === 'seedream-pro') {
+            // Seedream 5.0 Pro rendert höchstens 2K. Eine hereingereichte
+            // 4K-Anforderung wird begrenzt, statt eine Auflösung zu
             // versprechen, die das Modell nicht liefert.
             endpoint = hasSource ? SD_ENDPOINT_EDIT : SD_ENDPOINT_CREATE;
             falInput = {

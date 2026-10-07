@@ -8,11 +8,11 @@
  * .env.local) to force gpt-image-2 — useful for A/B comparisons.
  */
 
-export type ImageProviderKey = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-lite' | 'nano-banana-21';
+export type ImageProviderKey = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-pro' | 'nano-banana-21';
 
 export const detectImageProvider = (): ImageProviderKey => {
     const override = (import.meta.env?.VITE_IMAGE_PROVIDER as string | undefined)?.toLowerCase();
-    if (override === 'openai' || override === 'fal-nb2' || override === 'nano-banana-pro' || override === 'seedream-lite') return override as ImageProviderKey;
+    if (override === 'openai' || override === 'fal-nb2' || override === 'nano-banana-pro' || override === 'seedream-pro') return override as ImageProviderKey;
     return 'fal-nb2';
 };
 
@@ -34,7 +34,7 @@ const PROVIDER_DISPLAY_NAME: Record<ImageProviderKey, string> = {
     'fal-nb2':         'Nano Banana',
     'nano-banana-pro': 'Nano Banana Pro',
     'openai':          'GPT Image 2.5',
-    'seedream-lite':   'Seedream 5 Lite',
+    'seedream-pro':   'Seedream 5 Pro',
     'nano-banana-21':  'Nano Banana 2.1',
 };
 
@@ -43,7 +43,7 @@ export const modelVersionToProvider = (modelVersion?: string | null): ImageProvi
     if (modelVersion?.startsWith('gpt-image')) return 'openai';
     if (modelVersion === 'nano-banana-pro') return 'nano-banana-pro';
     // fal meldet den Modellnamen mit Versionspfad zurück, daher Präfixprüfung.
-    if (modelVersion?.startsWith('seedream')) return 'seedream-lite';
+    if (modelVersion?.startsWith('seedream')) return 'seedream-pro';
     if (modelVersion === 'nano-banana-2.1') return 'nano-banana-21';
     return 'fal-nb2';
 };

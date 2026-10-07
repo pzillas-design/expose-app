@@ -144,7 +144,7 @@ export async function persistFalResult(
     // obwohl ein anderes Modell es erzeugt hat.
     const modelVersion = ctx.provider === 'openai' ? 'gpt-image-2.5-flare'
         : ctx.provider === 'nano-banana-pro' ? 'nano-banana-pro'
-        : ctx.provider === 'seedream-lite' ? 'seedream-5-lite'
+        : ctx.provider === 'seedream-pro' ? 'seedream-5-pro'
         : ctx.provider === 'nano-banana-21' ? 'nano-banana-2.1'
         : 'nano-banana-2';
 

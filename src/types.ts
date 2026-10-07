@@ -152,7 +152,7 @@ export type ImageQualityLevel = 'low' | 'medium' | 'high';
 export type ImageAspectRatio = 'auto' | '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '3:2' | '2:3' | '21:9' | '5:4' | '4:5';
 export type ImageOutputFormat = 'jpeg' | 'png' | 'webp';
 
-export type ImageModelProvider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-lite' | 'nano-banana-21';
+export type ImageModelProvider = 'fal-nb2' | 'nano-banana-pro' | 'openai' | 'seedream-pro' | 'nano-banana-21';
 
 export interface GenerationSettings {
   provider: ImageModelProvider;        // 'openai' (gpt-image-2) | 'fal-nb2' (Google Nano Banana 2)
@@ -195,13 +195,13 @@ export const NB_PRO_PRICES_USD: Record<string, number> = {
   'nb2-4k': 1.20,
 };
 
-// Seedream 5.0 Lite berechnet fal pauschal 0,035 $ je Bild bis 3K — ohne
-// Auflösungsstufen. Ein pauschaler Verkaufspreis spiegelt das sauber wider und
-// hält die Marge über alle Stufen gleich bei rund 77 %.
+// Seedream 5.0 Pro: fal staffelt den Einkauf — 0,0675 $ bis 1536x1536,
+// 0,135 $ bis 2048x2048. Der Verkauf folgt derselben Staffel bei rund 73 %
+// Marge. Pro ist kein Sparmodell: In der Bearbeitungs-Rangliste liegt es mit
+// Elo 1099 praktisch gleichauf mit NB2 (1102).
 //
-// 4K fehlt bewusst: Das Modell rendert höchstens 3K. Die Stufe wird in der
-// Oberfläche ausgeblendet und serverseitig auf 2K begrenzt, statt 3K als 4K
-// auszugeben.
+// 4K fehlt: Das Modell rendert höchstens 2K. Die Stufe wird in der Oberfläche
+// ausgeblendet und serverseitig begrenzt.
 // Nano Banana 2.1 — Nachfolger von NB2 (Google schaltet gemini-3.1-flash-image
 // laut Ankündigung vom 06.10.2026 ab). Verkaufspreise absichtlich identisch zu
 // NB2: Für Kunden ändert sich nichts, während der Einkauf von 0,08 auf 0,034 $
@@ -214,10 +214,10 @@ export const NB21_PRICES_USD: Record<string, number> = {
   'nb2-4k':  0.65,
 };
 
-export const SEEDREAM_LITE_PRICES_USD: Record<string, number> = {
-  'nb2-05k': 0.15,
-  'nb2-1k':  0.15,
-  'nb2-2k':  0.15,
+export const SEEDREAM_PRO_PRICES_USD: Record<string, number> = {
+  'nb2-05k': 0.25,
+  'nb2-1k':  0.25,
+  'nb2-2k':  0.50,
 };
 
 // GPT Image 2.5 Flare. Der alte 0,85-€-Preis trug einen Einkauf von 0,21 $;
@@ -239,7 +239,7 @@ export const getGenerationPriceUsd = (
   provider === 'openai'            ? (GPT_PRICES_USD[resolution]?.[quality] ?? 0)
   : provider === 'nano-banana-pro' ? (NB_PRO_PRICES_USD[resolution] ?? 0)
   // 4K auf 2K abbilden: Seedream kann kein 4K, wir rechnen den Pauschalpreis.
-  : provider === 'seedream-lite'   ? (SEEDREAM_LITE_PRICES_USD[resolution] ?? SEEDREAM_LITE_PRICES_USD['nb2-2k'])
+  : provider === 'seedream-pro'   ? (SEEDREAM_PRO_PRICES_USD[resolution] ?? SEEDREAM_PRO_PRICES_USD['nb2-2k'])
   : provider === 'nano-banana-21'  ? (NB21_PRICES_USD[resolution] ?? 0)
   : (NB2_PRICES_USD[resolution] ?? 0);
 
