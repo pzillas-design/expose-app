@@ -23,10 +23,9 @@ interface GenerationSettingsModalProps {
 
 // ── Generation mode — encodes provider + quality in one pick ───────────────
 
-type GenerationMode = 'nb2' | 'nb21' | 'nb2-pro' | 'seedream' | 'gpt';
+type GenerationMode = 'nb21' | 'nb2-pro' | 'seedream' | 'gpt';
 
 const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quality: ImageQualityLevel }> = {
-    'nb2':      { provider: 'fal-nb2',          quality: 'low'    },
     'nb21':     { provider: 'nano-banana-21',    quality: 'low'    },
     'nb2-pro':  { provider: 'nano-banana-pro',   quality: 'high'   },
     'seedream': { provider: 'seedream-pro',     quality: 'low'    },
@@ -42,7 +41,6 @@ const MODE_PRESETS: Record<GenerationMode, { provider: ImageModelProvider; quali
 // Herkunft ist die Information, die bei der Wahl tatsächlich weiterhilft.
 // Anbieternamen sind Eigennamen und in beiden Sprachen gleich.
 const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[] = [
-    { value: 'nb2',      label: 'Nano Banana 2',     hint: 'Google'    },
     { value: 'nb21',     label: 'Nano Banana 2.1',   hint: 'Google'    },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',   hint: 'Google'    },
     { value: 'seedream', label: 'Seedream 5 Pro',    hint: 'ByteDance' },
@@ -50,7 +48,6 @@ const MODE_OPTIONS_DE: { value: GenerationMode; label: string; hint?: string }[]
 ];
 
 const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[] = [
-    { value: 'nb2',      label: 'Nano Banana 2',    hint: 'Google'    },
     { value: 'nb21',     label: 'Nano Banana 2.1',  hint: 'Google'    },
     { value: 'nb2-pro',  label: 'Nano Banana Pro',  hint: 'Google'    },
     { value: 'seedream', label: 'Seedream 5 Pro',   hint: 'ByteDance' },
@@ -58,10 +55,11 @@ const MODE_OPTIONS_EN: { value: GenerationMode; label: string; hint?: string }[]
 ];
 
 function detectMode(s: GenerationSettings): GenerationMode {
-    if (s.provider === 'nano-banana-21') return 'nb21';
     if (s.provider === 'nano-banana-pro') return 'nb2-pro';
+    // 'fal-nb2' ist abgekündigt und nicht mehr wählbar. Eine noch gespeicherte
+    // Einstellung zeigt auf 2.1, damit die Auswahl nicht leer bleibt.
+    if (s.provider === 'nano-banana-21' || s.provider === 'fal-nb2') return 'nb21';
     if (s.provider === 'seedream-pro') return 'seedream';
-    if (s.provider === 'fal-nb2') return 'nb2';
     return 'gpt';
 }
 

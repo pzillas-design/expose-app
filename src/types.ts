@@ -167,7 +167,7 @@ export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
   // NB2 is faster, cheaper, and produces consistently usable real-estate edits.
   // Users who prefer GPT Image 2 can switch in the settings modal; once they do,
   // the migration flag prevents auto-revert on next reload.
-  provider:     'fal-nb2',
+  provider:     'nano-banana-21',
   resolution:   'nb2-1k',
   quality:      'high',
   aspectRatio:  'auto',
@@ -270,15 +270,17 @@ export const RESOLUTION_TIERS: { id: GenerationQuality; label: string; px: numbe
  * advertised price can never drift from what we actually charge.
  */
 export const getPublicPriceTiers = (lang: 'de' | 'en' = 'de') =>
-  RESOLUTION_TIERS.map(t => ({
+  // 2.1 kennt keine 512px-Stufe — sie wird intern auf 1K gehoben und wäre in
+  // einer öffentlichen Preisliste eine zweite Zeile zum selben Preis.
+  RESOLUTION_TIERS.filter(t => t.id !== 'nb2-05k').map(t => ({
     res: t.label,
-    price: formatPriceEur(NB2_PRICES_USD[t.id] ?? 0, lang),
+    price: formatPriceEur(NB21_PRICES_USD[t.id] ?? 0, lang),
     label: `${lang === 'de' ? 'bis' : 'up to'} ${t.px} × ${t.px} px`,
   }));
 
 /** Cheapest price across the default (NB2) tariff — for "from X €" claims. */
 export const getLowestPublicPrice = (lang: 'de' | 'en' = 'de'): string =>
-  formatPriceEur(Math.min(...Object.values(NB2_PRICES_USD)), lang);
+  formatPriceEur(Math.min(...Object.values(NB21_PRICES_USD)), lang);
 
 // --- ADMIN TYPES ---
 
