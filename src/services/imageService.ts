@@ -711,8 +711,49 @@ export const imageService = {
         });
 
         groups.forEach((items, groupId) => {
-            // Within a row, sort newest to oldest (consistent with gallery-level sorting)
-            items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            // Seit man mehrere Bilder in denselben Stapel legen kann, enthält eine
+            // Reihe oft mehrere Originale samt Varianten. Eine reine Sortierung
+            // nach Datum mischt die dann: Die neueste Variante von Bild 2 landet
+            // vor Bild 1 und seinen Varianten.
+            //
+            // Stattdessen erst nach Herkunft gruppieren, dann sortieren:
+            //   1v2, 1v1, 1, 2v2, 2v1, 2
+            // Die Originale erscheinen in Upload-Reihenfolge, innerhalb einer
+            // Abstammung steht die neueste Variante vorn und das Original hinten.
+            const inRow = new Set(items.map(i => i.id));
+            const byId = new Map(items.map(i => [i.id, i]));
+
+            /** Wurzel der Abstammung, begrenzt auf diese Reihe. */
+            const rootOf = (img: CanvasImage): string => {
+                let cur = img;
+                const seen = new Set<string>([cur.id]);
+                while (cur.parentId && inRow.has(cur.parentId) && !seen.has(cur.parentId)) {
+                    seen.add(cur.parentId);
+                    const next = byId.get(cur.parentId);
+                    if (!next) break;
+                    cur = next;
+                }
+                return cur.id;
+            };
+
+            const rootCache = new Map<string, string>();
+            const rootFor = (img: CanvasImage): string => {
+                let r = rootCache.get(img.id);
+                if (r === undefined) { r = rootOf(img); rootCache.set(img.id, r); }
+                return r;
+            };
+
+            items.sort((a, b) => {
+                const ra = rootFor(a), rb = rootFor(b);
+                if (ra !== rb) {
+                    // Originale in Upload-Reihenfolge, ältestes zuerst.
+                    const ta = byId.get(ra)?.createdAt ?? 0;
+                    const tb = byId.get(rb)?.createdAt ?? 0;
+                    return ta - tb;
+                }
+                // Innerhalb einer Abstammung: neueste Variante zuerst.
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            });
 
             // Determine row title from root or first visible item
             let rowTitle = 'untitled';
