@@ -283,6 +283,22 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const { confirm } = useItemDialog();
 
     // Track generating children of current image
+    /**
+     * Schreibt der Nutzer gerade in ein Feld (Prompt, Titel)? Dann darf die
+     * Ansicht nicht wechseln — der Cursor würde mitten im Satz herausgerissen.
+     * Gilt für beide Sprünge: zum Platzhalter beim Start und zum Ergebnis am
+     * Ende. Dieselbe Regel steckt in useGeneration für den dortigen Pfad.
+     */
+    const isTypingNow = useCallback((): boolean => {
+        if (typeof document === 'undefined') return false;
+        const el = document.activeElement as HTMLElement | null;
+        if (!el) return false;
+        const tag = el.tagName;
+        return tag === 'TEXTAREA'
+            || (tag === 'INPUT' && !['checkbox', 'radio', 'button', 'submit', 'range', 'file'].includes((el as HTMLInputElement).type))
+            || el.isContentEditable;
+    }, []);
+
     const generatingChild = useMemo(() =>
         img ? images.find(i => i.parentId === img.id && i.isGenerating) : undefined,
         [images, img]
@@ -297,9 +313,19 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                 // New generation started — record starting position and reset nav flag
                 prevGeneratingChildRef.current = { childId: generatingChild.id, parentId: selectedId };
                 navHappenedDuringGenRef.current = false;
+                // Direkt auf den Platzhalter wechseln, damit der Fortschritt dort
+                // zu sehen ist, wo das Ergebnis erscheint — statt auf dem Quellbild
+                // zu warten und am Ende wegzuspringen. Beim Tippen bleibt die
+                // Ansicht stehen, gleiche Regel wie beim Sprung nach Abschluss.
+                if (selectedId !== generatingChild.id && !isTypingNow()) {
+                    onSelectImage(generatingChild.id);
+                }
             } else if (prevGeneratingChildRef.current.childId === generatingChild.id
-                       && selectedId !== prevGeneratingChildRef.current.parentId) {
-                // User navigated while this generation was in progress
+                       && selectedId !== prevGeneratingChildRef.current.parentId
+                       && selectedId !== generatingChild.id) {
+                // User navigated while this generation was in progress.
+                // Der Platzhalter selbst zählt nicht — dorthin haben wir oben
+                // selbst gewechselt, das ist keine Nutzeraktion.
                 navHappenedDuringGenRef.current = true;
             }
         } else if (prevGeneratingChildRef.current) {
@@ -309,22 +335,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             navHappenedDuringGenRef.current = false;
             if (userNavigated) return;
             const finishedImage = imageMap.get(childId);
-            // Schreibt der Nutzer gerade (Prompt, Titel), nicht wegspringen —
-            // der Cursor würde mitten im Satz aus dem Feld gerissen. Gleiche
-            // Regel wie in useGeneration; dies ist der zweite, unabhängige
-            // Sprungpfad und muss sie ebenfalls befolgen.
-            const el = typeof document !== 'undefined' ? document.activeElement as HTMLElement | null : null;
-            const isTyping = !!el && (
-                el.tagName === 'TEXTAREA' ||
-                (el.tagName === 'INPUT' && !['checkbox','radio','button','submit','range','file'].includes((el as HTMLInputElement).type)) ||
-                el.isContentEditable
-            );
-            if (finishedImage && !finishedImage.isGenerating && !isTyping) {
+            // Steht die Ansicht schon auf dem Platzhalter, ist nichts zu tun —
+            // er wird an Ort und Stelle zum fertigen Bild.
+            if (finishedImage && !finishedImage.isGenerating && !isTypingNow()) {
                 setIsSideSheetVisible(false);
                 onSelectImage(childId);
             }
         }
-    }, [generatingChild, images, selectedId, onSelectImage]);
+    }, [generatingChild, images, selectedId, onSelectImage, isTypingNow]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
 
     // Keep blob visible after generation completes until the real image has loaded
