@@ -717,9 +717,9 @@ export const imageService = {
             // vor Bild 1 und seinen Varianten.
             //
             // Stattdessen erst nach Herkunft gruppieren, dann sortieren:
-            //   1v2, 1v1, 1, 2v2, 2v1, 2
-            // Die Originale erscheinen in Upload-Reihenfolge, innerhalb einer
-            // Abstammung steht die neueste Variante vorn und das Original hinten.
+            //   2v2, 2v1, 2, 1v2, 1v1, 1
+            // Das zuletzt hinzugefügte Original steht oben, innerhalb einer
+            // Abstammung die neueste Variante vorn und das Original hinten.
             const inRow = new Set(items.map(i => i.id));
             const byId = new Map(items.map(i => [i.id, i]));
 
@@ -746,10 +746,11 @@ export const imageService = {
             items.sort((a, b) => {
                 const ra = rootFor(a), rb = rootFor(b);
                 if (ra !== rb) {
-                    // Originale in Upload-Reihenfolge, ältestes zuerst.
+                    // Zuletzt hinzugefügtes Original oben — wie die Galerie
+                    // insgesamt, die ebenfalls das Neueste zuerst zeigt.
                     const ta = byId.get(ra)?.createdAt ?? 0;
                     const tb = byId.get(rb)?.createdAt ?? 0;
-                    return ta - tb;
+                    return tb - ta;
                 }
                 // Innerhalb einer Abstammung: neueste Variante zuerst.
                 return (b.createdAt || 0) - (a.createdAt || 0);
