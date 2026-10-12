@@ -21,7 +21,7 @@ import { usePresets } from './usePresets';
 import { useAutoSave } from './useAutoSave';
 import { useMobile } from './useMobile';
 import { setNotificationsEnabled } from '../utils/notifications';
-import { stackIdOf, flattenRows } from '../utils/stacks';
+import { stackIdOf, flattenRows, sortRowItems } from '../utils/stacks';
 
 export const useNanoController = () => {
     const { showToast } = useToast();
@@ -519,7 +519,9 @@ export const useNanoController = () => {
             const idx = prev.findIndex(r => r.items.some(i => stackIdOf(i) === folderId));
             if (idx === -1) return prev;
             const newRows = [...prev];
-            newRows[idx] = { ...newRows[idx], items: [composite, ...newRows[idx].items] };
+            // Gleiche Sortierung wie beim Laden, sonst springt die Komposition
+            // beim nächsten Neuladen an eine andere Stelle.
+            newRows[idx] = { ...newRows[idx], items: sortRowItems([composite, ...newRows[idx].items]) };
             return newRows;
         });
 

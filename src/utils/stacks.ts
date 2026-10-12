@@ -79,6 +79,34 @@ const compareWithinRow = (
  * und die Pfeile in der Detailansicht leiten sich alle davon ab. Damit laufen
  * sie nicht mehr auseinander.
  */
+/**
+ * Sortiert die Bilder EINER Reihe.
+ *
+ * Auch für optimistische Einfügungen gedacht: Wer einen Platzhalter in eine
+ * bestehende Reihe setzt, soll ihn an dieselbe Stelle setzen, an der er nach
+ * dem nächsten Laden landet. Sonst springt er beim Neuladen sichtbar um.
+ */
+export const sortRowItems = (items: CanvasImage[]): CanvasImage[] => {
+    const byId = new Map(items.map(i => [i.id, i]));
+    const inRow = new Set(items.map(i => i.id));
+    const rootCache = new Map<string, string>();
+    const rootIdOf = (img: CanvasImage): string => {
+        const cached = rootCache.get(img.id);
+        if (cached !== undefined) return cached;
+        let cur = img;
+        const seen = new Set<string>([cur.id]);
+        while (cur.parentId && inRow.has(cur.parentId) && !seen.has(cur.parentId)) {
+            seen.add(cur.parentId);
+            const next = byId.get(cur.parentId);
+            if (!next) break;
+            cur = next;
+        }
+        rootCache.set(img.id, cur.id);
+        return cur.id;
+    };
+    return [...items].sort((a, b) => compareWithinRow(a, b, rootIdOf, byId));
+};
+
 export const buildRows = (images: CanvasImage[]): ImageRow[] => {
     const byId = new Map(images.map(img => [img.id, img]));
 
@@ -93,37 +121,16 @@ export const buildRows = (images: CanvasImage[]): ImageRow[] => {
     const rows: ImageRow[] = [];
 
     groups.forEach((items, groupId) => {
-        // Wurzel der Abstammung, begrenzt auf die eigene Reihe. Ist das
-        // Quellbild inzwischen gelöscht oder abgelaufen, gilt das Bild als
-        // eigenes Original, statt die Gruppierung zu sprengen.
-        const inRow = new Set(items.map(i => i.id));
-        const rootCache = new Map<string, string>();
-        const rootIdOf = (img: CanvasImage): string => {
-            const cached = rootCache.get(img.id);
-            if (cached !== undefined) return cached;
-            let cur = img;
-            const seen = new Set<string>([cur.id]);
-            while (cur.parentId && inRow.has(cur.parentId) && !seen.has(cur.parentId)) {
-                seen.add(cur.parentId);
-                const next = byId.get(cur.parentId);
-                if (!next) break;
-                cur = next;
-            }
-            rootCache.set(img.id, cur.id);
-            return cur.id;
-        };
-
-        items.sort((a, b) => compareWithinRow(a, b, rootIdOf, byId));
-
+        const sorted = sortRowItems(items);
         const root = byId.get(groupId);
-        const titleSource = root ?? items[0];
+        const titleSource = root ?? sorted[0];
         rows.push({
             id: `${groupId}_row`,
             title: titleSource?.baseName || titleSource?.title || 'untitled',
             // Nach dem Original datiert, damit ein Stapel durch neue Varianten
             // nicht nach oben wandert.
-            createdAt: (root ?? items[items.length - 1])?.createdAt ?? items[0]?.createdAt,
-            items,
+            createdAt: (root ?? sorted[sorted.length - 1])?.createdAt ?? sorted[0]?.createdAt,
+            items: sorted,
         });
     });
 

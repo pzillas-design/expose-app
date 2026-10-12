@@ -11,7 +11,7 @@ import { loadGenerationSettings } from '@/utils/generationSettings';
 import { sendGenerationCompleteNotification } from '@/utils/notifications';
 import { trackImageGenerated } from '@/utils/analytics';
 import { logError } from '@/services/errorLogger';
-import { stackIdOf } from '@/utils/stacks';
+import { stackIdOf, sortRowItems } from '@/utils/stacks';
 
 interface UseGenerationProps {
     rows: ImageRow[];
@@ -548,7 +548,10 @@ export const useGeneration = ({
             const newRows = [...prev];
             const idx = newRows.findIndex(r => r.items.some(i => i.id === sourceImage.id));
             if (idx === -1) return prev;
-            newRows[idx] = { ...newRows[idx], items: [placeholder, ...newRows[idx].items] };
+            // Über dieselbe Sortierung einfügen wie beim Laden — sonst sitzt der
+            // Platzhalter bis zum nächsten Neuladen an einer anderen Stelle und
+            // springt dann sichtbar um.
+            newRows[idx] = { ...newRows[idx], items: sortRowItems([placeholder, ...newRows[idx].items]) };
             return newRows;
         });
 

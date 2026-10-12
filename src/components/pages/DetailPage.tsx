@@ -203,13 +203,30 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     // O(1) lookups via Map instead of O(n) find/findIndex on every render
     const imageMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
-    const imageIndexMap = useMemo(() => new Map(images.map((i, idx) => [i.id, idx])), [images]);
+
+    // Die EINE Liste, auf der sich Pfeile, Thumbnail-Leiste und Nachladen
+    // bewegen. Vorher stand dieser Filter dreimal im File und die Pfeile
+    // benutzten ihn gar nicht — ein Bild ohne Vorschau war damit per Pfeil
+    // erreichbar, in der Leiste aber unsichtbar, und der Markierungsindex
+    // verschob sich.
+    //
+    // Platzhalter gehören ausdrücklich dazu: Sie sind vollwertige Einträge,
+    // nur eben noch ohne Bild. Würden sie fehlen, übersprängen die Pfeile
+    // gerade entstehende Varianten.
+    const navigableImages = useMemo(
+        () => images.filter(i => i.isGenerating || i.thumbSrc || i.src),
+        [images],
+    );
+    const imageIndexMap = useMemo(
+        () => new Map(navigableImages.map((i, idx) => [i.id, idx])),
+        [navigableImages],
+    );
 
     // Thumbstrip: render ALL displayable images — stable DOM width prevents layout shifts from mx-auto
     // opacity-0 items beyond ±8 are pointer-events-none so they cost nothing at runtime
     const stripImages = useMemo(() => {
-        const displayable = images.filter(i => i.isGenerating || i.thumbSrc || i.src);
-        const currentIdx = displayable.findIndex(i => i.id === selectedId);
+        const displayable = navigableImages;
+        const currentIdx = imageIndexMap.get(selectedId) ?? -1;
         return displayable.map((img, index) => ({
             img,
             distance: currentIdx === -1 ? 0 : Math.abs(index - currentIdx),
@@ -529,11 +546,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // the end of the loaded list, so non-scroll navigation still triggers paging.
     useEffect(() => {
         if (!hasMore || !onLoadMore) return;
-        const displayable = images.filter(i => i.isGenerating || i.thumbSrc || i.src);
-        const idx = displayable.findIndex(i => i.id === selectedId);
+        const idx = imageIndexMap.get(selectedId) ?? -1;
         if (idx === -1) return;
-        if (displayable.length - idx <= 20) onLoadMore();
-    }, [selectedId, images, hasMore, onLoadMore]);
+        if (navigableImages.length - idx <= 20) onLoadMore();
+    }, [selectedId, navigableImages, imageIndexMap, hasMore, onLoadMore]);
 
     // Track actual image dimensions — initialized from DB values, updated from real load.
     // Also preloads via Image() so displayBox can be computed even when the visible <img>
@@ -682,15 +698,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const navigate = useCallback((d: 1 | -1) => {
         const n = idx + d;
-        if (n < 0 || n >= images.length) return;
-        const from = images[idx];
-        const to = images[n];
+        if (n < 0 || n >= navigableImages.length) return;
+        const from = navigableImages[idx];
+        const to = navigableImages[n];
         // Gleicher Stapel → sofort, damit der Vergleich nicht gestört wird.
         const crossesStack = !!from && !!to && stackIdOf(from) !== stackIdOf(to);
         suppressEntryAnimRef.current = true;
         transitionRef.current = crossesStack ? (d === 1 ? 'next' : 'prev') : 'none';
         onSelectImage(to.id);
-    }, [idx, images, onSelectImage]);
+    }, [idx, navigableImages, onSelectImage]);
 
     // Keyboard Navigation
     useEffect(() => {
