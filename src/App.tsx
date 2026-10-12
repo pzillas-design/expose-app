@@ -98,6 +98,12 @@ export function App() {
     // Zuletzt verlassener Stapel — die Galerie scrollt ihn beim Aufbau in die
     // erste sichtbare Zeile, damit man dort weitermacht, wo man aufgehört hat.
     const [returnToStackId, setReturnToStackId] = React.useState<string | null>(null);
+    // Zuletzt betrachtetes Bild. Muss getrennt gemerkt werden: activeId wird
+    // beim Verlassen der Detailansicht auf null gesetzt, ist also leer, wenn
+    // die Galerie rendert. Stapel fiel das nicht auf, weil sie über
+    // returnCoverId einen eigenen Weg haben — Einzelbilder hingen allein an
+    // activeId und bekamen deshalb nie eine Rückkehr-Animation.
+    const [lastViewedImageId, setLastViewedImageId] = React.useState<string | null>(null);
     const [voiceFocusIndex, setVoiceFocusIndex] = React.useState<number | null>(null);
     const [isVoiceUploadOpen, setIsVoiceUploadOpen] = React.useState(false);
     const [voiceDownloadImage, setVoiceDownloadImage] = React.useState<{ id: string; name: string } | null>(null);
@@ -257,6 +263,7 @@ export function App() {
                     navigate(`/image/${state.activeId}`);
                     return;
                 }
+                setLastViewedImageId(state.activeId);
                 actions.handleSelection(null, false, false);
             }
             return;
@@ -1367,7 +1374,7 @@ export function App() {
                                     onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate("/")}
                                     returnToStackId={returnToStackId}
                                     onReturnToStackHandled={() => setReturnToStackId(null)}
-                                    lastViewedId={state.activeId}
+                                    lastViewedId={lastViewedImageId}
                                     state={state}
                                     actions={actions}
                                     t={t}
@@ -1425,7 +1432,7 @@ export function App() {
                                     }}
                                     expandedGroupId={expandedGroupId}
                                     onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate("/")}
-                                    lastViewedId={state.activeId}
+                                    lastViewedId={lastViewedImageId}
                                     state={state}
                                     actions={actions}
                                     t={t}
