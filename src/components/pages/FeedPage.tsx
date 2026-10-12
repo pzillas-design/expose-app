@@ -566,15 +566,24 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return row.items[0].id;
     }, [lastViewedId, displayImages, rows]);
 
-    // Gate the return-from-detail animation so it plays only once per mount.
-    // Without this, after returnCoverId (group-close animation) clears, lastViewedRowCoverId
-    // kicks in and causes a second spurious zoom animation on a different tile.
-    // FeedPage remounts fresh on each grid entry, so useState(true) → false after 600ms is correct.
+    // Begrenzt die Rückkehr-Animation auf einen Durchlauf. Ohne das setzt nach
+    // dem Schließen eines Stapels (returnCoverId) zusätzlich lastViewedRowCoverId
+    // ein und animiert eine zweite, falsche Kachel.
+    //
+    // Das Zeitfenster startet erst, wenn Reihen da sind — vorher gibt es nichts
+    // zu animieren. Beim Start am Aufbau ging die Animation verloren, sobald
+    // die Bilder länger als 600 ms brauchten: Das Fenster war dann schon zu,
+    // wenn die Kachel erschien. Bei Einzelbildern fiel das auf, weil deren
+    // Rückweg allein von diesem Fenster abhängt — der Stapel-Weg setzt seine
+    // Kachel ausdrücklich und ist davon unberührt.
     const [lastViewedAnimActive, setLastViewedAnimActive] = React.useState(true);
+    const animWindowStartedRef = React.useRef(false);
     React.useEffect(() => {
+        if (animWindowStartedRef.current || rows.length === 0) return;
+        animWindowStartedRef.current = true;
         const t = setTimeout(() => setLastViewedAnimActive(false), 600);
         return () => clearTimeout(t);
-    }, []); // intentionally empty: run once per mount
+    }, [rows.length]);
 
     // Scroll the last-viewed cover tile into view when returning from detail
     const didScrollRef = React.useRef(false);
