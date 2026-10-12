@@ -829,7 +829,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                         ? (selectedIdSet.has(img.id) ? 0 : 90 + Math.min(idx * 22, 260))
                                                         : effectiveGroupId ? Math.min(idx * 35, 350) : undefined
                                                 }
-                                                isLastViewed={img.id === revealId || (!effectiveGroupId && !renderSelectMode && img.id === (returnCoverId ?? ''))}
+                                                // Der Rückkehr-Zoom galt bisher nur in der Galerie
+                                                // (!effectiveGroupId) — aus der Detailansicht zurück in
+                                                // einen Stapel blieb er deshalb aus. Die Kachel ist dort
+                                                // genauso vorhanden, der Ausschluss war nicht begründet.
+                                                // Im Auswahlmodus bleibt er aus: Dort wird markiert,
+                                                // nicht navigiert.
+                                                isLastViewed={img.id === revealId || (!renderSelectMode && img.id === (returnCoverId ?? ''))}
                                                 isNew={isNew}
                                                 daysRemaining={daysLeft}
                                                 currentLang={state?.currentLang}
