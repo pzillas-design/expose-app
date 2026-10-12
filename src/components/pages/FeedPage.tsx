@@ -566,33 +566,30 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return row.items[0].id;
     }, [lastViewedId, displayImages, rows]);
 
-    // Begrenzt die Rückkehr-Animation auf einen Durchlauf. Ohne das setzt nach
-    // dem Schließen eines Stapels (returnCoverId) zusätzlich lastViewedRowCoverId
-    // ein und animiert eine zweite, falsche Kachel.
+    // Rückkehr aus der Detailansicht — exakt derselbe Weg wie die Rückkehr aus
+    // einem Stapel. Vorher war er schwächer gebaut und blieb deshalb hinter
+    // dem Stapel-Verhalten zurück:
     //
-    // Das Zeitfenster startet erst, wenn Reihen da sind — vorher gibt es nichts
-    // zu animieren. Beim Start am Aufbau ging die Animation verloren, sobald
-    // die Bilder länger als 600 ms brauchten: Das Fenster war dann schon zu,
-    // wenn die Kachel erschien. Bei Einzelbildern fiel das auf, weil deren
-    // Rückweg allein von diesem Fenster abhängt — der Stapel-Weg setzt seine
-    // Kachel ausdrücklich und ist davon unberührt.
-    const [lastViewedAnimActive, setLastViewedAnimActive] = React.useState(true);
-    const animWindowStartedRef = React.useRef(false);
-    React.useEffect(() => {
-        if (animWindowStartedRef.current || rows.length === 0) return;
-        animWindowStartedRef.current = true;
-        const t = setTimeout(() => setLastViewedAnimActive(false), 600);
-        return () => clearTimeout(t);
-    }, [rows.length]);
-
-    // Scroll the last-viewed cover tile into view when returning from detail
-    const didScrollRef = React.useRef(false);
-    React.useEffect(() => {
-        if (!lastViewedRowCoverId || didScrollRef.current) return;
-        // Return from detail view → put the origin row at the top of the viewport.
-        didScrollRef.current = true;
+    //   - Er löste nur den Scroll aus, nie den Zoom. Der hing stattdessen an
+    //     einem Zeitfenster nach dem Aufbau — ein Wettlauf mit dem Laden, den
+    //     die Bilder regelmäßig gewannen.
+    //   - Er merkte sich "erledigt", bevor die Kachel überhaupt existierte.
+    //     War sie noch nicht da, war der eine Versuch verbraucht.
+    //   - Er lief nach dem Zeichnen statt davor, was den Sprung sichtbar macht.
+    //
+    // Jetzt: vor dem Zeichnen, wartet auf die Kachel, löst Zoom und Scroll
+    // gemeinsam aus, und gilt erst dann als erledigt.
+    const handledLastViewedRef = React.useRef<string | null>(null);
+    React.useLayoutEffect(() => {
+        if (!lastViewedRowCoverId) return;
+        if (handledLastViewedRef.current === lastViewedRowCoverId) return;
+        // Steht die Kachel noch nicht in den Reihen, übernimmt der nächste Durchlauf.
+        if (!rows.some(r => r.items.some(i => i.id === lastViewedRowCoverId))) return;
+        handledLastViewedRef.current = lastViewedRowCoverId;
+        setReturnCoverId(lastViewedRowCoverId);
+        setTimeout(() => setReturnCoverId(null), 600);
         scrollTileToTop(lastViewedRowCoverId);
-    }, [lastViewedRowCoverId, displayImages, scrollTileToTop]);
+    }, [lastViewedRowCoverId, rows, scrollTileToTop]);
 
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -832,7 +829,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                         ? (selectedIdSet.has(img.id) ? 0 : 90 + Math.min(idx * 22, 260))
                                                         : effectiveGroupId ? Math.min(idx * 35, 350) : undefined
                                                 }
-                                                isLastViewed={img.id === revealId || (!effectiveGroupId && !renderSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? ''))}
+                                                isLastViewed={img.id === revealId || (!effectiveGroupId && !renderSelectMode && img.id === (returnCoverId ?? ''))}
                                                 isNew={isNew}
                                                 daysRemaining={daysLeft}
                                                 currentLang={state?.currentLang}
