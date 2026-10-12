@@ -195,13 +195,22 @@ html:not(.dark) {
 
 @keyframes feed-zoom-return {
   from {
-    opacity: 0.6;
-    transform: scale(1.10);
+    opacity: 0.5;
+    transform: scale(1.28);
   }
 
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Ohne Bewegung bleibt die Einblendung — der Blick wird weiterhin zur
+     richtigen Kachel geführt, nur ohne Zoom. */
+  @keyframes feed-zoom-return {
+    from { opacity: 0.5; }
+    to   { opacity: 1; }
   }
 }
 

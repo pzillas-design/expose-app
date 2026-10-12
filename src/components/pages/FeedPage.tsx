@@ -83,9 +83,11 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     // Set the 'from' keyframe values as inline style so the very first paint
                     // already shows the zoomed-in state — avoids the brief normal-size flash
                     // that occurs before the CSS animation engine kicks in.
-                    transform: 'scale(1.1)',
-                    opacity: 0.6,
-                    animation: 'feed-zoom-return 400ms cubic-bezier(0.25,1,0.5,1) both',
+                    // MUSS mit dem Keyframe feed-zoom-return übereinstimmen —
+                    // sonst blitzt vor dem Start der Animation ein Zwischenwert auf.
+                    transform: 'scale(1.28)',
+                    opacity: 0.5,
+                    animation: 'feed-zoom-return 480ms cubic-bezier(0.25,1,0.5,1) both',
                 }
                 : staggerDelay !== undefined
                     ? { animation: `feed-fade-in 280ms ${staggerDelay}ms both ease-out` }
