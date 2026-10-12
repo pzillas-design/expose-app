@@ -280,6 +280,9 @@ interface FeedPageProps {
     expandedGroupId: string | null;
     onExpandedGroupChange: (id: string | null) => void;
     lastViewedId?: string | null;
+    /** Stapel, den der Nutzer gerade verlassen hat — wird in die erste Zeile gescrollt. */
+    returnToStackId?: string | null;
+    onReturnToStackHandled?: () => void;
     onScrollProgress?: (p: number) => void;
     voiceFocusIndex?: number | null;
     showComposer?: boolean;
@@ -288,7 +291,7 @@ interface FeedPageProps {
     columnsOverride?: number;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer, columnsOverride }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, returnToStackId, onReturnToStackHandled, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer, columnsOverride }) => {
     // URL-based fallback: expandedGroupId may still be null on first render after /stack/:id navigation
     const effectiveGroupId = expandedGroupId || (
         typeof window !== 'undefined' && window.location.pathname.startsWith('/stack/')
@@ -521,6 +524,22 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         };
         requestAnimationFrame(tryScroll);
     }, []);
+
+    // Rückkehr aus einem Stapel über den Routenwechsel: Die ID kommt von App,
+    // weil sie den Neuaufbau dieser Komponente überleben muss. Greift einmal
+    // pro Rückkehr, danach meldet die Komponente zurück und App vergisst sie.
+    const handledReturnRef = React.useRef<string | null>(null);
+    React.useLayoutEffect(() => {
+        if (!returnToStackId || handledReturnRef.current === returnToStackId) return;
+        const row = rows.find(r => r.id === returnToStackId);
+        const cover = row?.items[0];
+        if (!cover) return; // Reihen noch nicht geladen — nächster Durchlauf
+        handledReturnRef.current = returnToStackId;
+        setReturnCoverId(cover.id);
+        setTimeout(() => setReturnCoverId(null), 500);
+        scrollTileToTop(cover.id);
+        onReturnToStackHandled?.();
+    }, [returnToStackId, rows, scrollTileToTop, onReturnToStackHandled]);
 
     React.useLayoutEffect(() => {
         if (prevExpandedGroupId.current && !expandedGroupId) {

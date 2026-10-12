@@ -95,6 +95,9 @@ export function App() {
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
     const [feedSideSheetVisible, setFeedSideSheetVisible] = React.useState(false);
     const [expandedGroupId, setExpandedGroupId] = React.useState<string | null>(null);
+    // Zuletzt verlassener Stapel — die Galerie scrollt ihn beim Aufbau in die
+    // erste sichtbare Zeile, damit man dort weitermacht, wo man aufgehört hat.
+    const [returnToStackId, setReturnToStackId] = React.useState<string | null>(null);
     const [voiceFocusIndex, setVoiceFocusIndex] = React.useState<number | null>(null);
     const [isVoiceUploadOpen, setIsVoiceUploadOpen] = React.useState(false);
     const [voiceDownloadImage, setVoiceDownloadImage] = React.useState<{ id: string; name: string } | null>(null);
@@ -234,7 +237,15 @@ export function App() {
                 setExpandedGroupId(stackId);
             }
         } else if (location.pathname === '/') {
-            if (expandedGroupId) setExpandedGroupId(null);
+            if (expandedGroupId) {
+                // Welchen Stapel wir gerade verlassen, muss hier gemerkt werden:
+                // '/' und '/stack/:id' sind getrennte Routen, FeedPage wird beim
+                // Wechsel neu aufgebaut. Ein Ref INNERHALB von FeedPage ist dann
+                // wieder leer — deshalb griff die Scroll-Wiederherstellung bisher
+                // nur manchmal, nämlich wenn kein Routenwechsel stattfand.
+                setReturnToStackId(expandedGroupId);
+                setExpandedGroupId(null);
+            }
         }
 
         // Sync Detail view from URL
@@ -1354,6 +1365,8 @@ export function App() {
                                     }}
                                     expandedGroupId={expandedGroupId}
                                     onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate("/")}
+                                    returnToStackId={returnToStackId}
+                                    onReturnToStackHandled={() => setReturnToStackId(null)}
                                     lastViewedId={state.activeId}
                                     state={state}
                                     actions={actions}
