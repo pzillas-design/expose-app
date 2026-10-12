@@ -10,6 +10,7 @@ import { Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { FeedHeroSection } from '../layout/FeedHeroSection';
 import { LayerComposer } from '@/components/composer/LayerComposer';
+import { GeneratingRing } from '@/components/ui/GeneratingRing';
 
 /* ── TTL helpers ── */
 // Muss mit DEFAULT_TTL_DAYS in supabase/functions/cleanup-expired-images
@@ -149,7 +150,11 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                 );
                             })()}
                             <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-                                <Loader2 className="w-7 h-7 animate-[spin_3s_linear_infinite] text-white/70" />
+                                <GeneratingRing
+                                    generationStartTime={img.generationStartTime}
+                                    estimatedDuration={img.estimatedDuration}
+                                    size={28}
+                                />
                             </div>
                         </>
                     ) : previewSrc ? (
