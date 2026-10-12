@@ -9,7 +9,8 @@ import { EditorCanvas } from '@/components/canvas/EditorCanvas';
 import { ObjectsTab } from '@/components/sidesheet/ObjectsTab';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { GenerationProgressBar } from '@/components/canvas/ImageItem';
-import { useToast } from '@/components/ui/Toast';
+import { useToast } from '@/components/ui/Toast';import { stackIdOf } from '@/utils/stacks';
+
 
 /* ── Circular progress for thumb strip generating placeholders ── */
 const ThumbCircularProgress: React.FC<{ startTime?: number; estimatedDuration?: number }> = ({ startTime, estimatedDuration }) => {
@@ -252,8 +253,18 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // intermediate re-renders during loading (imgNaturalDims, displayBox, etc.) also stay suppressed.
     const suppressEntryAnimRef = useRef(false);
     useEffect(() => { if (isMainLoaded) suppressEntryAnimRef.current = false; }, [isMainLoaded]);
+
+    // Art des Übergangs beim Bildwechsel. Innerhalb eines Stapels vergleicht
+    // man Varianten — jede Bewegung stört dabei, also wird sofort gewechselt.
+    // Beim Wechsel in einen anderen Stapel macht ein kurzes Wischen spürbar,
+    // dass man das Objekt verlassen hat.
+    const transitionRef = useRef<'none' | 'next' | 'prev'>('none');
+    const [transition, setTransition] = useState<'none' | 'next' | 'prev'>('none');
+    useEffect(() => { setTransition(transitionRef.current); }, [selectedId]);
+
     const handleSelectWithin = useCallback((id: string) => {
         suppressEntryAnimRef.current = true;
+        transitionRef.current = 'none';
         onSelectImage(id);
     }, [onSelectImage]);
 
@@ -671,10 +682,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const navigate = useCallback((d: 1 | -1) => {
         const n = idx + d;
-        if (n >= 0 && n < images.length) {
-            suppressEntryAnimRef.current = true;
-            onSelectImage(images[n].id);
-        }
+        if (n < 0 || n >= images.length) return;
+        const from = images[idx];
+        const to = images[n];
+        // Gleicher Stapel → sofort, damit der Vergleich nicht gestört wird.
+        const crossesStack = !!from && !!to && stackIdOf(from) !== stackIdOf(to);
+        suppressEntryAnimRef.current = true;
+        transitionRef.current = crossesStack ? (d === 1 ? 'next' : 'prev') : 'none';
+        onSelectImage(to.id);
     }, [idx, images, onSelectImage]);
 
     // Keyboard Navigation
@@ -901,7 +916,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             <img
                                                 src={img.thumbSrc}
                                                 className={`w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-100 dark:brightness-50 scale-110' : ''}`}
-                                                style={suppressEntryAnimRef.current ? {} : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }}
+                                                style={
+                                                    transition !== 'none'
+                                                        ? { animation: `detail-img-swipe-${transition} 260ms cubic-bezier(0.25,1,0.5,1) both` }
+                                                        : suppressEntryAnimRef.current
+                                                            ? {}
+                                                            : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }
+                                                }
                                                 alt=""
                                             />
                                         </div>

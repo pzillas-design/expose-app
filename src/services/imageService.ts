@@ -3,6 +3,7 @@ import { storageService, THUMB_OPTIONS, THUMB_OPTIONS_KEY } from './storageServi
 import { CanvasImage, ImageRow } from '../types';
 import { slugify } from '../utils/stringUtils';
 import { generateId } from '../utils/ids';
+import { buildRows, stackIdOf } from '../utils/stacks';
 
 import { loadGenerationSettings } from '../utils/generationSettings';
 
@@ -74,7 +75,7 @@ export const imageService = {
             prompt: image.generationPrompt,
             user_draft_prompt: image.userDraftPrompt,
             parent_id: image.parentId,
-            folder_id: image.folderId ?? image.id,
+            folder_id: stackIdOf(image),
             annotations: cleanedAnnotations ? JSON.stringify(cleanedAnnotations) : null,
             generation_params: {
                 quality: image.quality,
@@ -300,7 +301,7 @@ export const imageService = {
             activeTemplateId: activeTemplateId || undefined,
             sourceImage: sourceImageForEdge,
             // folder_id of source so edge function can propagate it to the generated image
-            sourceFolderId: sourceImage?.folderId ?? sourceImage?.id ?? undefined,
+            sourceFolderId: sourceImage ? stackIdOf(sourceImage) : undefined,
             // Pass storage_path when available so the edge function downloads original
             // bytes directly (no JPEG recompression loss). Falls back to base64 in
             // payload.originalImage for blob URLs / images without a storage path.
@@ -461,7 +462,7 @@ export const imageService = {
             realWidth: genWidth,
             realHeight: genHeight,
             parentId: (result.parent_id ?? result.parentId) ?? (sourceImage.parentId ?? sourceImage.id),
-            folderId: result.folder_id || (sourceImage.folderId ?? sourceImage.id)
+            folderId: result.folder_id || stackIdOf(sourceImage)
         };
     },
 
@@ -522,6 +523,8 @@ export const imageService = {
             userDraftPrompt: record.user_draft_prompt || '',
             annotations: resolvedAnns,
             parentId: record.parent_id,
+            // Einziger Ort, an dem der Altbestand ohne folder_id ausgeglichen
+            // wird. Danach ist folderId immer gesetzt und stackIdOf() trivial.
             folderId: record.folder_id || record.parent_id || record.id,
             quality: record.generation_params?.quality || 'nb2-2k',
             activeTemplateId: record.generation_params?.activeTemplateId,
@@ -698,97 +701,7 @@ export const imageService = {
             loadedImages.push(skeleton);
         });
 
-        // 4. Group into Rows by folder_id (explicit, immutable stack root).
-        // Falls back to img.id for images without folder_id (pre-migration data).
-        const rows: ImageRow[] = [];
-        const imageMap = new Map<string, CanvasImage>(loadedImages.map(img => [img.id, img]));
-        const groups = new Map<string, CanvasImage[]>();
-
-        loadedImages.forEach(img => {
-            const groupId = img.folderId ?? img.id;
-            if (!groups.has(groupId)) groups.set(groupId, []);
-            groups.get(groupId)!.push(img);
-        });
-
-        groups.forEach((items, groupId) => {
-            // Seit man mehrere Bilder in denselben Stapel legen kann, enthält eine
-            // Reihe oft mehrere Originale samt Varianten. Eine reine Sortierung
-            // nach Datum mischt die dann: Die neueste Variante von Bild 2 landet
-            // vor Bild 1 und seinen Varianten.
-            //
-            // Stattdessen erst nach Herkunft gruppieren, dann sortieren:
-            //   2v2, 2v1, 2, 1v2, 1v1, 1
-            // Das zuletzt hinzugefügte Original steht oben, innerhalb einer
-            // Abstammung die neueste Variante vorn und das Original hinten.
-            const inRow = new Set(items.map(i => i.id));
-            const byId = new Map(items.map(i => [i.id, i]));
-
-            /** Wurzel der Abstammung, begrenzt auf diese Reihe. */
-            const rootOf = (img: CanvasImage): string => {
-                let cur = img;
-                const seen = new Set<string>([cur.id]);
-                while (cur.parentId && inRow.has(cur.parentId) && !seen.has(cur.parentId)) {
-                    seen.add(cur.parentId);
-                    const next = byId.get(cur.parentId);
-                    if (!next) break;
-                    cur = next;
-                }
-                return cur.id;
-            };
-
-            const rootCache = new Map<string, string>();
-            const rootFor = (img: CanvasImage): string => {
-                let r = rootCache.get(img.id);
-                if (r === undefined) { r = rootOf(img); rootCache.set(img.id, r); }
-                return r;
-            };
-
-            // Jeder Zweig muss bis zur ID durchentscheiden. Ein Vergleicher, der
-            // bei Gleichstand 0 liefert, ist über Gruppen hinweg nicht transitiv:
-            // Zwei Originale aus demselben Stapel-Upload tragen oft denselben
-            // Zeitstempel (Date.now() je Datei in einer Schleife), und sort()
-            // ergibt dann je nach Eingabereihenfolge ein anderes Ergebnis.
-            // In der Detailansicht äußert sich das als Schleife — die Pfeile
-            // springen zwischen zwei Bildern hin und her, weil die Reihenfolge
-            // zwischen zwei Renders kippt.
-            items.sort((a, b) => {
-                const ra = rootFor(a), rb = rootFor(b);
-                if (ra !== rb) {
-                    // Zuletzt hinzugefügtes Original oben — wie die Galerie
-                    // insgesamt, die ebenfalls das Neueste zuerst zeigt.
-                    const ta = byId.get(ra)?.createdAt ?? 0;
-                    const tb = byId.get(rb)?.createdAt ?? 0;
-                    if (ta !== tb) return tb - ta;
-                    return ra < rb ? -1 : ra > rb ? 1 : 0;
-                }
-                // Innerhalb einer Abstammung: neueste Variante zuerst.
-                const t = (b.createdAt || 0) - (a.createdAt || 0);
-                if (t !== 0) return t;
-                return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-            });
-
-            // Determine row title from root or first visible item
-            let rowTitle = 'untitled';
-            let rowCreatedAt = items[0].createdAt;
-
-            const root = imageMap.get(groupId);
-            if (root) {
-                rowTitle = root.baseName || root.title || 'untitled';
-                rowCreatedAt = root.createdAt;
-            } else {
-                rowTitle = items[0].baseName || items[0].title || 'untitled';
-            }
-
-            rows.push({
-                id: groupId + '_row',
-                title: rowTitle,
-                items: items,
-                createdAt: rowCreatedAt // Row date is the emergence of the root or oldest visible version
-            });
-        });
-
-        // Sort rows by newest first (Apple Photos style: newest groups at the top)
-        rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        const rows = buildRows(loadedImages);
 
         return { rows, rawCount: imgsRes.count || dbImages.length, batchSize: dbImages.length };
     },
@@ -853,31 +766,9 @@ export const imageService = {
 
         const loadedImages = await Promise.all(dbImages.map(rec => imageService.resolveImageRecord(rec, signedUrlMap)));
 
-        // Group into rows by folder_id (immutable stack root).
-        const rows: ImageRow[] = [];
-        const imageMap = new Map<string, CanvasImage>(loadedImages.map(img => [img.id, img]));
-        const groups = new Map<string, CanvasImage[]>();
-
-        loadedImages.forEach(img => {
-            const groupId = img.folderId ?? img.id;
-            if (!groups.has(groupId)) groups.set(groupId, []);
-            groups.get(groupId)!.push(img);
-        });
-
-        groups.forEach((items, groupId) => {
-            items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-            let rowTitle = items[0].baseName || items[0].title || 'untitled';
-            let rowCreatedAt = items[0].createdAt;
-            const root = imageMap.get(groupId);
-            if (root) {
-                rowTitle = root.baseName || root.title || 'untitled';
-                rowCreatedAt = root.createdAt;
-            }
-            rows.push({ id: groupId + '_row', title: rowTitle, items, createdAt: rowCreatedAt });
-        });
-
-        return rows;
+        return buildRows(loadedImages);
     },
+
 
     /**
      * Internal helper to prepare annotations for storage by:

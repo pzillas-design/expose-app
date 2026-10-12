@@ -21,6 +21,7 @@ import { usePresets } from './usePresets';
 import { useAutoSave } from './useAutoSave';
 import { useMobile } from './useMobile';
 import { setNotificationsEnabled } from '../utils/notifications';
+import { stackIdOf, flattenRows } from '../utils/stacks';
 
 export const useNanoController = () => {
     const { showToast } = useToast();
@@ -71,14 +72,10 @@ export const useNanoController = () => {
 
 
     // Derived — deduplicate by ID in case the same image ends up in two rows due to timing
-    const allImages = React.useMemo(() => {
-        const seen = new Set<string>();
-        return rows.flatMap(r => r.items).filter(i => {
-            if (seen.has(i.id)) return false;
-            seen.add(i.id);
-            return true;
-        });
-    }, [rows]);
+    // Die flache Reihenfolge über alle Stapel. Galerie, Stapelansicht und die
+    // Pfeile in der Detailansicht leiten sich alle hiervon ab — damit können
+    // sie nicht mehr auseinanderlaufen.
+    const allImages = React.useMemo(() => flattenRows(rows), [rows]);
 
     // Called directly by useGeneration on completion — more reliable than transition detection
     const handleGenerationComplete = useCallback((id: string) => {
@@ -476,14 +473,14 @@ export const useNanoController = () => {
         }
 
         const newId = generateId();
-        const folderId = baseImage.folderId ?? baseImage.id;
+        const folderId = stackIdOf(baseImage);
         const rawBaseName = (baseImage.baseName || baseImage.title || 'Image').replace(/_v\d+$/, '');
 
         // Version is scoped to the stack (folderId). Derive the next number from
         // the *titles* (the visible "_vN"), not the `version` column — older edge-
         // function generations can have a title like "48_v2" while their version
         // column says 11, which would otherwise make the composite jump to v12.
-        const stackItems = rows.flatMap(r => r.items).filter(i => (i.folderId ?? i.id) === folderId);
+        const stackItems = rows.flatMap(r => r.items).filter(i => stackIdOf(i) === folderId);
         const parseVer = (t?: string) => {
             const m = (t || '').match(/_v(\d+)$/);
             return m ? parseInt(m[1], 10) : 1;
@@ -519,7 +516,7 @@ export const useNanoController = () => {
 
         // Insert into the stack row immediately so the user sees it in the strip.
         setRows(prev => {
-            const idx = prev.findIndex(r => r.items.some(i => (i.folderId ?? i.id) === folderId));
+            const idx = prev.findIndex(r => r.items.some(i => stackIdOf(i) === folderId));
             if (idx === -1) return prev;
             const newRows = [...prev];
             newRows[idx] = { ...newRows[idx], items: [composite, ...newRows[idx].items] };

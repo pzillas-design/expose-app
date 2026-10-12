@@ -11,6 +11,7 @@ import { loadGenerationSettings } from '@/utils/generationSettings';
 import { sendGenerationCompleteNotification } from '@/utils/notifications';
 import { trackImageGenerated } from '@/utils/analytics';
 import { logError } from '@/services/errorLogger';
+import { stackIdOf } from '@/utils/stacks';
 
 interface UseGenerationProps {
     rows: ImageRow[];
@@ -492,11 +493,11 @@ export const useGeneration = ({
         // 1. VERSION CALCULATION (Sync)
         // Use folderId to scope siblings — avoids counting versions from *other* stacks
         // that happen to share the same base name (e.g. two different "Wohnzimmer" uploads).
-        const sourceFolderId = sourceImage.folderId ?? sourceImage.id;
+        const sourceFolderId = stackIdOf(sourceImage);
         const allImages = rows.flatMap(r => r.items);
         const siblings = allImages.filter(i => {
             if (!i) return false;
-            return (i.folderId ?? i.id) === sourceFolderId;
+            return stackIdOf(i) === sourceFolderId;
         });
         // Derive the next version from the visible "_vN" in the *titles*, not the
         // `version` column — persisted generations get a global counter in that
@@ -530,7 +531,7 @@ export const useGeneration = ({
             src: sourceImage.src,
             annotations: [], // Generated results start blank — reference images stay on the source image
             parentId: sourceImage.id,
-            folderId: sourceImage.folderId ?? sourceImage.id, // Inherit stack root — never changes
+            folderId: stackIdOf(sourceImage), // Inherit stack root — never changes
             generationPrompt: prompt,
             // Store full request body on the child so "Mehr" can replay it exactly.
             // userDraftPrompt stores the user-facing prompt so SideSheet can display it when revisiting.
