@@ -743,6 +743,14 @@ export const imageService = {
                 return r;
             };
 
+            // Jeder Zweig muss bis zur ID durchentscheiden. Ein Vergleicher, der
+            // bei Gleichstand 0 liefert, ist über Gruppen hinweg nicht transitiv:
+            // Zwei Originale aus demselben Stapel-Upload tragen oft denselben
+            // Zeitstempel (Date.now() je Datei in einer Schleife), und sort()
+            // ergibt dann je nach Eingabereihenfolge ein anderes Ergebnis.
+            // In der Detailansicht äußert sich das als Schleife — die Pfeile
+            // springen zwischen zwei Bildern hin und her, weil die Reihenfolge
+            // zwischen zwei Renders kippt.
             items.sort((a, b) => {
                 const ra = rootFor(a), rb = rootFor(b);
                 if (ra !== rb) {
@@ -750,10 +758,13 @@ export const imageService = {
                     // insgesamt, die ebenfalls das Neueste zuerst zeigt.
                     const ta = byId.get(ra)?.createdAt ?? 0;
                     const tb = byId.get(rb)?.createdAt ?? 0;
-                    return tb - ta;
+                    if (ta !== tb) return tb - ta;
+                    return ra < rb ? -1 : ra > rb ? 1 : 0;
                 }
                 // Innerhalb einer Abstammung: neueste Variante zuerst.
-                return (b.createdAt || 0) - (a.createdAt || 0);
+                const t = (b.createdAt || 0) - (a.createdAt || 0);
+                if (t !== 0) return t;
+                return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
             });
 
             // Determine row title from root or first visible item
