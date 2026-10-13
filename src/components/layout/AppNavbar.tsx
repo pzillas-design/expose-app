@@ -405,47 +405,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     {detailVersion}
                 </span>
             )}
-            <span className="hidden md:contents">
-                <RoundIconButton
-                    icon={<MenuLines className="w-[18px] h-[18px]" />}
-                    onClick={() => setIsDetailMenuOpen(p => !p)}
-                    variant="ghost"
-                    active={isDetailMenuOpen}
-                    tooltip={t('nav_menu')}
-                />
-                {isDetailMenuOpen && (
-                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50">
-                        <DropdownMenu
-                            items={[
-                                { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                                // Frueher ein eigener Knopf in der Leiste. Drei
-                                // Einzelknoepfe neben einem Menue, das dieselben Dinge
-                                // noch einmal fuehrt, sind drei Gelegenheiten, an der
-                                // falschen Stelle zu suchen.
-                                ...(isMobile ? [] : [{
-                                    label: !isSideSheetVisible
-                                        ? (t('panel_show_right') || 'Eingabe rechts')
-                                        : detailLayout === 'column'
-                                            ? (t('panel_move_bottom') || 'Eingabe nach unten')
-                                            : (t('panel_hide') || 'Eingabe ausblenden'),
-                                    icon: !isSideSheetVisible || detailLayout === 'column'
-                                        ? <PanelRight className="w-4 h-4" />
-                                        : <PanelBottom className="w-4 h-4" />,
-                                    onClick: () => {
-                                        setIsDetailMenuOpen(false);
-                                        if (!isSideSheetVisible) { setDetailLayout('column'); onToggleSideSheet?.(); }
-                                        else if (detailLayout === 'column') setDetailLayout('row');
-                                        else onToggleSideSheet?.();
-                                    },
-                                }]),
-                                ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
-                                { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
-                                { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
-                            ]}
-                        />
-                    </div>
-                )}
-            </span>
         </div>
     ) : isGroupDrillDown && groupInfo ? (
         <div className="flex items-center gap-1.5">
@@ -508,12 +467,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <div className="flex items-center gap-2">
             <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
             {/* Mobile: 3-dot menu in the right corner */}
-            <div className="relative md:hidden" ref={mobileDetailMenuRef}>
+            {/* Ein Menue, rechts, auf allen Breiten. Vorher lag eines in der
+                Mitte neben dem Titel und ein zweites rechts fuer das Handy —
+                zwei Knoepfe mit demselben Inhalt an zwei Orten. */}
+            <div className="relative" ref={mobileDetailMenuRef}>
                 <RoundIconButton
-                    icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
+                    icon={<MenuLines className="w-[18px] h-[18px]" />}
                     onClick={() => setIsDetailMenuOpen(p => !p)}
                     variant="ghost"
                     active={isDetailMenuOpen}
+                    tooltip={t('nav_menu')}
                 />
                 {isDetailMenuOpen && (
                     <div className="absolute top-full mt-2 right-0 z-50">
@@ -549,7 +512,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     </div>
                 )}
             </div>
-            {/* Desktop: individual icons */}
+            {/* Herunterladen bleibt als eigener Knopf: Du hattest zwei Symbole
+                genannt, nicht drei, und dieses ist die haeufigste Handlung in
+                der Detailansicht. Es steht zusaetzlich im Menue. */}
             <span className="hidden md:contents">
                 <RoundIconButton
                     icon={<Download className="w-[18px] h-[18px]" />}
