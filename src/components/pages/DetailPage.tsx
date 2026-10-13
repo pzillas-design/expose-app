@@ -182,21 +182,24 @@ interface DetailPageProps {
 /**
  * Die schwebenden Knoepfe ueber dem Bild.
  *
- * Immer sichtbar, aber zurueckgenommen — und auf jedem Untergrund lesbar,
- * ohne Umrandung.
+ * Immer sichtbar, auf jedem Untergrund — mit einer Regel statt mehrerer.
  *
- * Ueber hellen Motiven traegt die dunkle Fuellung. Ueber dunklen traegt das
- * weisse Zeichen selbst: Die Fuellung verschwindet dort, das Symbol bleibt. Ein
- * leichter Schlagschatten am Zeichen haelt es auch auf mittleren Tonwerten
- * ablesbar, wo weder Flaeche noch Zeichen allein genug Kontrast haetten.
+ * Der Kniff ist `backdrop-contrast(0.55)`: Kontrast senken zieht jeden Tonwert
+ * zur Mitte. Schwarz wird dadurch grau, Weiss ebenfalls. Die Flaeche hebt sich
+ * also von selbst ab, egal was darunter liegt — ohne Fallunterscheidung, ohne
+ * Rahmen, ohne eine Farbe, die auf der einen Haelfte der Bilder falsch ist.
  *
- * Das kommt ohne Ring aus — eine Umrandung haette den Knopf ueber jedem Motiv
- * als Objekt behauptet, auch dort, wo er gar nicht gebraucht wird.
+ * Eine feste Fuellung kann das nicht: Schwarz auf Schwarz bleibt unsichtbar,
+ * Weiss auf einem Schneebild ebenso. Beides hatten wir, und beides war nur fuer
+ * die Haelfte der Motive richtig.
+ *
+ * Dazu eine sehr schwache helle Fuellung fuer mittlere Tonwerte, wo das Senken
+ * des Kontrasts wenig bewirkt, und ein leichter Schlagschatten am Zeichen.
  */
 const FLOATING_BTN_BASE = `text-white rounded-full flex items-center
-    bg-black/35 hover:bg-black/60 backdrop-blur-md
-    shadow-lg shadow-black/25
-    [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]
+    backdrop-blur-md backdrop-contrast-[0.55] backdrop-brightness-110 backdrop-saturate-[0.9]
+    bg-white/[0.06] hover:bg-white/[0.14]
+    [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]
     transition-[background-color] duration-150`;
 
 const FLOATING_BTN = `${FLOATING_BTN_BASE} h-9 px-4 text-xs font-medium`;
