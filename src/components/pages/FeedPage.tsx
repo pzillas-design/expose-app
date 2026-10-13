@@ -66,6 +66,36 @@ const dayLabelOf = (ts: string | number | undefined, lang: 'de' | 'en'): string 
     return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { day: 'numeric', month: 'long' });
 };
 
+/**
+ * Das Abzeichen oben auf einer Kachel — Quellbild, Upload-Fortschritt, Anzahl
+ * im Stapel.
+ *
+ * Vorher stand dieselbe Klassenkette an drei Stellen abgeschrieben. Dass der
+ * Chip unfertig wirkte, war die Folge: Es gab keine Stelle, an der man ihn
+ * haette verbessern koennen, ohne ihn dreimal zu verbessern.
+ *
+ * Poliert gegenueber der alten Fassung:
+ * - Weichzeichner statt reiner Deckkraft, damit er auf hellen wie dunklen
+ *   Bildmotiven gleich gut sitzt. Dieselbe Sprache wie die Kopfzeile.
+ * - Ein feiner Ring statt nur eines Schattens. Auf einem weissen Hausdach war
+ *   der Chip vorher praktisch unsichtbar.
+ * - Waechst mit dem Inhalt: ein Icon bleibt rund, eine zweistellige Zahl
+ *   bekommt Luft, statt gequetscht zu werden.
+ */
+const TileChip: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
+    <div
+        className={`absolute top-2 right-2 z-20 h-6 min-w-6 px-1.5 rounded-full flex items-center justify-center
+            backdrop-blur-md bg-white/75 dark:bg-black/55
+            ring-1 ring-black/[0.06] dark:ring-white/[0.12]
+            shadow-[0_1px_2px_rgba(0,0,0,0.12)]
+            text-[11px] font-semibold tabular-nums leading-none
+            text-zinc-700 dark:text-zinc-100
+            pointer-events-none ${className}`}
+    >
+        {children}
+    </div>
+);
+
 /* ── Memoised grid item ── */
 interface FeedGridItemProps {
     img: CanvasImage;
@@ -312,15 +342,15 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
                     {/* Source image badge — same weight + size as the Euro icon in the navbar. */}
                     {isSource && (
-                        <div className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center z-20 bg-white/85 dark:bg-zinc-800/85 shadow-sm pointer-events-none">
-                            <Upload className="w-[14px] h-[14px] text-zinc-700 dark:text-zinc-200" strokeWidth={2} />
-                        </div>
+                        <TileChip>
+                            <Upload className="w-[14px] h-[14px]" strokeWidth={2} />
+                        </TileChip>
                     )}
 
                     {/* Upload state — queued items spin without progress; the single
                         actively uploading item fills a clock-style progress ring 0→100. */}
                     {!isGen && !isSource && !img.storage_path && img.src?.startsWith('blob:') && (
-                        <div className="absolute top-2 right-2 z-20 w-6 h-6 rounded-full flex items-center justify-center bg-white/85 dark:bg-zinc-800/85 shadow-sm pointer-events-none">
+                        <TileChip>
                             {img.uploadStatus === 'uploading' ? (
                                 <svg viewBox="0 0 20 20" className="w-[16px] h-[16px] -rotate-90">
                                     <circle cx="10" cy="10" r="8" fill="none" strokeWidth="2.5"
@@ -331,18 +361,24 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                         strokeDashoffset={(2 * Math.PI * 8) * (1 - Math.min(100, img.uploadProgress ?? 0) / 100)} />
                                 </svg>
                             ) : (
-                                <Loader2 className="w-[14px] h-[14px] animate-[spin_3s_linear_infinite] text-zinc-700 dark:text-zinc-200" />
+                                <Loader2 className="w-[14px] h-[14px] animate-[spin_3s_linear_infinite]" />
                             )}
-                        </div>
+                        </TileChip>
                     )}
 
-                    {/* Group count badge — hidden for now (A/B test without counter) */}
-                    {/* {isGroup && !isGen && (
-                        <div className={`absolute bottom-2 right-2 z-10 flex items-center justify-center gap-1 bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium pointer-events-none leading-none shadow-sm backdrop-blur-sm ${groupCount < 10 && !hasGenerating ? 'w-5 h-5 rounded-full' : 'rounded-full px-2 py-[3px]'}`}>
+                    {/* Anzahl der Bilder im Stapel.
+                        Oben rechts, derselbe Chip wie Quellbild und Upload — die
+                        Stelle ist frei, weil beide anderen nur in der
+                        Stapelansicht bzw. beim Hochladen auftreten, der Zaehler
+                        dagegen nur auf einem Deckbild in der Galerie.
+                        Der Punkt zeigt an, dass in diesem Stapel gerade etwas
+                        entsteht; dann ist die Zahl noch nicht endgueltig. */}
+                    {isGroup && !isGen && (
+                        <TileChip className={hasGenerating ? 'gap-1' : ''}>
                             {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
                             {groupCount}
-                        </div>
-                    )} */}
+                        </TileChip>
+                    )}
 
                 </div>
 
