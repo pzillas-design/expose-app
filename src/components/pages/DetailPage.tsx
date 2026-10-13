@@ -845,16 +845,16 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             so the image scales to fit above them and the bottom edge stays reachable. */}
                         <div
                             ref={imageViewportRef}
-                            // In der Seitenanordnung oben buendig: Die Eingabe steht
-                            // daneben und beginnt an ihrer Oberkante — ein mittig
-                            // gesetztes Bild faengt daneben irgendwo an, je nach
-                            // Seitenverhaeltnis woanders. Zwei Dinge nebeneinander
-                            // lesen sich als zusammengehoerig, wenn sie auf einer
-                            // Linie beginnen.
+                            // Immer mittig. Ein Bild gehoert in die Mitte seiner
+                            // Flaeche — das ist in jedem Bildprogramm so, und es
+                            // bleibt ruhig, wenn man zwischen Bildern mit
+                            // verschiedenen Seitenverhaeltnissen blaettert.
                             //
-                            // In der Zeilenanordnung bleibt es mittig: Dort steht die
-                            // Eingabe darunter, und der Bezugspunkt ist die Mitte.
-                            className={`absolute inset-0 flex justify-center ${isRowLayout || isMobile ? 'items-center' : 'items-start pt-6'}`}
+                            // Ein frueherer Versuch richtete es in der Seitenanordnung
+                            // oben aus, damit es mit der Eingabe daneben auf einer
+                            // Linie beginnt. Das war die falsche Haelfte: Buendig
+                            // werden soll die Box, nicht das Bild.
+                            className="absolute inset-0 flex justify-center items-center"
                             style={state.sideSheetMode === 'brush' ? { paddingBottom: BRUSH_BOTTOM_RESERVE } : undefined}
                         >
                             {displayBox.width > 0 && displayBox.height > 0 && (
