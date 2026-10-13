@@ -600,6 +600,32 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onGenerate(finalPrompt, prompt, activeTemplate?.id, controlValues);
     };
 
+    /**
+     * Generieren per Tastatur.
+     *
+     * Bewusst ⌘↵ statt ⏎ allein: Das Prompt-Feld ist mehrzeilig, ein blankes
+     * Enter muss dort einen Zeilenumbruch machen. ⌘↵ ist ausserdem das, was
+     * Nutzer aus Slack, Linear und GitHub mitbringen.
+     *
+     * Der Abgleich laeuft ueber die gesamte Seite, nicht nur ueber das
+     * Textfeld: Wer gerade einen Variablen-Chip gesetzt hat, soll nicht erst
+     * zurueck ins Feld klicken muessen.
+     */
+    const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    const generateShortcutLabel = isMac ? '⌘↵' : 'Strg↵';
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return;
+            // Modale Dialoge haben eigene Enter-Bedeutungen — denen nicht
+            // dazwischenfunken.
+            if (document.querySelector('[role="dialog"]')) return;
+            e.preventDefault();
+            handleGenerate();
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    });
+
     // Voice: unified generation + prompt events (no more DOM hacks)
     useEffect(() => {
         const onTriggerGeneration = () => handleGenerate();
@@ -1084,8 +1110,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         content={
                                                             <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
                                                                 {lang === 'de'
-                                                                    ? 'Neu: Seedream 5 Flash — gleiches Tempo, günstiger.'
-                                                                    : 'New: Seedream 5 Flash — same speed, cheaper.'}
+                                                                    ? 'Neu: Seedream 5 Flash — bessere Bilder, günstiger.'
+                                                                    : 'New: Seedream 5 Flash — better images, cheaper.'}
                                                             </p>
                                                         }
                                                         placement="auto"
@@ -1114,6 +1140,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         data-voice-action="generate-button"
                                                         variant="primary"
                                                         tooltip={t('generate')}
+                                                        tooltipShortcut={generateShortcutLabel}
                                                         tooltipSide="top"
                                                     />
                                                 ) : (
@@ -1122,6 +1149,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         data-voice-action="generate-button"
                                                         variant="generate"
                                                         size="m"
+                                                        // Die Button-Komponente hat das schon: <kbd> in
+                                                        // Monospace bei 40 % Deckkraft, auf dem Handy
+                                                        // ausgeblendet. Kein eigener Stil noetig.
+                                                        shortcut={w < 360 ? undefined : generateShortcutLabel}
                                                         className={`${w < 360 ? 'px-3 min-w-[44px]' : 'px-5'} shrink-0`}
                                                     >
                                                         {w < 360 ? (
