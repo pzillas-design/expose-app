@@ -886,18 +886,23 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         {/* Official Logo */}
                         <Logo
                             className={`shrink-0 object-contain transition-all duration-500 ease-out ${isScrolled
-                                ? 'w-7 h-7'
-                                : 'w-[30.5px] h-[30.5px] md:w-[45px] md:h-[45px] lg:w-[52px] h-[52px] group-active:scale-95'
+                                ? 'w-6 h-6'
+                                // Eine Stufe kleiner. Nebenbei: In der ausgefahrenen
+                                // Angabe stand zweimal eine Hoehe (h-[30.5px] und
+                                // h-[52px] ohne lg:), die zweite hat die erste auf
+                                // allen Breiten ueberschrieben — das Logo war also
+                                // nie quadratisch, sondern immer 52 hoch.
+                                : 'w-[26px] h-[26px] md:w-[38px] md:h-[38px] lg:w-[44px] lg:h-[44px] group-active:scale-95'
                                 }`}
                         />
 
                         {/* Text "EXPOSE" — ml transitions to 0 when collapsed so icon stays centered */}
                         <div
-                            className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${isScrolled ? 'w-0 ml-0 opacity-0' : 'w-[72px] md:w-[106px] lg:w-[129px] ml-[11.4px] opacity-100'
+                            className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${isScrolled ? 'w-0 ml-0 opacity-0' : 'w-[62px] md:w-[90px] lg:w-[110px] ml-[10px] opacity-100'
                                 }`}
                         >
                             <span
-                                className="font-kumbh font-normal text-[18.5px] md:text-[27px] lg:text-[31.5px] text-zinc-900 dark:text-white whitespace-nowrap leading-none pb-[1px] md:pb-[1.5px] lg:pb-[2px]"
+                                className="font-kumbh font-normal text-[16px] md:text-[23px] lg:text-[27px] text-zinc-900 dark:text-white whitespace-nowrap leading-none pb-[1px] md:pb-[1.5px] lg:pb-[2px]"
                                 style={{ letterSpacing: '-0.005em' }}
                             >
                                 exposé

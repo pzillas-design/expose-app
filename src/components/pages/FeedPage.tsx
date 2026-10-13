@@ -110,7 +110,7 @@ const UploadDropZone: React.FC<{
         // stehen; uebereinander liest es sich als eine Sache. `row` regelt
         // seither nur noch, wie viel Luft die Flaeche bekommt.
         className={`w-full rounded-2xl flex flex-col items-center justify-center transition-colors duration-200
-            ${row ? 'gap-2 py-7' : 'gap-3 px-6 py-12'}
+            ${row ? 'gap-3.5 py-10' : 'gap-4 px-6 py-14'}
             ${active
                 // Beim Ziehen etwas deutlicher, aber in derselben Tonlage —
                 // kein Farbwechsel, nur mehr davon.
