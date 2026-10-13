@@ -77,6 +77,13 @@ interface SideSheetProps {
     qualityMode: GenerationQuality;
     onQualityModeChange: (mode: GenerationQuality) => void;
     templates: PromptTemplate[];
+    /**
+     * Zeilenanordnung der Detailansicht: Bild oben, Panel unten.
+     * Bewusst eine Prop und nicht direkt aus den Vorlieben gelesen — das
+     * Seitenpanel steht auch in der Galerie und auf der Erstellen-Seite, und
+     * dort gibt es diese Anordnung nicht.
+     */
+    rowLayout?: boolean;
     onRefreshTemplates?: () => void;
     onSaveTemplate?: (template: any) => Promise<any>;
     onEditTemplate?: (template: PromptTemplate) => void;
@@ -111,7 +118,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onAddUserItem, onDeleteUserItem, maskTool, onMaskToolChange,
         activeShape, onActiveShapeChange, onActiveAnnotationChange,
         onInteractionStart: onInteractionStartExt, onInteractionEnd: onInteractionEndExt,
-        qualityMode, onQualityModeChange, templates, onSaveTemplate, onEditTemplate,
+        qualityMode, onQualityModeChange, templates, rowLayout = false, onSaveTemplate, onEditTemplate,
         onDeleteTemplate, onSaveRecentPrompt, onUpdateImageTitle, onDownload,
         onGenerateMore, onNavigateParent, userProfile, width
     } = props;
@@ -862,7 +869,26 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 flex flex-col gap-5">
+                {/*
+                    Im Zeilenmodus zwei Spalten statt einer langen Bahn.
+
+                    Die Spaltenanordnung quer gestreckt ergab ein breites, fast
+                    leeres Band: Die Eingabe lief ueber die ganze Breite, die
+                    Knoepfe standen an den gegenueberliegenden Bildschirmraendern,
+                    und die Vorlagen rutschten darunter aus dem Blick — auf
+                    einem grossen Bildschirm musste man scrollen, um etwas zu
+                    sehen, wofuer reichlich Platz da war.
+
+                    Jetzt: Eingabe links, Vorlagen rechts, zusammen auf eine
+                    lesbare Breite begrenzt und mittig gesetzt. Was an den
+                    Seiten frei bleibt, bleibt frei — das ist ruhiger als eine
+                    Zeile, die bis in beide Ecken reicht.
+                */}
+                <div className={`flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 ${
+                    rowLayout
+                        ? 'w-full max-w-[1180px] mx-auto grid grid-cols-[minmax(0,1fr)_minmax(260px,320px)] gap-x-8 gap-y-5 items-start'
+                        : 'flex flex-col gap-5'
+                }`}>
 
                     <>
                             {/* ── REFINE Section ── */}

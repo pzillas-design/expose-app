@@ -816,7 +816,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // reicht gerade fuer beides, es gibt nichts zu verteilen.
     const detailLayout = useDetailLayout();
     const isRowLayout = !isMobile && detailLayout === 'row';
-    const [panelHeight, setPanelHeight] = useState(320);
+    // Anteilig am Fenster statt einer festen Zahl: 320 Pixel sind auf einem
+    // 13-Zoll-Bildschirm ein Drittel und auf einem grossen ein Streifen, unter
+    // dem das Bild verloren wirkt. Ein knappes Drittel haelt das Verhaeltnis
+    // zwischen Bild und Eingabe ueber alle Groessen hinweg aehnlich.
+    const [panelHeight, setPanelHeight] = useState(() =>
+        typeof window === 'undefined' ? 320 : Math.round(Math.min(Math.max(window.innerHeight * 0.32, 260), 460))
+    );
     const MIN_PANEL_HEIGHT = 200;
 
     const startResizing = useCallback(() => setIsResizing(true), []);
@@ -1266,6 +1272,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     <SideSheet
                         key={state.selectedImage?.id ?? 'no-selection'}
                         width={isMobile || isRowLayout ? '100%' : `${sidebarWidth}px`}
+                        rowLayout={isRowLayout}
                         disableMobileSheet={isMobile}
                         selectedImage={state.selectedImage}
                         selectedImages={state.selectedImages}
