@@ -845,7 +845,16 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             so the image scales to fit above them and the bottom edge stays reachable. */}
                         <div
                             ref={imageViewportRef}
-                            className="absolute inset-0 flex items-center justify-center"
+                            // In der Seitenanordnung oben buendig: Die Eingabe steht
+                            // daneben und beginnt an ihrer Oberkante — ein mittig
+                            // gesetztes Bild faengt daneben irgendwo an, je nach
+                            // Seitenverhaeltnis woanders. Zwei Dinge nebeneinander
+                            // lesen sich als zusammengehoerig, wenn sie auf einer
+                            // Linie beginnen.
+                            //
+                            // In der Zeilenanordnung bleibt es mittig: Dort steht die
+                            // Eingabe darunter, und der Bezugspunkt ist die Mitte.
+                            className={`absolute inset-0 flex justify-center ${isRowLayout || isMobile ? 'items-center' : 'items-start pt-6'}`}
                             style={state.sideSheetMode === 'brush' ? { paddingBottom: BRUSH_BOTTOM_RESERVE } : undefined}
                         >
                             {displayBox.width > 0 && displayBox.height > 0 && (
@@ -960,7 +969,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         belegt — sonst bliebe ein leerer Streifen stehen und das
                         Bild haette nichts gewonnen. Im Pinselmodus bleibt die
                         Hoehe wie gehabt, dort haengt die Werkzeugleiste darin. */}
-                    <div className={`${state.sideSheetMode !== 'brush' ? 'h-0' : (isMobile ? 'h-0' : 'h-20')} shrink-0 relative z-30 w-full overflow-visible`}>
+                    <div className={`${state.sideSheetMode !== 'brush' ? 'h-0 overflow-hidden' : `${isMobile ? 'h-0' : 'h-20'} overflow-visible`} shrink-0 relative z-30 w-full`}>
                         {/* Thumbnail Strip — width is capped to a fixed thumb count
                             (11 desktop / 5 mobile), centered. Cell = 36px thumb + 8px gap = 44px. */}
 

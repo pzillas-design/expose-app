@@ -156,7 +156,10 @@ const TileChip: React.FC<{
         //
         // Keine Fettschrift: Auf einer dunklen Scheibe traegt schon der Kontrast,
         // und fett machte aus einer Nebensache ein Ausrufezeichen.
-        className={`absolute top-2 right-2 z-20 h-[22px] min-w-[22px] px-1.5 rounded-full
+        // top-3/right-3 statt top-2/right-2: Der Auswahlkreis sitzt in einem
+        // Feld mit p-3, also 12 Pixel von der Ecke. Das Abzeichen sass auf 8
+        // und stand damit sichtbar anders als sein Gegenstueck.
+        className={`absolute top-3 right-3 z-20 h-[22px] min-w-[22px] px-1.5 rounded-full
             grid place-items-center
             bg-black/45 backdrop-blur-[3px]
             text-[11px] font-normal tabular-nums leading-none text-white
@@ -1293,13 +1296,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         <button
                                             onClick={openComposer}
                                             style={{ aspectRatio: `${displayImages[0].width} / ${displayImages[0].height}`, width: '100%', height: 'auto' }}
-                                            // Dieselbe Flaechensprache wie die Ablagestreifen:
-                                            // Schwarz bzw. Weiss mit niedriger Deckkraft statt
-                                            // fester Grautoene, dazu derselbe Radius. Vorher
-                                            // sass hier ein zinc-Kasten mit scharfen Ecken,
-                                            // der neben den Bildkacheln wie ein Fremdkoerper
-                                            // wirkte.
-                                            className="relative rounded-2xl flex flex-col items-center justify-center gap-2.5
+                                            // Dieselbe Flaechensprache wie die Ablagestreifen,
+                                            // aber die Ecken der Bildkacheln: Die sind eckig,
+                                            // und ein gerundeter Kasten mittendrin bricht die
+                                            // Reihe. Rundung ist hier kein Stil, sondern eine
+                                            // Aussage ueber Zugehoerigkeit.
+                                            className="relative flex flex-col items-center justify-center gap-2.5
                                                 bg-black/[0.03] dark:bg-white/[0.04]
                                                 hover:bg-black/[0.05] dark:hover:bg-white/[0.06]
                                                 text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300

@@ -399,7 +399,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             </span>
             <span className="hidden md:contents">
                 <RoundIconButton
-                    icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
+                    icon={<MenuLines className="w-[18px] h-[18px]" />}
                     onClick={() => setIsDetailMenuOpen(p => !p)}
                     variant="ghost"
                     active={isDetailMenuOpen}
@@ -410,6 +410,26 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         <DropdownMenu
                             items={[
                                 { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                                // Frueher ein eigener Knopf in der Leiste. Drei
+                                // Einzelknoepfe neben einem Menue, das dieselben Dinge
+                                // noch einmal fuehrt, sind drei Gelegenheiten, an der
+                                // falschen Stelle zu suchen.
+                                ...(isMobile ? [] : [{
+                                    label: !isSideSheetVisible
+                                        ? (t('panel_show_right') || 'Eingabe rechts')
+                                        : detailLayout === 'column'
+                                            ? (t('panel_move_bottom') || 'Eingabe nach unten')
+                                            : (t('panel_hide') || 'Eingabe ausblenden'),
+                                    icon: !isSideSheetVisible || detailLayout === 'column'
+                                        ? <PanelRight className="w-4 h-4" />
+                                        : <PanelBottom className="w-4 h-4" />,
+                                    onClick: () => {
+                                        setIsDetailMenuOpen(false);
+                                        if (!isSideSheetVisible) { setDetailLayout('column'); onToggleSideSheet?.(); }
+                                        else if (detailLayout === 'column') setDetailLayout('row');
+                                        else onToggleSideSheet?.();
+                                    },
+                                }]),
                                 ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
                                 { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
                                 { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
@@ -493,6 +513,26 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             items={[
                                 ...voiceMenuItem.map(v => ({ ...v, onClick: () => { setIsDetailMenuOpen(false); v.onClick(); } })),
                                 { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                                // Frueher ein eigener Knopf in der Leiste. Drei
+                                // Einzelknoepfe neben einem Menue, das dieselben Dinge
+                                // noch einmal fuehrt, sind drei Gelegenheiten, an der
+                                // falschen Stelle zu suchen.
+                                ...(isMobile ? [] : [{
+                                    label: !isSideSheetVisible
+                                        ? (t('panel_show_right') || 'Eingabe rechts')
+                                        : detailLayout === 'column'
+                                            ? (t('panel_move_bottom') || 'Eingabe nach unten')
+                                            : (t('panel_hide') || 'Eingabe ausblenden'),
+                                    icon: !isSideSheetVisible || detailLayout === 'column'
+                                        ? <PanelRight className="w-4 h-4" />
+                                        : <PanelBottom className="w-4 h-4" />,
+                                    onClick: () => {
+                                        setIsDetailMenuOpen(false);
+                                        if (!isSideSheetVisible) { setDetailLayout('column'); onToggleSideSheet?.(); }
+                                        else if (detailLayout === 'column') setDetailLayout('row');
+                                        else onToggleSideSheet?.();
+                                    },
+                                }]),
                                 ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
                                 { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
                                 { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
@@ -538,46 +578,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     />
                 </span>
             )}
-            <span className="hidden md:contents">
-                {/*
-                    Ein Knopf, drei Zustaende: rechts — unten — aus — rechts.
-                    Vorher brauchte es dafuer zwei Bedienelemente an zwei
-                    Orten: diesen Knopf fuer sichtbar/unsichtbar und einen
-                    Menueeintrag fuer die Anordnung. Beide beschreiben
-                    dieselbe Frage — wo steht die Eingabe —, und zwei Orte
-                    fuer eine Frage sind einer zu viel.
-
-                    Das Symbol zeigt den Zustand, der gerade gilt, nicht den
-                    naechsten: Ein Knopf, der anzeigt, was er tun wird, laesst
-                    sich nicht lesen, solange man nicht weiss, wo man steht.
-                */}
-                <RoundIconButton
-                    icon={!isSideSheetVisible
-                        ? <PanelRight className="w-[18px] h-[18px]" />
-                        : detailLayout === 'row'
-                            ? <PanelBottom className="w-[18px] h-[18px]" />
-                            : <PanelRight className="w-[18px] h-[18px]" />}
-                    onClick={() => {
-                        if (!isSideSheetVisible) {
-                            // aus → rechts
-                            setDetailLayout('column');
-                            onToggleSideSheet?.();
-                        } else if (detailLayout === 'column') {
-                            // rechts → unten
-                            setDetailLayout('row');
-                        } else {
-                            // unten → aus
-                            onToggleSideSheet?.();
-                        }
-                    }}
-                    variant={isSideSheetVisible ? 'soft' : 'ghost'}
-                    tooltip={!isSideSheetVisible
-                        ? (t('panel_show_right') || 'Eingabe rechts')
-                        : detailLayout === 'column'
-                            ? (t('panel_move_bottom') || 'Eingabe nach unten')
-                            : (t('panel_hide') || 'Eingabe ausblenden')}
-                />
-            </span>
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
