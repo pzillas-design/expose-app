@@ -376,11 +376,26 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
 
     // ── Prompt auto-resize ──
+    //
+    // Waechst mit dem Text, aber zwischen zwei Grenzen. Leer faellt das Feld
+    // auf eine knappe Hoehe zurueck — ein halb leerer Kasten von 140 Pixeln war
+    // viel Flaeche fuer nichts. Nach oben ist Schluss, dann scrollt der Text
+    // IM Feld, statt die Knoepfe darunter immer weiter nach unten zu schieben.
+    //
+    // Das ist die Bauweise jedes Chat-Eingabefeldes, und sie loest nebenbei die
+    // Frage nach einer zweiten Spalte fuer die Knoepfe: Die braucht es nicht,
+    // wenn das Feld selbst nicht mehr waechst.
+    const PROMPT_MIN_H = 72;
+    const PROMPT_MAX_H = 240;
     useLayoutEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${Math.max(textareaRef.current.scrollHeight, 80)}px`;
-        }
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        const next = Math.min(Math.max(el.scrollHeight, PROMPT_MIN_H), PROMPT_MAX_H);
+        el.style.height = `${next}px`;
+        // Nur scrollen, wenn die Obergrenze erreicht ist — sonst blitzt beim
+        // Tippen eine Bildlaufleiste auf.
+        el.style.overflowY = el.scrollHeight > PROMPT_MAX_H ? 'auto' : 'hidden';
     }, [prompt]);
 
     // ── Entwurf beim Bildwechsel laden ──────────────────────────────────────
@@ -950,7 +965,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             autoCorrect="off"
                                             autoCapitalize="off"
                                             spellCheck={false}
-                                            className={`w-full bg-transparent outline-none ${Typo.Prompt} resize-none min-h-[140px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600`}
+                                            className={`w-full bg-transparent outline-none ${Typo.Prompt} resize-none no-scrollbar text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600`}
                                         />
                                     </div>
 
