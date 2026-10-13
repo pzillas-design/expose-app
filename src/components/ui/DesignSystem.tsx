@@ -341,7 +341,18 @@ interface RoundIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, tooltipShortcut, tooltipSide, variant = 'default', className = '', ...props }) => {
     // Structural classes
-    const base = `w-9 h-9 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95`;
+    // 36 Pixel sichtbar, 44 Pixel treffbar.
+    //
+    // Der Kreis bleibt so gross, wie er aussehen soll — eine Leiste aus
+    // 44er-Kreisen waere massig. Die Trefferflaeche waechst stattdessen
+    // unsichtbar ueber ein Pseudoelement auf die 44 Pixel, die als
+    // Mindestmass fuer den Finger gelten. Das wirkt an jeder Stelle der
+    // Anwendung, an der dieser Knopf steht, statt an jeder einzeln.
+    //
+    // `relative` ist noetig, damit das Pseudoelement sich auf den Knopf
+    // bezieht; `-inset-1` sind 4 Pixel je Seite, also 36 + 8 = 44.
+    const base = `relative w-9 h-9 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95
+        before:content-[''] before:absolute before:-inset-1 before:rounded-full`;
 
     // Aesthetic classes
     const variants = {

@@ -1193,9 +1193,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                 </div>
                             </section>
 
-                                {/* ── PRESETS Section ── */}
-                                <div className="mt-auto pt-2 text-zinc-800 dark:text-zinc-200">
-                                    <div className="py-3">
+                                {/* ── PRESETS Section ──
+                                    `mt-auto` schob die Vorlagen an das untere Ende der
+                                    Spalte. Bei einem hohen Panel stand dadurch eine
+                                    Bildschirmhoehe Leere zwischen Eingabe und Vorlagen,
+                                    und man musste scrollen, um etwas zu sehen, das zur
+                                    Eingabe gehoert. Jetzt stehen sie direkt darunter;
+                                    was unten frei bleibt, bleibt frei. */}
+                                <div className="pt-1 text-zinc-800 dark:text-zinc-200">
+                                    <div className="pt-1 pb-2.5">
                                         <Eyebrow muted>{t('presets_label')}</Eyebrow>
                                     </div>
                                     <div className="animate-in fade-in slide-in-from-top-1 duration-150 flex flex-wrap gap-2">
