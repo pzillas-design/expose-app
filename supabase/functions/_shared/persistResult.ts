@@ -69,7 +69,16 @@ export async function persistFalResult(
     jobId: string,
     ctx: AsyncContext,
     fal: { imageUrl: string; width?: number; height?: number; contentType?: string },
+    /**
+     * Die beim Absenden gesetzten Zwischenzeiten. Der Rückruf-Pfad ergänzt sie
+     * um seine eigenen, damit am Ende EINE Zeitachse in der Zeile steht:
+     * Absenden → fal → Rückruf → Download → Version → Storage → fertig. Ohne
+     * das wüssten wir weiterhin nur die Gesamtdauer.
+     */
+    seedMarks?: Record<string, number> | null,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+    const marks: Record<string, number> = { ...(seedMarks ?? {}) };
+    const mark = (key: string) => { marks[key] = Date.now() - (ctx.submitAt || Date.now()); };
     // ── Idempotency guard ──────────────────────────────────────────────────
     const { data: existing } = await supabaseAdmin
         .from('images').select('id').eq('id', jobId).maybeSingle();
@@ -80,6 +89,7 @@ export async function persistFalResult(
     if (!imgResp.ok) return { ok: false, error: `fetch fal image: HTTP ${imgResp.status}` };
     const imgBuf = new Uint8Array(await imgResp.arrayBuffer());
     const contentType = imgResp.headers.get('content-type') || fal.contentType || 'image/jpeg';
+    mark('img');
 
     const src = ctx.sourceImage || {};
 
@@ -115,6 +125,7 @@ export async function persistFalResult(
     }
 
     // ── Storage upload ───────────────────────────────────────────────────────
+    mark('ver');
     const rootFolder = sanitizeEmailForPath(ctx.userEmail) || ctx.userId;
     const dateFolder = buildUploadDateFolder(new Date());
     const ext = contentType === 'image/png' ? 'png' : 'jpg';
@@ -125,6 +136,7 @@ export async function persistFalResult(
         .from('user-content')
         .upload(storagePath, imgBuf, { contentType, upsert: true });
     if (upErr) return { ok: false, error: `storage upload: ${upErr.message}` };
+    mark('stored');
 
     // ── Insert images row ──────────────────────────────────────────────────
     // Record fal's ACTUAL output dimensions, not the source's. fal returns a
@@ -179,12 +191,14 @@ export async function persistFalResult(
     }
 
     // ── Finalize job row ───────────────────────────────────────────────────
+    mark('done');
     const durationMs = Date.now() - (ctx.submitAt || Date.now());
     const usedVariables = !!(ctx.variables && Object.keys(ctx.variables).length > 0);
     await supabaseAdmin.from('generation_jobs').update({
         status: 'completed',
         model: modelVersion,
         duration_ms: durationMs,
+        timings: marks,
         quality_mode: ctx.qualityMode,
         variables_used: usedVariables,
         prompt_preview: (ctx.prompt || '').slice(0, 2000),

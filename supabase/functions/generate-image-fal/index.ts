@@ -277,6 +277,11 @@ Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
     const taskStart = Date.now();
+    // Zwischenzeiten je Abschnitt, in ms seit dem Absenden. duration_ms allein
+    // sagt nur, dass es lang gedauert hat, nicht wo — und geraten haben wir
+    // lang genug. Landet als generation_jobs.timings in der Datenbank.
+    const marks: Record<string, number> = {};
+    const mark = (key: string) => { marks[key] = Date.now() - taskStart; };
     let newId: string | null = null;
     let supabaseAdmin: any = null;
     let refundData: { userId: string; originalCredits: number } | null = null;
@@ -294,6 +299,7 @@ Deno.serve(async (req) => {
         const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(jwtPayload.sub);
         const user = authUser?.user ?? null;
         if (!user) throw new Error('User not found');
+        mark('auth');
 
         // ── Parse payload ──────────────────────────────────────────────────
         const payload = await req.json();
@@ -513,6 +519,7 @@ Deno.serve(async (req) => {
         const falResolution = qualityToFalResolution(qualityMode);
 
         // ── Resolve image_urls (source + annotation + references) ──────────
+        mark('prep');
         const imageUrls = await resolveImageUrls(supabaseAdmin, newId, {
             sourceStoragePath,
             payloadOriginalImage,
@@ -520,6 +527,11 @@ Deno.serve(async (req) => {
             annotationImage: payloadAnnotationImage,
             references: payloadReferences,
         });
+        // Jedes Bild, das als data-URL kommt, wird hier erst in den Storage
+        // geladen. Die Anzahl gehört zur Messung, sonst ist ein langsamer
+        // Abschnitt nicht von einem Auftrag mit acht Referenzen zu trennen.
+        mark('urls');
+        marks.url_count = imageUrls.length;
 
         const hasSource = imageUrls.length > 0;
 
@@ -688,13 +700,14 @@ Deno.serve(async (req) => {
                 variables: (variables && typeof variables === 'object' && Object.keys(variables).length > 0) ? variables : null,
                 falRequestId: submitData?.request_id ?? null,
             };
+            mark('submitted');
             Object.assign(apiRequestPayload, {
                 current_stage: 'queued',
                 falRequestId: submitData?.request_id,
                 async: asyncCtx,
             });
             await supabaseAdmin.from('generation_jobs')
-                .update({ status: 'processing', request_payload: apiRequestPayload })
+                .update({ status: 'processing', request_payload: apiRequestPayload, timings: marks })
                 .eq('id', newId);
 
             logInfo('Queued', `job=${newId} falRequestId=${submitData?.request_id} endpoint=${endpoint}`);
@@ -703,9 +716,11 @@ Deno.serve(async (req) => {
             });
         }
 
+        mark('submitted');
         const providerStart = Date.now();
         const falResult = await callFal(falApiKey, endpoint, falInput);
         const providerLatencyMs = Date.now() - providerStart;
+        mark('webhook'); // synchroner Pfad: fal hat geantwortet, kein Rückruf
 
         Object.assign(apiRequestPayload, {
             providerLatencyMs,
@@ -720,6 +735,7 @@ Deno.serve(async (req) => {
         if (!imgResp.ok) throw new Error(`Failed to fetch fal image: HTTP ${imgResp.status}`);
         const imgBuf = new Uint8Array(await imgResp.arrayBuffer());
         const contentType = imgResp.headers.get('content-type') || falResult.contentType || 'image/jpeg';
+        mark('img');
 
         // ── Decide title / version (mirrors old saveGeminiResult logic) ────
         const srcBaseName = sourceImage?.baseName || sourceImage?.title;
@@ -763,9 +779,11 @@ Deno.serve(async (req) => {
         const filename = `${fileRole}_${newId.substring(0, 8)}.${ext}`;
         const storagePath = `${rootFolder}/user-content/${dateFolder}/${filename}`;
         const storageStart = Date.now();
+        mark('ver');
         const { error: upErr } = await supabaseAdmin.storage
             .from('user-content')
             .upload(storagePath, imgBuf, { contentType, upsert: true });
+        mark('stored');
         if (upErr) throw new Error(`Storage upload failed: ${upErr.message}`);
         apiRequestPayload.storageLatencyMs = Date.now() - storageStart;
 
@@ -821,12 +839,14 @@ Deno.serve(async (req) => {
 
         // ── Finalize job row ───────────────────────────────────────────────
         apiRequestPayload.current_stage = 'completed';
+        mark('done');
         const durationMs = Date.now() - taskStart;
         const usedVariables = !!(variables && typeof variables === 'object' && Object.keys(variables).length > 0);
         const finalUpdateRes = await supabaseAdmin.from('generation_jobs').update({
             status: 'completed',
             model: modelVersion,
             duration_ms: durationMs,
+            timings: marks,
             quality_mode: qualityMode,
             request_payload: apiRequestPayload,
             variables_used: usedVariables,
