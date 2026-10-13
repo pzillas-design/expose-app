@@ -17,8 +17,12 @@ import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { GenerationSettingsModal } from '@/components/modals/GenerationSettingsModal';
 import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from '@/types';
 
-/** Merker fuer den einmaligen Hinweis auf das neue Standardmodell. */
-const MODEL_HINT_KEY = 'expose:hint:seedream-default-v1';
+/**
+ * Schluessel des einmaligen Hinweises auf das neue Standardmodell.
+ * ContextTip fuehrt darunter Buch, ob er schon gezeigt wurde, und sorgt
+ * nebenbei dafuer, dass nicht zwei Hinweise gleichzeitig aufgehen.
+ */
+const MODEL_HINT_KEY = 'expose_tip_seedream_default_v1';
 import { saveGenerationSettings, loadGenerationSettings } from '@/utils/generationSettings';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
@@ -140,18 +144,21 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // nicht umstellen. Wer bereits Seedream nutzt, sieht ihn nie.
     const [showModelHint, setShowModelHint] = React.useState(false);
     React.useEffect(() => {
-        try {
-            if (window.localStorage.getItem(MODEL_HINT_KEY)) return;
-            if (previewSettings.provider === 'seedream') return;
-            setShowModelHint(true);
-        } catch (_) { /* privater Modus: dann eben kein Hinweis */ }
-        // Absichtlich nur beim Aufbau: Der Hinweis soll nicht bei jedem
-        // Modellwechsel wieder aufpoppen.
+        // Ob der Hinweis schon gezeigt wurde, verwaltet ContextTip selbst ueber
+        // storageKey — hier nur die Frage, ob er ueberhaupt gemeint ist. Wer
+        // bereits Seedream nutzt, braucht ihn nicht.
+        //
+        // Absichtlich nur beim Aufbau: Er soll nicht bei jedem Modellwechsel
+        // wieder erscheinen.
+        if (previewSettings.provider !== 'seedream') setShowModelHint(true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+    // Das Wegblenden und Merken uebernimmt ContextTip ueber storageKey. Hier
+    // nur noch das vorzeitige Beenden, wenn der Nutzer von sich aus in die
+    // Einstellungen geht oder das Modell wechselt — dann hat der Hinweis seinen
+    // Zweck erfuellt und braucht nicht auszulaufen.
     const dismissModelHint = React.useCallback(() => {
         setShowModelHint(false);
-        try { window.localStorage.setItem(MODEL_HINT_KEY, new Date().toISOString()); } catch (_) { /* egal */ }
     }, []);
 
     const handleSettingsChange = (next: GenerationSettings) => {
@@ -1072,29 +1079,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             {/* Settings — round icon button with Tooltip, same pattern as the reference-image button. */}
                                             <div className="relative shrink-0">
                                                 {showModelHint && (
-                                                    <>
-                                                        {/* Punkt am Knopf — der eigentliche Zeiger. Die Blase
-                                                            erklaert, der Punkt zeigt hin. */}
-                                                        <span className="absolute -top-0.5 -right-0.5 z-10 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white dark:ring-zinc-900 pointer-events-none" />
-                                                        <div className="absolute bottom-full right-0 mb-3 z-20 w-56 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg p-3 text-left">
-                                                            <p className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
-                                                                {lang === 'de' ? 'Neu: Seedream 5 Flash' : 'New: Seedream 5 Flash'}
-                                                            </p>
-                                                            <p className="mt-1 text-xs leading-snug text-zinc-500 dark:text-zinc-400">
+                                                    <ContextTip
+                                                        storageKey={MODEL_HINT_KEY}
+                                                        content={
+                                                            <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
                                                                 {lang === 'de'
-                                                                    ? 'Gleiches Tempo, 0,18 € statt 0,24 €. Hier umstellen.'
-                                                                    : 'Same speed, €0.18 instead of €0.24. Switch here.'}
+                                                                    ? 'Neu: Seedream 5 Flash — gleiches Tempo, günstiger.'
+                                                                    : 'New: Seedream 5 Flash — same speed, cheaper.'}
                                                             </p>
-                                                            <button
-                                                                onClick={dismissModelHint}
-                                                                className="mt-2 text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                                                            >
-                                                                {lang === 'de' ? 'Verstanden' : 'Got it'}
-                                                            </button>
-                                                            {/* Spitze zum Knopf */}
-                                                            <span className="absolute top-full right-4 -mt-px w-2 h-2 rotate-45 border-r border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900" />
-                                                        </div>
-                                                    </>
+                                                        }
+                                                        placement="auto"
+                                                        enabled
+                                                        onDismiss={dismissModelHint}
+                                                    />
                                                 )}
                                                 <Tooltip text={lang === 'de' ? 'Bild-Einstellungen' : 'Image settings'} side="top">
                                                     <button
