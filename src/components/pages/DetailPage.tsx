@@ -471,13 +471,21 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     }), [img?.width, img?.height]);
 
     const [displayBox, setDisplayBox] = useState({ width: 0, height: 0 });
-    const [imageTopOffset, setImageTopOffset] = useState(0);
     /**
-     * Innenabstand oben im Seitenpanel (pt-6 in SideSheet). Er zaehlt bereits
-     * mit, wenn das Panel an die Bildkante gelegt wird — sonst saesse die
-     * Eingabe um genau diesen Betrag zu tief.
+     * Abstand der Bildoberkante zur Oberkante ihres Bereichs.
+     *
+     * Wird derzeit nicht benutzt: Die Eingabe daran auszurichten sah bei einem
+     * Bild gut aus, verhielt sich ueber mehrere aber schlecht — der Wert haengt
+     * am Seitenverhaeltnis, und beim Blaettern von einem Quer- auf ein
+     * Hochformat waere die Eingabe samt Cursor um ueber hundert Pixel
+     * gesprungen. Ein Eingabefeld, das seinen Platz wechselt, waehrend man
+     * darin schreibt, ist schlimmer als eines, das nicht buendig steht.
+     *
+     * Bleibt stehen, weil die Groesse unabhaengig davon stimmt und jemand sie
+     * fuer eine Einblendung am Bildrand brauchen koennte.
      */
-    const PANEL_INNER_PT = 24;
+    const [imageTopOffset, setImageTopOffset] = useState(0);
+    void imageTopOffset;
 
     // In annotation mode (brush/text/shapes) the bottom toolbars float over the image.
     // Reserve this many pixels at the bottom so the image scales to fit above them.
@@ -1144,12 +1152,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // wirkungslos geblieben. Genau daran lag es, dass
                             // Ausblenden im Zeilenmodus nichts tat.
                             ? { width: '100%' }
-                            : {
-                                width: isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px',
-                                // Buendig mit der Oberkante des Bildes. Das Bild bleibt
-                                // mittig — bewegt wird die Eingabe, nicht das Bild.
-                                paddingTop: Math.max(0, imageTopOffset - PANEL_INNER_PT),
-                            }}
+                            : { width: isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px' }}
                 >
                     {/* Resizer Handle — desktop only */}
                     {!isMobile && !isRowLayout && (
