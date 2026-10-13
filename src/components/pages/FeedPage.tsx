@@ -1,7 +1,7 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
 import { NAV_SCROLL_OFFSET } from '@/config/layout';
-import { Loader2, Plus, Layers, Layers2, ChevronRight, Upload, Download, X } from 'lucide-react';
+import { Loader2, Layers, Layers2, ChevronRight, Upload, Download, X } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -105,8 +105,12 @@ const UploadDropZone: React.FC<{
 }> = ({ onClick, label, sub, active = false, row = false, className = '' }) => (
     <button
         onClick={onClick}
-        className={`w-full rounded-2xl flex items-center justify-center transition-colors duration-200
-            ${row ? 'flex-row gap-2.5 py-8' : 'flex-col gap-3 px-6 py-12'}
+        // Symbol immer ueber der Schrift, in beiden Faellen. Nebeneinander
+        // zerfiel die Einheit in zwei Dinge, die zufaellig nebeneinander
+        // stehen; uebereinander liest es sich als eine Sache. `row` regelt
+        // seither nur noch, wie viel Luft die Flaeche bekommt.
+        className={`w-full rounded-2xl flex flex-col items-center justify-center transition-colors duration-200
+            ${row ? 'gap-2 py-7' : 'gap-3 px-6 py-12'}
             ${active
                 // Beim Ziehen etwas deutlicher, aber in derselben Tonlage —
                 // kein Farbwechsel, nur mehr davon.
@@ -114,17 +118,13 @@ const UploadDropZone: React.FC<{
                 : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}
             ${className}`}
     >
-        {/* Ein blankes Plus. ImagePlus trug einen Bildrahmen samt Berg, Sonne
-            und Pluszeichen — bei 20 Pixeln vier Formen in einem Symbol, und
-            damit unruhiger als die Flaeche, die es ankuendigt. */}
-        <Plus className="w-[18px] h-[18px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
-        {/* Zwei Zeilen, beide zurueckgenommen: Der Streifen ist ein Angebot,
-            keine Aufforderung. Die erste nennt die Handlung, die zweite den
-            zweiten Weg dorthin — kleiner und blasser, damit sie nicht mitliest,
-            wer schon weiss, was er tut. */}
-        <span className="flex flex-col items-center leading-tight">
-            <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400">{label}</span>
-            {sub && <span className="text-[11.5px] text-zinc-400 dark:text-zinc-600 mt-0.5">{sub}</span>}
+        <Upload className="w-[18px] h-[18px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.75} />
+        {/* Beide Zeilen in derselben Schrift. Vorher trugen sie zwei Groessen
+            und zwei Farben — das machte aus zwei Saetzen zwei Ebenen, obwohl
+            sie dasselbe sagen: wie man Bilder hereinbekommt. */}
+        <span className="flex flex-col items-center gap-0.5 text-[13px] leading-tight text-zinc-500 dark:text-zinc-400">
+            <span>{label}</span>
+            {sub && <span>{sub}</span>}
         </span>
     </button>
 );
