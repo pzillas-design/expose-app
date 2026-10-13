@@ -1055,7 +1055,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 )}
                 <div className="flex-1 flex flex-col">
                     <div className="flex-1 flex flex-col relative pb-16 min-h-[100dvh]">
-                        {displayImages.length > 0 ? (
+                        {/*
+                            Nicht an displayImages haengen, sondern daran, ob es
+                            ueberhaupt Bilder gibt.
+
+                            displayImages enthaelt seit den Tagesgruppen nur die
+                            SICHTBAREN Kacheln. Klappt jemand alle Tage zu, ist es
+                            leer — und der leere Zustand haette die Kopfzeilen
+                            verdraengt, mit denen man sie wieder aufklappt. Eine
+                            Sackgasse, aus der nur ein Neuladen herausfuehrt.
+                        */}
+                        {(displayImages.length > 0 || (daySections?.length ?? 0) > 0) ? (
                             <>
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${renderSelectMode ? 'select' : 'normal'}`}
