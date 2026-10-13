@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
 import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
+import { useDetailLayout } from '@/utils/uiPrefs';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
@@ -809,6 +810,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const [isResizing, setIsResizing] = useState(false);
     useEffect(() => { onSidebarWidthChange?.(380); }, []);
 
+    // Anordnung: nebeneinander oder untereinander. Auf schmalen Geraeten gilt
+    // immer untereinander — dort waere nebeneinander kein Angebot, sondern eine
+    // Zumutung, und deshalb ist die Hoehe dort auch nicht ziehbar: Der Platz
+    // reicht gerade fuer beides, es gibt nichts zu verteilen.
+    const detailLayout = useDetailLayout();
+    const isRowLayout = !isMobile && detailLayout === 'row';
+    const [panelHeight, setPanelHeight] = useState(320);
+    const MIN_PANEL_HEIGHT = 200;
+
     const startResizing = useCallback(() => setIsResizing(true), []);
     const stopResizing = useCallback(() => setIsResizing(false), []);
 
@@ -816,13 +826,21 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const MAX_SIDEBAR_WIDTH = 600;
 
     const resize = useCallback((e: MouseEvent) => {
-        if (isResizing) {
-            const newWidth = window.innerWidth - e.clientX;
-            const clampedWidth = Math.min(Math.max(newWidth, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
-            setSidebarWidth(clampedWidth);
-            onSidebarWidthChange?.(clampedWidth);
+        if (!isResizing) return;
+        if (isRowLayout) {
+            // Nach oben ziehen vergroessert die Leiste. Die Obergrenze haengt am
+            // Fenster statt an einer festen Zahl: Sonst liesse sich auf einem
+            // kleinen Bildschirm das Bild vollstaendig verdecken.
+            const maxPanel = Math.max(MIN_PANEL_HEIGHT, window.innerHeight * 0.75);
+            const next = window.innerHeight - e.clientY;
+            setPanelHeight(Math.min(Math.max(next, MIN_PANEL_HEIGHT), maxPanel));
+            return;
         }
-    }, [isResizing, onSidebarWidthChange]);
+        const newWidth = window.innerWidth - e.clientX;
+        const clampedWidth = Math.min(Math.max(newWidth, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
+        setSidebarWidth(clampedWidth);
+        onSidebarWidthChange?.(clampedWidth);
+    }, [isResizing, isRowLayout, onSidebarWidthChange]);
 
     useEffect(() => {
         if (isResizing) {
@@ -857,7 +875,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
             {/* Removed internal header - handled by AppNavbar */}
 
-            <main className={`flex-1 flex flex-col md:flex-row md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+            <main className={`flex-1 flex flex-col ${isRowLayout ? '' : 'md:flex-row'} md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
                 {/* Canvas Area — mobile brush: flex-1 (fills screen); mobile normal: fixed aspect-ratio height; desktop: flex-1 */}
                 <div
                     className={`flex flex-col bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
@@ -1224,22 +1242,30 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     // Linie daneben waere eine zweite Aussage ueber dieselbe
                     // Grenze. Der Ziehgriff zum Verbreitern sitzt ohnehin dort
                     // und zeigt sie an, sobald man ihn braucht.
-                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
-                    style={{ width: isMobile ? undefined : (isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px') }}
+                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 ${isResizing ? 'select-none' : 'md:transition-[width,height] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
+                    style={isMobile
+                        ? undefined
+                        : isRowLayout
+                            ? { width: '100%', height: isSideSheetActuallyVisible ? `${panelHeight}px` : '0px' }
+                            : { width: isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px' }}
                 >
                     {/* Resizer Handle — desktop only */}
                     {!isMobile && (
                         <div
                             onMouseDown={startResizing}
-                            className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-black/5 dark:hover:bg-white/10 active:bg-blue-500/30 transition-colors z-50 group"
+                            className={isRowLayout
+                                ? "absolute left-0 right-0 top-0 h-1.5 cursor-row-resize hover:bg-black/5 dark:hover:bg-white/10 active:bg-blue-500/30 transition-colors z-50 group"
+                                : "absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-black/5 dark:hover:bg-white/10 active:bg-blue-500/30 transition-colors z-50 group"}
                         >
-                            <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700" />
+                            <div className={isRowLayout
+                                ? "absolute inset-x-0 top-0 h-[1px] bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700"
+                                : "absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700"} />
                         </div>
                     )}
 
                     <SideSheet
                         key={state.selectedImage?.id ?? 'no-selection'}
-                        width={isMobile ? '100%' : `${sidebarWidth}px`}
+                        width={isMobile || isRowLayout ? '100%' : `${sidebarWidth}px`}
                         disableMobileSheet={isMobile}
                         selectedImage={state.selectedImage}
                         selectedImages={state.selectedImages}

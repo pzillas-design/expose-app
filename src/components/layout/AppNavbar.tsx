@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Images, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Images, Columns2, Rows2, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -8,6 +8,7 @@ import { GenerationProgressRing } from '../ui/GenerationProgressRing';
 import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
 import { MenuLines } from '@/components/ui/CustomIcons';
+import { useDetailLayout, setDetailLayout } from '@/utils/uiPrefs';
 import { NAV_H, NAV_H_EXPANDED_MOBILE, NAV_H_EXPANDED_DESKTOP } from '@/config/layout';
 import { CanvasImage } from '@/types';
 
@@ -144,6 +145,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onRetryVoiceMode
 }) => {
     const isMobile = useMobile();
+    // Direkt gelesen statt durchgereicht: Die Vorliebe meldet ihre Aenderung
+    // selbst, also brauchen weder App noch DetailPage davon zu wissen. Ein
+    // Durchreichen durch zwei Ebenen waere mehr Code fuer dasselbe Ergebnis.
+    const detailLayout = useDetailLayout();
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
     const [isDetailMenuOpen, setIsDetailMenuOpen] = useState(false);
@@ -404,6 +409,18 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
                                 ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
                                 { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                                ...(isMobile ? [] : [{
+                                    label: detailLayout === 'row'
+                                        ? (t('layout_side_by_side') || 'Nebeneinander')
+                                        : (t('layout_stacked') || 'Untereinander'),
+                                    icon: detailLayout === 'row'
+                                        ? <Columns2 className="w-4 h-4" />
+                                        : <Rows2 className="w-4 h-4" />,
+                                    onClick: () => {
+                                        setIsDetailMenuOpen(false);
+                                        setDetailLayout(detailLayout === 'row' ? 'column' : 'row');
+                                    },
+                                }]),
                                 { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
                             ]}
                         />
@@ -485,6 +502,18 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
                                 ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
                                 { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                                ...(isMobile ? [] : [{
+                                    label: detailLayout === 'row'
+                                        ? (t('layout_side_by_side') || 'Nebeneinander')
+                                        : (t('layout_stacked') || 'Untereinander'),
+                                    icon: detailLayout === 'row'
+                                        ? <Columns2 className="w-4 h-4" />
+                                        : <Rows2 className="w-4 h-4" />,
+                                    onClick: () => {
+                                        setIsDetailMenuOpen(false);
+                                        setDetailLayout(detailLayout === 'row' ? 'column' : 'row');
+                                    },
+                                }]),
                                 { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
                             ]}
                         />
