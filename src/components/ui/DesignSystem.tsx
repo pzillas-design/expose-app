@@ -115,8 +115,8 @@ interface TooltipProps {
     text: string;
     children: React.ReactElement<any>;
     side?: 'top' | 'bottom';
-    /** Keyboard shortcut hint shown after text in monospace */
-    shortcut?: string;
+    /** Tastenkuerzel hinter dem Text — Zeichenkette oder Symbol. */
+    shortcut?: React.ReactNode;
 }
 
 export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom', shortcut }) => {
@@ -133,7 +133,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         // Dynamic estimate of tooltip width based on text length to allow closer edge alignment
         const padding = 8;
         const charWidth = 6; // Average width per character in pixels for text-[10px]
-        const totalLen = text.length + (shortcut ? shortcut.length + 2 : 0);
+        const totalLen = text.length + (typeof shortcut === 'string' ? shortcut.length + 2 : shortcut ? 4 : 0);
         const estimatedHalfWidth = Math.max(20, (totalLen * charWidth) / 2 + 10);
 
         let left = rect.left + rect.width / 2;
@@ -187,7 +187,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
                         zwei oder drei Zeilen klebten sie vorher aneinander. */}
                     <div className="text-[11px] font-medium tracking-wide flex items-start gap-2 leading-[1.55]">
                         <span className="break-words">{text}</span>
-                        {shortcut && <kbd className="font-mono text-zinc-400 dark:text-zinc-500 whitespace-nowrap">{shortcut}</kbd>}
+                        {shortcut && <kbd className="font-mono inline-flex items-center gap-0.5 text-zinc-400 dark:text-zinc-500 whitespace-nowrap">{shortcut}</kbd>}
                     </div>
                 </div>,
                 document.body
@@ -236,8 +236,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     tooltip?: string;
     tooltipShortcut?: string;
     tooltipSide?: 'top' | 'bottom';
-    /** Keyboard shortcut shown inline in the button — hidden on mobile (sm: breakpoint) */
-    shortcut?: string;
+    /**
+     * Tastenkuerzel im Knopf, auf dem Handy ausgeblendet.
+     *
+     * Bewusst ReactNode und nicht string: Zeichen wie ↵ sind Schriftzeichen,
+     * keine Symbole. Ihre Groesse und ihre Lage zur Grundlinie bestimmt die
+     * Schrift, nicht wir — deshalb sass der Zeilenschalter im Knopf nie
+     * richtig, egal welche Groesse eingestellt war. Ein echtes Symbol
+     * (lucide CornerDownLeft) laesst sich dagegen genau setzen.
+     */
+    shortcut?: React.ReactNode;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -292,7 +300,7 @@ export const Button: React.FC<ButtonProps> = ({
                     mit. Mehr Deckkraft dazu: 40 % waren auf dem Farbverlauf des
                     Generieren-Knopfes kaum zu sehen.
                 */
-                <kbd className="hidden sm:inline-flex items-center font-mono text-[1.3em] leading-none opacity-70 ml-1">{shortcut}</kbd>
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[0.95em] leading-none opacity-70 ml-1.5">{shortcut}</kbd>
             )}
         </button>
     );

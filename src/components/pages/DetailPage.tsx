@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
 import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
-import { useDetailLayout, useThumbStripVisible } from '@/utils/uiPrefs';
+import { useDetailLayout } from '@/utils/uiPrefs';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
@@ -436,137 +436,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // already mid-scroll, snapping it back would jerk).
     const userScrollSelectionRef = useRef(false);
 
-    // Update padding on mount + resize — re-run when combinedStrip changes so refs are attached.
-    // Never depends on selectedId to avoid layout reflows that interrupt opacity transitions.
-    useEffect(() => {
-        const strip = thumbStripRef.current;
-        const inner = thumbStripInnerRef.current;
-        if (!strip || !inner) return;
-        const updatePadding = () => {
-            const halfPad = Math.max(0, Math.floor(strip.clientWidth / 2) - 18);
-            inner.style.paddingLeft = `${halfPad}px`;
-            inner.style.paddingRight = `${halfPad}px`;
-        };
-        updatePadding();
-        const obs = new ResizeObserver(updatePadding);
-        obs.observe(strip);
-        return () => obs.disconnect();
-    }, [combinedStrip.length]);
-
-    // Scroll active thumb to center on selectedId change / resize / sidesheet toggle.
-    // Uses getBoundingClientRect so the result is correct even at the start/end of the
-    // list (no dependency on padding math). Skips when the change came from the user's
-    // own scroll (already centered by snap) so the strip doesn't jerk back.
-    useEffect(() => {
-        // User-driven scroll selection? Just consume the flag and skip — the thumb is
-        // already at center thanks to scroll-snap, no recentering needed.
-        if (userScrollSelectionRef.current) {
-            userScrollSelectionRef.current = false;
-            return;
-        }
-
-        const centerActiveThumb = () => {
-            const strip = thumbStripRef.current;
-            if (!strip) return;
-            const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
-            if (!activeThumb) return;
-
-            const stripRect = strip.getBoundingClientRect();
-            const thumbRect = activeThumb.getBoundingClientRect();
-            const thumbCenterInContent = thumbRect.left - stripRect.left + strip.scrollLeft + thumbRect.width / 2;
-            const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
-            isFirstStripScrollRef.current = false;
-            const scrollTarget = thumbCenterInContent - strip.clientWidth / 2;
-            if (Math.abs(strip.scrollLeft - scrollTarget) < 1) return;
-            isProgrammaticScrollRef.current = true;
-            strip.scrollTo({ left: scrollTarget, behavior });
-
-            // Cancel any previous pending clear (rapid successive navigations).
-            if (scrollEndTimerRef.current) { clearTimeout(scrollEndTimerRef.current); scrollEndTimerRef.current = null; }
-            if (scrollEndHandlerRef.current) { strip.removeEventListener('scrollend', scrollEndHandlerRef.current); scrollEndHandlerRef.current = null; }
-
-            const clearGuard = () => {
-                isProgrammaticScrollRef.current = false;
-                if (scrollEndTimerRef.current) { clearTimeout(scrollEndTimerRef.current); scrollEndTimerRef.current = null; }
-                if (scrollEndHandlerRef.current) { strip.removeEventListener('scrollend', scrollEndHandlerRef.current); scrollEndHandlerRef.current = null; }
-            };
-            scrollEndHandlerRef.current = clearGuard;
-            strip.addEventListener('scrollend', clearGuard);
-            // Fallback for browsers without 'scrollend' (and the instant case).
-            scrollEndTimerRef.current = window.setTimeout(clearGuard, behavior === 'smooth' ? 1200 : 60);
-        };
-
-        let raf1: number, raf2: number;
-        raf1 = requestAnimationFrame(() => {
-            raf2 = requestAnimationFrame(centerActiveThumb);
-        });
-
-        window.addEventListener('resize', centerActiveThumb);
-
-        return () => {
-            cancelAnimationFrame(raf1);
-            cancelAnimationFrame(raf2);
-            window.removeEventListener('resize', centerActiveThumb);
-        };
-    }, [selectedId, combinedStrip, isSideSheetVisible]);
-
-    // Scroll-driven selection: continuously update selectedId to whichever thumb is
-    // closest to viewport center. Reactive (RAF-throttled), not debounced — so the
-    // orange selection ring tracks the user's scroll smoothly without springing back.
-    // Detail image loading is handled separately downstream — that one can take its
-    // time, the strip itself stays snappy.
-    useEffect(() => {
-        const strip = thumbStripRef.current;
-        if (!strip) return;
-
-        const findCenterThumbId = (): string | null => {
-            const stripRect = strip.getBoundingClientRect();
-            const centerX = stripRect.left + stripRect.width / 2;
-            const thumbs = strip.querySelectorAll<HTMLElement>('[data-thumb-id]');
-            if (thumbs.length === 0) return null;
-            let closest: HTMLElement | null = null;
-            let bestDist = Infinity;
-            thumbs.forEach((t) => {
-                const r = t.getBoundingClientRect();
-                const d = Math.abs((r.left + r.width / 2) - centerX);
-                if (d < bestDist) { bestDist = d; closest = t; }
-            });
-            return closest ? (closest as HTMLElement).getAttribute('data-thumb-id') : null;
-        };
-
-        let rafId: number | null = null;
-        let pending = false;
-
-        const tick = () => {
-            rafId = null;
-            pending = false;
-            if (isProgrammaticScrollRef.current) return;
-            const id = findCenterThumbId();
-            if (id && id !== selectedId) {
-                userScrollSelectionRef.current = true;
-                handleSelectWithin(id);
-            }
-        };
-
-        const onScroll = () => {
-            // Lazy-load near the end of the strip.
-            if (hasMore && onLoadMore) {
-                const remaining = strip.scrollWidth - strip.clientWidth - strip.scrollLeft;
-                if (remaining < 3 * 44) onLoadMore();
-            }
-            // RAF-coalesce: at most one update per frame.
-            if (pending) return;
-            pending = true;
-            rafId = requestAnimationFrame(tick);
-        };
-
-        strip.addEventListener('scroll', onScroll, { passive: true });
-        return () => {
-            strip.removeEventListener('scroll', onScroll);
-            if (rafId !== null) cancelAnimationFrame(rafId);
-        };
-    }, [selectedId, handleSelectWithin, hasMore, onLoadMore]);
-
     // Fallback: also load more when active image (via thumb click / arrow keys) is near
     // the end of the loaded list, so non-scroll navigation still triggers paging.
     useEffect(() => {
@@ -819,7 +688,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // Zumutung, und deshalb ist die Hoehe dort auch nicht ziehbar: Der Platz
     // reicht gerade fuer beides, es gibt nichts zu verteilen.
     const detailLayout = useDetailLayout();
-    const thumbStripVisible = useThumbStripVisible();
     const isRowLayout = !isMobile && detailLayout === 'row';
     // Anteilig am Fenster statt einer festen Zahl: 320 Pixel sind auf einem
     // 13-Zoll-Bildschirm ein Drittel und auf einem grossen ein Streifen, unter
@@ -1092,59 +960,9 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         belegt — sonst bliebe ein leerer Streifen stehen und das
                         Bild haette nichts gewonnen. Im Pinselmodus bleibt die
                         Hoehe wie gehabt, dort haengt die Werkzeugleiste darin. */}
-                    <div className={`${state.sideSheetMode !== 'brush' ? (thumbStripVisible ? 'h-20' : 'h-0') : (isMobile ? 'h-0' : 'h-20')} shrink-0 relative z-30 w-full overflow-visible`}>
+                    <div className={`${state.sideSheetMode !== 'brush' ? 'h-0' : (isMobile ? 'h-0' : 'h-20')} shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — width is capped to a fixed thumb count
                             (11 desktop / 5 mobile), centered. Cell = 36px thumb + 8px gap = 44px. */}
-                        {thumbStripVisible && <div
-                            ref={thumbStripRef}
-                            className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-[220px] md:max-w-[484px] flex items-center overflow-x-auto no-scrollbar bg-zinc-50 dark:bg-zinc-950 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
-                            style={{
-                                maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-                                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-                                // Carousel-style snap so horizontal scrolling lands on a thumb
-                                // and the closest-to-center thumb becomes the new selectedId.
-                                scrollSnapType: 'x mandatory',
-                            }}
-                        >
-                            <div ref={thumbStripInnerRef} className="flex items-center">
-                            {combinedStrip.map(({ img: i, distance, leaving }) => {
-                                // ±8 visible with exponential opacity decay; ±9-12 invisible buffer for smooth transitions
-                                const VISIBLE = 8;
-                                const thumbOpacity = leaving ? 1
-                                    : distance === 0 ? 1
-                                    : distance > VISIBLE ? 0
-                                    : Math.max(0.15, 0.6 * Math.pow(0.82, distance - 1));
-                                if (i.isGenerating && !leaving) {
-                                    const parentThumb = i.parentId ? imageMap.get(i.parentId) : null;
-                                    const pSrc = parentThumb?.thumbSrc || parentThumb?.src;
-                                    return (
-                                        <GeneratingThumb
-                                            key={i.id}
-                                            id={i.id}
-                                            pSrc={pSrc}
-                                            isActive={selectedId === i.id}
-                                            thumbOpacity={thumbOpacity}
-                                            startTime={i.generationStartTime}
-                                            estimatedDuration={i.estimatedDuration}
-                                            onSelect={handleSelectWithin}
-                                        />
-                                    );
-                                }
-                                return (
-                                    <ThumbButton
-                                        key={i.id}
-                                        id={i.id}
-                                        src={i.thumbSrc || i.src || ''}
-                                        isActive={selectedId === i.id}
-                                        isNew={state?.unseenIds?.has(i.id)}
-                                        leaving={leaving}
-                                        thumbOpacity={thumbOpacity}
-                                        onSelect={handleSelectWithin}
-                                    />
-                                );
-                            })}
-                            </div>
-                        </div>}
 
                         {/* Annotations Toolbar — fixed bottom on mobile, absolute on desktop */}
                         {state.sideSheetMode === 'brush' && <div className={`${isMobile ? 'fixed bottom-6' : 'absolute bottom-6'} left-0 right-0 z-50 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150`}>

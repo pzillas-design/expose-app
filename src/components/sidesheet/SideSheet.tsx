@@ -5,7 +5,7 @@ import {
 } from '@/types';
 import {
     Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Play, Plus, Check,
-    Undo2, Redo2, Layers, MoreHorizontal, Settings2
+    Undo2, Redo2, Layers, MoreHorizontal, Settings2, CornerDownLeft
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
@@ -662,7 +662,14 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // Kuerzel — sonst verspraeche der Knopf etwas, das nicht mehr gilt.
     const enterGenerates = useEnterGenerates();
     const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-    const generateShortcutLabel = enterGenerates ? '↵' : (isMac ? '⌘↵' : 'Strg↵');
+    // Der Zeilenschalter als Symbol, nicht als Zeichen: ↵ ist ein
+    // Schriftzeichen, dessen Groesse und Lage zur Grundlinie die Schrift
+    // bestimmt — deshalb sass es nie mittig. Das Befehlstasten-Zeichen ⌘
+    // bleibt Text, das ist in allen Systemschriften sauber gezeichnet.
+    const enterIcon = <CornerDownLeft className="w-[15px] h-[15px]" strokeWidth={2} />;
+    const generateShortcutLabel = enterGenerates
+        ? enterIcon
+        : <>{isMac ? '⌘' : 'Strg'}{enterIcon}</>;
     // Bewusst kein Hinweistext am Knopf: Das Zeichen im Knopf sagt es bereits,
     // und wer es nicht kennt, klickt — was ohnehin funktioniert. Ein Kasten,
     // der bei jedem Ueberfahren des wichtigsten Knopfes aufgeht, waere dauernd
