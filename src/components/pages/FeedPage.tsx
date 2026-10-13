@@ -56,10 +56,19 @@ const dayKeyOf = (ts: string | number | undefined): string => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-/** "Heute", "Gestern", sonst das ausgeschriebene Datum. */
-const dayLabelOf = (ts: string | number | undefined, lang: 'de' | 'en'): string => {
-    const d = ts ? new Date(ts) : new Date();
-    const key = dayKeyOf(ts);
+/**
+ * "Heute", "Gestern", sonst das ausgeschriebene Datum — aus dem Tagesschluessel.
+ *
+ * Bewusst aus dem SCHLUESSEL und nicht aus einem Zeitstempel: Gruppiert wurde
+ * nach dem Datum des Originals, beschriftet wurde nach dem Datum des
+ * Deckbildes, und das Deckbild ist die NEUESTE Fassung. Zwei Stapel mit
+ * Originalen von verschiedenen Tagen, deren neueste Fassungen am selben Tag
+ * entstanden, bekamen dadurch dieselbe Ueberschrift — im Verlauf stand "8.
+ * Oktober" zweimal untereinander.
+ */
+const dayLabelOf = (key: string, lang: 'de' | 'en'): string => {
+    const [y, m, dd] = key.split('-').map(Number);
+    const d = new Date(y, (m || 1) - 1, dd || 1);
     const today = dayKeyOf(Date.now());
     const yesterday = dayKeyOf(Date.now() - 86400000);
     if (key === today) return lang === 'de' ? 'Heute' : 'Today';
@@ -774,7 +783,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         }
         return Array.from(byDay.entries()).map(([key, covers]) => ({
             key,
-            label: dayLabelOf(covers[0]?.createdAt, state?.currentLang === 'de' ? 'de' : 'en'),
+            label: dayLabelOf(key, state?.currentLang === 'de' ? 'de' : 'en'),
             covers,
             // Die Frist haengt am Tag, nicht an der einzelnen Kachel. Steht die
             // Gruppe zu, sind die gelben Punkte an den Kacheln nicht zu sehen —
@@ -1237,13 +1246,27 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                     // Rasters: Der ist fuer Bildkacheln gedacht und laesst
                                                     // zwischen zwei zugeklappten Tagen sonst eine halbe
                                                     // Bildhoehe Luft stehen.
-                                                    className="col-span-full flex items-center gap-2 py-1 -my-4 sm:-my-6 text-left group/day"
+                                                    // Der Zeilenabstand des Rasters wird exakt
+                                                    // aufgehoben (-my-5 bzw. -my-8 bei gap-y-10/16)
+                                                    // und durch einen eigenen ersetzt. Vorher hob
+                                                    // ihn ein ungefaehrer Wert nur teilweise auf,
+                                                    // und zwar an beiden Breiten unterschiedlich —
+                                                    // daher die ungleichen Luecken zwischen den
+                                                    // Tagen.
+                                                    className="col-span-full flex items-center gap-2 py-2 -my-5 sm:-my-8 px-2 -mx-2 rounded-lg text-left
+                                                        hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors duration-150 group/day"
                                                 >
                                                     <ChevronRight
                                                         className={`w-4 h-4 shrink-0 text-zinc-400 transition-transform duration-200 ${closed ? '' : 'rotate-90'}`}
                                                         strokeWidth={2}
                                                     />
-                                                    <span className={Typo.H4}>{sec.label}</span>
+                                                    {/* Dezenter: Die Kopfzeile ordnet, sie ist nicht
+                                                        der Inhalt. Typo.H4 ist halbfett und in
+                                                        Textfarbe — damit stand das Datum lauter da
+                                                        als die Bilder darunter. */}
+                                                    <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 group-hover/day:text-zinc-800 dark:group-hover/day:text-zinc-200 transition-colors">
+                                                        {sec.label}
+                                                    </span>
                                                     {sec.daysLeft != null && sec.daysLeft <= WARNING_DAYS && (
                                                         // Dezent, aber nicht zu uebersehen: Steht der Tag zu,
                                                         // sind die gelben Punkte an den Kacheln verdeckt, und

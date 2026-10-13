@@ -94,16 +94,17 @@ export const useDetailLayout = (): DetailLayout => {
  * die Pfeile und der Wisch dasselbe leisten. Wer sie vermisst, holt sie im
  * Menue zurueck.
  *
- * Standard bleibt an: Ein stillschweigendes Verschwinden waere fuer alle, die
- * sie benutzen, ein Verlust ohne Ankuendigung.
+ * Standard ist aus: Der Platz gehoert dem Bild, und Pfeile, Wischen und die
+ * Galerie leisten dasselbe. Wer sie will, holt sie im Menue zurueck — und die
+ * Entscheidung bleibt dann gespeichert.
  */
 const THUMB_STRIP_KEY = 'expose:ui:detail-thumbstrip-v1';
 
 export const getThumbStripVisible = (): boolean => {
     try {
-        return window.localStorage.getItem(THUMB_STRIP_KEY) !== '0';
+        return window.localStorage.getItem(THUMB_STRIP_KEY) === '1';
     } catch (_) {
-        return true;
+        return false;
     }
 };
 
