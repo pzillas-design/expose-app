@@ -182,20 +182,22 @@ interface DetailPageProps {
 /**
  * Die schwebenden Knoepfe ueber dem Bild.
  *
- * Immer sichtbar, aber zurueckgenommen — und auf jedem Untergrund lesbar.
+ * Immer sichtbar, aber zurueckgenommen — und auf jedem Untergrund lesbar,
+ * ohne Umrandung.
  *
- * Die dunkle Fuellung traegt ueber hellen Motiven, der helle Ring ueber
- * dunklen. Mit nur einem der beiden verschwindet der Knopf jeweils auf der
- * anderen Haelfte der Bilder: Schwarz auf Schwarz ist unsichtbar, und eine
- * helle Flaeche auf einem Schneebild ebenso.
+ * Ueber hellen Motiven traegt die dunkle Fuellung. Ueber dunklen traegt das
+ * weisse Zeichen selbst: Die Fuellung verschwindet dort, das Symbol bleibt. Ein
+ * leichter Schlagschatten am Zeichen haelt es auch auf mittleren Tonwerten
+ * ablesbar, wo weder Flaeche noch Zeichen allein genug Kontrast haetten.
  *
- * Deshalb beides, und beides schwach: Es geht nicht darum, aufzufallen,
- * sondern darum, nicht zu verschwinden.
+ * Das kommt ohne Ring aus — eine Umrandung haette den Knopf ueber jedem Motiv
+ * als Objekt behauptet, auch dort, wo er gar nicht gebraucht wird.
  */
 const FLOATING_BTN_BASE = `text-white rounded-full flex items-center
     bg-black/35 hover:bg-black/60 backdrop-blur-md
-    ring-1 ring-white/20 hover:ring-white/30
-    transition-[background-color,box-shadow] duration-150`;
+    shadow-lg shadow-black/25
+    [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]
+    transition-[background-color] duration-150`;
 
 const FLOATING_BTN = `${FLOATING_BTN_BASE} h-9 px-4 text-xs font-medium`;
 
