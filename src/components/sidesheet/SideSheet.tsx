@@ -25,6 +25,17 @@ import { useEnterGenerates } from '@/utils/uiPrefs';
  */
 const MODEL_HINT_KEY = 'expose_tip_seedream_default_v1';
 
+/**
+ * Die Chips unter "Vorlagen".
+ *
+ * Eine Angabe fuer alle drei Faelle: die Vorlagen selbst, der Knopf fuer eine
+ * neue, und der leere Zustand. Vorher dreimal dieselbe Kette abgeschrieben,
+ * mit je eigenen Abweichungen im Abstand.
+ */
+const TEMPLATE_CHIP = `flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium group
+    bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80
+    transition-colors duration-150`;
+
 /** Innenabstand des Panels oben und unten, in Pixeln (entspricht pt-6/pb-6). */
 const PANEL_PAD_Y = 24;
 
@@ -1349,7 +1360,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             <button
                                                 key={tpl.id}
                                                 onClick={() => handleSelectTemplate(tpl)}
-                                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 transition-all duration-150 group text-[12px] font-medium"
+                                                className={TEMPLATE_CHIP}
                                             >
                                                 {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
                                                 <span className="text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
@@ -1360,21 +1371,28 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         {displayTemplates.length === 0 ? (
                                             <button
                                                 onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 transition-all text-[12px] font-medium text-zinc-500 dark:text-zinc-400"
+                                                className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
                                             >
                                                 <Plus className="w-3 h-3" />
                                                 {t('new_preset') || 'Neue Vorlage'}
                                             </button>
                                         ) : (
                                             <div className="relative inline-flex shrink-0">
-                                                <RoundIconButton
-                                                    icon={<MoreHorizontal className="w-4 h-4" />}
-                                                    onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
-                                                    tooltip={t('edit_presets')}
-                                                    tooltipSide="top"
-                                                    variant="ghost"
-                                                    data-voice-action="open-presets-manager"
-                                                />
+                                                {/* Derselbe Chip wie die Vorlagen daneben, nur mit
+                                                    einem Plus: Ein runder Knopf in einer Reihe
+                                                    eckiger Chips sah aus wie etwas anderes, obwohl
+                                                    er dazugehoert — und drei Punkte sagen "mehr
+                                                    davon", gemeint ist "eine neue". */}
+                                                <Tooltip text={t('edit_presets')} side="top">
+                                                    <button
+                                                        onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
+                                                        data-voice-action="open-presets-manager"
+                                                        aria-label={t('edit_presets')}
+                                                        className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </Tooltip>
                                                 <ContextTip
                                                     storageKey="expose_tip_presets_manage_v1"
                                                     text={lang === 'de'
