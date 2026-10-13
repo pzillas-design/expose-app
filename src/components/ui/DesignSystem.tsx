@@ -348,12 +348,17 @@ export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, 
         default: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-700 dark:text-zinc-300 hover:bg-white/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white`,
         danger: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400`,
         ghost: `bg-transparent backdrop-blur-none border-transparent text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white`,
-        // Dauerhaft sichtbar, aber nur eben so. Fuer Knoepfe, die immer da sind
-        // und deshalb auffindbar sein muessen, ohne dass man sie erst sucht —
-        // der Zurueck-Pfeil vor allem. 'ghost' zeigt bis zum Ueberfahren gar
-        // nichts, und auf einem Foto ist ein freistehender Pfeil schwer zu
-        // treffen, weil man seine Flaeche nicht sieht.
-        soft: `bg-black/[0.05] dark:bg-white/[0.07] border-transparent text-zinc-600 dark:text-zinc-300 hover:bg-black/[0.09] dark:hover:bg-white/[0.12] hover:text-black dark:hover:text-white`,
+        // Zeigt im Ruhezustand das, was 'ghost' erst beim Ueberfahren zeigt.
+        //
+        // Fuer die wenigen Knoepfe, die an jeder Stelle den Weg zurueck
+        // bedeuten. 'ghost' zeigt bis zum Ueberfahren gar nichts: Auf einem
+        // Foto ist ein freistehender Pfeil schwer zu treffen, weil seine
+        // Flaeche unsichtbar ist — und auf dem Handy gibt es kein Ueberfahren,
+        // dort war sie also nie zu sehen.
+        //
+        // Sparsam einsetzen. Bekaeme sie jeder Knopf, waere die Leiste eine
+        // Reihe grauer Kreise und die Hervorhebung waere keine mehr.
+        soft: `bg-black/[0.08] dark:bg-white/[0.12] border-transparent text-zinc-700 dark:text-zinc-200 hover:bg-black/[0.12] dark:hover:bg-white/[0.18] hover:text-black dark:hover:text-white`,
         primary: `bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm hover:brightness-110`,
     };
 

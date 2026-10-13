@@ -327,17 +327,17 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     const leftContent = isDetail ? (
         <div className="flex items-center gap-1">
-            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" tooltip={t('back')} />
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="soft" tooltip={t('back')} />
             {progressRing}
         </div>
     ) : isCreate ? (
         <div className="flex items-center gap-1">
-            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" tooltip={t('back')} />
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="soft" tooltip={t('back')} />
             {progressRing}
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
-            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCancelSelectMode} variant="ghost" />
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCancelSelectMode} variant="soft" />
             {progressRing}
         </div>
     ) : isGroupDrillDown ? (
