@@ -1128,15 +1128,28 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                 >
                     {/* Resizer Handle — desktop only */}
                     {!isMobile && !isRowLayout && (
+                        /*
+                            Greifflaeche ueber die volle Hoehe, sichtbar ist nur ein
+                            kurzer Balken in der Mitte.
+
+                            Vorher leuchtete die ganze Kante auf — eine
+                            bildschirmhohe Flaeche als Rueckmeldung auf einen
+                            Mauszeiger ist zu viel Antwort fuer zu wenig Frage. Der
+                            Balken ist etwa daumenhoch: genug, um ihn zu sehen und zu
+                            treffen, wenig genug, um ihn zu uebersehen, solange man
+                            ihn nicht sucht.
+
+                            Im Ruhezustand sehr zurueckhaltend, beim Ueberfahren
+                            deutlicher — getroffen wird ohnehin die ganze Kante.
+                        */
                         <div
                             onMouseDown={startResizing}
-                            className={isRowLayout
-                                ? "absolute left-0 right-0 top-0 h-1.5 cursor-row-resize hover:bg-black/5 dark:hover:bg-white/10 active:bg-blue-500/30 transition-colors z-50 group"
-                                : "absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-black/5 dark:hover:bg-white/10 active:bg-blue-500/30 transition-colors z-50 group"}
+                            className="absolute left-0 top-0 bottom-0 w-2 -ml-1 cursor-col-resize z-50 group/resize flex items-center justify-center"
                         >
-                            <div className={isRowLayout
-                                ? "absolute inset-x-0 top-0 h-[1px] bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700"
-                                : "absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700"} />
+                            <div className="w-[3px] h-10 rounded-full bg-black/10 dark:bg-white/15
+                                group-hover/resize:bg-black/25 dark:group-hover/resize:bg-white/35
+                                group-active/resize:bg-black/35 dark:group-active/resize:bg-white/50
+                                transition-colors duration-150" />
                         </div>
                     )}
 
