@@ -1146,7 +1146,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             onMouseDown={startResizing}
                             className="absolute left-0 top-0 bottom-0 w-2 -ml-1 cursor-col-resize z-50 group/resize flex items-center justify-center"
                         >
-                            <div className="w-[3px] h-10 rounded-full bg-black/10 dark:bg-white/15
+                            <div className="w-1 h-12 rounded-full bg-black/10 dark:bg-white/15
                                 group-hover/resize:bg-black/25 dark:group-hover/resize:bg-white/35
                                 group-active/resize:bg-black/35 dark:group-active/resize:bg-white/50
                                 transition-colors duration-150" />
