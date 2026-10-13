@@ -393,6 +393,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         onSelectImage(tracked.childId);
     }, [generatingChild, imageMap, selectedId, onSelectImage, isTypingNow]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
+    // Im Zeilenmodus wird die Bildhoehe gesetzt statt gemessen. Gemessen wird
+    // deshalb der Hauptbereich: Wuerde der Bildbereich sich selbst messen,
+    // nachdem seine Hoehe aus dieser Messung stammt, liefe beides im Kreis.
+    const mainRef = useRef<HTMLDivElement>(null);
 
     // Keep blob visible after generation completes until the real image has loaded
     const prevIsGeneratingRef = useRef<boolean>(false);
@@ -826,6 +830,35 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     );
     const MIN_PANEL_HEIGHT = 200;
 
+    /**
+     * Hoehe des Bildbereichs im Zeilenmodus.
+     *
+     * Das Bild sitzt buendig unter der Leiste und nimmt die volle Breite; seine
+     * Hoehe folgt daraus. Die Eingabe rueckt direkt darunter — es bleibt kein
+     * Streifen dazwischen, und bei einem 4:3-Bild ist der Bereich genau so hoch
+     * wie das Bild.
+     *
+     * Zweite Grenze fuer Hochformate: Sonst fuellte ein 3:4-Bild bei voller
+     * Breite den ganzen Bildschirm und die Eingabe waere nicht mehr zu sehen.
+     */
+    const [rowImageHeight, setRowImageHeight] = useState<number | undefined>(undefined);
+    useEffect(() => {
+        if (!isRowLayout) { setRowImageHeight(undefined); return; }
+        const compute = () => {
+            const el = mainRef.current;
+            if (!el || !imgNaturalDims.width || !imgNaturalDims.height) return;
+            const byWidth = el.clientWidth * imgNaturalDims.height / imgNaturalDims.width;
+            const maxH = Math.max(220, el.clientHeight - MIN_PANEL_HEIGHT);
+            setRowImageHeight(Math.round(Math.min(byWidth, maxH)));
+        };
+        compute();
+        const el = mainRef.current;
+        const obs = el ? new ResizeObserver(compute) : null;
+        if (el && obs) obs.observe(el);
+        window.addEventListener('resize', compute);
+        return () => { obs?.disconnect(); window.removeEventListener('resize', compute); };
+    }, [isRowLayout, imgNaturalDims.width, imgNaturalDims.height]);
+
     const startResizing = useCallback(() => setIsResizing(true), []);
     const stopResizing = useCallback(() => setIsResizing(false), []);
 
@@ -882,7 +915,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
             {/* Removed internal header - handled by AppNavbar */}
 
-            <main className={`flex-1 flex flex-col ${isRowLayout ? '' : 'md:flex-row'} md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+            <main ref={mainRef} className={`flex-1 flex flex-col ${isRowLayout ? '' : 'md:flex-row'} md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
                 {/* Canvas Area — mobile brush: flex-1 (fills screen); mobile normal: fixed aspect-ratio height; desktop: flex-1 */}
                 <div
                     className={`flex flex-col bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
@@ -896,7 +929,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     }
                 >
                     {/* Image Container */}
-                    <div className="flex-1 relative overflow-hidden min-h-0">
+                    <div
+                        className={`relative overflow-hidden min-h-0 ${isRowLayout ? 'shrink-0' : 'flex-1'}`}
+                        style={isRowLayout && rowImageHeight ? { height: `${rowImageHeight}px` } : undefined}
+                    >
 
                     {/* Nav Arrows — desktop only, visible on hover, hidden in brush mode */}
                     {idx > 0 && state.sideSheetMode !== 'brush' && (
@@ -1257,11 +1293,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     style={isMobile
                         ? undefined
                         : isRowLayout
-                            ? { width: '100%', height: isSideSheetActuallyVisible ? `${panelHeight}px` : '0px' }
+                            // Keine gesetzte Hoehe: Die Leiste nimmt, was das Bild
+                            // uebrig laesst. Damit rueckt sie unmittelbar an das
+                            // Bild heran, und es gibt nichts mehr zu ziehen.
+                            ? { width: '100%' }
                             : { width: isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px' }}
                 >
                     {/* Resizer Handle — desktop only */}
-                    {!isMobile && (
+                    {!isMobile && !isRowLayout && (
                         <div
                             onMouseDown={startResizing}
                             className={isRowLayout
