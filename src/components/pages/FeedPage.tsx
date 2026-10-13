@@ -1,7 +1,7 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
 import { NAV_SCROLL_OFFSET } from '@/config/layout';
-import { Loader2, Plus, Layers, Layers2, ChevronRight, Upload, Download, X, ImagePlus } from 'lucide-react';
+import { Loader2, Plus, Layers, Layers2, ChevronRight, Upload, Download, X } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -105,7 +105,7 @@ const UploadDropZone: React.FC<{
     <button
         onClick={onClick}
         className={`w-full rounded-2xl flex items-center justify-center transition-colors duration-200
-            ${row ? 'flex-row gap-2.5 py-6' : 'flex-col gap-3 px-6 py-10'}
+            ${row ? 'flex-row gap-2.5 py-8' : 'flex-col gap-3 px-6 py-12'}
             ${active
                 // Beim Ziehen etwas deutlicher, aber in derselben Tonlage —
                 // kein Farbwechsel, nur mehr davon.
@@ -113,7 +113,10 @@ const UploadDropZone: React.FC<{
                 : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}
             ${className}`}
     >
-        <ImagePlus className="w-5 h-5 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.5} />
+        {/* Ein blankes Plus. ImagePlus trug einen Bildrahmen samt Berg, Sonne
+            und Pluszeichen — bei 20 Pixeln vier Formen in einem Symbol, und
+            damit unruhiger als die Flaeche, die es ankuendigt. */}
+        <Plus className="w-[18px] h-[18px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
         <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{label}</span>
     </button>
 );
