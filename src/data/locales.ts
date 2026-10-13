@@ -158,7 +158,7 @@ export const translations = {
     welcome_title: "Welcome to Exposé",
     welcome_desc: "Select your photos to edit or start a new flow.",
     welcome_empty_desc: "Add photos, or create something new.",
-    welcome_drop_cta: "Upload photos or drag them here",
+    welcome_drop_cta: "Upload or drag photos",
     thumbstrip_hide: "Hide filmstrip",
     thumbstrip_show: "Show filmstrip",
     tiles_larger: "Larger tiles",
