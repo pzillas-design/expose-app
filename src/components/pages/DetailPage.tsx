@@ -1178,9 +1178,9 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // Rand statt als Griff.
                             className="absolute left-0 top-0 bottom-0 w-6 -ml-1 cursor-col-resize z-50 group/resize flex items-center"
                         >
-                            <div className="w-2 h-12 ml-3 rounded-full bg-black/15 dark:bg-white/20
-                                group-hover/resize:bg-black/30 dark:group-hover/resize:bg-white/40
-                                group-active/resize:bg-black/40 dark:group-active/resize:bg-white/55
+                            <div className="w-1.5 h-12 ml-3 rounded-full bg-black/10 dark:bg-white/12
+                                group-hover/resize:bg-black/20 dark:group-hover/resize:bg-white/28
+                                group-active/resize:bg-black/30 dark:group-active/resize:bg-white/40
                                 transition-colors duration-150" />
                         </div>
                     )}
