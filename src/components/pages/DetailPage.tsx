@@ -471,6 +471,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     }), [img?.width, img?.height]);
 
     const [displayBox, setDisplayBox] = useState({ width: 0, height: 0 });
+    const [imageTopOffset, setImageTopOffset] = useState(0);
+    /**
+     * Innenabstand oben im Seitenpanel (pt-6 in SideSheet). Er zaehlt bereits
+     * mit, wenn das Panel an die Bildkante gelegt wird — sonst saesse die
+     * Eingabe um genau diesen Betrag zu tief.
+     */
+    const PANEL_INNER_PT = 24;
 
     // In annotation mode (brush/text/shapes) the bottom toolbars float over the image.
     // Reserve this many pixels at the bottom so the image scales to fit above them.
@@ -490,10 +497,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             viewportHeight / imgNaturalDims.height
         );
 
+        const boxHeight = Math.max(1, Math.round(imgNaturalDims.height * scale));
         setDisplayBox({
             width: Math.max(1, Math.round(imgNaturalDims.width * scale)),
-            height: Math.max(1, Math.round(imgNaturalDims.height * scale))
+            height: boxHeight
         });
+        // Wie weit die Oberkante des Bildes von der Oberkante seines Bereichs
+        // entfernt ist. Das Bild steht mittig; die Eingabe daneben legt sich an
+        // diese Linie an, damit beide auf derselben Hoehe beginnen.
+        setImageTopOffset(Math.max(0, Math.round((viewport.clientHeight - boxHeight) / 2)));
     }, [imgNaturalDims.height, imgNaturalDims.width, state.sideSheetMode]);
 
     useEffect(() => {
@@ -1132,7 +1144,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // wirkungslos geblieben. Genau daran lag es, dass
                             // Ausblenden im Zeilenmodus nichts tat.
                             ? { width: '100%' }
-                            : { width: isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px' }}
+                            : {
+                                width: isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px',
+                                // Buendig mit der Oberkante des Bildes. Das Bild bleibt
+                                // mittig — bewegt wird die Eingabe, nicht das Bild.
+                                paddingTop: Math.max(0, imageTopOffset - PANEL_INNER_PT),
+                            }}
                 >
                     {/* Resizer Handle — desktop only */}
                     {!isMobile && !isRowLayout && (
