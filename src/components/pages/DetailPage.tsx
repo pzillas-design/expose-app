@@ -723,7 +723,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // Zumutung, und deshalb ist die Hoehe dort auch nicht ziehbar: Der Platz
     // reicht gerade fuer beides, es gibt nichts zu verteilen.
     const detailLayout = useDetailLayout();
-    const isRowLayout = !isMobile && detailLayout === 'row';
+    // Die Zeilenanordnung gilt nur, SOLANGE die Eingabe sichtbar ist. Im
+    // Vollbild gibt es nichts zu teilen: Dort soll das Bild die ganze Flaeche
+    // bekommen und mittig darin stehen — mit der Zeilenhoehe waere es oben
+    // geklebt und darunter waere der Platz der verschwundenen Eingabe leer
+    // geblieben.
+    const isRowLayout = !isMobile && detailLayout === 'row' && isSideSheetActuallyVisible;
     // Anteilig am Fenster statt einer festen Zahl: 320 Pixel sind auf einem
     // 13-Zoll-Bildschirm ein Drittel und auf einem grossen ein Streifen, unter
     // dem das Bild verloren wirkt. Ein knappes Drittel haelt das Verhaeltnis

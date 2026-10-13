@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, PanelBottom, PanelRightClose, Minus, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, PanelBottom, Maximize2, Minus, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -511,12 +511,12 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 // oder wohin es geht.
                                 ...(isMobile ? [] : [{
                                     label: !isSideSheetVisible
-                                        ? (t('panel_state_hidden') || 'Eingabe aus')
+                                        ? (t('view_fullscreen') || 'Ansicht: Vollbild')
                                         : detailLayout === 'column'
-                                            ? (t('panel_state_right') || 'Eingabe rechts')
-                                            : (t('panel_state_bottom') || 'Eingabe unten'),
+                                            ? (t('view_columns') || 'Ansicht: Spalten')
+                                            : (t('view_rows') || 'Ansicht: Zeilen'),
                                     icon: !isSideSheetVisible
-                                        ? <PanelRightClose className="w-4 h-4" />
+                                        ? <Maximize2 className="w-4 h-4" />
                                         : detailLayout === 'column'
                                             ? <PanelRight className="w-4 h-4" />
                                             : <PanelBottom className="w-4 h-4" />,
