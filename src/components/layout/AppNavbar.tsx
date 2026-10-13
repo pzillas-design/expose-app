@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff, Folder } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Images, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -7,6 +7,7 @@ import { DropdownMenu } from '../ui/DropdownMenu';
 import { GenerationProgressRing } from '../ui/GenerationProgressRing';
 import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
+import { MenuLines } from '@/components/ui/CustomIcons';
 import { NAV_H } from '@/config/layout';
 import { CanvasImage } from '@/types';
 
@@ -341,7 +342,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : isGroupDrillDown ? (
         <div className="flex items-center gap-1">
-            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCloseGroup} variant="ghost" />
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCloseGroup} variant="soft" />
             {progressRing}
         </div>
     ) : (
@@ -350,7 +351,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <RoundIconButton
                     icon={<ChevronLeft className="w-5 h-5" />}
                     onClick={() => window.history.back()}
-                    variant="ghost"
+                    variant="soft"
                     tooltip="Blog"
                 />
             ) : isSpecialPage ? (
@@ -413,7 +414,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     ) : isGroupDrillDown && groupInfo ? (
         <div className="flex items-center gap-1.5">
             {groupItemCount && groupItemCount > 1 ? (
-                <Folder className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
+                <Images className="w-[15px] h-[15px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.75} />
             ) : null}
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
                 {groupInfo}
@@ -435,7 +436,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             {!isPublic && user && balanceDisplay}
             <div className="relative" ref={gridMenuRef}>
                 <RoundIconButton
-                    icon={<MoreHorizontal className="w-4 h-4" />}
+                    icon={<MenuLines className="w-4 h-4" />}
                     onClick={() => setIsGridMenuOpen(p => !p)}
                     variant="ghost"
                     active={isGridMenuOpen}
@@ -589,7 +590,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
                     <div className="relative" ref={gridMenuRef}>
                         <RoundIconButton
-                            icon={<MoreHorizontal className="w-4 h-4" />}
+                            icon={<MenuLines className="w-4 h-4" />}
                             onClick={() => setIsGridMenuOpen(p => !p)}
                             variant="ghost"
                             active={isGridMenuOpen}
@@ -898,7 +899,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                             }`}
                                         onClick={() => setIsGridMenuOpen(p => !p)}
                                     >
-                                        <MoreHorizontal className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                        <MenuLines className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
                                         <div
                                             className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                                 }`}
@@ -1013,7 +1014,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     to the left of the title is the minimal "this is a stack" signal. */}
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-10 max-w-[60%]">
                     {groupItemCount && groupItemCount > 1 ? (
-                        <Folder className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
+                        <Images className="w-[15px] h-[15px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.75} />
                     ) : null}
                     <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                         {groupInfo}

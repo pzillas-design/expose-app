@@ -321,7 +321,7 @@ interface RoundIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     tooltip?: string;
     tooltipShortcut?: string;
     tooltipSide?: 'top' | 'bottom';
-    variant?: 'default' | 'danger' | 'ghost' | 'primary';
+    variant?: 'default' | 'danger' | 'ghost' | 'soft' | 'primary';
 }
 
 export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, tooltipShortcut, tooltipSide, variant = 'default', className = '', ...props }) => {
@@ -330,9 +330,15 @@ export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, 
 
     // Aesthetic classes
     const variants = {
-        default: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-700 dark:text-zinc-300 hover:bg-white/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white hover:`,
-        danger: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:`,
+        default: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-700 dark:text-zinc-300 hover:bg-white/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white`,
+        danger: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400`,
         ghost: `bg-transparent backdrop-blur-none border-transparent text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white`,
+        // Dauerhaft sichtbar, aber nur eben so. Fuer Knoepfe, die immer da sind
+        // und deshalb auffindbar sein muessen, ohne dass man sie erst sucht —
+        // der Zurueck-Pfeil vor allem. 'ghost' zeigt bis zum Ueberfahren gar
+        // nichts, und auf einem Foto ist ein freistehender Pfeil schwer zu
+        // treffen, weil man seine Flaeche nicht sieht.
+        soft: `bg-black/[0.05] dark:bg-white/[0.07] border-transparent text-zinc-600 dark:text-zinc-300 hover:bg-black/[0.09] dark:hover:bg-white/[0.12] hover:text-black dark:hover:text-white`,
         primary: `bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm hover:brightness-110`,
     };
 
