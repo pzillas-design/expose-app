@@ -974,8 +974,29 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 // Keine Übergänge: Diese Kopfzeile ist immer schmal, es gibt
                 // nichts zu animieren — und beim Ansichtswechsel wäre jede
                 // Animation ein Fehler, kein Effekt.
-                className="fixed top-0 left-0 right-0 z-50 h-14 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50 flex items-center px-4 md:px-6 [mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]"
+                className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 md:px-6"
             >
+            {/*
+                Untergrund als eigene Ebene, nicht auf der Kopfzeile selbst.
+
+                Eine Maske beschneidet ALLE Nachkommen auf die Flaeche des
+                maskierten Elements. Lag sie auf der Kopfzeile, verschwand jedes
+                Aufklappmenue spurlos: Die Liste steht per `top-full` vollstaendig
+                unterhalb der Kopfzeile, also im vollstaendig transparenten Teil
+                der Maske. Genau deshalb liess sich das Menue in der
+                Detailansicht nicht mehr oeffnen — es wurde geoeffnet, aber nicht
+                gezeichnet.
+
+                Gleiche Bauweise wie in der Galerie-Kopfzeile: Weichzeichner und
+                Maske sitzen auf einer Ebene darunter, die Kopfzeile selbst
+                beschneidet nichts.
+            */}
+            <div
+                aria-hidden
+                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50
+                    [mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]
+                    [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]"
+            />
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
                     <button
@@ -1010,8 +1031,29 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     return (
         <header
             key="nav-detail"
-            className={`fixed top-0 left-0 right-0 z-50 h-14 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50 flex items-center px-4 md:px-6 [mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]`}
+            className={`fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 md:px-6`}
         >
+            {/*
+                Untergrund als eigene Ebene, nicht auf der Kopfzeile selbst.
+
+                Eine Maske beschneidet ALLE Nachkommen auf die Flaeche des
+                maskierten Elements. Lag sie auf der Kopfzeile, verschwand jedes
+                Aufklappmenue spurlos: Die Liste steht per `top-full` vollstaendig
+                unterhalb der Kopfzeile, also im vollstaendig transparenten Teil
+                der Maske. Genau deshalb liess sich das Menue in der
+                Detailansicht nicht mehr oeffnen — es wurde geoeffnet, aber nicht
+                gezeichnet.
+
+                Gleiche Bauweise wie in der Galerie-Kopfzeile: Weichzeichner und
+                Maske sitzen auf einer Ebene darunter, die Kopfzeile selbst
+                beschneidet nichts.
+            */}
+            <div
+                aria-hidden
+                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50
+                    [mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]
+                    [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]"
+            />
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
                 {leftContent}
