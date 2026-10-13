@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Images, Columns2, Rows2, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Images, PanelBottom, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -423,18 +423,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         setThumbStripVisible(!thumbStripVisible);
                                     },
                                 },
-                                ...(isMobile ? [] : [{
-                                    label: detailLayout === 'row'
-                                        ? (t('layout_side_by_side') || 'Nebeneinander')
-                                        : (t('layout_stacked') || 'Untereinander'),
-                                    icon: detailLayout === 'row'
-                                        ? <Columns2 className="w-4 h-4" />
-                                        : <Rows2 className="w-4 h-4" />,
-                                    onClick: () => {
-                                        setIsDetailMenuOpen(false);
-                                        setDetailLayout(detailLayout === 'row' ? 'column' : 'row');
-                                    },
-                                }]),
                                 { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
                             ]}
                         />
@@ -528,18 +516,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         setThumbStripVisible(!thumbStripVisible);
                                     },
                                 },
-                                ...(isMobile ? [] : [{
-                                    label: detailLayout === 'row'
-                                        ? (t('layout_side_by_side') || 'Nebeneinander')
-                                        : (t('layout_stacked') || 'Untereinander'),
-                                    icon: detailLayout === 'row'
-                                        ? <Columns2 className="w-4 h-4" />
-                                        : <Rows2 className="w-4 h-4" />,
-                                    onClick: () => {
-                                        setIsDetailMenuOpen(false);
-                                        setDetailLayout(detailLayout === 'row' ? 'column' : 'row');
-                                    },
-                                }]),
                                 { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
                             ]}
                         />
@@ -584,11 +560,43 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 </span>
             )}
             <span className="hidden md:contents">
+                {/*
+                    Ein Knopf, drei Zustaende: rechts — unten — aus — rechts.
+                    Vorher brauchte es dafuer zwei Bedienelemente an zwei
+                    Orten: diesen Knopf fuer sichtbar/unsichtbar und einen
+                    Menueeintrag fuer die Anordnung. Beide beschreiben
+                    dieselbe Frage — wo steht die Eingabe —, und zwei Orte
+                    fuer eine Frage sind einer zu viel.
+
+                    Das Symbol zeigt den Zustand, der gerade gilt, nicht den
+                    naechsten: Ein Knopf, der anzeigt, was er tun wird, laesst
+                    sich nicht lesen, solange man nicht weiss, wo man steht.
+                */}
                 <RoundIconButton
-                    icon={<PanelRight className="w-[18px] h-[18px]" />}
-                    onClick={onToggleSideSheet}
-                    variant="ghost"
-                    tooltip={t('nav_sidebar')}
+                    icon={!isSideSheetVisible
+                        ? <PanelRight className="w-[18px] h-[18px]" />
+                        : detailLayout === 'row'
+                            ? <PanelBottom className="w-[18px] h-[18px]" />
+                            : <PanelRight className="w-[18px] h-[18px]" />}
+                    onClick={() => {
+                        if (!isSideSheetVisible) {
+                            // aus → rechts
+                            setDetailLayout('column');
+                            onToggleSideSheet?.();
+                        } else if (detailLayout === 'column') {
+                            // rechts → unten
+                            setDetailLayout('row');
+                        } else {
+                            // unten → aus
+                            onToggleSideSheet?.();
+                        }
+                    }}
+                    variant={isSideSheetVisible ? 'soft' : 'ghost'}
+                    tooltip={!isSideSheetVisible
+                        ? (t('panel_show_right') || 'Eingabe rechts')
+                        : detailLayout === 'column'
+                            ? (t('panel_move_bottom') || 'Eingabe nach unten')
+                            : (t('panel_hide') || 'Eingabe ausblenden')}
                 />
             </span>
         </div>
