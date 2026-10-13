@@ -909,7 +909,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 */}
                 <div className={`flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 ${
                     rowLayout
-                        ? 'w-full max-w-[1180px] mx-auto grid grid-cols-[minmax(0,1fr)_minmax(260px,320px)] gap-x-8 gap-y-5 items-start'
+                        // Die Textspalte bekommt eine eigene Obergrenze, nicht
+                        // nur das Paar. Eine Eingabe, die ueber 1000 Pixel breit
+                        // laeuft, liest sich schlecht und schiebt ihre Knoepfe an
+                        // die Raender — das Paar zu begrenzen haette das auf
+                        // breiten Schirmen nicht verhindert.
+                        ? 'w-full grid grid-cols-[minmax(0,760px)_minmax(240px,320px)] justify-center gap-x-8 gap-y-5 items-start'
                         : 'flex flex-col gap-5'
                 }`}>
 

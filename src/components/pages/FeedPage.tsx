@@ -129,8 +129,17 @@ const UploadDropZone: React.FC<{
     </button>
 );
 
-const TileChip: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
-    <div
+const TileChip: React.FC<{
+    children: React.ReactNode;
+    className?: string;
+    onClick?: (e: React.MouseEvent) => void;
+    title?: string;
+}> = ({ children, className = '', onClick, title }) => {
+    const Tag: any = onClick ? 'button' : 'div';
+    return (
+    <Tag
+        onClick={onClick}
+        title={title}
         // Mitte und Anordnung getrennt: Das aeussere Feld zentriert (place-items),
         // das innere ordnet (flex). Vorher machte ein Raster beides zugleich —
         // grid-flow-col mit auto-cols-max zentriert die Spur, nicht den Inhalt,
@@ -142,11 +151,12 @@ const TileChip: React.FC<{ children: React.ReactNode; className?: string }> = ({
             grid place-items-center
             bg-black/45 backdrop-blur-[3px]
             text-[11px] font-normal tabular-nums leading-none text-white
-            pointer-events-none ${className}`}
+            ${onClick ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'} ${className}`}
     >
         <span className="flex items-center gap-1 leading-none">{children}</span>
-    </div>
-);
+    </Tag>
+    );
+};
 
 /* ── Memoised grid item ── */
 interface FeedGridItemProps {
@@ -167,6 +177,8 @@ interface FeedGridItemProps {
     hasGenerating?: boolean;
     /** Die Reihe hinter dieser Kachel — wird an onOpenGroup durchgereicht. */
     group?: ImageRow | null;
+    /** Waehlt alle Bilder dieses Stapels aus bzw. ab. Fehlt bei Einzelbildern. */
+    onToggleSelectStack?: () => void;
     /**
      * Oeffnet den Stapel. Nimmt die Reihe als Argument, statt sie einzuschliessen:
      * Eine je Kachel neu erzeugte Pfeilfunktion macht memo() wirkungslos, und dann
@@ -201,7 +213,7 @@ interface FeedGridItemProps {
 const ZOOM_RETURN_MS = 480;
 const ZOOM_RETURN_CLEAR_MS = ZOOM_RETURN_MS + 140;
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, group, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en', isSource = false }) => {
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, group, onToggleSelectStack, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en', isSource = false }) => {
     const isMobile = useMobile();
     const previewSrc = img.thumbSrc || img.src;
 
@@ -384,7 +396,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         Outer wrapper provides a generous 44×44px hit target (the visible circle
                         is only 20px, which previously caused stray taps to bubble to the parent and
                         open the image instead of toggling selection). */}
-                    {!isGen && (
+                    {!isGen && !(isGroup && !isMobile && onToggleSelectStack) && (
                         <div
                             className={`absolute top-0 left-0 p-3 z-20 cursor-pointer ${isSelectMode || (isKeyboardActive && !isMobile) ? '' : 'pointer-events-none'}`}
                             onClick={(e) => {
@@ -447,11 +459,35 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         Der Punkt zeigt an, dass in diesem Stapel gerade etwas
                         entsteht; dann ist die Zahl noch nicht endgueltig. */}
                     {isGroup && !isGen && (
-                        // Nur beim Ueberfahren. Die Zahl ist eine Auskunft, kein
-                        // Zustand — sie muss nicht dauerhaft auf dem Bild liegen.
-                        // Auf Beruehrungsgeraeten gibt es kein Ueberfahren, dort
-                        // bleibt sie sichtbar, sonst waere sie unerreichbar.
-                        <TileChip className={isMobile ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity duration-150'}>
+                        /*
+                            Zahl und Auswahlkreis sind dasselbe Bedienelement.
+
+                            Die Zahl sagt, wie viele Bilder im Stapel liegen; ein
+                            Klick nimmt genau diese. Das ist die Handlung, die man
+                            an einem Deckbild ueberhaupt will — der Stapel ist die
+                            Einheit, nicht das zufaellig oberste Bild.
+
+                            Deshalb traegt ein Deckbild auch keinen eigenen
+                            Auswahlkreis mehr: Zwei Auswahlknoepfe auf derselben
+                            Kachel, von denen einer sechs Bilder nimmt und der
+                            andere eines, waeren nicht zu erraten.
+
+                            Sichtbar beim Ueberfahren, im Auswahlmodus und sobald
+                            etwas ausgewaehlt ist — sonst waere der Zustand
+                            unsichtbar. Auf Beruehrungsgeraeten bleibt sie
+                            sichtbar und bleibt reine Auskunft: Dort ist die
+                            Mehrfachauswahl ohnehin abgeschaltet.
+                        */
+                        <TileChip
+                            onClick={isMobile || !onToggleSelectStack ? undefined : (e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                onToggleSelectStack();
+                            }}
+                            className={`${isMobile || isSelectMode || isSelected ? '' : 'opacity-0 group-hover:opacity-100'} transition-[opacity,background-color] duration-150 ${
+                                isSelected ? '!bg-gradient-to-br !from-orange-400 !to-red-500 shadow-md' : ''
+                            }`}
+                        >
                             {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
                             {groupCount}
                         </TileChip>
@@ -489,6 +525,8 @@ interface FeedPageProps {
     isFetchingMore?: boolean;
     isSelectMode?: boolean;
     isSelectionSideSheetOpen?: boolean;
+    /** Waehlt alle Bilder eines Stapels aus bzw. ab — vom Zaehler auf dem Deckbild. */
+    onToggleSelectStack?: (ids: string[]) => void;
     selectedIds?: string[];
     onToggleSelect?: (id: string, isRange?: boolean) => void;
     state?: any;
@@ -508,7 +546,7 @@ interface FeedPageProps {
     columnsOverride?: number;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, returnToStackId, onReturnToStackHandled, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer, columnsOverride }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, onToggleSelectStack, expandedGroupId, onExpandedGroupChange, lastViewedId, returnToStackId, onReturnToStackHandled, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer, columnsOverride }) => {
     // URL-based fallback: expandedGroupId may still be null on first render after /stack/:id navigation
     const effectiveGroupId = expandedGroupId || (
         typeof window !== 'undefined' && window.location.pathname.startsWith('/stack/')
@@ -1056,6 +1094,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 hasGenerating={hasGen}
                 group={row}
                 onOpenGroup={gc > 1 && row ? handleOpenGroup : undefined}
+                onToggleSelectStack={gc > 1 && row && onToggleSelectStack
+                    ? () => onToggleSelectStack(row.items.map(i => i.id))
+                    : undefined}
                 staggerDelay={
                     renderSelectMode
                         // In select mode the tile the user just checked leads, the rest

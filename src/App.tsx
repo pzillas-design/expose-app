@@ -1402,6 +1402,20 @@ export function App() {
                                             }
                                         }
                                     }}
+                                    onToggleSelectStack={(ids) => {
+                                        // Alle oder keines: Sind schon alle Bilder des
+                                        // Stapels gewaehlt, nimmt der Klick sie wieder
+                                        // heraus. Sonst kommen die fehlenden dazu, ohne
+                                        // eine bestehende Auswahl zu verwerfen.
+                                        const selected = new Set(state.selectedIds);
+                                        const allIn = ids.every(id => selected.has(id));
+                                        const next = allIn
+                                            ? state.selectedIds.filter((id: string) => !ids.includes(id))
+                                            : [...state.selectedIds, ...ids.filter(id => !selected.has(id))];
+                                        if (next.length > 0 && !state.isSelectMode) actions.setIsSelectMode(true);
+                                        actions.selectMultiple(next);
+                                        if (next.length === 0) actions.setIsSelectMode(false);
+                                    }}
                                     expandedGroupId={expandedGroupId}
                                     onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate("/")}
                                     returnToStackId={returnToStackId}
