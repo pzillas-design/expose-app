@@ -535,33 +535,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     tooltipShortcut="D"
                 />
             </span>
-            {detailHasPrompt && (
-                <span className="relative hidden md:block">
-                    <RoundIconButton
-                        icon={<Repeat className="w-[18px] h-[18px]" />}
-                        onClick={onDetailRegenerate}
-                        variant="ghost"
-                        tooltip={t('generate_more')}
-                        tooltipShortcut="M"
-                    />
-                    <ContextTip
-                        storageKey="expose_tip_generate_more_button_v4"
-                        content={
-                                <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
-                                    {lang === 'de' ? 'Tippe auf ' : 'Click '}
-                                <ContextTipChip
-                                    icon={<Repeat className="h-3.5 w-3.5" />}
-                                />
-                                {lang === 'de'
-                                    ? ', um mehr Varianten wie diese zu generieren.'
-                                    : ' to generate more variations like this.'}
-                                </p>
-                        }
-                        placement="below"
-                        enabled={detailIsNew && detailHasPrompt}
-                    />
-                </span>
-            )}
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
