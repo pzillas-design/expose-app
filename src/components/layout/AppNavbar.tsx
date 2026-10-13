@@ -649,7 +649,30 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     if (isHeroMode) {
         const hp = heroProgress!;
         const isScrolled = hp > 0.4;
-        const showBorder = hp > 0.9;
+
+        // ── Die Leiste folgt dem Scroll, statt an Schwellen zu springen ──────
+        //
+        // heroProgress ist ein stetiger Wert zwischen 0 und 1, der pro
+        // Scroll-Frame aktualisiert wird. Vorher wurde davon nur `> 0.4` und
+        // `> 0.9` benutzt: Die Hoehe sprang an einem Punkt, der Hintergrund an
+        // einem zweiten, und eine 300-ms-Animation hat die beiden Spruenge
+        // nachtraeglich weichgezeichnet. Das ist der Grund, warum es nicht
+        // rund wirkte — animiert wurde eine Reaktion auf einen Sprung, nicht
+        // die Bewegung selbst. Zwischen 0,4 und 0,9 stand die Leiste
+        // ausserdem schon schmal da, aber noch voellig durchsichtig, sodass
+        // der Inhalt ohne alles dahinter durchlief.
+        //
+        // Jetzt werden Hoehe und Deckkraft direkt aus hp gerechnet. Die Hoehe
+        // bekommt bewusst KEINE CSS-Animation: Sie aendert sich ohnehin jeden
+        // Frame, und eine laufende Transition wuerde bei jedem neuen Wert von
+        // vorn beginnen — das ergibt genau das gummiartige Nachziehen.
+        const expandedH = isMobile ? 88 : 148;
+        const collapsedH = 56;
+        const headerH = expandedH + (collapsedH - expandedH) * hp;
+        // Der Untergrund kommt frueher und ist bei zwei Dritteln des Weges
+        // voll da — so steht etwas hinter dem Inhalt, bevor er die Leiste
+        // erreicht, statt erst kurz vor Schluss aufzutauchen.
+        const surfaceOpacity = Math.min(1, Math.max(0, (hp - 0.1) / 0.55));
 
         return (
             <header
@@ -660,18 +683,44 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 // Weichzeichner ein, den es in dieser Ansicht gar nicht gibt.
                 // Mit key wird neu aufgebaut und startet im Endzustand.
                 key="nav-gallery"
-                className={`fixed top-0 left-0 right-0 z-50 flex items-center px-4 md:px-6 border-b ${
-                    // Auch die Kindelemente stillstellen: Knöpfe und Pfeil
-                    // skalieren mit isScrolled und würden sonst mitlaufen.
-                    heroTransitions ? 'transition-all duration-300' : 'transition-none [&_*]:!transition-none'
-                } ${showBorder
-                    ? 'border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/85'
-                    : 'border-transparent bg-white/0 dark:bg-zinc-950/0'
-                    } ${isScrolled
-                        ? 'h-14 backdrop-blur-none'
-                        : 'h-[88px] md:h-[148px] backdrop-blur-none border-transparent pointer-events-none'
-                    }`}
+                style={{ height: `${headerH}px` }}
+                className={`fixed top-0 left-0 right-0 z-50 flex items-center px-4 md:px-6 ${
+                    // Keine Linie mehr. Die Kante entsteht allein aus dem
+                    // Untergrund, und der laeuft unten weich aus.
+                    ''
+                } ${
+                    // Nur die Kindelemente stillstellen, solange die Ansicht
+                    // gerade wechselt — Knoepfe und Pfeil skalieren mit
+                    // isScrolled und wuerden sonst mitlaufen.
+                    heroTransitions ? '' : '[&_*]:!transition-none'
+                } ${hp < 0.4 ? 'pointer-events-none' : ''}`}
             >
+                {/*
+                    Untergrund als eigene Ebene.
+
+                    Der Weichzeichner sitzt bewusst NICHT auf der Kopfzeile
+                    selbst: Deren Hoehe aendert sich beim Scrollen jeden Frame,
+                    und ein backdrop-filter muesste dann jedes Mal neu
+                    abgetastet werden — das war das Flackern, wegen dem der
+                    Weichzeichner zwischenzeitlich ganz raus war. Diese Ebene
+                    hat eine feste Groesse innerhalb der Kopfzeile und aendert
+                    nur ihre Deckkraft, was die Grafikkarte allein erledigt.
+
+                    Stark weichgezeichnet, aber nur leicht eingefaerbt: Man
+                    sieht, dass etwas dahinter ist, ohne dass es zur Flaeche
+                    wird. Die Maske laesst die unteren 20 Pixel auslaufen, damit
+                    unten keine sichtbare Kante entsteht — der Ersatz fuer die
+                    Linie, die vorher dort stand.
+                */}
+                <div
+                    aria-hidden
+                    className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
+                    style={{
+                        opacity: surfaceOpacity,
+                        maskImage: 'linear-gradient(to bottom, black calc(100% - 20px), transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, black calc(100% - 20px), transparent 100%)',
+                    }}
+                />
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
                     {isBlogPost ? (
@@ -925,7 +974,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 // Keine Übergänge: Diese Kopfzeile ist immer schmal, es gibt
                 // nichts zu animieren — und beim Ansichtswechsel wäre jede
                 // Animation ein Fehler, kein Effekt.
-                className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6"
+                className="fixed top-0 left-0 right-0 z-50 h-14 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50 flex items-center px-4 md:px-6 [mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]"
             >
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
@@ -961,7 +1010,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     return (
         <header
             key="nav-detail"
-            className={`fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6`}
+            className={`fixed top-0 left-0 right-0 z-50 h-14 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50 flex items-center px-4 md:px-6 [mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]`}
         >
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
