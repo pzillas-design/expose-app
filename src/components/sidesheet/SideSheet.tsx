@@ -399,42 +399,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // Das ist die Bauweise jedes Chat-Eingabefeldes, und sie loest nebenbei die
     // Frage nach einer zweiten Spalte fuer die Knoepfe: Die braucht es nicht,
     // wenn das Feld selbst nicht mehr waechst.
-    /**
-     * Senkrechte Ausrichtung des Panel-Inhalts.
-     *
-     * Solange der Inhalt kurz ist, steht er mittig; sobald er die Hoehe
-     * fuellt, oben. Umgesetzt ueber einen Innenabstand und nicht ueber
-     * `justify-center`, weil ein Abstand sich weich veraendern laesst — ein
-     * zentrierter Flex-Inhalt springt, und bei Ueberlauf schneidet er oben ab.
-     *
-     * Entscheidend fuer "nicht hinderlich": Solange das Eingabefeld den Fokus
-     * hat, wird NICHT neu gerechnet. Sonst waere die Box beim Tippen nach oben
-     * gekrochen, waehrend man darin schreibt — genau das, was eine feste
-     * Verankerung vermeidet. Die Mitte stellt sich ein, wenn man das Feld
-     * verlaesst.
-     */
-    const panelScrollRef = useRef<HTMLDivElement>(null);
-    const panelContentRef = useRef<HTMLDivElement>(null);
-    const [centerPad, setCenterPad] = useState(0);
     const isMobileSheet = isMobile && !props.disableMobileSheet;
-    const centerEnabled = !rowLayout && !isMobileSheet;
-    useLayoutEffect(() => {
-        if (!centerEnabled) { setCenterPad(0); return; }
-        const box = panelScrollRef.current;
-        const content = panelContentRef.current;
-        if (!box || !content) return;
-        const measure = () => {
-            if (document.activeElement === textareaRef.current) return;
-            const available = box.clientHeight - PANEL_PAD_Y * 2;
-            const needed = content.scrollHeight;
-            setCenterPad(needed < available ? Math.round((available - needed) / 2) : 0);
-        };
-        measure();
-        const obs = new ResizeObserver(measure);
-        obs.observe(box);
-        obs.observe(content);
-        return () => obs.disconnect();
-    }, [centerEnabled, prompt, activeTemplateId, selectedImage?.id]);
 
     const PROMPT_MIN_H = 72;
     const PROMPT_MAX_H = 240;
@@ -980,21 +945,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                     Zeile, die bis in beide Ecken reicht.
                 */}
                 <div
-                    ref={panelScrollRef}
-                    style={centerEnabled ? {
-                        paddingTop: PANEL_PAD_Y + centerPad,
-                        // Weich, aber kurz: Die Bewegung soll zu sehen sein, ohne
-                        // dass man auf sie wartet. Wer Bewegung abgestellt hat,
-                        // bekommt den Sprung — das ist dort die richtige Antwort.
-                        transition: 'padding-top 320ms cubic-bezier(0.25,1,0.5,1)',
-                    } : undefined}
-                    className={`flex-1 overflow-y-auto no-scrollbar px-5 pb-6 ${centerEnabled ? '' : 'pt-6'} motion-reduce:transition-none`}>
+                    className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6">
                     {/* Eigene Ebene fuer die Anordnung, damit ihre Hoehe messbar
                         ist: Der Behaelter traegt den Innenabstand, der sich
                         aendert — sich selbst zu messen hiesse, das Ergebnis in
                         die Messung einzurechnen. */}
                     <div
-                        ref={panelContentRef}
                         className={rowLayout
                             // Die Textspalte bekommt eine eigene Obergrenze, nicht
                             // nur das Paar. Eine Eingabe, die ueber 1000 Pixel breit

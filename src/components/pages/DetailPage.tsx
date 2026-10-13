@@ -497,18 +497,18 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     /**
      * Abstand der Bildoberkante zur Oberkante ihres Bereichs.
      *
-     * Wird derzeit nicht benutzt: Die Eingabe daran auszurichten sah bei einem
-     * Bild gut aus, verhielt sich ueber mehrere aber schlecht — der Wert haengt
-     * am Seitenverhaeltnis, und beim Blaettern von einem Quer- auf ein
-     * Hochformat waere die Eingabe samt Cursor um ueber hundert Pixel
-     * gesprungen. Ein Eingabefeld, das seinen Platz wechselt, waehrend man
-     * darin schreibt, ist schlimmer als eines, das nicht buendig steht.
+     * Die Eingabe legt sich in der Spaltenansicht an diese Linie, damit beide
+     * auf derselben Hoehe beginnen. Das Bild bleibt mittig — bewegt wird die
+     * Eingabe.
      *
-     * Bleibt stehen, weil die Groesse unabhaengig davon stimmt und jemand sie
-     * fuer eine Einblendung am Bildrand brauchen koennte.
+     * Der Wert haengt am Seitenverhaeltnis und aendert sich damit beim
+     * Blaettern. Deshalb gleitet die Eingabe weich an ihre neue Lage, statt zu
+     * springen, und waehrend man im Feld schreibt, aendert sich ohnehin nichts
+     * daran — die Hoehe des Bildes haengt nicht am Text.
      */
     const [imageTopOffset, setImageTopOffset] = useState(0);
-    void imageTopOffset;
+    /** Innenabstand oben im Panel (pt-6 in SideSheet) — zaehlt bereits mit. */
+    const PANEL_INNER_PT = 24;
 
     // In annotation mode (brush/text/shapes) the bottom toolbars float over the image.
     // Reserve this many pixels at the bottom so the image scales to fit above them.
@@ -1175,7 +1175,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     // Linie daneben waere eine zweite Aussage ueber dieselbe
                     // Grenze. Der Ziehgriff zum Verbreitern sitzt ohnehin dort
                     // und zeigt sie an, sobald man ihn braucht.
-                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 ${isResizing ? 'select-none' : 'md:transition-[width,height] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && (isMobile || isRowLayout) ? 'hidden' : ''}`}
+                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 ${isResizing ? 'select-none' : 'md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none'} ${!isSideSheetActuallyVisible && (isMobile || isRowLayout) ? 'hidden' : ''}`}
                     style={isMobile
                         ? undefined
                         : isRowLayout
@@ -1191,7 +1191,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // wirkungslos geblieben. Genau daran lag es, dass
                             // Ausblenden im Zeilenmodus nichts tat.
                             ? { width: '100%' }
-                            : { width: isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px' }}
+                            : {
+                                width: isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px',
+                                paddingTop: Math.max(0, imageTopOffset - PANEL_INNER_PT),
+                            }}
                 >
                     {/* Resizer Handle — desktop only */}
                     {!isMobile && !isRowLayout && (
