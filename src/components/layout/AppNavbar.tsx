@@ -7,6 +7,7 @@ import { DropdownMenu } from '../ui/DropdownMenu';
 import { GenerationProgressRing } from '../ui/GenerationProgressRing';
 import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
+import { NAV_H } from '@/config/layout';
 import { CanvasImage } from '@/types';
 
 interface AppNavbarProps {
@@ -667,7 +668,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         // Frame, und eine laufende Transition wuerde bei jedem neuen Wert von
         // vorn beginnen — das ergibt genau das gummiartige Nachziehen.
         const expandedH = isMobile ? 88 : 148;
-        const collapsedH = 56;
+        const collapsedH = NAV_H;
         const headerH = expandedH + (collapsedH - expandedH) * hp;
         // Der Untergrund kommt frueher und ist bei zwei Dritteln des Weges
         // voll da — so steht etwas hinter dem Inhalt, bevor er die Leiste
@@ -974,7 +975,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 // Keine Übergänge: Diese Kopfzeile ist immer schmal, es gibt
                 // nichts zu animieren — und beim Ansichtswechsel wäre jede
                 // Animation ein Fehler, kein Effekt.
-                className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 md:px-6"
+                className="fixed top-0 left-0 right-0 z-50 h-[var(--nav-h)] flex items-center px-4 md:px-6"
             >
             {/*
                 Untergrund als eigene Ebene, nicht auf der Kopfzeile selbst.
@@ -1031,7 +1032,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     return (
         <header
             key="nav-detail"
-            className={`fixed top-0 left-0 right-0 z-50 h-14 flex items-center px-4 md:px-6`}
+            className={`fixed top-0 left-0 right-0 z-50 h-[var(--nav-h)] flex items-center px-4 md:px-6`}
         >
             {/*
                 Untergrund als eigene Ebene, nicht auf der Kopfzeile selbst.

@@ -1,5 +1,6 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
+import { NAV_SCROLL_OFFSET } from '@/config/layout';
 import { Loader2, Plus, Layers, ChevronRight, SquaresSubtract, Upload, Download, X, ImagePlus } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
@@ -569,7 +570,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const sc = scrollRef.current;
             if (el && sc) {
                 const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
-                sc.scrollTo({ top: Math.max(0, top - 72), behavior: 'instant' as ScrollBehavior });
+                sc.scrollTo({ top: Math.max(0, top - NAV_SCROLL_OFFSET), behavior: 'instant' as ScrollBehavior });
             } else if (Date.now() - start < 600) {
                 requestAnimationFrame(scrollFn);
             }
@@ -778,7 +779,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const sc = scrollRef.current;
             if (el && sc) {
                 const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
-                sc.scrollTo({ top: Math.max(0, top - 72), behavior: 'instant' as ScrollBehavior });
+                sc.scrollTo({ top: Math.max(0, top - NAV_SCROLL_OFFSET), behavior: 'instant' as ScrollBehavior });
             } else if (Date.now() - start < 500) {
                 requestAnimationFrame(tryScroll);
             }

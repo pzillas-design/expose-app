@@ -1107,7 +1107,7 @@ export function App() {
         : "min-h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
 
     const mainContainerClasses = isAppLayout
-        ? "flex-1 flex flex-col overflow-hidden pt-14"
+        ? "flex-1 flex flex-col overflow-hidden pt-[var(--nav-h)]"
         : "flex-1 flex flex-col";
 
     const showGlobalNavbar = !isAdminRoute;
