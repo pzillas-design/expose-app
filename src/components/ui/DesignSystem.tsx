@@ -166,11 +166,15 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
             {childWithRef}
             {isVisible && createPortal(
                 <div
+                    // Ohne Rahmen: Der Kasten hebt sich durch Flaeche und
+                    // Schatten ab, eine Linie daneben ist eine zweite Aussage
+                    // ueber dieselbe Kante — dieselbe Regel wie bei Kopfzeile
+                    // und Seitenleiste.
                     className={`
- fixed z-[9999] px-2.5 py-1.5 ${Theme.Geometry.Radius} pointer-events-none animate-in fade-in zoom-in-95 duration-100
- bg-white dark:bg-black
+ fixed z-[9999] px-3 py-2 rounded-xl pointer-events-none animate-in fade-in zoom-in-95 duration-100
+ bg-white dark:bg-zinc-900
  text-zinc-900 dark:text-zinc-100
- border border-zinc-200 dark:border-zinc-800
+ shadow-lg shadow-black/10 dark:shadow-black/40
  max-w-[260px]
  `}
                     style={{
@@ -179,7 +183,9 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
                         transform: `translate(-50%, ${side === 'bottom' ? '0' : '-100%'})`
                     }}
                 >
-                    <div className="text-[10px] font-medium tracking-wide flex items-start gap-1.5 leading-snug">
+                    {/* 11 statt 10 Pixel und deutlich mehr Zeilenabstand: Bei
+                        zwei oder drei Zeilen klebten sie vorher aneinander. */}
+                    <div className="text-[11px] font-medium tracking-wide flex items-start gap-2 leading-[1.55]">
                         <span className="break-words">{text}</span>
                         {shortcut && <kbd className="font-mono text-zinc-400 dark:text-zinc-500 whitespace-nowrap">{shortcut}</kbd>}
                     </div>
@@ -286,7 +292,7 @@ export const Button: React.FC<ButtonProps> = ({
                     mit. Mehr Deckkraft dazu: 40 % waren auf dem Farbverlauf des
                     Generieren-Knopfes kaum zu sehen.
                 */
-                <kbd className="hidden sm:inline-flex items-center font-mono text-[1em] leading-none opacity-60 ml-0.5">{shortcut}</kbd>
+                <kbd className="hidden sm:inline-flex items-center font-mono text-[1.3em] leading-none opacity-70 ml-1">{shortcut}</kbd>
             )}
         </button>
     );

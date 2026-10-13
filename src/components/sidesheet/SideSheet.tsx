@@ -24,6 +24,28 @@ import { useEnterGenerates } from '@/utils/uiPrefs';
  * nebenbei dafuer, dass nicht zwei Hinweise gleichzeitig aufgehen.
  */
 const MODEL_HINT_KEY = 'expose_tip_seedream_default_v1';
+
+/**
+ * Die Chips unter "Anmerkungen" — Pinselstriche, Stempel, Formen.
+ *
+ * Zweimal dieselbe Klassenkette abgeschrieben, und entsprechend uneben: links
+ * 10 Pixel Abstand, rechts 4, dazu ein Kreuz von 12 Pixeln in einem Feld von
+ * 20. Jetzt eine Angabe, rund wie die uebrigen Chips der Anwendung, innen
+ * gleichmaessig, und das Kreuz gross genug, um es zu treffen.
+ *
+ * Der Hintergrund in Schwarz/Weiss mit Deckkraft statt in Zink-Toenen: So
+ * sitzt der Chip auf hellem wie dunklem Grund gleich, und er passt zu den
+ * Ablageflaechen und dem Kachel-Abzeichen.
+ */
+const ANNOTATION_CHIP = `flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-full text-[12px] font-medium
+    bg-black/[0.06] dark:bg-white/[0.08] text-zinc-600 dark:text-zinc-300
+    hover:bg-black/[0.10] dark:hover:bg-white/[0.13] hover:text-zinc-900 dark:hover:text-zinc-100
+    transition-colors duration-150`;
+
+const ANNOTATION_CHIP_CLOSE = `w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0
+    text-zinc-400 dark:text-zinc-500
+    hover:text-zinc-900 dark:hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/[0.12]
+    transition-colors duration-150`;
 import { saveGenerationSettings, loadGenerationSettings } from '@/utils/generationSettings';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
@@ -1047,15 +1069,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 key="masks"
                                                                 type="button"
                                                                 onClick={() => onModeChange('brush')}
-                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                                                                className={ANNOTATION_CHIP}
                                                             >
                                                                 <span>{masks.length > 1 ? `${masks.length}× ` : ''}{t('brush_label')}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); if (!selectedImage?.annotations) return; updateAnnotationsWithHistory(selectedImage.annotations.filter(a => a.type !== 'mask_path')); }}
-                                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-300/50 dark:hover:bg-zinc-600/50 transition-colors"
+                                                                    className={ANNOTATION_CHIP_CLOSE}
                                                                 >
-                                                                    <X className="w-3 h-3" />
+                                                                    <X className="w-3.5 h-3.5" strokeWidth={2.25} />
                                                                 </span>
                                                             </button>
                                                         );
@@ -1071,15 +1093,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 key={ann.id}
                                                                 type="button"
                                                                 onClick={() => onModeChange('brush')}
-                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                                                                className={ANNOTATION_CHIP}
                                                             >
                                                                 <span>{label}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-300/50 dark:hover:bg-zinc-600/50 transition-colors"
+                                                                    className={ANNOTATION_CHIP_CLOSE}
                                                                 >
-                                                                    <X className="w-3 h-3" />
+                                                                    <X className="w-3.5 h-3.5" strokeWidth={2.25} />
                                                                 </span>
                                                             </button>
                                                         );
@@ -1101,8 +1123,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         className="relative w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
                                                     >
                                                         <Camera className="w-4 h-4" />
+                                                        {/* 16 Pixel waren fuer eine Ziffer mit Fettschrift zu eng,
+                                                            die Zahl sass sichtbar ausser Mitte. Jetzt 18, mittig ueber
+                                                            grid, und ein Ring in der Hintergrundfarbe, damit das
+                                                            Abzeichen sich vom Knopf absetzt statt auf ihm zu kleben. */}
                                                         {(referenceAnns.length + (props.createReferenceFiles?.length ?? 0)) > 0 && (
-                                                            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                                            <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-orange-500 text-white text-[10px] font-semibold tabular-nums leading-none grid place-items-center ring-2 ring-white dark:ring-zinc-950">
                                                                 {referenceAnns.length + (props.createReferenceFiles?.length ?? 0)}
                                                             </span>
                                                         )}

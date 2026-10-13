@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Images, Columns2, Rows2, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, Columns2, Rows2, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -55,6 +55,8 @@ interface AppNavbarProps {
     onNavigateToImage?: (id: string) => void;
     onGenerateMoreById?: (id: string) => void;
     isGroupDrillDown?: boolean;
+    /** Spanne der Fassungen im Stapel, z. B. "v1–v12". */
+    groupVersionLabel?: string;
     onCloseGroup?: () => void;
     /** 0 = hero/expanded, 1 = compact. Grid mode only. */
     heroProgress?: number;
@@ -125,6 +127,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onNavigateToImage,
     onGenerateMoreById,
     isGroupDrillDown = false,
+    groupVersionLabel,
     onCloseGroup,
     heroProgress,
     onHeroUploadClick,
@@ -430,12 +433,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </div>
     ) : isGroupDrillDown && groupInfo ? (
         <div className="flex items-center gap-1.5">
-            {groupItemCount && groupItemCount > 1 ? (
-                <Images className="w-[15px] h-[15px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.75} />
-            ) : null}
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
                 {groupInfo}
             </span>
+            {groupVersionLabel && (
+                <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                    {groupVersionLabel}
+                </span>
+            )}
         </div>
     ) : (
         <button
@@ -1042,12 +1047,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 {/* CENTER: Group title — same font as the detail view; a folder icon
                     to the left of the title is the minimal "this is a stack" signal. */}
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-10 max-w-[60%]">
-                    {groupItemCount && groupItemCount > 1 ? (
-                        <Images className="w-[15px] h-[15px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.75} />
-                    ) : null}
                     <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                         {groupInfo}
                     </span>
+                    {groupVersionLabel && (
+                        <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                            {groupVersionLabel}
+                        </span>
+                    )}
                 </div>
 
                 {/* RIGHT: balance + menu — the layer composer is now entered via the
