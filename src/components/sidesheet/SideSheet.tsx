@@ -611,8 +611,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
      * Textfeld: Wer gerade einen Variablen-Chip gesetzt hat, soll nicht erst
      * zurueck ins Feld klicken muessen.
      */
-    const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-    const generateShortcutLabel = isMac ? '⌘↵' : 'Strg↵';
+    // Am Knopf steht der einfachere der beiden Wege. Befehls-/Strg+Enter gilt
+    // weiterhin und greift ueberall auf der Seite — am Knopf stuende es nur im
+    // Weg, weil es laenger ist und weniger Leute es brauchen.
+    const generateShortcutLabel = '↵';
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return;
@@ -867,6 +869,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             data-voice-action="prompt-input"
                                             value={prompt}
                                             onChange={e => handlePromptChange(e.target.value)}
+                                            onKeyDown={e => {
+                                                // Enter loest aus, Umschalt+Enter macht einen
+                                                // Zeilenumbruch — so, wie es Nutzer aus jedem
+                                                // Chatfenster kennen.
+                                                //
+                                                // Waehrend einer laufenden Umwandlung (IME, etwa
+                                                // bei japanischer Eingabe) bestaetigt Enter das
+                                                // Wort und darf nicht generieren.
+                                                if (e.key !== 'Enter' || e.shiftKey || (e.nativeEvent as any).isComposing) return;
+                                                if (e.metaKey || e.ctrlKey) return; // uebernimmt der globale Abgleich
+                                                e.preventDefault();
+                                                handleGenerate();
+                                            }}
                                             placeholder={t('describe_changes') || 'Describe your changes…'}
                                             disabled={selectedImage?.isGenerating}
                                             autoComplete="off"
