@@ -42,8 +42,14 @@ interface FeedGridItemProps {
     groupCount?: number;
     /** Whether any image in this group is currently generating */
     hasGenerating?: boolean;
-    /** Called when user clicks a group cover tile — opens the group drill-down */
-    onOpenGroup?: () => void;
+    /** Die Reihe hinter dieser Kachel — wird an onOpenGroup durchgereicht. */
+    group?: ImageRow | null;
+    /**
+     * Oeffnet den Stapel. Nimmt die Reihe als Argument, statt sie einzuschliessen:
+     * Eine je Kachel neu erzeugte Pfeilfunktion macht memo() wirkungslos, und dann
+     * rendert JEDE Kachel bei JEDEM Mauszeiger-Wechsel neu.
+     */
+    onOpenGroup?: (row: ImageRow) => void;
     /** Staggered fade-in delay in ms (for group open animation) */
     staggerDelay?: number;
     /** Whether this item was the last one viewed in detail — plays zoom-out return animation */
@@ -58,9 +64,38 @@ interface FeedGridItemProps {
     isSource?: boolean;
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en', isSource = false }) => {
+/**
+ * Dauer des Rueckkehr-Zooms. MUSS mit dem Keyframe feed-zoom-return in
+ * index.css uebereinstimmen.
+ *
+ * Vorher standen hier drei Zahlen fuer dieselbe Sache: die Animation lief
+ * 480 ms, abgeraeumt wurde an zwei Stellen nach 500 ms und an einer nach
+ * 600 ms. 20 ms Luft reichen nicht — faengt die Animation einen Frame spaeter
+ * an, weil der Browser gerade Bilder dekodiert, wird sie mittendrin abgeraeumt
+ * und die Kachel springt auf ihre Endgroesse. Genau dieses Zucken nach dem
+ * Zoom war zu sehen.
+ */
+const ZOOM_RETURN_MS = 480;
+const ZOOM_RETURN_CLEAR_MS = ZOOM_RETURN_MS + 140;
+
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, group, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en', isSource = false }) => {
     const isMobile = useMobile();
     const previewSrc = img.thumbSrc || img.src;
+
+    // Bilder blenden ein, statt aufzuploppen.
+    //
+    // Vorher stand das <img> ohne jede Rueckmeldung im Baum: Es erschien in dem
+    // Moment, in dem der Browser es dekodiert hatte. Bei fuenfzig Kacheln und
+    // lazy loading heisst das: in zufaelliger Reihenfolge, einzeln, ueber
+    // mehrere Sekunden verteilt. Genau das ist der chaotische Aufbau.
+    //
+    // Ein bereits zwischengespeichertes Bild wird NICHT eingeblendet: Dort ist
+    // `complete` schon beim ersten Anfassen wahr, und eine Blende auf etwas,
+    // das sofort da ist, waere selbst wieder ein Flackern.
+    const [imgLoaded, setImgLoaded] = React.useState(false);
+    const imgRef = React.useCallback((node: HTMLImageElement | null) => {
+        if (node?.complete) setImgLoaded(true);
+    }, []);
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
 
@@ -87,7 +122,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     // sonst blitzt vor dem Start der Animation ein Zwischenwert auf.
                     transform: 'scale(1.28)',
                     opacity: 0.5,
-                    animation: 'feed-zoom-return 480ms cubic-bezier(0.25,1,0.5,1) both',
+                    animation: `feed-zoom-return ${ZOOM_RETURN_MS}ms cubic-bezier(0.25,1,0.5,1) both`,
                 }
                 : staggerDelay !== undefined
                     ? { animation: `feed-fade-in 280ms ${staggerDelay}ms both ease-out` }
@@ -98,7 +133,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 className="relative isolate cursor-pointer transition-transform duration-100 active:scale-[1.03]"
                 style={boundedStyle}
                 onClick={(e) => {
-                    if (onOpenGroup) { onOpenGroup(); return; }
+                    if (onOpenGroup && group) { onOpenGroup(group); return; }
                     if (isSelectMode && onToggleSelect) onToggleSelect(img.id, e.shiftKey);
                     else onSelectImage(img.id);
                 }}
@@ -162,10 +197,21 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     ) : previewSrc ? (
                         <div className="absolute inset-0 flex items-center justify-center">
                             <img
+                                ref={imgRef}
                                 src={previewSrc}
                                 alt={img.title}
-                                className={`w-full h-full object-cover transition-opacity duration-200 ${isSelectMode && isSelected ? 'opacity-60' : ''}`}
-                                loading="lazy"
+                                onLoad={() => setImgLoaded(true)}
+                                // Ein Bild, das nicht laedt, darf nicht unsichtbar
+                                // bleiben — lieber ohne Blende zeigen.
+                                onError={() => setImgLoaded(true)}
+                                className={`w-full h-full object-cover transition-opacity duration-300 ease-out ${!imgLoaded ? 'opacity-0' : isSelectMode && isSelected ? 'opacity-60' : 'opacity-100'}`}
+                                // Die zurueckkehrende Kachel wartet nicht auf den
+                                // Scroll-Ausloeser: Sonst laeuft der Zoom auf einem
+                                // leeren Kasten und das Bild springt hinterher herein.
+                                loading={isLastViewed ? 'eager' : 'lazy'}
+                                // Dekodieren neben dem Hauptstrang, damit es die
+                                // laufende Zoom-Animation nicht ins Stocken bringt.
+                                decoding="async"
                             />
                         </div>
                     ) : null}
@@ -489,6 +535,15 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         scrollGridToTile(targetId);
     }, [renderSelectMode, scrollGridToTile]);
 
+    // Eine Identitaet fuer alle Kacheln. Vorher entstand je Stapelkachel bei
+    // jedem Rendern eine neue Pfeilfunktion — damit war das memo() an
+    // FeedGridItem wirkungslos, und ein Mauszeiger-Wechsel (der nur
+    // activeIndex setzt) liess das gesamte Raster neu rendern.
+    const handleOpenGroup = React.useCallback((row: ImageRow) => {
+        actions?.markGroupSeen?.(row.items.map(i => i.id));
+        onExpandedGroupChange(row.id);
+    }, [actions, onExpandedGroupChange]);
+
     const displayImages = useMemo(() => {
         if (effectiveGroupId) {
             return rows.find(r => r.id === effectiveGroupId)?.items || [];
@@ -538,7 +593,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (!cover) return; // Reihen noch nicht geladen — nächster Durchlauf
         handledReturnRef.current = returnToStackId;
         setReturnCoverId(cover.id);
-        setTimeout(() => setReturnCoverId(null), 500);
+        setTimeout(() => setReturnCoverId(null), ZOOM_RETURN_CLEAR_MS);
         scrollTileToTop(cover.id);
         onReturnToStackHandled?.();
     }, [returnToStackId, rows, scrollTileToTop, onReturnToStackHandled]);
@@ -549,7 +604,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const cover = row?.items[0];
             if (cover) {
                 setReturnCoverId(cover.id);
-                setTimeout(() => setReturnCoverId(null), 500);
+                setTimeout(() => setReturnCoverId(null), ZOOM_RETURN_CLEAR_MS);
                 // Scroll the origin stack's cover to the top row after re-render.
                 scrollTileToTop(cover.id);
             }
@@ -587,7 +642,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (!rows.some(r => r.items.some(i => i.id === lastViewedRowCoverId))) return;
         handledLastViewedRef.current = lastViewedRowCoverId;
         setReturnCoverId(lastViewedRowCoverId);
-        setTimeout(() => setReturnCoverId(null), 600);
+        setTimeout(() => setReturnCoverId(null), ZOOM_RETURN_CLEAR_MS);
         scrollTileToTop(lastViewedRowCoverId);
     }, [lastViewedRowCoverId, rows, scrollTileToTop]);
 
@@ -829,10 +884,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                 parentSrc={parentSrc}
                                                 groupCount={gc}
                                                 hasGenerating={hasGen}
-                                                onOpenGroup={gc > 1 && row ? () => {
-                                                    actions?.markGroupSeen?.(row.items.map(i => i.id));
-                                                    onExpandedGroupChange(row.id);
-                                                } : undefined}
+                                                group={row}
+                                                onOpenGroup={gc > 1 && row ? handleOpenGroup : undefined}
                                                 staggerDelay={
                                                     renderSelectMode
                                                         // In select mode the tile the user just checked leads, the rest
