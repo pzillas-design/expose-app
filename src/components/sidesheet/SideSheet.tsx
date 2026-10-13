@@ -320,27 +320,45 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         }
     }, [prompt]);
 
-    // ── Sync prompt on image change ──
+    // ── Entwurf beim Bildwechsel laden ──────────────────────────────────────
     useEffect(() => {
         if (!selectedImage) return;
-        if (selectedImage.id !== lastSelectedIdRef.current) {
-            if (!isMulti) {
-                // Load this image's saved state (both child and non-child images store their settings).
-                // Children store draftPrompt/variableValues/activeTemplateId from generation time,
-                // so the SideSheet correctly shows what was applied when revisiting a generated image.
+        if (selectedImage.id === lastSelectedIdRef.current) return;
+
+        if (!isMulti) {
+            // Ein erzeugtes Bild ist ein Ergebnis, kein Entwurf — das Panel
+            // startet dort leer. Vorher wurden variableValues und
+            // activeTemplateId auch für Kinder geladen, userDraftPrompt aber
+            // nicht: Man sah Chips ohne Text und wusste nicht, was gelten soll.
+            //
+            // Die Felder bleiben am Bild gespeichert, sie werden hier nur nicht
+            // als Entwurf angezeigt — "Mehr" liest sie weiterhin direkt vom
+            // Bild und spielt die Anfrage unverändert nach.
+            const isGeneratedChild = !!selectedImage.parentId || !!selectedImage.generationPrompt;
+            if (isGeneratedChild) {
+                setPrompt('');
+                setActiveTemplateId(null);
+                setControlValues({});
+            } else {
                 setPrompt(selectedImage.userDraftPrompt || '');
                 setActiveTemplateId(selectedImage.activeTemplateId || null);
                 setControlValues(selectedImage.variableValues || {});
             }
-            // Multi-select: keep current values so variable selection survives batch mode.
-            // Always reset modal/UI state that must not bleed between images.
-            setIsInspirationOpen(false);
-            setViewingRefAnn(null);
-            setInspirationInitialSrc(null);
-            setHiddenControlIds([]);
-            setLabelOverrides({});
-            lastSelectedIdRef.current = selectedImage.id;
         }
+
+        // Zustand von Dialogen und Beschriftungen darf nie zwischen Bildern
+        // überlaufen — unabhängig davon, ob ein Entwurf geladen wurde.
+        setIsInspirationOpen(false);
+        setViewingRefAnn(null);
+        setInspirationInitialSrc(null);
+        setHiddenControlIds([]);
+        setLabelOverrides({});
+
+        // Nur vermerken, wenn auch wirklich geladen wurde. Im Mehrfachmodus
+        // wurde die ID bisher trotzdem gesetzt; beim Rückwechsel auf dasselbe
+        // Bild galt es dann als "schon geladen" und behielt die Werte aus der
+        // Mehrfachauswahl.
+        if (!isMulti) lastSelectedIdRef.current = selectedImage.id;
     }, [selectedImage?.id, isMulti]);
 
     // ── History initialization ──
@@ -490,10 +508,33 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         updateAnnotationsWithHistory([...(selectedImage.annotations || []), newText]);
     };
 
+    // ── Entwurf speichern ───────────────────────────────────────────────────
+    //
+    // Prompt und Variablen liefen vorher auseinander: Der Prompt wurde bei
+    // Mehrfachauswahl gar nicht gespeichert (!isMulti), die Variablen nur am
+    // Hauptbild. Im Panel sah man danach Chips ohne Text, und die anderen
+    // Bilder der Auswahl hatten überhaupt nichts.
+    //
+    // Beides geht jetzt über dieselbe Zielliste — bei Mehrfachauswahl auf alle
+    // ausgewählten Bilder, sonst auf das eine. Was für den Prompt gilt, gilt
+    // damit zwangsläufig auch für die Variablen.
+    const draftTargets = React.useMemo<CanvasImage[]>(() => {
+        if (isMulti && selectedImages) return selectedImages;
+        return selectedImage ? [selectedImage] : [];
+    }, [isMulti, selectedImages, selectedImage]);
+
+    const persistPrompt = React.useCallback((text: string) => {
+        draftTargets.forEach(img => onUpdatePrompt(img.id, text));
+    }, [draftTargets, onUpdatePrompt]);
+
+    const persistVariables = React.useCallback((templateId: string | undefined, values: Record<string, string[]>) => {
+        draftTargets.forEach(img => onUpdateVariables(img.id, templateId, values));
+    }, [draftTargets, onUpdateVariables]);
+
     // ── Prompt helpers ──
     const handlePromptChange = (val: string) => {
         setPrompt(val);
-        if (selectedImage?.id && !isMulti) onUpdatePrompt(selectedImage.id, val);
+        persistPrompt(val);
     };
 
     const handleGenerate = () => {
@@ -532,7 +573,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         const onSetPrompt = (e: Event) => {
             const { text } = (e as CustomEvent).detail as { text: string };
             setPrompt(text);
-            if (selectedImage?.id && !isMulti) onUpdatePrompt(selectedImage.id, text);
+            persistPrompt(text);
         };
 
         window.addEventListener('expose:trigger-generation', onTriggerGeneration);
@@ -547,7 +588,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         // Replace prompt with template text
         const newText = tpl.prompt;
         setPrompt(newText);
-        if (selectedImage && !isMulti) onUpdatePrompt(selectedImage.id, newText);
+        persistPrompt(newText);
 
         // Merge controls if activeTemplate is a custom "merged" template or just replace activeTemplateId
         // but the prompt asked specifically to just paste the content.
@@ -558,7 +599,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         // the UI but were still passed to onGenerate and appended to the prompt
         // by the edge function (with the raw control id as label).
         setControlValues({});
-        if (selectedImage) onUpdateVariables(selectedImage.id, tpl.id, {});
+        persistVariables(tpl.id, {});
         textareaRef.current?.focus();
     };
 
@@ -581,7 +622,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         // Side effect stays OUT of the state updater — updaters must be pure
         // (React may re-invoke them, which double-fired the persist call).
         setControlValues(next);
-        if (selectedImage) onUpdateVariables(selectedImage.id, activeTemplate?.id, next);
+        persistVariables(activeTemplate?.id, next);
     };
 
     // ── Reference Image ──

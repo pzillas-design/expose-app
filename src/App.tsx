@@ -310,15 +310,17 @@ export function App() {
         actions.handleSelection(id, false, false);
         isNavigatingProgrammatically.current = true;
         const img = allImages.find(i => i.id === id);
-        const isGenerated = !!(img?.generationPrompt || img?.parentId);
         const isMobile = window.innerWidth < 768;
         const alreadyInDetail = location.pathname.startsWith('/image/');
         if (isMobile) {
             // Mobile always shows sidesheet
             setDetailSideSheetVisible(true);
         } else if (!alreadyInDetail) {
-            // Entering detail view fresh from grid: apply default rule (original=show, generated=hide)
-            setDetailSideSheetVisible(!isGenerated);
+            // Panel ist immer offen. Die frühere Regel schloss es bei erzeugten
+            // Bildern — das kostete im häufigsten Fall einen Klick, weil man
+            // genau dort weiterarbeitet, und beruhte nur auf einer Annahme über
+            // die Absicht des Nutzers.
+            setDetailSideSheetVisible(true);
         }
         // else: navigating within detail view — keep current sidesheet toggle state
         navigate(`/image/${id}`);
