@@ -26,6 +26,26 @@ function getDaysRemaining(createdAt: string | number | undefined): number | null
 }
 
 /**
+ * Restfrist eines Tages-Abschnitts, gerechnet aus dem Tag selbst.
+ *
+ * Nicht aus den Kacheln des Abschnitts: Deren Deckbild ist die NEUESTE
+ * Variante eines Stapels, waehrend der Stapel nach seinem Original einsortiert
+ * ist. Die kleinste Frist ueber die Deckbilder waere deshalb zu optimistisch —
+ * sie uebersaehe die aelteren Bilder, die im zugeklappten Stapel stecken.
+ *
+ * Der Tag ist ohnehin die Einheit, an der die Frist haengt: Alles, was an
+ * einem Tag entstanden ist, laeuft am selben Tag ab.
+ */
+function getDayDaysRemaining(dayKey: string): number | null {
+    const [y, m, d] = dayKey.split('-').map(Number);
+    if (!y || !m || !d) return null;
+    // Ende des Kalendertags, damit ein am Morgen erzeugtes Bild nicht einen
+    // Tag frueher gezaehlt wird als eines vom Abend desselben Tages.
+    const dayEnd = new Date(y, m - 1, d, 23, 59, 59).getTime();
+    return Math.ceil((dayEnd + TTL_DAYS * 86_400_000 - Date.now()) / 86_400_000);
+}
+
+/**
  * Tagesschluessel aus einem Zeitstempel. Bewusst nach Kalendertag und nicht
  * nach Stunde oder Minute: Eine Kopfzeile "13:36-13:36" waere eine Zeitspanne
  * von null und sagt niemandem etwas.
@@ -590,15 +610,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             key,
             label: dayLabelOf(covers[0]?.createdAt, state?.currentLang === 'de' ? 'de' : 'en'),
             covers,
-            // Die knappste Frist im Abschnitt zaehlt. Steht die Gruppe zu, sind
-            // die gelben Punkte an den Kacheln nicht zu sehen — ohne diesen
-            // Wert verschwaende die Warnung mit dem Zuklappen, und genau das
-            // waere der Moment, in dem sie gebraucht wird.
-            daysLeft: covers.reduce<number | null>((min, img) => {
-                const d = getDaysRemaining(img.createdAt);
-                if (d == null) return min;
-                return min == null ? d : Math.min(min, d);
-            }, null),
+            // Die Frist haengt am Tag, nicht an der einzelnen Kachel. Steht die
+            // Gruppe zu, sind die gelben Punkte an den Kacheln nicht zu sehen —
+            // ohne diesen Wert verschwaende die Warnung mit dem Zuklappen, und
+            // genau das waere der Moment, in dem sie gebraucht wird.
+            daysLeft: getDayDaysRemaining(key),
         }));
     }, [rows, effectiveGroupId, renderSelectMode, state?.currentLang]);
 
