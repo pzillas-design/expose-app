@@ -179,6 +179,21 @@ interface DetailPageProps {
     t: any;
 }
 
+/**
+ * Die schwebenden Knoepfe ueber dem Bild.
+ *
+ * Etwas kleiner als zuvor (36 statt 40 Pixel hoch, schmalere Innenabstaende),
+ * dafuer deutlicher gefaerbt: Auf einem hellen Motiv war 40 % Schwarz kaum zu
+ * sehen, und Groesse ist das teurere Mittel — sie nimmt Platz vom Bild, Farbe
+ * nicht.
+ */
+const FLOATING_BTN = `h-9 px-4 bg-black/60 hover:bg-black/80 text-white rounded-full
+    flex items-center text-xs font-medium transition-colors duration-150 backdrop-blur-sm`;
+
+/** Dasselbe als quadratischer Knopf fuer ein einzelnes Symbol. */
+const FLOATING_BTN_ICON = `h-9 w-9 bg-black/60 hover:bg-black/80 text-white rounded-full
+    flex items-center justify-center transition-colors duration-150 backdrop-blur-sm`;
+
 export const DetailPage: React.FC<DetailPageProps> = ({
     images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
     isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange, isExiting,
@@ -822,27 +837,38 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         style={isRowLayout && rowImageHeight ? { height: `${rowImageHeight}px` } : undefined}
                     >
 
-                    {/* Nav Arrows — desktop only, visible on hover, hidden in brush mode */}
-                    {idx > 0 && state.sideSheetMode !== 'brush' && (
-                        <button onClick={() => handleSelectWithin(images[idx - 1].id)} className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                    )}
-                    {idx < images.length - 1 && state.sideSheetMode !== 'brush' && (
-                        <button onClick={() => handleSelectWithin(images[idx + 1].id)} className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
-                    )}
-
                         {/* Floating action buttons */}
                         {state.sideSheetMode !== 'brush' && (
                             <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-all duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-0 group-hover:opacity-100'}`}>
-                                <div className="flex items-center gap-2 pointer-events-auto">
+                                <div className="flex items-center gap-1.5 pointer-events-auto">
+                                    {/* Blaettern steht jetzt in derselben Zeile wie die
+                                        uebrigen Handlungen am Bild. An den Seitenraendern
+                                        lagen die Pfeile weit auseinander und mitten im
+                                        Motiv; unten bilden sie mit "Mehr" und "Bearbeiten"
+                                        eine Gruppe, die man an einem Ort findet. */}
+                                    {idx > 0 && (
+                                        <button
+                                            onClick={() => handleSelectWithin(images[idx - 1].id)}
+                                            aria-label={t('previous') || 'Zurück'}
+                                            className={FLOATING_BTN_ICON}
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                    {idx < images.length - 1 && (
+                                        <button
+                                            onClick={() => handleSelectWithin(images[idx + 1].id)}
+                                            aria-label={t('next') || 'Weiter'}
+                                            className={FLOATING_BTN_ICON}
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    )}
                                     {img.generationPrompt && (
                                         <Tooltip text={t('generate_more')} shortcut="M">
                                             <button
                                                 onClick={() => actions.handleGenerateMore(img)}
-                                                className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center gap-1.5 text-xs font-medium transition-all"
+                                                className={`${FLOATING_BTN} gap-1.5`}
                                             >
                                                 <Repeat className="w-3.5 h-3.5" />
                                                 {t('nav_more')}
@@ -851,7 +877,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     )}
                                     {!isSideSheetVisible && !showBlob && (
                                         <Tooltip text={t('open_editing_panel')} shortcut="E">
-                                            <button onClick={() => setIsSideSheetVisible(true)} className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center text-xs font-medium transition-all">
+                                            <button onClick={() => setIsSideSheetVisible(true)} className={FLOATING_BTN}>
                                                 {t('nav_edit')}
                                             </button>
                                         </Tooltip>

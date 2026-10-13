@@ -467,6 +467,18 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <div className="flex items-center gap-2">
             <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
             {/* Mobile: 3-dot menu in the right corner */}
+            {/* Herunterladen bleibt als eigener Knopf: Du hattest zwei Symbole
+                genannt, nicht drei, und dieses ist die haeufigste Handlung in
+                der Detailansicht. Es steht zusaetzlich im Menue. */}
+            <span className="hidden md:contents">
+                <RoundIconButton
+                    icon={<Download className="w-[18px] h-[18px]" />}
+                    onClick={onDetailDownload}
+                    variant="ghost"
+                    tooltip={t('nav_download')}
+                    tooltipShortcut="D"
+                />
+            </span>
             {/* Ein Menue, rechts, auf allen Breiten. Vorher lag eines in der
                 Mitte neben dem Titel und ein zweites rechts fuer das Handy —
                 zwei Knoepfe mit demselben Inhalt an zwei Orten. */}
@@ -523,18 +535,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     </div>
                 )}
             </div>
-            {/* Herunterladen bleibt als eigener Knopf: Du hattest zwei Symbole
-                genannt, nicht drei, und dieses ist die haeufigste Handlung in
-                der Detailansicht. Es steht zusaetzlich im Menue. */}
-            <span className="hidden md:contents">
-                <RoundIconButton
-                    icon={<Download className="w-[18px] h-[18px]" />}
-                    onClick={onDetailDownload}
-                    variant="ghost"
-                    tooltip={t('nav_download')}
-                    tooltipShortcut="D"
-                />
-            </span>
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
