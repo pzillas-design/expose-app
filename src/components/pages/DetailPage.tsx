@@ -182,17 +182,25 @@ interface DetailPageProps {
 /**
  * Die schwebenden Knoepfe ueber dem Bild.
  *
- * Etwas kleiner als zuvor (36 statt 40 Pixel hoch, schmalere Innenabstaende),
- * dafuer deutlicher gefaerbt: Auf einem hellen Motiv war 40 % Schwarz kaum zu
- * sehen, und Groesse ist das teurere Mittel — sie nimmt Platz vom Bild, Farbe
- * nicht.
+ * Immer sichtbar, aber zurueckgenommen — und auf jedem Untergrund lesbar.
+ *
+ * Die dunkle Fuellung traegt ueber hellen Motiven, der helle Ring ueber
+ * dunklen. Mit nur einem der beiden verschwindet der Knopf jeweils auf der
+ * anderen Haelfte der Bilder: Schwarz auf Schwarz ist unsichtbar, und eine
+ * helle Flaeche auf einem Schneebild ebenso.
+ *
+ * Deshalb beides, und beides schwach: Es geht nicht darum, aufzufallen,
+ * sondern darum, nicht zu verschwinden.
  */
-const FLOATING_BTN = `h-9 px-4 bg-black/60 hover:bg-black/80 text-white rounded-full
-    flex items-center text-xs font-medium transition-colors duration-150 backdrop-blur-sm`;
+const FLOATING_BTN_BASE = `text-white rounded-full flex items-center
+    bg-black/35 hover:bg-black/60 backdrop-blur-md
+    ring-1 ring-white/20 hover:ring-white/30
+    transition-[background-color,box-shadow] duration-150`;
+
+const FLOATING_BTN = `${FLOATING_BTN_BASE} h-9 px-4 text-xs font-medium`;
 
 /** Dasselbe als quadratischer Knopf fuer ein einzelnes Symbol. */
-const FLOATING_BTN_ICON = `h-9 w-9 bg-black/60 hover:bg-black/80 text-white rounded-full
-    flex items-center justify-center transition-colors duration-150 backdrop-blur-sm`;
+const FLOATING_BTN_ICON = `${FLOATING_BTN_BASE} h-9 w-9 justify-center`;
 
 export const DetailPage: React.FC<DetailPageProps> = ({
     images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
@@ -844,7 +852,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                         {/* Floating action buttons */}
                         {state.sideSheetMode !== 'brush' && (
-                            <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-all duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-0 group-hover:opacity-100'}`}>
+                            <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
                                 <div className="flex items-center gap-1.5 pointer-events-auto">
                                     {/* Blaettern steht jetzt in derselben Zeile wie die
                                         uebrigen Handlungen am Bild. An den Seitenraendern
