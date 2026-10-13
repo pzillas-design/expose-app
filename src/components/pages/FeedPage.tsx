@@ -131,13 +131,20 @@ const UploadDropZone: React.FC<{
 
 const TileChip: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
     <div
+        // Mitte und Anordnung getrennt: Das aeussere Feld zentriert (place-items),
+        // das innere ordnet (flex). Vorher machte ein Raster beides zugleich —
+        // grid-flow-col mit auto-cols-max zentriert die Spur, nicht den Inhalt,
+        // und bei einer einzelnen Ziffer sass sie dadurch sichtbar daneben.
+        //
+        // Keine Fettschrift: Auf einer dunklen Scheibe traegt schon der Kontrast,
+        // und fett machte aus einer Nebensache ein Ausrufezeichen.
         className={`absolute top-2 right-2 z-20 h-[22px] min-w-[22px] px-1.5 rounded-full
-            grid grid-flow-col auto-cols-max items-center justify-center gap-1
+            grid place-items-center
             bg-black/45 backdrop-blur-[3px]
-            text-[11px] font-medium tabular-nums leading-none text-white
+            text-[11px] font-normal tabular-nums leading-none text-white
             pointer-events-none ${className}`}
     >
-        {children}
+        <span className="flex items-center gap-1 leading-none">{children}</span>
     </div>
 );
 
@@ -440,7 +447,11 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         Der Punkt zeigt an, dass in diesem Stapel gerade etwas
                         entsteht; dann ist die Zahl noch nicht endgueltig. */}
                     {isGroup && !isGen && (
-                        <TileChip className={hasGenerating ? 'gap-1' : ''}>
+                        // Nur beim Ueberfahren. Die Zahl ist eine Auskunft, kein
+                        // Zustand — sie muss nicht dauerhaft auf dem Bild liegen.
+                        // Auf Beruehrungsgeraeten gibt es kein Ueberfahren, dort
+                        // bleibt sie sichtbar, sonst waere sie unerreichbar.
+                        <TileChip className={isMobile ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity duration-150'}>
                             {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
                             {groupCount}
                         </TileChip>
