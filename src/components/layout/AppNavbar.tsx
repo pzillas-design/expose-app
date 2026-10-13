@@ -494,21 +494,35 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <div className="absolute top-full mt-2 right-0 z-50">
                         <DropdownMenu
                             items={[
-                                ...voiceMenuItem.map(v => ({ ...v, onClick: () => { setIsDetailMenuOpen(false); v.onClick(); } })),
+                                /*
+                                    Drei Gruppen, nach Art der Sache:
+
+                                    1. Was man MIT DIESEM BILD tut — erzeugen,
+                                       sichern, nachsehen.
+                                    2. Wie man ARBEITET — Ansicht und Sprache.
+                                       Das aendert nicht das Bild, sondern die
+                                       Umgebung.
+                                    3. Was sich nicht rueckgaengig machen laesst.
+
+                                    Vorher stand "Mehr generieren" zwischen der
+                                    Ansicht und "Info": eine Handlung am Bild
+                                    mitten zwischen einer Einstellung und einer
+                                    Auskunft. Und "Info" war der einzige Eintrag
+                                    ohne Symbol, wodurch die Spalte rechts eine
+                                    Luecke hatte.
+                                */
+                                ...(detailHasPrompt ? [{
+                                    label: t('generate_more') || 'Mehr generieren',
+                                    icon: <Repeat className="w-4 h-4" />,
+                                    onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); },
+                                }] : []),
                                 { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                                { label: t('nav_info'), icon: <Info className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+
                                 // Die Eingabe-Anordnung: ein Eintrag, drei Zustaende.
-                                //
-                                // Das Menue bleibt beim Klick OFFEN. Man sieht dann
-                                // unmittelbar, was passiert ist, und kann
-                                // weiterschalten, ohne es dreimal zu oeffnen — bei
-                                // einem Rundlauf aus drei Zustaenden ist Zumachen
-                                // nach jedem Schritt das Gegenteil von hilfreich.
-                                //
-                                // Die Beschriftung nennt den Zustand, nicht die
-                                // Handlung, und das Symbol zeigt ihn mit: "Eingabe
-                                // rechts" mit dem Symbol fuer rechts. Sonst muesste
-                                // man raten, ob der Text beschreibt, wo man ist,
-                                // oder wohin es geht.
+                                // Das Menue bleibt beim Klick OFFEN — bei einem
+                                // Rundlauf aus drei Ansichten ist Zumachen nach jedem
+                                // Schritt das Gegenteil von hilfreich.
                                 ...(isMobile ? [] : [{
                                     label: !isSideSheetVisible
                                         ? (t('view_fullscreen') || 'Ansicht: Vollbild')
@@ -527,8 +541,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                         else onToggleSideSheet?.();
                                     },
                                 }]),
-                                ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
-                                { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                                ...voiceMenuItem.map(v => ({ ...v, onClick: () => { setIsDetailMenuOpen(false); v.onClick(); } })),
+
                                 { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true, separator: true },
                             ]}
                         />

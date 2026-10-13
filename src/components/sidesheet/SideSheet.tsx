@@ -418,7 +418,32 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         // Nur scrollen, wenn die Obergrenze erreicht ist — sonst blitzt beim
         // Tippen eine Bildlaufleiste auf.
         el.style.overflowY = el.scrollHeight > PROMPT_MAX_H ? 'auto' : 'hidden';
-    }, [prompt]);
+    }, [prompt, selectedImage?.id]);
+
+    /**
+     * Der Entwurfsbereich blendet beim Bildwechsel ein.
+     *
+     * Prompt und Variablen-Chips gehoeren dem einzelnen Bild: Beim Blaettern
+     * steht mal Text da, mal Chips, mal nichts. Das sprang bisher uebergangslos
+     * um, waehrend Karte, Knoepfe und Vorlagen stehen blieben — es sah aus wie
+     * ein Fehler, nicht wie ein Wechsel.
+     *
+     * Ausblenden geschieht sofort, Einblenden weich: Der alte Inhalt gehoert
+     * nicht mehr zum neuen Bild, er soll nicht noch kurz nachleuchten. Das Neue
+     * dagegen darf kommen.
+     *
+     * Bewusst ohne key und damit ohne Neuaufbau: Das Textfeld wuerde dabei
+     * seine berechnete Hoehe verlieren, bis der naechste Lauf sie wieder setzt.
+     */
+    const [draftIn, setDraftIn] = useState(true);
+    useLayoutEffect(() => {
+        setDraftIn(false);
+        const id = requestAnimationFrame(() => requestAnimationFrame(() => setDraftIn(true)));
+        return () => cancelAnimationFrame(id);
+    }, [selectedImage?.id]);
+    const draftFadeClass = draftIn
+        ? 'opacity-100 transition-opacity duration-200 ease-out'
+        : 'opacity-0';
 
     // ── Entwurf beim Bildwechsel laden ──────────────────────────────────────
     useEffect(() => {
@@ -981,7 +1006,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                       abgesetzt war. */}
                                 <div className={`${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.RadiusLg} ${rowLayout ? 'p-5 space-y-4' : 'p-6 space-y-6'} transition-all`}>
                                     {/* Prompt Textarea */}
-                                    <div>
+                                    <div className={draftFadeClass}>
                                         <textarea
                                             ref={textareaRef}
                                             data-voice-action="prompt-input"
@@ -1052,7 +1077,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         </div>
                                     )}
 
-                                    {/* Active Template Variable Chips */}
+                                    {/* Active Template Variable Chips — blenden mit dem
+                                        Prompt zusammen ein; beide gehoeren dem Bild. */}
+                                    <div className={draftFadeClass}>
                                     {(activeTemplate?.controls ?? (standaloneControls.length > 0 ? standaloneControls : null))?.filter(c => !hiddenControlIds.includes(c.id)).map(ctrl => {
                                         const displayLabel = labelOverrides[ctrl.id] || ctrl.label;
                                         const isEditing = editingControlId === ctrl.id;
@@ -1103,6 +1130,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             </div>
                                         )
                                     })}
+                                    </div>
 
                                     {/* Annotations Section */}
                                     {!isMulti && visibleAnns.length > 0 && (
