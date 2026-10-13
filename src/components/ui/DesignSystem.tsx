@@ -274,11 +274,13 @@ export const Button: React.FC<ButtonProps> = ({
         secondary: `bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700`,
         danger: `bg-red-500 text-white hover:bg-red-600 shadow-sm`,
         ghost: `bg-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100`,
-        // Weiss in BEIDEN Themen. Der Hintergrund ist ein Orange-Rot-Verlauf
-        // und wechselt mit dem Thema nicht — die Schrift tat es trotzdem und
-        // stand im Dunkelmodus fast schwarz auf Orange. Das war kein
-        // Geschmacksfrage, sondern zu wenig Kontrast.
-        generate: `bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm hover:brightness-110`
+        // Dunkle Schrift in BEIDEN Themen — bewusste Ausnahme, auf Wunsch so
+        // gesetzt. Der Hintergrund ist ein Orange-Rot-Verlauf und wechselt mit
+        // dem Thema nicht, also tut es die Schrift auch nicht. Vorher stand
+        // hier `text-white dark:text-zinc-950`: Dieselbe Flaeche trug je nach
+        // Thema zwei verschiedene Schriftfarben, obwohl sie sich gar nicht
+        // aendert — das war der eigentliche Fehler, nicht die Farbe selbst.
+        generate: `bg-gradient-to-r from-orange-500 to-red-600 text-zinc-900 shadow-sm hover:brightness-110`
     };
 
     const btn = (
