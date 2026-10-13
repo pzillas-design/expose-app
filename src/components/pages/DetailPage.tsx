@@ -331,46 +331,66 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         img ? images.find(i => i.parentId === img.id && i.isGenerating) : undefined,
         [images, img]
     );
-    // Auto-navigate to finished child: was generating → now done.
-    // Disabled if the user navigated at any point during generation (even if they came back).
-    const prevGeneratingChildRef = useRef<{ childId: string; parentId: string } | null>(null);
+    /**
+     * Begleitet eine laufende Generierung: beim Start auf den Platzhalter
+     * wechseln, am Ende auf das Ergebnis — sofern der Nutzer zwischendurch
+     * nicht selbst woanders hingegangen ist.
+     *
+     * Die verfolgte Generierung wird über ihre ID nachgeschlagen, NICHT über
+     * generatingChild. Letzteres sucht Kinder des gerade angezeigten Bildes und
+     * ist leer, sobald man den Platzhalter selbst ansieht — der Code hielt die
+     * Generierung dann für beendet, verwarf den Merker, und beim nächsten
+     * Schritt auf das Quellbild galt sie als neu entdeckt. Ergebnis war eine
+     * Falle: Ein Pfeil in Richtung Quellbild warf einen sofort zum Platzhalter
+     * zurück, während die Gegenrichtung funktionierte.
+     *
+     * Zusätzlich merkt sich autoJumpedRef jeden Platzhalter, zu dem bereits
+     * gesprungen wurde. Derselbe Sprung passiert damit höchstens einmal, egal
+     * wie oft man danach am Quellbild vorbeikommt.
+     */
+    const trackedGenRef = useRef<{ childId: string; parentId: string } | null>(null);
+    const autoJumpedRef = useRef<Set<string>>(new Set());
     const navHappenedDuringGenRef = useRef(false);
+
     useEffect(() => {
-        if (generatingChild) {
-            if (!prevGeneratingChildRef.current) {
-                // New generation started — record starting position and reset nav flag
-                prevGeneratingChildRef.current = { childId: generatingChild.id, parentId: selectedId };
-                navHappenedDuringGenRef.current = false;
-                // Direkt auf den Platzhalter wechseln, damit der Fortschritt dort
-                // zu sehen ist, wo das Ergebnis erscheint — statt auf dem Quellbild
-                // zu warten und am Ende wegzuspringen. Beim Tippen bleibt die
-                // Ansicht stehen, gleiche Regel wie beim Sprung nach Abschluss.
-                if (selectedId !== generatingChild.id && !isTypingNow()) {
-                    onSelectImage(generatingChild.id);
-                }
-            } else if (prevGeneratingChildRef.current.childId === generatingChild.id
-                       && selectedId !== prevGeneratingChildRef.current.parentId
-                       && selectedId !== generatingChild.id) {
-                // User navigated while this generation was in progress.
-                // Der Platzhalter selbst zählt nicht — dorthin haben wir oben
-                // selbst gewechselt, das ist keine Nutzeraktion.
+        // Neue Generierung am aktuell angezeigten Bild entdeckt
+        if (generatingChild && !trackedGenRef.current && !autoJumpedRef.current.has(generatingChild.id)) {
+            trackedGenRef.current = { childId: generatingChild.id, parentId: selectedId };
+            navHappenedDuringGenRef.current = false;
+            if (selectedId !== generatingChild.id && !isTypingNow()) {
+                autoJumpedRef.current.add(generatingChild.id);
+                onSelectImage(generatingChild.id);
+            }
+            return;
+        }
+
+        const tracked = trackedGenRef.current;
+        if (!tracked) return;
+
+        const trackedImage = imageMap.get(tracked.childId);
+        // Fehlt das Bild (noch nicht geladen), weiter abwarten statt abbrechen.
+        if (!trackedImage) return;
+
+        if (trackedImage.isGenerating) {
+            // Weder Quellbild noch Platzhalter: Der Nutzer ist selbst woanders
+            // hingegangen, der Sprung zum Ergebnis entfällt.
+            if (selectedId !== tracked.parentId && selectedId !== tracked.childId) {
                 navHappenedDuringGenRef.current = true;
             }
-        } else if (prevGeneratingChildRef.current) {
-            const { childId, parentId } = prevGeneratingChildRef.current;
-            const userNavigated = navHappenedDuringGenRef.current || selectedId !== parentId;
-            prevGeneratingChildRef.current = null;
-            navHappenedDuringGenRef.current = false;
-            if (userNavigated) return;
-            const finishedImage = imageMap.get(childId);
-            // Steht die Ansicht schon auf dem Platzhalter, ist nichts zu tun —
-            // er wird an Ort und Stelle zum fertigen Bild.
-            if (finishedImage && !finishedImage.isGenerating && !isTypingNow()) {
-                setIsSideSheetVisible(false);
-                onSelectImage(childId);
-            }
+            return;
         }
-    }, [generatingChild, images, selectedId, onSelectImage, isTypingNow]);
+
+        // Fertig
+        const userNavigated = navHappenedDuringGenRef.current
+            || (selectedId !== tracked.parentId && selectedId !== tracked.childId);
+        trackedGenRef.current = null;
+        navHappenedDuringGenRef.current = false;
+        if (userNavigated || isTypingNow()) return;
+        // Steht die Ansicht schon auf dem Platzhalter, ist das ein Nichtstun —
+        // er wird an Ort und Stelle zum fertigen Bild.
+        setIsSideSheetVisible(false);
+        onSelectImage(tracked.childId);
+    }, [generatingChild, imageMap, selectedId, onSelectImage, isTypingNow]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
 
     // Keep blob visible after generation completes until the real image has loaded
