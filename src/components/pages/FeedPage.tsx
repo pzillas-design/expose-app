@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
-import { Loader2, Plus, Layers, SquaresSubtract, Upload, Download, X, ImagePlus } from 'lucide-react';
+import { Loader2, Plus, Layers, ChevronRight, SquaresSubtract, Upload, Download, X, ImagePlus } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -24,6 +24,27 @@ function getDaysRemaining(createdAt: string | number | undefined): number | null
     const expiresAt = created + TTL_DAYS * 24 * 60 * 60 * 1000;
     return Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
 }
+
+/**
+ * Tagesschluessel aus einem Zeitstempel. Bewusst nach Kalendertag und nicht
+ * nach Stunde oder Minute: Eine Kopfzeile "13:36-13:36" waere eine Zeitspanne
+ * von null und sagt niemandem etwas.
+ */
+const dayKeyOf = (ts: string | number | undefined): string => {
+    const d = ts ? new Date(ts) : new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/** "Heute", "Gestern", sonst das ausgeschriebene Datum. */
+const dayLabelOf = (ts: string | number | undefined, lang: 'de' | 'en'): string => {
+    const d = ts ? new Date(ts) : new Date();
+    const key = dayKeyOf(ts);
+    const today = dayKeyOf(Date.now());
+    const yesterday = dayKeyOf(Date.now() - 86400000);
+    if (key === today) return lang === 'de' ? 'Heute' : 'Today';
+    if (key === yesterday) return lang === 'de' ? 'Gestern' : 'Yesterday';
+    return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { day: 'numeric', month: 'long' });
+};
 
 /* ── Memoised grid item ── */
 interface FeedGridItemProps {
@@ -544,6 +565,61 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         onExpandedGroupChange(row.id);
     }, [actions, onExpandedGroupChange]);
 
+    /**
+     * Tagesabschnitte der Galerie.
+     *
+     * Nur dort: In einem geoeffneten Stapel und im Auswahlmodus bleibt das
+     * Raster flach, weil beide Ansichten bereits einen eigenen Fokus setzen.
+     *
+     * `rows` ist schon nach Datum sortiert, neueste zuerst — die Map behaelt
+     * die Einfuegereihenfolge, also stimmt die Reihenfolge der Abschnitte
+     * ohne zweites Sortieren.
+     */
+    const daySections = useMemo(() => {
+        if (effectiveGroupId || renderSelectMode) return null;
+        const byDay = new Map<string, CanvasImage[]>();
+        for (const row of rows) {
+            const cover = row.items[0];
+            if (!cover) continue;
+            const key = dayKeyOf(row.createdAt ?? cover.createdAt);
+            const bucket = byDay.get(key);
+            if (bucket) bucket.push(cover);
+            else byDay.set(key, [cover]);
+        }
+        return Array.from(byDay.entries()).map(([key, covers]) => ({
+            key,
+            label: dayLabelOf(covers[0]?.createdAt, state?.currentLang === 'de' ? 'de' : 'en'),
+            covers,
+            // Die knappste Frist im Abschnitt zaehlt. Steht die Gruppe zu, sind
+            // die gelben Punkte an den Kacheln nicht zu sehen — ohne diesen
+            // Wert verschwaende die Warnung mit dem Zuklappen, und genau das
+            // waere der Moment, in dem sie gebraucht wird.
+            daysLeft: covers.reduce<number | null>((min, img) => {
+                const d = getDaysRemaining(img.createdAt);
+                if (d == null) return min;
+                return min == null ? d : Math.min(min, d);
+            }, null),
+        }));
+    }, [rows, effectiveGroupId, renderSelectMode, state?.currentLang]);
+
+    // Zugeklappte Tage. Beim ersten Aufbau ist nur der juengste Tag offen —
+    // danach entscheidet der Nutzer, und ein spaeter hinzukommender Tag (etwa
+    // nach Mitternacht) ist der neue juengste und damit offen.
+    const [closedDays, setClosedDays] = React.useState<Set<string>>(new Set());
+    const daysSeededRef = React.useRef(false);
+    React.useEffect(() => {
+        if (daysSeededRef.current || !daySections || daySections.length === 0) return;
+        daysSeededRef.current = true;
+        setClosedDays(new Set(daySections.slice(1).map(sec => sec.key)));
+    }, [daySections]);
+    const toggleDay = React.useCallback((key: string) => {
+        setClosedDays(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key); else next.add(key);
+            return next;
+        });
+    }, []);
+
     const displayImages = useMemo(() => {
         if (effectiveGroupId) {
             return rows.find(r => r.id === effectiveGroupId)?.items || [];
@@ -551,8 +627,15 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (renderSelectMode) {
             return rows.flatMap(r => r.items);
         }
+        // Nur was wirklich sichtbar ist — sonst zeigen Tastatur- und
+        // Sprachnavigation auf Kacheln, die gar nicht im Raster stehen.
+        if (daySections) {
+            return daySections
+                .filter(sec => !closedDays.has(sec.key))
+                .flatMap(sec => sec.covers);
+        }
         return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
-    }, [effectiveGroupId, renderSelectMode, rows]);
+    }, [effectiveGroupId, renderSelectMode, rows, daySections, closedDays]);
 
     // Track which cover tile to animate when closing a group.
     // useLayoutEffect fires synchronously before paint so the first visible frame
@@ -700,7 +783,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     React.useEffect(() => {
         const updateColumns = () => {
             if (!gridRef.current || !gridRef.current.children.length) return;
-            const children = Array.from(gridRef.current.children) as HTMLElement[];
+            // Tages-Kopfzeilen sind vollbreite Rasterelemente und wuerden die
+            // Spaltenzaehlung auf 1 druecken — sie stehen allein in ihrer Zeile.
+            const children = (Array.from(gridRef.current.children) as HTMLElement[])
+                .filter(el => el.dataset.dayHeader !== '1');
             if (children.length === 0) return;
             const firstTop = children[0].offsetTop;
             let colCountRaw = 0;
@@ -784,6 +870,62 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return () => observer.disconnect();
     }, [hasMore, isLoading, isFetchingMore, onLoadMore]);
 
+    // Eine Kachel. Herausgezogen, weil das Raster sie an zwei Stellen
+    // braucht: flach (Stapel, Auswahlmodus) und nach Tagen gruppiert.
+    const renderTile = (img: CanvasImage, idx: number) => {
+        const gc = (effectiveGroupId || renderSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
+        const row = (effectiveGroupId || renderSelectMode) ? null : groupRowMap.get(img.id);
+        const hasGen = row?.items.some(i => i.isGenerating) ?? false;
+        const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
+        const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
+        const unseenIds: Set<string> = state?.unseenIds ?? new Set();
+        // For group covers: dot if any item in group is unseen
+        const rowItems = row?.items ?? [img];
+        const isNew = !effectiveGroupId
+            ? rowItems.some(i => unseenIds.has(i.id))
+            : unseenIds.has(img.id);
+        // TTL: use root image's createdAt for group covers
+        const rootImg = rowItems.find(i => !i.parentId) ?? img;
+        const daysLeft = getDaysRemaining(rootImg.createdAt);
+        return (
+            <FeedGridItem
+                key={img.id}
+                img={img}
+                idx={idx}
+                isSelected={selectedIdSet.has(img.id)}
+                isKeyboardActive={activeIndex === idx || voiceFocusIndex === idx}
+                isSelectMode={!!isSelectMode}
+                onSelectImage={onSelectImage}
+                onToggleSelect={onToggleSelect}
+                setActiveIndex={setActiveIndex}
+                actions={actions}
+                parentSrc={parentSrc}
+                groupCount={gc}
+                hasGenerating={hasGen}
+                group={row}
+                onOpenGroup={gc > 1 && row ? handleOpenGroup : undefined}
+                staggerDelay={
+                    renderSelectMode
+                        // In select mode the tile the user just checked leads, the rest
+                        // follow a beat later so the eye keeps its anchor.
+                        ? (selectedIdSet.has(img.id) ? 0 : 90 + Math.min(idx * 22, 260))
+                        : effectiveGroupId ? Math.min(idx * 35, 350) : undefined
+                }
+                // Der Rückkehr-Zoom galt bisher nur in der Galerie
+                // (!effectiveGroupId) — aus der Detailansicht zurück in
+                // einen Stapel blieb er deshalb aus. Die Kachel ist dort
+                // genauso vorhanden, der Ausschluss war nicht begründet.
+                // Im Auswahlmodus bleibt er aus: Dort wird markiert,
+                // nicht navigiert.
+                isLastViewed={img.id === revealId || (!renderSelectMode && img.id === (returnCoverId ?? ''))}
+                isNew={isNew}
+                daysRemaining={daysLeft}
+                currentLang={state?.currentLang}
+                isSource={!img.parentId && !img.isGenerating && (!!effectiveGroupId || renderSelectMode)}
+            />
+        );
+    };
+
     if (isLoading && images.length === 0) {
         // Auch der Ladezustand nimmt Dateien an. Vorher kehrte FeedPage hier
         // zurück, bevor die Drop-Handler überhaupt im Baum standen — und der
@@ -854,59 +996,45 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-end gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out transition-opacity ${isGridFading ? 'opacity-0' : 'opacity-100'} ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 style={columnsOverride ? { gridTemplateColumns: `repeat(${columnsOverride}, minmax(0, 1fr))` } : undefined}
                                 >
-                                    {displayImages.map((img, idx) => {
-                                        const gc = (effectiveGroupId || renderSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
-                                        const row = (effectiveGroupId || renderSelectMode) ? null : groupRowMap.get(img.id);
-                                        const hasGen = row?.items.some(i => i.isGenerating) ?? false;
-                                        const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
-                                        const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
-                                        const unseenIds: Set<string> = state?.unseenIds ?? new Set();
-                                        // For group covers: dot if any item in group is unseen
-                                        const rowItems = row?.items ?? [img];
-                                        const isNew = !effectiveGroupId
-                                            ? rowItems.some(i => unseenIds.has(i.id))
-                                            : unseenIds.has(img.id);
-                                        // TTL: use root image's createdAt for group covers
-                                        const rootImg = rowItems.find(i => !i.parentId) ?? img;
-                                        const daysLeft = getDaysRemaining(rootImg.createdAt);
-                                        return (
-                                            <FeedGridItem
-                                                key={img.id}
-                                                img={img}
-                                                idx={idx}
-                                                isSelected={selectedIdSet.has(img.id)}
-                                                isKeyboardActive={activeIndex === idx || voiceFocusIndex === idx}
-                                                isSelectMode={!!isSelectMode}
-                                                onSelectImage={onSelectImage}
-                                                onToggleSelect={onToggleSelect}
-                                                setActiveIndex={setActiveIndex}
-                                                actions={actions}
-                                                parentSrc={parentSrc}
-                                                groupCount={gc}
-                                                hasGenerating={hasGen}
-                                                group={row}
-                                                onOpenGroup={gc > 1 && row ? handleOpenGroup : undefined}
-                                                staggerDelay={
-                                                    renderSelectMode
-                                                        // In select mode the tile the user just checked leads, the rest
-                                                        // follow a beat later so the eye keeps its anchor.
-                                                        ? (selectedIdSet.has(img.id) ? 0 : 90 + Math.min(idx * 22, 260))
-                                                        : effectiveGroupId ? Math.min(idx * 35, 350) : undefined
-                                                }
-                                                // Der Rückkehr-Zoom galt bisher nur in der Galerie
-                                                // (!effectiveGroupId) — aus der Detailansicht zurück in
-                                                // einen Stapel blieb er deshalb aus. Die Kachel ist dort
-                                                // genauso vorhanden, der Ausschluss war nicht begründet.
-                                                // Im Auswahlmodus bleibt er aus: Dort wird markiert,
-                                                // nicht navigiert.
-                                                isLastViewed={img.id === revealId || (!renderSelectMode && img.id === (returnCoverId ?? ''))}
-                                                isNew={isNew}
-                                                daysRemaining={daysLeft}
-                                                currentLang={state?.currentLang}
-                                                isSource={!img.parentId && !img.isGenerating && (!!effectiveGroupId || renderSelectMode)}
-                                            />
-                                        );
-                                    })}
+                                    {daySections ? (() => {
+                                        // Ein fortlaufender Index ueber die SICHTBAREN Kacheln, damit
+                                        // Tastatur- und Sprachnavigation mit displayImages uebereinstimmen.
+                                        let imgIdx = 0;
+                                        return daySections.flatMap(sec => {
+                                            const closed = closedDays.has(sec.key);
+                                            const header = (
+                                                <button
+                                                    key={`day-${sec.key}`}
+                                                    data-day-header="1"
+                                                    onClick={() => toggleDay(sec.key)}
+                                                    className="col-span-full flex items-center gap-2 py-1 text-left group/day"
+                                                >
+                                                    <ChevronRight
+                                                        className={`w-4 h-4 shrink-0 text-zinc-400 transition-transform duration-200 ${closed ? '' : 'rotate-90'}`}
+                                                        strokeWidth={2}
+                                                    />
+                                                    <span className={Typo.H4}>{sec.label}</span>
+                                                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                                                        {sec.covers.length}
+                                                    </span>
+                                                    {sec.daysLeft != null && sec.daysLeft <= WARNING_DAYS && (
+                                                        // Dezent, aber nicht zu uebersehen: Steht der Tag zu,
+                                                        // sind die gelben Punkte an den Kacheln verdeckt, und
+                                                        // dies ist die einzige Stelle, an der die Frist noch
+                                                        // auftaucht.
+                                                        <span className="ml-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium text-zinc-500 dark:text-zinc-400 bg-black/[0.04] dark:bg-white/[0.06]">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                                                            {state?.currentLang === 'de'
+                                                                ? `noch ${Math.max(0, sec.daysLeft)} ${sec.daysLeft === 1 ? 'Tag' : 'Tage'}`
+                                                                : `${Math.max(0, sec.daysLeft)} ${sec.daysLeft === 1 ? 'day' : 'days'} left`}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            );
+                                            if (closed) return [header];
+                                            return [header, ...sec.covers.map(img => renderTile(img, imgIdx++))];
+                                        });
+                                    })() : displayImages.map((img, idx) => renderTile(img, idx))}
 
                                     {/* Layer Composer entry — only inside an expanded stack with 2+ variants.
                                         Matches the parent image's aspect ratio (letterboxed in the square cell)
