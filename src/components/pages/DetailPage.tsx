@@ -723,30 +723,34 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [navigate, confirm, onDelete, onDownload, selectedId, onBack, actions, isSideSheetVisible, setIsSideSheetVisible, state.sideSheetMode]);
 
-    // Resizable Sidebar States
-    const [sidebarWidth, setSidebarWidth] = useState(380);
-    const [isResizing, setIsResizing] = useState(false);
-    useEffect(() => { onSidebarWidthChange?.(380); }, []);
-
-    // Anordnung: nebeneinander oder untereinander. Auf schmalen Geraeten gilt
-    // immer untereinander — dort waere nebeneinander kein Angebot, sondern eine
-    // Zumutung, und deshalb ist die Hoehe dort auch nicht ziehbar: Der Platz
-    // reicht gerade fuer beides, es gibt nichts zu verteilen.
+    // Anordnung: nebeneinander, untereinander oder Vollbild. Auf schmalen
+    // Geraeten gilt immer untereinander.
     const detailLayout = useDetailLayout();
     // Die Zeilenanordnung gilt nur, SOLANGE die Eingabe sichtbar ist. Im
     // Vollbild gibt es nichts zu teilen: Dort soll das Bild die ganze Flaeche
-    // bekommen und mittig darin stehen — mit der Zeilenhoehe waere es oben
-    // geklebt und darunter waere der Platz der verschwundenen Eingabe leer
-    // geblieben.
+    // bekommen und mittig darin stehen.
     const isRowLayout = !isMobile && detailLayout === 'row' && isSideSheetActuallyVisible;
-    // Anteilig am Fenster statt einer festen Zahl: 320 Pixel sind auf einem
-    // 13-Zoll-Bildschirm ein Drittel und auf einem grossen ein Streifen, unter
-    // dem das Bild verloren wirkt. Ein knappes Drittel haelt das Verhaeltnis
-    // zwischen Bild und Eingabe ueber alle Groessen hinweg aehnlich.
-    const [panelHeight, setPanelHeight] = useState(() =>
-        typeof window === 'undefined' ? 320 : Math.round(Math.min(Math.max(window.innerHeight * 0.32, 260), 460))
-    );
-    const MIN_PANEL_HEIGHT = 200;
+
+    /**
+     * Breite des Seitenpanels — fest, nicht mehr ziehbar.
+     *
+     * Der Ziehgriff ist entfallen: Er war ein Bedienelement, das in jeder
+     * Sitzung neu benutzt werden musste, um denselben Zustand wieder
+     * herzustellen, und sein Wert wurde nirgends gespeichert. Eine Groesse, die
+     * ohnehin fuer fast jeden gleich ist, gehoert festgelegt und nicht
+     * verhandelt.
+     *
+     * 30 Prozent der Fensterbreite, begrenzt auf 360 bis 480 Pixel: Unter 360
+     * wird die Eingabe eng, ueber 480 nimmt sie dem Bild Platz, ohne selbst
+     * etwas davon zu haben — der Text wuerde nur breiter laufen, und das liest
+     * sich schlechter. CSS rechnet das selbst, es braucht keine Messung und
+     * keinen Zustand.
+     */
+    const SIDEBAR_WIDTH = 'clamp(360px, 30vw, 480px)';
+    /** Nominalwert fuer alles, was eine Zahl braucht (Drop-Zonen, Sprachkontext). */
+    const SIDEBAR_WIDTH_PX = typeof window === 'undefined'
+        ? 380
+        : Math.round(Math.min(Math.max(window.innerWidth * 0.30, 360), 480));
 
     /**
      * Hoehe des Bildbereichs im Zeilenmodus.
@@ -777,42 +781,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => { obs?.disconnect(); window.removeEventListener('resize', compute); };
     }, [isRowLayout, imgNaturalDims.width, imgNaturalDims.height]);
 
-    const startResizing = useCallback(() => setIsResizing(true), []);
-    const stopResizing = useCallback(() => setIsResizing(false), []);
+    const MIN_PANEL_HEIGHT = 200;
 
-    const MIN_SIDEBAR_WIDTH = 300;
-    const MAX_SIDEBAR_WIDTH = 600;
-
-    const resize = useCallback((e: MouseEvent) => {
-        if (!isResizing) return;
-        if (isRowLayout) {
-            // Nach oben ziehen vergroessert die Leiste. Die Obergrenze haengt am
-            // Fenster statt an einer festen Zahl: Sonst liesse sich auf einem
-            // kleinen Bildschirm das Bild vollstaendig verdecken.
-            const maxPanel = Math.max(MIN_PANEL_HEIGHT, window.innerHeight * 0.75);
-            const next = window.innerHeight - e.clientY;
-            setPanelHeight(Math.min(Math.max(next, MIN_PANEL_HEIGHT), maxPanel));
-            return;
-        }
-        const newWidth = window.innerWidth - e.clientX;
-        const clampedWidth = Math.min(Math.max(newWidth, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
-        setSidebarWidth(clampedWidth);
-        onSidebarWidthChange?.(clampedWidth);
-    }, [isResizing, isRowLayout, onSidebarWidthChange]);
-
-    useEffect(() => {
-        if (isResizing) {
-            window.addEventListener("mousemove", resize);
-            window.addEventListener("mouseup", stopResizing);
-        } else {
-            window.removeEventListener("mousemove", resize);
-            window.removeEventListener("mouseup", stopResizing);
-        }
-        return () => {
-            window.removeEventListener("mousemove", resize);
-            window.removeEventListener("mouseup", stopResizing);
-        };
-    }, [isResizing, resize, stopResizing]);
 
 
     // No image found — go back, this page shouldn't exist without a valid image.
@@ -1177,7 +1147,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     // Linie daneben waere eine zweite Aussage ueber dieselbe
                     // Grenze. Der Ziehgriff zum Verbreitern sitzt ohnehin dort
                     // und zeigt sie an, sobald man ihn braucht.
-                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 ${isResizing ? 'select-none' : 'md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none'} ${!isSideSheetActuallyVisible && (isMobile || isRowLayout) ? 'hidden' : ''}`}
+                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none ${!isSideSheetActuallyVisible && (isMobile || isRowLayout) ? 'hidden' : ''}`}
                     style={isMobile
                         ? undefined
                         : isRowLayout
@@ -1194,44 +1164,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // Ausblenden im Zeilenmodus nichts tat.
                             ? { width: '100%' }
                             : {
-                                width: isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px',
+                                width: isSideSheetActuallyVisible ? SIDEBAR_WIDTH : '0px',
                                 paddingTop: Math.max(0, imageTopOffset - PANEL_INNER_PT),
                             }}
                 >
                     {/* Resizer Handle — desktop only */}
-                    {!isMobile && !isRowLayout && (
-                        /*
-                            Greifflaeche ueber die volle Hoehe, sichtbar ist nur ein
-                            kurzer Balken in der Mitte.
-
-                            Vorher leuchtete die ganze Kante auf — eine
-                            bildschirmhohe Flaeche als Rueckmeldung auf einen
-                            Mauszeiger ist zu viel Antwort fuer zu wenig Frage. Der
-                            Balken ist etwa daumenhoch: genug, um ihn zu sehen und zu
-                            treffen, wenig genug, um ihn zu uebersehen, solange man
-                            ihn nicht sucht.
-
-                            Im Ruhezustand sehr zurueckhaltend, beim Ueberfahren
-                            deutlicher — getroffen wird ohnehin die ganze Kante.
-                        */
-                        <div
-                            onMouseDown={startResizing}
-                            // Die Greifflaeche beginnt an der Kante, der sichtbare
-                            // Balken sitzt ein Stueck weiter innen — direkt an der
-                            // Bildkante klebte er am Bild und las sich als dessen
-                            // Rand statt als Griff.
-                            className="absolute left-0 top-0 bottom-0 w-6 -ml-1 cursor-col-resize z-50 group/resize flex items-center"
-                        >
-                            <div className="w-1.5 h-12 ml-3 rounded-full bg-black/10 dark:bg-white/12
-                                group-hover/resize:bg-black/20 dark:group-hover/resize:bg-white/28
-                                group-active/resize:bg-black/30 dark:group-active/resize:bg-white/40
-                                transition-colors duration-150" />
-                        </div>
-                    )}
 
                     <SideSheet
                         key={state.selectedImage?.id ?? 'no-selection'}
-                        width={isMobile || isRowLayout ? '100%' : `${sidebarWidth}px`}
+                        width={isMobile || isRowLayout ? '100%' : `${SIDEBAR_WIDTH_PX}px`}
                         rowLayout={isRowLayout}
                         disableMobileSheet={isMobile}
                         selectedImage={state.selectedImage}
