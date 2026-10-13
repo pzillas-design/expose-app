@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useEnterGenerates, setEnterGenerates } from '@/utils/uiPrefs';
 import { PRIMARY_PROVIDER } from '@/config/provider';
 import { ChevronDown, Check } from 'lucide-react';
 import { TranslationFunction, GenerationQuality } from '@/types';
@@ -78,6 +79,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         { id: 'en', label: 'English' },
         { id: 'auto', label: 'Auto' },
     ];
+
+    // Der Haken liest dieselbe Quelle wie das Eingabefeld; das Setzen meldet
+    // die Aenderung, sodass der Knopf sein Kuerzel sofort anpasst.
+    const enterGenerates = useEnterGenerates();
+    const setEnterGeneratesPref = (on: boolean) => setEnterGenerates(on);
 
     const handleNotificationToggle = async (enabled: boolean) => {
         if (notificationPermission === 'denied') {
@@ -242,6 +248,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                     </>
                                 )}
                             </div>
+                        </div>
+
+                        {/* Enter generiert */}
+                        <div className="flex items-center justify-between gap-4 pt-2">
+                            <div>
+                                <p className={rowTitle}>{t('pref_enter_generates_label') || 'Enter generiert'}</p>
+                                <p className={rowSub}>{t('pref_enter_generates_desc') || 'Umschalt+Enter macht stattdessen einen Zeilenumbruch.'}</p>
+                            </div>
+                            <Toggle checked={enterGenerates} onChange={() => setEnterGeneratesPref(!enterGenerates)} />
                         </div>
 
                         {/* Notifications */}

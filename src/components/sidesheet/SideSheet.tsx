@@ -16,6 +16,7 @@ import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/D
 import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { GenerationSettingsModal } from '@/components/modals/GenerationSettingsModal';
 import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from '@/types';
+import { useEnterGenerates } from '@/utils/uiPrefs';
 
 /**
  * Schluessel des einmaligen Hinweises auf das neue Standardmodell.
@@ -612,9 +613,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
      * zurueck ins Feld klicken muessen.
      */
     // Am Knopf steht der einfachere der beiden Wege. Befehls-/Strg+Enter gilt
-    // weiterhin und greift ueberall auf der Seite — am Knopf stuende es nur im
-    // Weg, weil es laenger ist und weniger Leute es brauchen.
-    const generateShortcutLabel = '↵';
+    // immer und greift ueberall auf der Seite; Enter allein laesst sich in den
+    // Einstellungen abschalten, und dann steht dort wieder das laengere
+    // Kuerzel — sonst verspraeche der Knopf etwas, das nicht mehr gilt.
+    const enterGenerates = useEnterGenerates();
+    const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    const generateShortcutLabel = enterGenerates ? '↵' : (isMac ? '⌘↵' : 'Strg↵');
+    const generateHint = enterGenerates
+        ? (lang === 'de' ? 'Enter generiert · Umschalt+Enter macht einen Umbruch' : 'Enter generates · Shift+Enter inserts a line break')
+        : (lang === 'de' ? `${isMac ? 'Befehlstaste' : 'Strg'}+Enter generiert` : `${isMac ? 'Cmd' : 'Ctrl'}+Enter generates`);
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return;
@@ -877,6 +884,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 // Waehrend einer laufenden Umwandlung (IME, etwa
                                                 // bei japanischer Eingabe) bestaetigt Enter das
                                                 // Wort und darf nicht generieren.
+                                                if (!enterGenerates) return;
                                                 if (e.key !== 'Enter' || e.shiftKey || (e.nativeEvent as any).isComposing) return;
                                                 if (e.metaKey || e.ctrlKey) return; // uebernimmt der globale Abgleich
                                                 e.preventDefault();
@@ -1164,6 +1172,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         data-voice-action="generate-button"
                                                         variant="generate"
                                                         size="m"
+                                                        tooltip={generateHint}
+                                                        tooltipSide="top"
                                                         // Die Button-Komponente hat das schon: <kbd> in
                                                         // Monospace bei 40 % Deckkraft, auf dem Handy
                                                         // ausgeblendet. Kein eigener Stil noetig.
