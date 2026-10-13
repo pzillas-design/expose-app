@@ -619,11 +619,16 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (!el || effectiveGroupId) return; // only the main feed paginates
         const onScroll = () => {
             if (!hasMore || isFetchingMore || isLoading) return;
+            // Sind alle Tage zugeklappt, steht nichts im Weg: Der Fussbereich
+            // liegt dann staendig im Blick, und jeder Lauf wuerde die naechste
+            // Seite holen — die wieder nur eine zugeklappte Zeile beitraegt.
+            // Dann wird nicht von selbst geladen; dafuer gibt es den Knopf.
+            if (displayImages.length === 0) return;
             if (el.scrollTop + el.clientHeight >= el.scrollHeight - 600) onLoadMore?.();
         };
         el.addEventListener('scroll', onScroll, { passive: true });
         return () => el.removeEventListener('scroll', onScroll);
-    }, [effectiveGroupId, hasMore, isFetchingMore, isLoading, onLoadMore, hasImages]);
+    }, [effectiveGroupId, hasMore, isFetchingMore, isLoading, onLoadMore, hasImages, displayImages.length]);
 
     const prevSelectModeRef = React.useRef(false);
     const prevSelectedCountRef = React.useRef(0);
@@ -1065,7 +1070,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             root: scrollRef.current
         });
 
-        if (sentinelRef.current) {
+        if (sentinelRef.current && displayImages.length > 0) {
             observer.observe(sentinelRef.current);
         }
 
@@ -1192,7 +1197,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     <FeedHeroSection />
                 )}
                 <div className="flex-1 flex flex-col">
-                    <div className="flex-1 flex flex-col relative pb-16 min-h-[100dvh]">
+                    {/* Die Mindesthoehe haelt den Fussbereich unten, solange das
+                        Raster den Schirm fuellt. Bei zugeklappten Tagen gibt es
+                        nichts zu fuellen — dann waere sie nur ein Bildschirm
+                        Schwarz zwischen Liste und Fuss. */}
+                    <div className={`flex-1 flex flex-col relative pb-16 ${displayImages.length > 0 ? 'min-h-[100dvh]' : ''}`}>
                         {/*
                             Nicht an displayImages haengen, sondern daran, ob es
                             ueberhaupt Bilder gibt.
@@ -1373,9 +1382,26 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                         </div>
                         
                         {!isLoading && !isFetchingMore && hasMore && (
-                            <div className="animate-in fade-in duration-1000 flex flex-col items-center gap-2 text-zinc-400/50 dark:text-zinc-600/50">
-                                <div className="text-[10px] uppercase tracking-[0.3em] font-medium">Scroll for more</div>
-                            </div>
+                            displayImages.length > 0 ? (
+                                <div className="animate-in fade-in duration-1000 flex flex-col items-center gap-2 text-zinc-400/50 dark:text-zinc-600/50">
+                                    <div className="text-[10px] uppercase tracking-[0.3em] font-medium">
+                                        {state?.currentLang === 'de' ? 'Weiter scrollen' : 'Scroll for more'}
+                                    </div>
+                                </div>
+                            ) : (
+                                // Zugeklappte Tage fuellen den Schirm nicht, also laedt
+                                // nichts von selbst nach. Statt "weiter scrollen" — wohin
+                                // auch — ein Knopf, der genau eine Seite holt.
+                                <button
+                                    onClick={() => onLoadMore?.()}
+                                    className="animate-in fade-in duration-500 text-[13px] font-medium px-4 py-2 rounded-full
+                                        text-zinc-500 dark:text-zinc-400
+                                        bg-black/[0.04] dark:bg-white/[0.06]
+                                        hover:bg-black/[0.07] dark:hover:bg-white/[0.10] transition-colors"
+                                >
+                                    {state?.currentLang === 'de' ? 'Ältere laden' : 'Load older'}
+                                </button>
+                            )
                         )}
                     </div>
                 )}
