@@ -107,11 +107,10 @@ const dayLabelOf = (key: string, lang: 'de' | 'en'): string => {
 const UploadDropZone: React.FC<{
     onClick: () => void;
     label: string;
-    sub?: string;
     active?: boolean;
     row?: boolean;
     className?: string;
-}> = ({ onClick, label, sub, active = false, row = false, className = '' }) => (
+}> = ({ onClick, label, active = false, row = false, className = '' }) => (
     <button
         onClick={onClick}
         // Symbol immer ueber der Schrift, in beiden Faellen. Nebeneinander
@@ -128,13 +127,9 @@ const UploadDropZone: React.FC<{
             ${className}`}
     >
         <Upload className="w-[18px] h-[18px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.75} />
-        {/* Beide Zeilen in derselben Schrift. Vorher trugen sie zwei Groessen
-            und zwei Farben — das machte aus zwei Saetzen zwei Ebenen, obwohl
-            sie dasselbe sagen: wie man Bilder hereinbekommt. */}
-        <span className="flex flex-col items-center gap-0.5 text-[13px] leading-tight text-zinc-500 dark:text-zinc-400">
-            <span>{label}</span>
-            {sub && <span>{sub}</span>}
-        </span>
+        {/* Eine Zeile. Zwei Zeilen machten aus einem Satz zwei, obwohl beide
+            dasselbe sagen: wie man Bilder hereinbekommt. */}
+        <span className="text-[13px] leading-tight text-zinc-500 dark:text-zinc-400">{label}</span>
     </button>
 );
 
@@ -567,6 +562,15 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     );
 
     const sentinelRef = React.useRef<HTMLDivElement>(null);
+    /**
+     * Anzahl der sichtbaren Kacheln, als Ref.
+     *
+     * Der Scroll-Zuhoerer haengt weiter oben im Aufbau als displayImages und
+     * kaeme sonst an den Wert nicht heran. Ein Ref loest das ohne die Reihenfolge
+     * im Aufbau umzustellen — und ohne den Zuhoerer bei jeder Aenderung der
+     * Bildzahl neu anzuhaengen.
+     */
+    const visibleCountRef = React.useRef(0);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
     const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -623,12 +627,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             // liegt dann staendig im Blick, und jeder Lauf wuerde die naechste
             // Seite holen — die wieder nur eine zugeklappte Zeile beitraegt.
             // Dann wird nicht von selbst geladen; dafuer gibt es den Knopf.
-            if (displayImages.length === 0) return;
+            if (visibleCountRef.current === 0) return;
             if (el.scrollTop + el.clientHeight >= el.scrollHeight - 600) onLoadMore?.();
         };
         el.addEventListener('scroll', onScroll, { passive: true });
         return () => el.removeEventListener('scroll', onScroll);
-    }, [effectiveGroupId, hasMore, isFetchingMore, isLoading, onLoadMore, hasImages, displayImages.length]);
+    }, [effectiveGroupId, hasMore, isFetchingMore, isLoading, onLoadMore, hasImages]);
 
     const prevSelectModeRef = React.useRef(false);
     const prevSelectedCountRef = React.useRef(0);
@@ -843,6 +847,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         }
         return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
     }, [effectiveGroupId, renderSelectMode, rows, daySections, openDays]);
+    visibleCountRef.current = displayImages.length;
 
     // Track which cover tile to animate when closing a group.
     // useLayoutEffect fires synchronously before paint so the first visible frame
@@ -1233,7 +1238,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                             onClick={triggerUpload}
                                             active={isDropActive}
                                             label={t?.('welcome_drop_cta') || 'Upload and edit'}
-                                            sub={t?.('welcome_drop_sub') || 'or drag photos here'}
                                         />
                                     </div>
                                 )}
@@ -1265,8 +1269,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                     // und zwar an beiden Breiten unterschiedlich —
                                                     // daher die ungleichen Luecken zwischen den
                                                     // Tagen.
-                                                    className="col-span-full flex items-center gap-2 py-2 -my-5 sm:-my-8 px-2 -mx-2 rounded-lg text-left
-                                                        hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors duration-150 group/day"
+                                                    // Buendig mit Kacheln und Ablageflaeche: keine
+                                                    // negativen Seitenabstaende mehr, die die Zeile
+                                                    // 8 Pixel ueber die Spalte hinausschoben.
+                                                    // Dieselbe Rundung und dieselbe Flaechenfarbe
+                                                    // wie dort — und mehr Hoehe, damit die Flaeche
+                                                    // beim Ueberfahren traegt statt nur anzudeuten.
+                                                    className="col-span-full flex items-center gap-2 px-4 py-3.5 -my-5 sm:-my-8 rounded-2xl text-left
+                                                        hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors duration-150 group/day"
                                                 >
                                                     <ChevronRight
                                                         className={`w-4 h-4 shrink-0 text-zinc-400 transition-transform duration-200 ${closed ? '' : 'rotate-90'}`}
@@ -1360,7 +1370,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     onClick={triggerUpload}
                                     active={isDropActive}
                                     label={t?.('welcome_drop_cta') || 'Upload and edit'}
-                                    sub={t?.('welcome_drop_sub') || 'or drag photos here'}
                                 />
 
                                 <button
