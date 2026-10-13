@@ -1121,36 +1121,55 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 </div>
                             </>
                         ) : !isLoading && (
-                            <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
-                                <div className="flex flex-col items-center gap-8">
-                                    <div className="space-y-2">
-                                        <h1 className="text-sm font-bold tracking-tight text-black dark:text-white">
-                                            {t?.('welcome_title') || 'Welcome to exposé'}
-                                        </h1>
-                                        <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 mx-auto text-sm`}>
-                                            {t?.('welcome_empty_desc') || 'Upload photos to edit or generate something new.'}
-                                        </p>
-                                    </div>
+                            /*
+                                Leerer Zustand.
+
+                                Vorher standen hier zwei gleich schwere
+                                Vollbreit-Knoepfe untereinander, eine Ueberschrift
+                                in Fliesstextgroesse (text-sm font-bold) und eine
+                                Verschachtelung, deren aeussere Huelle nur ein
+                                einziges Kind hatte. Dazu siezte der deutsche Text,
+                                waehrend der Rest der App duzt.
+
+                                Jetzt eine Handlung im Vordergrund: die Flaeche
+                                selbst. Sie nimmt den Klick UND den Drop, also
+                                braucht es daneben keinen zweiten Hochladen-Knopf.
+                                Das Generieren bleibt als ruhiger Textlink darunter
+                                — vorhanden, aber nicht im Wettbewerb.
+                            */
+                            <div className="flex-1 flex flex-col items-center justify-center px-6 w-full max-w-[420px] mx-auto gap-7 animate-in fade-in duration-500 min-h-full">
+                                <div className="text-center space-y-1.5">
+                                    <h1 className={Typo.H1}>
+                                        {t?.('welcome_title') || 'Welcome to exposé'}
+                                    </h1>
+                                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                        {t?.('welcome_empty_desc') || 'Upload photos to edit or generate something new.'}
+                                    </p>
                                 </div>
 
-                                <div className="flex flex-col w-full gap-4 max-w-[320px]">
-                                    <Button
-                                        variant="primary-mono"
-                                        size="l"
-                                        onClick={triggerUpload}
-                                        icon={<Upload className="w-5 h-5" />}
-                                    >
-                                        {t?.('action_upload') || 'Upload'}
-                                    </Button>
-                                    <Button
-                                        variant="secondary"
-                                        size="l"
-                                        onClick={onGenerate ?? onCreateNew}
-                                        icon={<Plus className="w-5 h-5" />}
-                                    >
-                                        {t?.('action_generate') || 'Generate image'}
-                                    </Button>
-                                </div>
+                                <button
+                                    onClick={triggerUpload}
+                                    className={`w-full rounded-2xl px-6 py-10 flex flex-col items-center justify-center gap-3
+                                        transition-colors duration-200
+                                        ${isDropActive
+                                            // Beim Ziehen etwas deutlicher, aber in
+                                            // derselben Tonlage — kein Farbwechsel,
+                                            // nur mehr davon.
+                                            ? 'bg-black/[0.06] dark:bg-white/[0.08]'
+                                            : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}`}
+                                >
+                                    <ImagePlus className="w-5 h-5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+                                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                                        {t?.('welcome_drop_cta') || 'Drop photos or click to choose'}
+                                    </span>
+                                </button>
+
+                                <button
+                                    onClick={onGenerate ?? onCreateNew}
+                                    className="text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
+                                >
+                                    {t?.('action_generate') || 'Generate image'}
+                                </button>
                             </div>
                         )}
                     </div>

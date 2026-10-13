@@ -157,7 +157,8 @@ export const translations = {
     // Board / Gallery
     welcome_title: "Welcome to Exposé",
     welcome_desc: "Select your photos to edit or start a new flow.",
-    welcome_empty_desc: "Upload your photos or generate something new.",
+    welcome_empty_desc: "Add photos, or create something new.",
+    welcome_drop_cta: "Drop photos or click to choose",
     empty_board_title: "Your board is empty",
     empty_board_desc: "Upload images or use the generator to get started.",
     upload_image_edit: "Upload Image & Edit",
@@ -721,7 +722,8 @@ export const translations = {
     // Board / Gallery
     welcome_title: "Willkommen bei Exposé",
     welcome_desc: "Fotos auswählen oder generieren Sie etwas Neues.",
-    welcome_empty_desc: "Laden Sie Fotos zum Bearbeiten hoch oder generieren Sie etwas Neues.",
+    welcome_empty_desc: "Fotos hinzufügen oder etwas Neues erstellen.",
+    welcome_drop_cta: "Fotos hierher ziehen oder klicken",
     empty_board_title: "Ihr Board ist leer",
     empty_board_desc: "Lade Bilder hoch oder nutze den Generator, um zu starten.",
     upload_image_edit: "Hochladen",
