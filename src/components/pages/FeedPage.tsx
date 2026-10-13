@@ -185,24 +185,39 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     <>
                         {groupCount > 2 && (
                             <div
-                                className="absolute h-full -z-20 bg-zinc-200 dark:bg-zinc-700"
+                                // Das hinterste Blatt. Dunkler als das vordere, damit
+                                // es auf schwarzem Grund zuruecktritt statt als heller
+                                // Balken aufzuliegen — vorher war es mit zinc-700
+                                // heller als das Blatt davor, also genau verkehrt
+                                // herum: Das Entfernteste stach am meisten hervor.
+                                className="absolute h-full -z-20 bg-zinc-200 dark:bg-zinc-800"
                                 style={{
                                     left: '10px', right: '10px',
-                                    bottom: isKeyboardActive ? '-28px' : '-20px',
-                                    transform: 'scaleX(0.93)',
-                                    transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                                    bottom: 0,
+                                    // translateY statt bottom: bottom ist eine
+                                    // Layout-Eigenschaft und zwingt den Browser bei
+                                    // jedem Frame zu einem neuen Umbruch. transform
+                                    // erledigt die Grafikkarte allein.
+                                    transform: `translateY(${isKeyboardActive ? 28 : 20}px) scaleX(0.93)`,
+                                    transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
+                                    willChange: 'transform',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.10)',
                                 }}
                             />
                         )}
                         <div
-                            className="absolute h-full -z-10 bg-zinc-300 dark:bg-zinc-600"
+                            // Das vordere Blatt bleibt das hellste: Naeher heisst
+                            // mehr Kontrast zum Hintergrund. Zusammen mit dem
+                            // dunkleren hinteren ergibt das eine Staffelung statt
+                            // zweier gleich lauter Balken.
+                            className="absolute h-full -z-10 bg-zinc-300 dark:bg-zinc-700"
                             style={{
                                 left: '5px', right: '5px',
-                                bottom: isKeyboardActive ? '-16px' : '-11px',
-                                transform: 'scaleX(0.96)',
-                                transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                                bottom: 0,
+                                transform: `translateY(${isKeyboardActive ? 16 : 11}px) scaleX(0.96)`,
+                                transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
+                                willChange: 'transform',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                             }}
                         />
                     </>
