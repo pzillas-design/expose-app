@@ -8,7 +8,7 @@ import { GenerationProgressRing } from '../ui/GenerationProgressRing';
 import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
 import { MenuLines } from '@/components/ui/CustomIcons';
-import { NAV_H } from '@/config/layout';
+import { NAV_H, NAV_H_EXPANDED_MOBILE, NAV_H_EXPANDED_DESKTOP } from '@/config/layout';
 import { CanvasImage } from '@/types';
 
 interface AppNavbarProps {
@@ -668,7 +668,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         // bekommt bewusst KEINE CSS-Animation: Sie aendert sich ohnehin jeden
         // Frame, und eine laufende Transition wuerde bei jedem neuen Wert von
         // vorn beginnen — das ergibt genau das gummiartige Nachziehen.
-        const expandedH = isMobile ? 88 : 148;
+        const expandedH = isMobile ? NAV_H_EXPANDED_MOBILE : NAV_H_EXPANDED_DESKTOP;
         const collapsedH = NAV_H;
         const headerH = expandedH + (collapsedH - expandedH) * hp;
         // Der Untergrund kommt frueher und ist bei zwei Dritteln des Weges

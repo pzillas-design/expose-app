@@ -98,10 +98,11 @@ const dayLabelOf = (ts: string | number | undefined, lang: 'de' | 'en'): string 
 const UploadDropZone: React.FC<{
     onClick: () => void;
     label: string;
+    sub?: string;
     active?: boolean;
     row?: boolean;
     className?: string;
-}> = ({ onClick, label, active = false, row = false, className = '' }) => (
+}> = ({ onClick, label, sub, active = false, row = false, className = '' }) => (
     <button
         onClick={onClick}
         className={`w-full rounded-2xl flex items-center justify-center transition-colors duration-200
@@ -117,7 +118,14 @@ const UploadDropZone: React.FC<{
             und Pluszeichen — bei 20 Pixeln vier Formen in einem Symbol, und
             damit unruhiger als die Flaeche, die es ankuendigt. */}
         <Plus className="w-[18px] h-[18px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
-        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{label}</span>
+        {/* Zwei Zeilen, beide zurueckgenommen: Der Streifen ist ein Angebot,
+            keine Aufforderung. Die erste nennt die Handlung, die zweite den
+            zweiten Weg dorthin — kleiner und blasser, damit sie nicht mitliest,
+            wer schon weiss, was er tut. */}
+        <span className="flex flex-col items-center leading-tight">
+            <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400">{label}</span>
+            {sub && <span className="text-[11.5px] text-zinc-400 dark:text-zinc-600 mt-0.5">{sub}</span>}
+        </span>
     </button>
 );
 
@@ -1138,12 +1146,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     er buendig mit den Kacheln steht.
                                 */}
                                 {!effectiveGroupId && !renderSelectMode && (
-                                    <div className="px-4 sm:px-8 pt-2 sm:pt-4">
+                                    <div className="px-4 sm:px-8">
                                         <UploadDropZone
                                             row
                                             onClick={triggerUpload}
                                             active={isDropActive}
-                                            label={t?.('welcome_drop_cta') || 'Drop photos or click to choose'}
+                                            label={t?.('welcome_drop_cta') || 'Upload and edit'}
+                                            sub={t?.('welcome_drop_sub') || 'or drag photos here'}
                                         />
                                     </div>
                                 )}
@@ -1256,7 +1265,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 <UploadDropZone
                                     onClick={triggerUpload}
                                     active={isDropActive}
-                                    label={t?.('welcome_drop_cta') || 'Drop photos or click to choose'}
+                                    label={t?.('welcome_drop_cta') || 'Upload and edit'}
+                                    sub={t?.('welcome_drop_sub') || 'or drag photos here'}
                                 />
 
                                 <button

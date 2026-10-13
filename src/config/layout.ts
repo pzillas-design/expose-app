@@ -18,3 +18,18 @@ export const NAV_H = 64;
  * Leiste plus etwas Luft, damit die Kachel nicht an ihr klebt.
  */
 export const NAV_SCROLL_OFFSET = NAV_H + 16;
+
+/**
+ * Hoehe der ausgefahrenen Leiste in der Galerie, nach Breite.
+ *
+ * Stand bisher nur in AppNavbar, waehrend FeedHeroSection den Unterschied zur
+ * eingeklappten Hoehe als fertige Zahl fuehrte (32 bzw. 92). Als die
+ * eingeklappte Hoehe von 56 auf 64 ging, war der Abstandhalter prompt 8 Pixel
+ * zu hoch — Inhalt und Leiste liefen beim Scrollen nicht mehr gleich.
+ *
+ * Fuer CSS stehen beide zusaetzlich als --nav-h-expanded in index.css; der
+ * Abstandhalter rechnet dort per calc(), damit die Differenz nirgends mehr als
+ * eigene Zahl auftaucht.
+ */
+export const NAV_H_EXPANDED_MOBILE = 88;
+export const NAV_H_EXPANDED_DESKTOP = 148;
