@@ -1152,11 +1152,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         */
                         <div
                             onMouseDown={startResizing}
-                            className="absolute left-0 top-0 bottom-0 w-2 -ml-1 cursor-col-resize z-50 group/resize flex items-center justify-center"
+                            // Die Greifflaeche beginnt an der Kante, der sichtbare
+                            // Balken sitzt ein Stueck weiter innen — direkt an der
+                            // Bildkante klebte er am Bild und las sich als dessen
+                            // Rand statt als Griff.
+                            className="absolute left-0 top-0 bottom-0 w-6 -ml-1 cursor-col-resize z-50 group/resize flex items-center"
                         >
-                            <div className="w-1 h-12 rounded-full bg-black/10 dark:bg-white/15
-                                group-hover/resize:bg-black/25 dark:group-hover/resize:bg-white/35
-                                group-active/resize:bg-black/35 dark:group-active/resize:bg-white/50
+                            <div className="w-2 h-12 ml-3 rounded-full bg-black/15 dark:bg-white/20
+                                group-hover/resize:bg-black/30 dark:group-hover/resize:bg-white/40
+                                group-active/resize:bg-black/40 dark:group-active/resize:bg-white/55
                                 transition-colors duration-150" />
                         </div>
                     )}
