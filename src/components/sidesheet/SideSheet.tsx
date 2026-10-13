@@ -648,9 +648,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const enterGenerates = useEnterGenerates();
     const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
     const generateShortcutLabel = enterGenerates ? '↵' : (isMac ? '⌘↵' : 'Strg↵');
-    const generateHint = enterGenerates
-        ? (lang === 'de' ? 'Enter generiert · Umschalt+Enter macht einen Umbruch' : 'Enter generates · Shift+Enter inserts a line break')
-        : (lang === 'de' ? `${isMac ? 'Befehlstaste' : 'Strg'}+Enter generiert` : `${isMac ? 'Cmd' : 'Ctrl'}+Enter generates`);
+    // Bewusst kein Hinweistext am Knopf: Das Zeichen im Knopf sagt es bereits,
+    // und wer es nicht kennt, klickt — was ohnehin funktioniert. Ein Kasten,
+    // der bei jedem Ueberfahren des wichtigsten Knopfes aufgeht, waere dauernd
+    // im Weg.
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return;
@@ -1224,8 +1225,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         data-voice-action="generate-button"
                                                         variant="generate"
                                                         size="m"
-                                                        tooltip={generateHint}
-                                                        tooltipSide="top"
                                                         // Die Button-Komponente hat das schon: <kbd> in
                                                         // Monospace bei 40 % Deckkraft, auf dem Handy
                                                         // ausgeblendet. Kein eigener Stil noetig.
