@@ -163,12 +163,17 @@ export interface GenerationSettings {
 }
 
 export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
-  // Reverted to NB2 + 1K after gpt-image-2 quality felt off in real use —
-  // NB2 is faster, cheaper, and produces consistently usable real-estate edits.
-  // Users who prefer GPT Image 2 can switch in the settings modal; once they do,
-  // the migration flag prevents auto-revert on next reload.
-  provider:     'nano-banana-21',
-  resolution:   'nb2-1k',
+  // Seedream 5 Flash als Standard: gleiche Geschwindigkeit wie die uebrigen
+  // Modelle (p50 30,4 s gegen 26-31 s gemessen), aber 0,18 EUR statt 0,24-0,50.
+  // Wer etwas anderes will, waehlt es im Modell-Dialog; eine einmal getroffene
+  // Wahl wird davon nicht angeruehrt, dies gilt nur fuer neue Browser.
+  //
+  // 2K statt 1K, weil Seedream pauschal abgerechnet wird — 1K kostet dasselbe
+  // wie 2K (0,18 EUR Verkauf, 0,027 Einkauf, siehe COSTS/'sd-*'). Bei 1K
+  // bekaeme der Nutzer also fuer dasselbe Geld das kleinere Bild. 2K ist
+  // ausserdem mit 59 % des Volumens ohnehin die meistgenutzte Stufe.
+  provider:     'seedream',
+  resolution:   'nb2-2k',
   quality:      'high',
   aspectRatio:  'auto',
   outputFormat: 'jpeg',

@@ -6,6 +6,7 @@ import { useModalStack } from '@/components/ui/ModalStack';
 import { useNanoController } from '@/hooks/useNanoController';
 import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
 import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
+import { imageNameOf } from '@/utils/imageName';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
@@ -1107,7 +1108,7 @@ export function App() {
         : "min-h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
 
     const mainContainerClasses = isAppLayout
-        ? "flex-1 flex flex-col overflow-hidden pt-14"
+        ? "flex-1 flex flex-col overflow-hidden pt-[var(--nav-h)]"
         : "flex-1 flex flex-col";
 
     const showGlobalNavbar = !isAdminRoute;
@@ -1180,13 +1181,24 @@ export function App() {
                     rightInset={location.pathname.startsWith('/image/') ? detailSidebarWidth : 0}
                     hasImages={allImages.length > 0}
                     imageCount={allImages.length}
+                    // Name und Fassung getrennt: Die Leiste setzt die Fassung
+                    // abgedunkelt dahinter, statt sie als Teil des Namens zu
+                    // zeigen. Der Unterstrich faellt damit weg, ohne dass ein
+                    // einziger Titel in der Datenbank angefasst werden muss.
                     detailInfo={(() => {
                         if (location.pathname.startsWith('/image/')) {
                             const id = location.pathname.split('/').pop();
                             const img = allImages.find(i => i.id === id);
-                            if (img) return img.title || 'Untitled';
+                            if (img) return imageNameOf(img).base || 'Untitled';
                         }
                         return undefined;
+                    })()}
+                    detailVersion={(() => {
+                        if (!location.pathname.startsWith('/image/')) return undefined;
+                        const id = location.pathname.split('/').pop();
+                        const img = allImages.find(i => i.id === id);
+                        const v = img ? imageNameOf(img).version : null;
+                        return v ? `v${v}` : undefined;
                     })()}
                     groupInfo={(() => {
                         if (expandedGroupId) {
@@ -1195,6 +1207,20 @@ export function App() {
                             return root?.title || row?.title || undefined;
                         }
                         return undefined;
+                    })()}
+                    // Statt eines Symbols die Spanne der Fassungen: Das sagt, dass
+                    // es ein Stapel ist UND wie weit er reicht. Ein Symbol sagt nur
+                    // das Erste, und auch das nur, wenn man es kennt.
+                    groupVersionLabel={(() => {
+                        if (!expandedGroupId) return undefined;
+                        const row = state.rows.find((r: any) => r.id === expandedGroupId);
+                        const versions = (row?.items ?? [])
+                            .map((i: any) => i.version || 1)
+                            .filter((v: number) => Number.isFinite(v));
+                        if (versions.length < 2) return undefined;
+                        const max = Math.max(...versions);
+                        const min = Math.min(...versions);
+                        return min === max ? `v${max}` : `v${min}–v${max}`;
                     })()}
                     groupItemCount={expandedGroupId
                         ? (state.rows.find((r: any) => r.id === expandedGroupId)?.items?.length ?? 0)
@@ -1303,8 +1329,17 @@ export function App() {
                                 className="absolute inset-y-0 left-0 flex items-center justify-center"
                                 style={{ right: sidesheetW }}
                             >
-                                <div className={`flex flex-col items-center gap-3 px-8 py-6 ${Theme.Colors.ModalBg} border ${Theme.Geometry.RadiusXl} transition-all duration-150 ${dragZone === 'image' ? 'scale-[1.06] border-orange-400 dark:border-orange-500' : Theme.Colors.Border}`}>
-                                    <Upload className={`transition-all duration-150 ${dragZone === 'image' ? 'w-8 h-8 text-orange-500' : 'w-6 h-6 text-zinc-400 dark:text-zinc-500'}`} />
+                                {/* Ohne Rahmen. Welches Ziel gemeint ist, sagt die
+                                    Flaeche selbst: Das angepeilte wird heller und
+                                    tritt leicht hervor, das andere bleibt zurueck.
+                                    Eine orange Umrandung dazu war ein zweites
+                                    Signal fuer dieselbe Aussage — und das lauteste
+                                    Element in einem Moment, in dem der Nutzer auf
+                                    sein Bild schaut. */}
+                                <div className={`flex flex-col items-center gap-3 px-8 py-6 rounded-2xl backdrop-blur-xl transition-all duration-150 ${dragZone === 'image'
+                                    ? 'scale-[1.04] bg-white/95 dark:bg-zinc-900/95 shadow-xl shadow-black/20'
+                                    : 'bg-white/70 dark:bg-zinc-900/70 shadow-lg shadow-black/10'}`}>
+                                    <Upload className={`w-6 h-6 transition-colors duration-150 ${dragZone === 'image' ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}`} />
                                     <p className={`${Typo.Body} text-sm ${dragZone === 'image' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'}`}>
                                         {lang === 'de' ? 'Hier ablegen zum Hochladen' : 'Drop here to upload'}
                                     </p>
@@ -1315,8 +1350,10 @@ export function App() {
                                 className="absolute inset-y-0 right-0 flex items-center justify-center"
                                 style={{ width: sidesheetW }}
                             >
-                                <div className={`flex flex-col items-center gap-3 px-8 py-6 ${Theme.Colors.ModalBg} border ${Theme.Geometry.RadiusXl} transition-all duration-150 ${dragZone === 'sidesheet' ? 'scale-[1.06] border-orange-400 dark:border-orange-500' : Theme.Colors.Border}`}>
-                                    <ImageIcon className={`transition-all duration-150 ${dragZone === 'sidesheet' ? 'w-8 h-8 text-orange-500' : 'w-6 h-6 text-zinc-400 dark:text-zinc-500'}`} />
+                                <div className={`flex flex-col items-center gap-3 px-8 py-6 rounded-2xl backdrop-blur-xl transition-all duration-150 ${dragZone === 'sidesheet'
+                                    ? 'scale-[1.04] bg-white/95 dark:bg-zinc-900/95 shadow-xl shadow-black/20'
+                                    : 'bg-white/70 dark:bg-zinc-900/70 shadow-lg shadow-black/10'}`}>
+                                    <ImageIcon className={`w-6 h-6 transition-colors duration-150 ${dragZone === 'sidesheet' ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}`} />
                                     <p className={`${Typo.Body} text-sm text-center ${dragZone === 'sidesheet' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'}`}>
                                         {lang === 'de' ? 'Als Referenz hinzufügen' : 'Add as reference'}
                                     </p>
@@ -1376,6 +1413,20 @@ export function App() {
                                                 actions.setIsSelectMode(false);
                                             }
                                         }
+                                    }}
+                                    onToggleSelectStack={(ids) => {
+                                        // Alle oder keines: Sind schon alle Bilder des
+                                        // Stapels gewaehlt, nimmt der Klick sie wieder
+                                        // heraus. Sonst kommen die fehlenden dazu, ohne
+                                        // eine bestehende Auswahl zu verwerfen.
+                                        const selected = new Set(state.selectedIds);
+                                        const allIn = ids.every(id => selected.has(id));
+                                        const next = allIn
+                                            ? state.selectedIds.filter((id: string) => !ids.includes(id))
+                                            : [...state.selectedIds, ...ids.filter(id => !selected.has(id))];
+                                        if (next.length > 0 && !state.isSelectMode) actions.setIsSelectMode(true);
+                                        actions.selectMultiple(next);
+                                        if (next.length === 0) actions.setIsSelectMode(false);
                                     }}
                                     expandedGroupId={expandedGroupId}
                                     onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate("/")}

@@ -117,50 +117,39 @@ Deno.serve(async (req) => {
 
         // Loop passes until nothing expired is left or the time budget runs out.
         while (Date.now() - started < TIME_BUDGET_MS) {
-            // Start from EVERY expired image, not just parent_id IS NULL. Two
-            // reasons: (a) a variant can be orphaned when its root vanished, and
-            // as a non-root it would then never be reached again — the first
-            // production run left 217 such rows behind; (b) it makes the pass
-            // independent of tree shape. Descendants are still pulled in below so
-            // a stack always disappears as a unit.
-            const { data: roots, error: rootsErr } = await admin
+            // Die Regel lautet: Jedes Bild lebt genau 14 Tage ab seiner eigenen
+            // Entstehung. Keines stirbt frueher, weil ein Vorfahr stirbt.
+            //
+            // Damit ist diese eine Abfrage bereits die vollstaendige Antwort —
+            // sie waehlt genau die Bilder, deren Frist abgelaufen ist. Vorher
+            // stand hier zusaetzlich ein rekursiver Durchlauf ueber parent_id,
+            // der zu jedem abgelaufenen Bild den ganzen Baum darunter einsammelte,
+            // seitenweise und in Bloecken. Der ergab nur Sinn, solange ein Stapel
+            // als Einheit verschwinden sollte — und hatte den Preis, dass eine am
+            // 13. Tag erzeugte Variante am naechsten Morgen mit dem Original
+            // verschwand, einen Tag alt.
+            //
+            // Seit die Frist am Bild selbst haengt, liefert der Durchlauf nur
+            // noch Bilder, die diese Abfrage ohnehin findet. Er ist deshalb
+            // ersatzlos entfallen: rund fuenfzig Zeilen Paginierung,
+            // Zyklusschutz und Blockbildung, die nichts mehr beitrugen.
+            //
+            // Ein frisches Kind bleibt ohne Elternteil zurueck. Das ist
+            // unkritisch: Die Stapelzuordnung haengt an folder_id, nicht an
+            // parent_id, und dieses Bild wird erfasst, sobald es selbst
+            // abgelaufen ist — die Abfrage nimmt jedes abgelaufene Bild, nicht
+            // nur parent_id IS NULL.
+            const { data: expired, error: expiredErr } = await admin
                 .from('images')
                 .select('id')
                 .lt('created_at', cutoff)
                 .limit(ROOT_BATCH);
 
-            if (rootsErr) throw new Error(`roots query: ${rootsErr.message}`);
-            if (!roots?.length) break;
+            if (expiredErr) throw new Error(`expired query: ${expiredErr.message}`);
+            if (!expired?.length) break;
 
-            rootsSeen += roots.length;
-
-            // Collect the whole edit tree — variants must go with their original,
-            // otherwise children would be left pointing at a deleted parent.
-            const ids = new Set<string>(roots.map((r: any) => r.id));
-            let frontier: string[] = roots.map((r: any) => r.id);
-            while (frontier.length) {
-                const kids: any[] = [];
-                for (const part of chunked(frontier)) {
-                    // Paginate: PostgREST caps a response at ~1000 rows, so a wide
-                    // stack would silently lose descendants — exactly how the
-                    // orphans above were created.
-                    let from = 0;
-                    while (true) {
-                        const { data, error: kidsErr } = await admin
-                            .from('images').select('id').in('parent_id', part)
-                            .range(from, from + 999);
-                        if (kidsErr) throw new Error(`children query: ${kidsErr.message}`);
-                        if (!data?.length) break;
-                        kids.push(...data);
-                        if (data.length < 1000) break;
-                        from += 1000;
-                    }
-                }
-                if (!kids.length) break;
-                frontier = kids.map((k: any) => k.id).filter((id: string) => !ids.has(id));
-                frontier.forEach((id: string) => ids.add(id));
-            }
-            const allIds = [...ids];
+            rootsSeen += expired.length;
+            const allIds = expired.map((r: any) => r.id);
 
             // Storage paths (+ thumbnails) must be read BEFORE the rows disappear.
             // A failure here must abort the pass — deleting rows without their

@@ -1,3 +1,16 @@
+:root {
+  /* Hoehe der Navigationsleiste. MUSS mit NAV_H in src/config/layout.ts
+     uebereinstimmen — dort steht, warum es diese eine Zahl gibt. */
+  --nav-h: 64px;
+  /* Ausgefahrene Hoehe in der Galerie. MUSS mit NAV_H_EXPANDED_* in
+     src/config/layout.ts uebereinstimmen. */
+  --nav-h-expanded: 88px;
+}
+
+@media (min-width: 768px) {
+  :root { --nav-h-expanded: 148px; }
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -115,8 +115,8 @@ interface TooltipProps {
     text: string;
     children: React.ReactElement<any>;
     side?: 'top' | 'bottom';
-    /** Keyboard shortcut hint shown after text in monospace */
-    shortcut?: string;
+    /** Tastenkuerzel hinter dem Text — Zeichenkette oder Symbol. */
+    shortcut?: React.ReactNode;
 }
 
 export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom', shortcut }) => {
@@ -133,7 +133,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         // Dynamic estimate of tooltip width based on text length to allow closer edge alignment
         const padding = 8;
         const charWidth = 6; // Average width per character in pixels for text-[10px]
-        const totalLen = text.length + (shortcut ? shortcut.length + 2 : 0);
+        const totalLen = text.length + (typeof shortcut === 'string' ? shortcut.length + 2 : shortcut ? 4 : 0);
         const estimatedHalfWidth = Math.max(20, (totalLen * charWidth) / 2 + 10);
 
         let left = rect.left + rect.width / 2;
@@ -166,11 +166,15 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
             {childWithRef}
             {isVisible && createPortal(
                 <div
+                    // Ohne Rahmen: Der Kasten hebt sich durch Flaeche und
+                    // Schatten ab, eine Linie daneben ist eine zweite Aussage
+                    // ueber dieselbe Kante — dieselbe Regel wie bei Kopfzeile
+                    // und Seitenleiste.
                     className={`
- fixed z-[9999] px-2.5 py-1.5 ${Theme.Geometry.Radius} pointer-events-none animate-in fade-in zoom-in-95 duration-100
- bg-white dark:bg-black
+ fixed z-[9999] px-3 py-2 rounded-xl pointer-events-none animate-in fade-in zoom-in-95 duration-100
+ bg-white dark:bg-zinc-900
  text-zinc-900 dark:text-zinc-100
- border border-zinc-200 dark:border-zinc-800
+ shadow-lg shadow-black/10 dark:shadow-black/40
  max-w-[260px]
  `}
                     style={{
@@ -179,9 +183,11 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
                         transform: `translate(-50%, ${side === 'bottom' ? '0' : '-100%'})`
                     }}
                 >
-                    <div className="text-[10px] font-medium tracking-wide flex items-start gap-1.5 leading-snug">
+                    {/* 11 statt 10 Pixel und deutlich mehr Zeilenabstand: Bei
+                        zwei oder drei Zeilen klebten sie vorher aneinander. */}
+                    <div className="text-[11px] font-medium tracking-wide flex items-start gap-2 leading-[1.55]">
                         <span className="break-words">{text}</span>
-                        {shortcut && <kbd className="font-mono text-zinc-400 dark:text-zinc-500 whitespace-nowrap">{shortcut}</kbd>}
+                        {shortcut && <kbd className="font-mono inline-flex items-center gap-0.5 text-zinc-400 dark:text-zinc-500 whitespace-nowrap">{shortcut}</kbd>}
                     </div>
                 </div>,
                 document.body
@@ -230,8 +236,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     tooltip?: string;
     tooltipShortcut?: string;
     tooltipSide?: 'top' | 'bottom';
-    /** Keyboard shortcut shown inline in the button — hidden on mobile (sm: breakpoint) */
-    shortcut?: string;
+    /**
+     * Tastenkuerzel im Knopf, auf dem Handy ausgeblendet.
+     *
+     * Bewusst ReactNode und nicht string: Zeichen wie ↵ sind Schriftzeichen,
+     * keine Symbole. Ihre Groesse und ihre Lage zur Grundlinie bestimmt die
+     * Schrift, nicht wir — deshalb sass der Zeilenschalter im Knopf nie
+     * richtig, egal welche Groesse eingestellt war. Ein echtes Symbol
+     * (lucide CornerDownLeft) laesst sich dagegen genau setzen.
+     */
+    shortcut?: React.ReactNode;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -241,10 +255,13 @@ export const Button: React.FC<ButtonProps> = ({
     const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${Typo.ButtonLabel}`;
 
     // Size variants — height & padding only, font is always from ButtonLabel
+    // Hoehe, Innenabstand UND Schriftgroesse je Stufe. Vorher trugen s bis l
+    // dieselbe Schrift aus Typo.ButtonLabel, nur xl wich ab — ein 48 Pixel
+    // hoher Knopf mit derselben Schrift wie ein 32 Pixel hoher wirkt leer.
     const sizes = {
-        s: 'h-8 px-4',
-        m: 'h-10 px-5',
-        l: 'h-12 px-6',
+        s: 'h-8 px-4 text-[13px]',
+        m: 'h-10 px-5 text-[15px]',
+        l: 'h-12 px-6 text-[15px]',
         xl: 'h-16 px-10 text-base',
     };
 
@@ -257,7 +274,13 @@ export const Button: React.FC<ButtonProps> = ({
         secondary: `bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700`,
         danger: `bg-red-500 text-white hover:bg-red-600 shadow-sm`,
         ghost: `bg-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100`,
-        generate: `bg-gradient-to-r from-orange-500 to-red-600 text-white dark:text-zinc-950 shadow-sm hover:brightness-110`
+        // Dunkle Schrift in BEIDEN Themen — bewusste Ausnahme, auf Wunsch so
+        // gesetzt. Der Hintergrund ist ein Orange-Rot-Verlauf und wechselt mit
+        // dem Thema nicht, also tut es die Schrift auch nicht. Vorher stand
+        // hier `text-white dark:text-zinc-950`: Dieselbe Flaeche trug je nach
+        // Thema zwei verschiedene Schriftfarben, obwohl sie sich gar nicht
+        // aendert — das war der eigentliche Fehler, nicht die Farbe selbst.
+        generate: `bg-gradient-to-r from-orange-500 to-red-600 text-zinc-900 shadow-sm hover:brightness-110`
     };
 
     const btn = (
@@ -271,7 +294,22 @@ export const Button: React.FC<ButtonProps> = ({
             {children}
             {!isLoading && icon && iconPosition === 'right' && React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
             {!isLoading && shortcut && (
-                <kbd className="hidden sm:inline-flex items-center font-mono text-[11px] opacity-40 -ml-0.5">{shortcut}</kbd>
+                /*
+                    Groesse relativ zur Beschriftung, nicht in festen Pixeln.
+
+                    Die Prop gab es, benutzt wurde sie bis heute nirgends — die
+                    11 Pixel waren also nie an einem echten Fall geprueft. Sie
+                    stammen aus der Tooltip-Darstellung, wo Kuerzel einzelne
+                    Grossbuchstaben sind (A, M, E). Symbole wie ⌘ und ↵ zeichnen
+                    die meisten Schriften deutlich kleiner als einen Buchstaben
+                    derselben Groesse, und bei 11 Pixeln bleibt davon nichts
+                    Lesbares uebrig.
+
+                    1em folgt der Beschriftung und waechst mit jeder Knopfgroesse
+                    mit. Mehr Deckkraft dazu: 40 % waren auf dem Farbverlauf des
+                    Generieren-Knopfes kaum zu sehen.
+                */
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[0.95em] leading-none opacity-70 ml-1.5">{shortcut}</kbd>
             )}
         </button>
     );
@@ -321,18 +359,40 @@ interface RoundIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     tooltip?: string;
     tooltipShortcut?: string;
     tooltipSide?: 'top' | 'bottom';
-    variant?: 'default' | 'danger' | 'ghost' | 'primary';
+    variant?: 'default' | 'danger' | 'ghost' | 'soft' | 'primary';
 }
 
 export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, tooltipShortcut, tooltipSide, variant = 'default', className = '', ...props }) => {
     // Structural classes
-    const base = `w-9 h-9 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95`;
+    // 36 Pixel sichtbar, 44 Pixel treffbar.
+    //
+    // Der Kreis bleibt so gross, wie er aussehen soll — eine Leiste aus
+    // 44er-Kreisen waere massig. Die Trefferflaeche waechst stattdessen
+    // unsichtbar ueber ein Pseudoelement auf die 44 Pixel, die als
+    // Mindestmass fuer den Finger gelten. Das wirkt an jeder Stelle der
+    // Anwendung, an der dieser Knopf steht, statt an jeder einzeln.
+    //
+    // `relative` ist noetig, damit das Pseudoelement sich auf den Knopf
+    // bezieht; `-inset-1` sind 4 Pixel je Seite, also 36 + 8 = 44.
+    const base = `relative w-9 h-9 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95
+        before:content-[''] before:absolute before:-inset-1 before:rounded-full`;
 
     // Aesthetic classes
     const variants = {
-        default: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-700 dark:text-zinc-300 hover:bg-white/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white hover:`,
-        danger: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 hover:`,
+        default: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-700 dark:text-zinc-300 hover:bg-white/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white`,
+        danger: `bg-white/50 dark:bg-black/50 border-transparent text-zinc-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400`,
         ghost: `bg-transparent backdrop-blur-none border-transparent text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white`,
+        // Zeigt im Ruhezustand das, was 'ghost' erst beim Ueberfahren zeigt.
+        //
+        // Fuer die wenigen Knoepfe, die an jeder Stelle den Weg zurueck
+        // bedeuten. 'ghost' zeigt bis zum Ueberfahren gar nichts: Auf einem
+        // Foto ist ein freistehender Pfeil schwer zu treffen, weil seine
+        // Flaeche unsichtbar ist — und auf dem Handy gibt es kein Ueberfahren,
+        // dort war sie also nie zu sehen.
+        //
+        // Sparsam einsetzen. Bekaeme sie jeder Knopf, waere die Leiste eine
+        // Reihe grauer Kreise und die Hervorhebung waere keine mehr.
+        soft: `bg-black/[0.08] dark:bg-white/[0.12] border-transparent text-zinc-700 dark:text-zinc-200 hover:bg-black/[0.12] dark:hover:bg-white/[0.18] hover:text-black dark:hover:text-white`,
         primary: `bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm hover:brightness-110`,
     };
 

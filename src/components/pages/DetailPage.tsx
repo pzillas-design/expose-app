@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
 import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
+import { useDetailLayout } from '@/utils/uiPrefs';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
@@ -177,6 +178,31 @@ interface DetailPageProps {
     actions: any;
     t: any;
 }
+
+/**
+ * Die schwebenden Knoepfe ueber dem Bild.
+ *
+ * Immer sichtbar, aber zurueckgenommen — und auf jedem Untergrund lesbar,
+ * ohne Umrandung.
+ *
+ * Ueber hellen Motiven traegt die dunkle Fuellung. Ueber dunklen traegt das
+ * weisse Zeichen selbst: Die Fuellung verschwindet dort, das Symbol bleibt. Ein
+ * leichter Schlagschatten am Zeichen haelt es auch auf mittleren Tonwerten
+ * ablesbar, wo weder Flaeche noch Zeichen allein genug Kontrast haetten.
+ *
+ * Das kommt ohne Ring aus — eine Umrandung haette den Knopf ueber jedem Motiv
+ * als Objekt behauptet, auch dort, wo er gar nicht gebraucht wird.
+ */
+const FLOATING_BTN_BASE = `text-white rounded-full flex items-center
+    bg-black/35 hover:bg-black/60 backdrop-blur-md
+    shadow-lg shadow-black/25
+    [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]
+    transition-[background-color] duration-150`;
+
+const FLOATING_BTN = `${FLOATING_BTN_BASE} h-9 px-4 text-xs font-medium`;
+
+/** Dasselbe als quadratischer Knopf fuer ein einzelnes Symbol. */
+const FLOATING_BTN_ICON = `${FLOATING_BTN_BASE} h-9 w-9 justify-center`;
 
 export const DetailPage: React.FC<DetailPageProps> = ({
     images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
@@ -392,6 +418,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         onSelectImage(tracked.childId);
     }, [generatingChild, imageMap, selectedId, onSelectImage, isTypingNow]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
+    // Im Zeilenmodus wird die Bildhoehe gesetzt statt gemessen. Gemessen wird
+    // deshalb der Hauptbereich: Wuerde der Bildbereich sich selbst messen,
+    // nachdem seine Hoehe aus dieser Messung stammt, liefe beides im Kreis.
+    const mainRef = useRef<HTMLDivElement>(null);
 
     // Keep blob visible after generation completes until the real image has loaded
     const prevIsGeneratingRef = useRef<boolean>(false);
@@ -431,137 +461,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // already mid-scroll, snapping it back would jerk).
     const userScrollSelectionRef = useRef(false);
 
-    // Update padding on mount + resize — re-run when combinedStrip changes so refs are attached.
-    // Never depends on selectedId to avoid layout reflows that interrupt opacity transitions.
-    useEffect(() => {
-        const strip = thumbStripRef.current;
-        const inner = thumbStripInnerRef.current;
-        if (!strip || !inner) return;
-        const updatePadding = () => {
-            const halfPad = Math.max(0, Math.floor(strip.clientWidth / 2) - 18);
-            inner.style.paddingLeft = `${halfPad}px`;
-            inner.style.paddingRight = `${halfPad}px`;
-        };
-        updatePadding();
-        const obs = new ResizeObserver(updatePadding);
-        obs.observe(strip);
-        return () => obs.disconnect();
-    }, [combinedStrip.length]);
-
-    // Scroll active thumb to center on selectedId change / resize / sidesheet toggle.
-    // Uses getBoundingClientRect so the result is correct even at the start/end of the
-    // list (no dependency on padding math). Skips when the change came from the user's
-    // own scroll (already centered by snap) so the strip doesn't jerk back.
-    useEffect(() => {
-        // User-driven scroll selection? Just consume the flag and skip — the thumb is
-        // already at center thanks to scroll-snap, no recentering needed.
-        if (userScrollSelectionRef.current) {
-            userScrollSelectionRef.current = false;
-            return;
-        }
-
-        const centerActiveThumb = () => {
-            const strip = thumbStripRef.current;
-            if (!strip) return;
-            const activeThumb = strip.querySelector(`[data-thumb-id="${selectedId}"]`) as HTMLElement | null;
-            if (!activeThumb) return;
-
-            const stripRect = strip.getBoundingClientRect();
-            const thumbRect = activeThumb.getBoundingClientRect();
-            const thumbCenterInContent = thumbRect.left - stripRect.left + strip.scrollLeft + thumbRect.width / 2;
-            const behavior = isFirstStripScrollRef.current ? 'auto' : 'smooth';
-            isFirstStripScrollRef.current = false;
-            const scrollTarget = thumbCenterInContent - strip.clientWidth / 2;
-            if (Math.abs(strip.scrollLeft - scrollTarget) < 1) return;
-            isProgrammaticScrollRef.current = true;
-            strip.scrollTo({ left: scrollTarget, behavior });
-
-            // Cancel any previous pending clear (rapid successive navigations).
-            if (scrollEndTimerRef.current) { clearTimeout(scrollEndTimerRef.current); scrollEndTimerRef.current = null; }
-            if (scrollEndHandlerRef.current) { strip.removeEventListener('scrollend', scrollEndHandlerRef.current); scrollEndHandlerRef.current = null; }
-
-            const clearGuard = () => {
-                isProgrammaticScrollRef.current = false;
-                if (scrollEndTimerRef.current) { clearTimeout(scrollEndTimerRef.current); scrollEndTimerRef.current = null; }
-                if (scrollEndHandlerRef.current) { strip.removeEventListener('scrollend', scrollEndHandlerRef.current); scrollEndHandlerRef.current = null; }
-            };
-            scrollEndHandlerRef.current = clearGuard;
-            strip.addEventListener('scrollend', clearGuard);
-            // Fallback for browsers without 'scrollend' (and the instant case).
-            scrollEndTimerRef.current = window.setTimeout(clearGuard, behavior === 'smooth' ? 1200 : 60);
-        };
-
-        let raf1: number, raf2: number;
-        raf1 = requestAnimationFrame(() => {
-            raf2 = requestAnimationFrame(centerActiveThumb);
-        });
-
-        window.addEventListener('resize', centerActiveThumb);
-
-        return () => {
-            cancelAnimationFrame(raf1);
-            cancelAnimationFrame(raf2);
-            window.removeEventListener('resize', centerActiveThumb);
-        };
-    }, [selectedId, combinedStrip, isSideSheetVisible]);
-
-    // Scroll-driven selection: continuously update selectedId to whichever thumb is
-    // closest to viewport center. Reactive (RAF-throttled), not debounced — so the
-    // orange selection ring tracks the user's scroll smoothly without springing back.
-    // Detail image loading is handled separately downstream — that one can take its
-    // time, the strip itself stays snappy.
-    useEffect(() => {
-        const strip = thumbStripRef.current;
-        if (!strip) return;
-
-        const findCenterThumbId = (): string | null => {
-            const stripRect = strip.getBoundingClientRect();
-            const centerX = stripRect.left + stripRect.width / 2;
-            const thumbs = strip.querySelectorAll<HTMLElement>('[data-thumb-id]');
-            if (thumbs.length === 0) return null;
-            let closest: HTMLElement | null = null;
-            let bestDist = Infinity;
-            thumbs.forEach((t) => {
-                const r = t.getBoundingClientRect();
-                const d = Math.abs((r.left + r.width / 2) - centerX);
-                if (d < bestDist) { bestDist = d; closest = t; }
-            });
-            return closest ? (closest as HTMLElement).getAttribute('data-thumb-id') : null;
-        };
-
-        let rafId: number | null = null;
-        let pending = false;
-
-        const tick = () => {
-            rafId = null;
-            pending = false;
-            if (isProgrammaticScrollRef.current) return;
-            const id = findCenterThumbId();
-            if (id && id !== selectedId) {
-                userScrollSelectionRef.current = true;
-                handleSelectWithin(id);
-            }
-        };
-
-        const onScroll = () => {
-            // Lazy-load near the end of the strip.
-            if (hasMore && onLoadMore) {
-                const remaining = strip.scrollWidth - strip.clientWidth - strip.scrollLeft;
-                if (remaining < 3 * 44) onLoadMore();
-            }
-            // RAF-coalesce: at most one update per frame.
-            if (pending) return;
-            pending = true;
-            rafId = requestAnimationFrame(tick);
-        };
-
-        strip.addEventListener('scroll', onScroll, { passive: true });
-        return () => {
-            strip.removeEventListener('scroll', onScroll);
-            if (rafId !== null) cancelAnimationFrame(rafId);
-        };
-    }, [selectedId, handleSelectWithin, hasMore, onLoadMore]);
-
     // Fallback: also load more when active image (via thumb click / arrow keys) is near
     // the end of the loaded list, so non-scroll navigation still triggers paging.
     useEffect(() => {
@@ -597,6 +496,21 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     }), [img?.width, img?.height]);
 
     const [displayBox, setDisplayBox] = useState({ width: 0, height: 0 });
+    /**
+     * Abstand der Bildoberkante zur Oberkante ihres Bereichs.
+     *
+     * Die Eingabe legt sich in der Spaltenansicht an diese Linie, damit beide
+     * auf derselben Hoehe beginnen. Das Bild bleibt mittig — bewegt wird die
+     * Eingabe.
+     *
+     * Der Wert haengt am Seitenverhaeltnis und aendert sich damit beim
+     * Blaettern. Deshalb gleitet die Eingabe weich an ihre neue Lage, statt zu
+     * springen, und waehrend man im Feld schreibt, aendert sich ohnehin nichts
+     * daran — die Hoehe des Bildes haengt nicht am Text.
+     */
+    const [imageTopOffset, setImageTopOffset] = useState(0);
+    /** Innenabstand oben im Panel (pt-6 in SideSheet) — zaehlt bereits mit. */
+    const PANEL_INNER_PT = 24;
 
     // In annotation mode (brush/text/shapes) the bottom toolbars float over the image.
     // Reserve this many pixels at the bottom so the image scales to fit above them.
@@ -616,10 +530,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             viewportHeight / imgNaturalDims.height
         );
 
+        const boxHeight = Math.max(1, Math.round(imgNaturalDims.height * scale));
         setDisplayBox({
             width: Math.max(1, Math.round(imgNaturalDims.width * scale)),
-            height: Math.max(1, Math.round(imgNaturalDims.height * scale))
+            height: boxHeight
         });
+        // Wie weit die Oberkante des Bildes von der Oberkante seines Bereichs
+        // entfernt ist. Das Bild steht mittig; die Eingabe daneben legt sich an
+        // diese Linie an, damit beide auf derselben Hoehe beginnen.
+        setImageTopOffset(Math.max(0, Math.round((viewport.clientHeight - boxHeight) / 2)));
     }, [imgNaturalDims.height, imgNaturalDims.width, state.sideSheetMode]);
 
     useEffect(() => {
@@ -804,39 +723,66 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [navigate, confirm, onDelete, onDownload, selectedId, onBack, actions, isSideSheetVisible, setIsSideSheetVisible, state.sideSheetMode]);
 
-    // Resizable Sidebar States
-    const [sidebarWidth, setSidebarWidth] = useState(380);
-    const [isResizing, setIsResizing] = useState(false);
-    useEffect(() => { onSidebarWidthChange?.(380); }, []);
+    // Anordnung: nebeneinander, untereinander oder Vollbild. Auf schmalen
+    // Geraeten gilt immer untereinander.
+    const detailLayout = useDetailLayout();
+    // Die Zeilenanordnung gilt nur, SOLANGE die Eingabe sichtbar ist. Im
+    // Vollbild gibt es nichts zu teilen: Dort soll das Bild die ganze Flaeche
+    // bekommen und mittig darin stehen.
+    const isRowLayout = !isMobile && detailLayout === 'row' && isSideSheetActuallyVisible;
 
-    const startResizing = useCallback(() => setIsResizing(true), []);
-    const stopResizing = useCallback(() => setIsResizing(false), []);
+    /**
+     * Breite des Seitenpanels — fest, nicht mehr ziehbar.
+     *
+     * Der Ziehgriff ist entfallen: Er war ein Bedienelement, das in jeder
+     * Sitzung neu benutzt werden musste, um denselben Zustand wieder
+     * herzustellen, und sein Wert wurde nirgends gespeichert. Eine Groesse, die
+     * ohnehin fuer fast jeden gleich ist, gehoert festgelegt und nicht
+     * verhandelt.
+     *
+     * 30 Prozent der Fensterbreite, begrenzt auf 360 bis 480 Pixel: Unter 360
+     * wird die Eingabe eng, ueber 480 nimmt sie dem Bild Platz, ohne selbst
+     * etwas davon zu haben — der Text wuerde nur breiter laufen, und das liest
+     * sich schlechter. CSS rechnet das selbst, es braucht keine Messung und
+     * keinen Zustand.
+     */
+    const SIDEBAR_WIDTH = 'clamp(360px, 30vw, 480px)';
+    /** Nominalwert fuer alles, was eine Zahl braucht (Drop-Zonen, Sprachkontext). */
+    const SIDEBAR_WIDTH_PX = typeof window === 'undefined'
+        ? 380
+        : Math.round(Math.min(Math.max(window.innerWidth * 0.30, 360), 480));
 
-    const MIN_SIDEBAR_WIDTH = 300;
-    const MAX_SIDEBAR_WIDTH = 600;
-
-    const resize = useCallback((e: MouseEvent) => {
-        if (isResizing) {
-            const newWidth = window.innerWidth - e.clientX;
-            const clampedWidth = Math.min(Math.max(newWidth, MIN_SIDEBAR_WIDTH), MAX_SIDEBAR_WIDTH);
-            setSidebarWidth(clampedWidth);
-            onSidebarWidthChange?.(clampedWidth);
-        }
-    }, [isResizing, onSidebarWidthChange]);
-
+    /**
+     * Hoehe des Bildbereichs im Zeilenmodus.
+     *
+     * Das Bild sitzt buendig unter der Leiste und nimmt die volle Breite; seine
+     * Hoehe folgt daraus. Die Eingabe rueckt direkt darunter — es bleibt kein
+     * Streifen dazwischen, und bei einem 4:3-Bild ist der Bereich genau so hoch
+     * wie das Bild.
+     *
+     * Zweite Grenze fuer Hochformate: Sonst fuellte ein 3:4-Bild bei voller
+     * Breite den ganzen Bildschirm und die Eingabe waere nicht mehr zu sehen.
+     */
+    const [rowImageHeight, setRowImageHeight] = useState<number | undefined>(undefined);
     useEffect(() => {
-        if (isResizing) {
-            window.addEventListener("mousemove", resize);
-            window.addEventListener("mouseup", stopResizing);
-        } else {
-            window.removeEventListener("mousemove", resize);
-            window.removeEventListener("mouseup", stopResizing);
-        }
-        return () => {
-            window.removeEventListener("mousemove", resize);
-            window.removeEventListener("mouseup", stopResizing);
+        if (!isRowLayout) { setRowImageHeight(undefined); return; }
+        const compute = () => {
+            const el = mainRef.current;
+            if (!el || !imgNaturalDims.width || !imgNaturalDims.height) return;
+            const byWidth = el.clientWidth * imgNaturalDims.height / imgNaturalDims.width;
+            const maxH = Math.max(220, el.clientHeight - MIN_PANEL_HEIGHT);
+            setRowImageHeight(Math.round(Math.min(byWidth, maxH)));
         };
-    }, [isResizing, resize, stopResizing]);
+        compute();
+        const el = mainRef.current;
+        const obs = el ? new ResizeObserver(compute) : null;
+        if (el && obs) obs.observe(el);
+        window.addEventListener('resize', compute);
+        return () => { obs?.disconnect(); window.removeEventListener('resize', compute); };
+    }, [isRowLayout, imgNaturalDims.width, imgNaturalDims.height]);
+
+    const MIN_PANEL_HEIGHT = 200;
+
 
 
     // No image found — go back, this page shouldn't exist without a valid image.
@@ -857,7 +803,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
             {/* Removed internal header - handled by AppNavbar */}
 
-            <main className={`flex-1 flex flex-col md:flex-row md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+            <main ref={mainRef} className={`flex-1 flex flex-col ${isRowLayout ? '' : 'md:flex-row'} md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
                 {/* Canvas Area — mobile brush: flex-1 (fills screen); mobile normal: fixed aspect-ratio height; desktop: flex-1 */}
                 <div
                     className={`flex flex-col bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
@@ -871,29 +817,43 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     }
                 >
                     {/* Image Container */}
-                    <div className="flex-1 relative overflow-hidden min-h-0">
-
-                    {/* Nav Arrows — desktop only, visible on hover, hidden in brush mode */}
-                    {idx > 0 && state.sideSheetMode !== 'brush' && (
-                        <button onClick={() => handleSelectWithin(images[idx - 1].id)} className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                    )}
-                    {idx < images.length - 1 && state.sideSheetMode !== 'brush' && (
-                        <button onClick={() => handleSelectWithin(images[idx + 1].id)} className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-black/40 hover:bg-black/70 text-white rounded-full items-center justify-center transition-all opacity-0 group-hover:opacity-100">
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
-                    )}
+                    <div
+                        className={`relative overflow-hidden min-h-0 ${isRowLayout ? 'shrink-0' : 'flex-1'}`}
+                        style={isRowLayout && rowImageHeight ? { height: `${rowImageHeight}px` } : undefined}
+                    >
 
                         {/* Floating action buttons */}
                         {state.sideSheetMode !== 'brush' && (
-                            <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-all duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-0 group-hover:opacity-100'}`}>
-                                <div className="flex items-center gap-2 pointer-events-auto">
+                            <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
+                                <div className="flex items-center gap-1.5 pointer-events-auto">
+                                    {/* Blaettern steht jetzt in derselben Zeile wie die
+                                        uebrigen Handlungen am Bild. An den Seitenraendern
+                                        lagen die Pfeile weit auseinander und mitten im
+                                        Motiv; unten bilden sie mit "Mehr" und "Bearbeiten"
+                                        eine Gruppe, die man an einem Ort findet. */}
+                                    {idx > 0 && (
+                                        <button
+                                            onClick={() => handleSelectWithin(images[idx - 1].id)}
+                                            aria-label={t('previous') || 'Zurück'}
+                                            className={FLOATING_BTN_ICON}
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                    {idx < images.length - 1 && (
+                                        <button
+                                            onClick={() => handleSelectWithin(images[idx + 1].id)}
+                                            aria-label={t('next') || 'Weiter'}
+                                            className={FLOATING_BTN_ICON}
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    )}
                                     {img.generationPrompt && (
                                         <Tooltip text={t('generate_more')} shortcut="M">
                                             <button
                                                 onClick={() => actions.handleGenerateMore(img)}
-                                                className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center gap-1.5 text-xs font-medium transition-all"
+                                                className={`${FLOATING_BTN} gap-1.5`}
                                             >
                                                 <Repeat className="w-3.5 h-3.5" />
                                                 {t('nav_more')}
@@ -902,7 +862,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                     )}
                                     {!isSideSheetVisible && !showBlob && (
                                         <Tooltip text={t('open_editing_panel')} shortcut="E">
-                                            <button onClick={() => setIsSideSheetVisible(true)} className="h-10 px-5 bg-black/40 hover:bg-black/70 text-white rounded-full flex items-center text-xs font-medium transition-all">
+                                            <button onClick={() => setIsSideSheetVisible(true)} className={FLOATING_BTN}>
                                                 {t('nav_edit')}
                                             </button>
                                         </Tooltip>
@@ -916,7 +876,16 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             so the image scales to fit above them and the bottom edge stays reachable. */}
                         <div
                             ref={imageViewportRef}
-                            className="absolute inset-0 flex items-center justify-center"
+                            // Immer mittig. Ein Bild gehoert in die Mitte seiner
+                            // Flaeche — das ist in jedem Bildprogramm so, und es
+                            // bleibt ruhig, wenn man zwischen Bildern mit
+                            // verschiedenen Seitenverhaeltnissen blaettert.
+                            //
+                            // Ein frueherer Versuch richtete es in der Seitenanordnung
+                            // oben aus, damit es mit der Eingabe daneben auf einer
+                            // Linie beginnt. Das war die falsche Haelfte: Buendig
+                            // werden soll die Box, nicht das Bild.
+                            className="absolute inset-0 flex justify-center items-center"
                             style={state.sideSheetMode === 'brush' ? { paddingBottom: BRUSH_BOTTOM_RESERVE } : undefined}
                         >
                             {displayBox.width > 0 && displayBox.height > 0 && (
@@ -1027,59 +996,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     </div>{/* closes image container */}
 
                     {/* Bottom Area: Fixed space so canvas never jumps (desktop only in brush mode; mobile uses fixed toolbar) */}
-                    <div className={`${state.sideSheetMode !== 'brush' ? 'h-20' : (isMobile ? 'h-0' : 'h-20')} shrink-0 relative z-30 w-full overflow-visible`}>
+                    {/* Ist die Leiste aus, faellt auch der Platz weg, den sie
+                        belegt — sonst bliebe ein leerer Streifen stehen und das
+                        Bild haette nichts gewonnen. Im Pinselmodus bleibt die
+                        Hoehe wie gehabt, dort haengt die Werkzeugleiste darin. */}
+                    <div className={`${state.sideSheetMode !== 'brush' ? 'h-0 overflow-hidden' : `${isMobile ? 'h-0' : 'h-20'} overflow-visible`} shrink-0 relative z-30 w-full`}>
                         {/* Thumbnail Strip — width is capped to a fixed thumb count
                             (11 desktop / 5 mobile), centered. Cell = 36px thumb + 8px gap = 44px. */}
-                        <div
-                            ref={thumbStripRef}
-                            className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-[220px] md:max-w-[484px] flex items-center overflow-x-auto no-scrollbar bg-zinc-50 dark:bg-zinc-950 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
-                            style={{
-                                maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-                                WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-                                // Carousel-style snap so horizontal scrolling lands on a thumb
-                                // and the closest-to-center thumb becomes the new selectedId.
-                                scrollSnapType: 'x mandatory',
-                            }}
-                        >
-                            <div ref={thumbStripInnerRef} className="flex items-center">
-                            {combinedStrip.map(({ img: i, distance, leaving }) => {
-                                // ±8 visible with exponential opacity decay; ±9-12 invisible buffer for smooth transitions
-                                const VISIBLE = 8;
-                                const thumbOpacity = leaving ? 1
-                                    : distance === 0 ? 1
-                                    : distance > VISIBLE ? 0
-                                    : Math.max(0.15, 0.6 * Math.pow(0.82, distance - 1));
-                                if (i.isGenerating && !leaving) {
-                                    const parentThumb = i.parentId ? imageMap.get(i.parentId) : null;
-                                    const pSrc = parentThumb?.thumbSrc || parentThumb?.src;
-                                    return (
-                                        <GeneratingThumb
-                                            key={i.id}
-                                            id={i.id}
-                                            pSrc={pSrc}
-                                            isActive={selectedId === i.id}
-                                            thumbOpacity={thumbOpacity}
-                                            startTime={i.generationStartTime}
-                                            estimatedDuration={i.estimatedDuration}
-                                            onSelect={handleSelectWithin}
-                                        />
-                                    );
-                                }
-                                return (
-                                    <ThumbButton
-                                        key={i.id}
-                                        id={i.id}
-                                        src={i.thumbSrc || i.src || ''}
-                                        isActive={selectedId === i.id}
-                                        isNew={state?.unseenIds?.has(i.id)}
-                                        leaving={leaving}
-                                        thumbOpacity={thumbOpacity}
-                                        onSelect={handleSelectWithin}
-                                    />
-                                );
-                            })}
-                            </div>
-                        </div>
 
                         {/* Annotations Toolbar — fixed bottom on mobile, absolute on desktop */}
                         {state.sideSheetMode === 'brush' && <div className={`${isMobile ? 'fixed bottom-6' : 'absolute bottom-6'} left-0 right-0 z-50 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150`}>
@@ -1219,22 +1142,38 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                 {/* Side Sheet — below image on mobile, side panel on desktop */}
                 <aside
-                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-200 dark:md:border-zinc-800' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
-                    style={{ width: isMobile ? undefined : (isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px') }}
+                    // Ohne Trennlinien, wie unter der Navigationsleiste. Die
+                    // Kante entsteht aus dem Flaechenwechsel; eine gezogene
+                    // Linie daneben waere eine zweite Aussage ueber dieselbe
+                    // Grenze. Der Ziehgriff zum Verbreitern sitzt ohnehin dort
+                    // und zeigt sie an, sobald man ihn braucht.
+                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none ${!isSideSheetActuallyVisible && (isMobile || isRowLayout) ? 'hidden' : ''}`}
+                    style={isMobile
+                        ? undefined
+                        : isRowLayout
+                            // Keine gesetzte Hoehe: Die Leiste nimmt, was das Bild
+                            // uebrig laesst. Damit rueckt sie unmittelbar an das
+                            // Bild heran, und es gibt nichts mehr zu ziehen.
+                            //
+                            // Ausgeblendet wird sie ueber `hidden` in der
+                            // Klassenliste, nicht ueber eine Hoehe von 0: Im
+                            // Seitenmodus schrumpft eine Breite sichtbar zusammen,
+                            // hier gibt es nichts zu schrumpfen — die Leiste
+                            // bekommt ihre Hoehe vom uebrigen Platz, und 0 waere
+                            // wirkungslos geblieben. Genau daran lag es, dass
+                            // Ausblenden im Zeilenmodus nichts tat.
+                            ? { width: '100%' }
+                            : {
+                                width: isSideSheetActuallyVisible ? SIDEBAR_WIDTH : '0px',
+                                paddingTop: Math.max(0, imageTopOffset - PANEL_INNER_PT),
+                            }}
                 >
                     {/* Resizer Handle — desktop only */}
-                    {!isMobile && (
-                        <div
-                            onMouseDown={startResizing}
-                            className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-black/5 dark:hover:bg-white/10 active:bg-blue-500/30 transition-colors z-50 group"
-                        >
-                            <div className="absolute inset-y-0 left-0 w-[1px] bg-transparent group-hover:bg-zinc-300 dark:group-hover:bg-zinc-700" />
-                        </div>
-                    )}
 
                     <SideSheet
                         key={state.selectedImage?.id ?? 'no-selection'}
-                        width={isMobile ? '100%' : `${sidebarWidth}px`}
+                        width={isMobile || isRowLayout ? '100%' : `${SIDEBAR_WIDTH_PX}px`}
+                        rowLayout={isRowLayout}
                         disableMobileSheet={isMobile}
                         selectedImage={state.selectedImage}
                         selectedImages={state.selectedImages}

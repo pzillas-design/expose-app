@@ -4,6 +4,7 @@ import { imageService } from '@/services/imageService';
 import { storageService } from '@/services/storageService';
 import { CanvasImage, ImageRow } from '@/types';
 import { sortRowItems } from '@/utils/stacks';
+import { parseUploadName } from '@/utils/imageName';
 
 interface UseFileHandlerProps {
     user: any;
@@ -46,7 +47,12 @@ export const useFileHandler = ({
             const skeletonId = generateId();
             const extension = file.name.split('.').pop()?.toLowerCase();
             const isHeic = ['heic', 'heif'].includes(extension || '');
-            const baseName = file.name.replace(/\.[^/.]+$/, "") || `Image_${Date.now()}`;
+            // Traegt der Dateiname eine Fassung (haus_v2.jpg), wird sie
+            // uebernommen: Sonst hiesse die naechste Bearbeitung wieder v2, und
+            // zwei verschiedene Bilder trugen dieselbe Nummer.
+            const parsed = parseUploadName(file.name);
+            const baseName = parsed.base || `Image_${Date.now()}`;
+            const startVersion = parsed.version;
 
             // 1. ADD SKELETON IMMEDIATELY
             const skeleton: CanvasImage = {
@@ -57,7 +63,7 @@ export const useFileHandler = ({
                 height: 512,
                 title: baseName,
                 baseName: baseName,
-                version: 1,
+                version: startVersion,
                 isGenerating: true, // This triggers the skeleton/shimmer UI
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
@@ -146,7 +152,7 @@ export const useFileHandler = ({
                                 realHeight: img.height,
                                 title: baseName,
                                 baseName: baseName,
-                                version: 1,
+                                version: startVersion,
                                 isGenerating: false,
                                 createdAt: Date.now(),
                                 updatedAt: Date.now(),

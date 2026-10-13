@@ -1,6 +1,7 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
-import { Loader2, Plus, Layers, SquaresSubtract, Upload, Download, X, ImagePlus } from 'lucide-react';
+import { NAV_SCROLL_OFFSET } from '@/config/layout';
+import { Loader2, Layers, Layers2, ChevronRight, Upload, Download, X } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -25,6 +26,150 @@ function getDaysRemaining(createdAt: string | number | undefined): number | null
     return Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
 }
 
+/**
+ * Restfrist eines Tages-Abschnitts, gerechnet aus dem Tag selbst.
+ *
+ * Nicht aus den Kacheln des Abschnitts: Deren Deckbild ist die NEUESTE
+ * Variante eines Stapels, waehrend der Stapel nach seinem Original einsortiert
+ * ist. Die kleinste Frist ueber die Deckbilder waere deshalb zu optimistisch —
+ * sie uebersaehe die aelteren Bilder, die im zugeklappten Stapel stecken.
+ *
+ * Der Tag ist ohnehin die Einheit, an der die Frist haengt: Alles, was an
+ * einem Tag entstanden ist, laeuft am selben Tag ab.
+ */
+function getDayDaysRemaining(dayKey: string): number | null {
+    const [y, m, d] = dayKey.split('-').map(Number);
+    if (!y || !m || !d) return null;
+    // Ende des Kalendertags, damit ein am Morgen erzeugtes Bild nicht einen
+    // Tag frueher gezaehlt wird als eines vom Abend desselben Tages.
+    const dayEnd = new Date(y, m - 1, d, 23, 59, 59).getTime();
+    return Math.ceil((dayEnd + TTL_DAYS * 86_400_000 - Date.now()) / 86_400_000);
+}
+
+/**
+ * Tagesschluessel aus einem Zeitstempel. Bewusst nach Kalendertag und nicht
+ * nach Stunde oder Minute: Eine Kopfzeile "13:36-13:36" waere eine Zeitspanne
+ * von null und sagt niemandem etwas.
+ */
+const dayKeyOf = (ts: string | number | undefined): string => {
+    const d = ts ? new Date(ts) : new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+/**
+ * "Heute", "Gestern", sonst das ausgeschriebene Datum — aus dem Tagesschluessel.
+ *
+ * Bewusst aus dem SCHLUESSEL und nicht aus einem Zeitstempel: Gruppiert wurde
+ * nach dem Datum des Originals, beschriftet wurde nach dem Datum des
+ * Deckbildes, und das Deckbild ist die NEUESTE Fassung. Zwei Stapel mit
+ * Originalen von verschiedenen Tagen, deren neueste Fassungen am selben Tag
+ * entstanden, bekamen dadurch dieselbe Ueberschrift — im Verlauf stand "8.
+ * Oktober" zweimal untereinander.
+ */
+const dayLabelOf = (key: string, lang: 'de' | 'en'): string => {
+    const [y, m, dd] = key.split('-').map(Number);
+    const d = new Date(y, (m || 1) - 1, dd || 1);
+    const today = dayKeyOf(Date.now());
+    const yesterday = dayKeyOf(Date.now() - 86400000);
+    if (key === today) return lang === 'de' ? 'Heute' : 'Today';
+    if (key === yesterday) return lang === 'de' ? 'Gestern' : 'Yesterday';
+    return d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { day: 'numeric', month: 'long' });
+};
+
+/**
+ * Das Abzeichen oben auf einer Kachel — Quellbild, Upload-Fortschritt, Anzahl
+ * im Stapel.
+ *
+ * Vorher stand dieselbe Klassenkette an drei Stellen abgeschrieben. Dass der
+ * Chip unfertig wirkte, war die Folge: Es gab keine Stelle, an der man ihn
+ * haette verbessern koennen, ohne ihn dreimal zu verbessern.
+ *
+ * Poliert gegenueber der alten Fassung:
+ * - Weichzeichner statt reiner Deckkraft, damit er auf hellen wie dunklen
+ *   Bildmotiven gleich gut sitzt. Dieselbe Sprache wie die Kopfzeile.
+ * - Ein feiner Ring statt nur eines Schattens. Auf einem weissen Hausdach war
+ *   der Chip vorher praktisch unsichtbar.
+ * - Waechst mit dem Inhalt: ein Icon bleibt rund, eine zweistellige Zahl
+ *   bekommt Luft, statt gequetscht zu werden.
+ */
+/**
+ * Die Flaeche zum Ablegen oder Auswaehlen von Bildern.
+ *
+ * Eine Definition fuer beide Vorkommen — den leeren Zustand und den Streifen
+ * ueber der Galerie. Sie unterscheiden sich nur in der Anordnung, nicht in der
+ * Erscheinung; zwei Abschriften waeren die naechste Stelle gewesen, an der
+ * Farbwerte auseinanderlaufen.
+ *
+ * Der Untergrund ist bewusst in Schwarz bzw. Weiss mit niedriger Deckkraft
+ * angegeben statt in festen Grautoenen: So sitzt er in beiden Themen gleich
+ * und bleibt der blosse Hauch, der gewuenscht ist.
+ */
+const UploadDropZone: React.FC<{
+    onClick: () => void;
+    label: string;
+    sub?: string;
+    active?: boolean;
+    row?: boolean;
+    className?: string;
+}> = ({ onClick, label, sub, active = false, row = false, className = '' }) => (
+    <button
+        onClick={onClick}
+        // Symbol immer ueber der Schrift, in beiden Faellen. Nebeneinander
+        // zerfiel die Einheit in zwei Dinge, die zufaellig nebeneinander
+        // stehen; uebereinander liest es sich als eine Sache. `row` regelt
+        // seither nur noch, wie viel Luft die Flaeche bekommt.
+        className={`w-full rounded-2xl flex flex-col items-center justify-center transition-colors duration-200
+            ${row ? 'gap-3.5 py-10' : 'gap-4 px-6 py-14'}
+            ${active
+                // Beim Ziehen etwas deutlicher, aber in derselben Tonlage —
+                // kein Farbwechsel, nur mehr davon.
+                ? 'bg-black/[0.06] dark:bg-white/[0.08]'
+                : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}
+            ${className}`}
+    >
+        <Upload className="w-[18px] h-[18px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.75} />
+        {/* Beide Zeilen in derselben Schrift. Vorher trugen sie zwei Groessen
+            und zwei Farben — das machte aus zwei Saetzen zwei Ebenen, obwohl
+            sie dasselbe sagen: wie man Bilder hereinbekommt. */}
+        <span className="flex flex-col items-center gap-0.5 text-[13px] leading-tight text-zinc-500 dark:text-zinc-400">
+            <span>{label}</span>
+            {sub && <span>{sub}</span>}
+        </span>
+    </button>
+);
+
+const TileChip: React.FC<{
+    children: React.ReactNode;
+    className?: string;
+    onClick?: (e: React.MouseEvent) => void;
+    title?: string;
+}> = ({ children, className = '', onClick, title }) => {
+    const Tag: any = onClick ? 'button' : 'div';
+    return (
+    <Tag
+        onClick={onClick}
+        title={title}
+        // Mitte und Anordnung getrennt: Das aeussere Feld zentriert (place-items),
+        // das innere ordnet (flex). Vorher machte ein Raster beides zugleich —
+        // grid-flow-col mit auto-cols-max zentriert die Spur, nicht den Inhalt,
+        // und bei einer einzelnen Ziffer sass sie dadurch sichtbar daneben.
+        //
+        // Keine Fettschrift: Auf einer dunklen Scheibe traegt schon der Kontrast,
+        // und fett machte aus einer Nebensache ein Ausrufezeichen.
+        // top-3/right-3 statt top-2/right-2: Der Auswahlkreis sitzt in einem
+        // Feld mit p-3, also 12 Pixel von der Ecke. Das Abzeichen sass auf 8
+        // und stand damit sichtbar anders als sein Gegenstueck.
+        className={`absolute top-3 right-3 z-20 h-[22px] min-w-[22px] px-1.5 rounded-full
+            grid place-items-center
+            bg-black/45 backdrop-blur-[3px]
+            text-[11px] font-normal tabular-nums leading-none text-white
+            ${onClick ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none'} ${className}`}
+    >
+        <span className="flex items-center gap-1 leading-none">{children}</span>
+    </Tag>
+    );
+};
+
 /* ── Memoised grid item ── */
 interface FeedGridItemProps {
     img: CanvasImage;
@@ -42,8 +187,16 @@ interface FeedGridItemProps {
     groupCount?: number;
     /** Whether any image in this group is currently generating */
     hasGenerating?: boolean;
-    /** Called when user clicks a group cover tile — opens the group drill-down */
-    onOpenGroup?: () => void;
+    /** Die Reihe hinter dieser Kachel — wird an onOpenGroup durchgereicht. */
+    group?: ImageRow | null;
+    /** Waehlt alle Bilder dieses Stapels aus bzw. ab. Fehlt bei Einzelbildern. */
+    onToggleSelectStack?: () => void;
+    /**
+     * Oeffnet den Stapel. Nimmt die Reihe als Argument, statt sie einzuschliessen:
+     * Eine je Kachel neu erzeugte Pfeilfunktion macht memo() wirkungslos, und dann
+     * rendert JEDE Kachel bei JEDEM Mauszeiger-Wechsel neu.
+     */
+    onOpenGroup?: (row: ImageRow) => void;
     /** Staggered fade-in delay in ms (for group open animation) */
     staggerDelay?: number;
     /** Whether this item was the last one viewed in detail — plays zoom-out return animation */
@@ -58,11 +211,54 @@ interface FeedGridItemProps {
     isSource?: boolean;
 }
 
-const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en', isSource = false }) => {
+/**
+ * Dauer des Rueckkehr-Zooms. MUSS mit dem Keyframe feed-zoom-return in
+ * index.css uebereinstimmen.
+ *
+ * Vorher standen hier drei Zahlen fuer dieselbe Sache: die Animation lief
+ * 480 ms, abgeraeumt wurde an zwei Stellen nach 500 ms und an einer nach
+ * 600 ms. 20 ms Luft reichen nicht — faengt die Animation einen Frame spaeter
+ * an, weil der Browser gerade Bilder dekodiert, wird sie mittendrin abgeraeumt
+ * und die Kachel springt auf ihre Endgroesse. Genau dieses Zucken nach dem
+ * Zoom war zu sehen.
+ */
+const ZOOM_RETURN_MS = 480;
+const ZOOM_RETURN_CLEAR_MS = ZOOM_RETURN_MS + 140;
+
+const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, group, onToggleSelectStack, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en', isSource = false }) => {
     const isMobile = useMobile();
     const previewSrc = img.thumbSrc || img.src;
+
+    // Bilder blenden ein, statt aufzuploppen.
+    //
+    // Vorher stand das <img> ohne jede Rueckmeldung im Baum: Es erschien in dem
+    // Moment, in dem der Browser es dekodiert hatte. Bei fuenfzig Kacheln und
+    // lazy loading heisst das: in zufaelliger Reihenfolge, einzeln, ueber
+    // mehrere Sekunden verteilt. Genau das ist der chaotische Aufbau.
+    //
+    // Ein bereits zwischengespeichertes Bild wird NICHT eingeblendet: Dort ist
+    // `complete` schon beim ersten Anfassen wahr, und eine Blende auf etwas,
+    // das sofort da ist, waere selbst wieder ein Flackern.
+    // Zieldeckkraft: im Auswahlmodus ist ein markiertes Bild gedaempft.
+    const targetOpacity = isSelectMode && isSelected ? 0.6 : 1;
+    // Bewusst OHNE React-Zustand.
+    //
+    // Mit useState begann das Bild bei opacity 0 und wurde erst durch ein
+    // erneutes Rendern sichtbar. Bei einem bereits zwischengespeicherten Bild
+    // liegt dazwischen ein gezeichneter Frame — und genau der ist das kurze
+    // Leersein nach der Animation.
+    //
+    // Ein ref-Callback laeuft waehrend des Commits, also VOR dem ersten
+    // Zeichnen. Was im Zwischenspeicher liegt, ist damit sofort sichtbar; alles
+    // andere blendet per onLoad ein. Nebenbei entfaellt ein Zustands-Update je
+    // Kachel.
+    const imgRef = React.useCallback((node: HTMLImageElement | null) => {
+        if (node?.complete) node.style.opacity = String(targetOpacity);
+    }, [targetOpacity]);
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
+    const playedReturnRef = React.useRef(false);
+    if (isLastViewed) playedReturnRef.current = true;
 
     // Tile hugs the image's natural aspect ratio at full column width — no square
     // letterboxing. Row height then follows the tallest image in that row.
@@ -78,6 +274,12 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
             onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
             data-image-id={img.id}
             className={`relative isolate group cursor-pointer`}
+            // Eine Kachel, die den Rueckkehr-Zoom gespielt hat, darf danach nicht
+            // in die gestaffelte Einblendung zurueckfallen: Die laeuft mit
+            // `both` und haelt waehrend ihrer Verzoegerung den Startwert
+            // opacity 0 — die Kachel waere nach dem Zoom noch einmal
+            // unsichtbar. Im Stapel, wo es eine Staffelung gibt, war das der
+            // zweite leere Frame.
             style={isLastViewed
                 ? {
                     // Set the 'from' keyframe values as inline style so the very first paint
@@ -87,9 +289,9 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     // sonst blitzt vor dem Start der Animation ein Zwischenwert auf.
                     transform: 'scale(1.28)',
                     opacity: 0.5,
-                    animation: 'feed-zoom-return 480ms cubic-bezier(0.25,1,0.5,1) both',
+                    animation: `feed-zoom-return ${ZOOM_RETURN_MS}ms cubic-bezier(0.25,1,0.5,1) both`,
                 }
-                : staggerDelay !== undefined
+                : staggerDelay !== undefined && !playedReturnRef.current
                     ? { animation: `feed-fade-in 280ms ${staggerDelay}ms both ease-out` }
                     : undefined}
         >
@@ -98,7 +300,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 className="relative isolate cursor-pointer transition-transform duration-100 active:scale-[1.03]"
                 style={boundedStyle}
                 onClick={(e) => {
-                    if (onOpenGroup) { onOpenGroup(); return; }
+                    if (onOpenGroup && group) { onOpenGroup(group); return; }
                     if (isSelectMode && onToggleSelect) onToggleSelect(img.id, e.shiftKey);
                     else onSelectImage(img.id);
                 }}
@@ -109,24 +311,39 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     <>
                         {groupCount > 2 && (
                             <div
-                                className="absolute h-full -z-20 bg-zinc-200 dark:bg-zinc-700"
+                                // Das hinterste Blatt. Dunkler als das vordere, damit
+                                // es auf schwarzem Grund zuruecktritt statt als heller
+                                // Balken aufzuliegen — vorher war es mit zinc-700
+                                // heller als das Blatt davor, also genau verkehrt
+                                // herum: Das Entfernteste stach am meisten hervor.
+                                className="absolute h-full -z-20 bg-zinc-200 dark:bg-zinc-800"
                                 style={{
                                     left: '10px', right: '10px',
-                                    bottom: isKeyboardActive ? '-28px' : '-20px',
-                                    transform: 'scaleX(0.93)',
-                                    transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                                    bottom: 0,
+                                    // translateY statt bottom: bottom ist eine
+                                    // Layout-Eigenschaft und zwingt den Browser bei
+                                    // jedem Frame zu einem neuen Umbruch. transform
+                                    // erledigt die Grafikkarte allein.
+                                    transform: `translateY(${isKeyboardActive ? 28 : 20}px) scaleX(0.93)`,
+                                    transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
+                                    willChange: 'transform',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.10)',
                                 }}
                             />
                         )}
                         <div
-                            className="absolute h-full -z-10 bg-zinc-300 dark:bg-zinc-600"
+                            // Das vordere Blatt bleibt das hellste: Naeher heisst
+                            // mehr Kontrast zum Hintergrund. Zusammen mit dem
+                            // dunkleren hinteren ergibt das eine Staffelung statt
+                            // zweier gleich lauter Balken.
+                            className="absolute h-full -z-10 bg-zinc-300 dark:bg-zinc-700"
                             style={{
                                 left: '5px', right: '5px',
-                                bottom: isKeyboardActive ? '-16px' : '-11px',
-                                transform: 'scaleX(0.96)',
-                                transition: 'bottom 240ms cubic-bezier(0.25,1,0.5,1)',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                                bottom: 0,
+                                transform: `translateY(${isKeyboardActive ? 16 : 11}px) scaleX(0.96)`,
+                                transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
+                                willChange: 'transform',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                             }}
                         />
                     </>
@@ -162,10 +379,22 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     ) : previewSrc ? (
                         <div className="absolute inset-0 flex items-center justify-center">
                             <img
+                                ref={imgRef}
                                 src={previewSrc}
                                 alt={img.title}
-                                className={`w-full h-full object-cover transition-opacity duration-200 ${isSelectMode && isSelected ? 'opacity-60' : ''}`}
-                                loading="lazy"
+                                onLoad={e => { e.currentTarget.style.opacity = String(targetOpacity); }}
+                                // Ein Bild, das nicht laedt, darf nicht unsichtbar
+                                // bleiben — lieber ohne Blende zeigen.
+                                onError={e => { e.currentTarget.style.opacity = String(targetOpacity); }}
+                                style={{ opacity: 0, transition: 'opacity 300ms ease-out' }}
+                                className="w-full h-full object-cover" 
+                                // Die zurueckkehrende Kachel wartet nicht auf den
+                                // Scroll-Ausloeser: Sonst laeuft der Zoom auf einem
+                                // leeren Kasten und das Bild springt hinterher herein.
+                                loading={isLastViewed ? 'eager' : 'lazy'}
+                                // Dekodieren neben dem Hauptstrang, damit es die
+                                // laufende Zoom-Animation nicht ins Stocken bringt.
+                                decoding="async"
                             />
                         </div>
                     ) : null}
@@ -179,7 +408,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         Outer wrapper provides a generous 44×44px hit target (the visible circle
                         is only 20px, which previously caused stray taps to bubble to the parent and
                         open the image instead of toggling selection). */}
-                    {!isGen && (
+                    {!isGen && !(isGroup && !isMobile && onToggleSelectStack) && (
                         <div
                             className={`absolute top-0 left-0 p-3 z-20 cursor-pointer ${isSelectMode || (isKeyboardActive && !isMobile) ? '' : 'pointer-events-none'}`}
                             onClick={(e) => {
@@ -210,37 +439,71 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
 
                     {/* Source image badge — same weight + size as the Euro icon in the navbar. */}
                     {isSource && (
-                        <div className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center z-20 bg-white/85 dark:bg-zinc-800/85 shadow-sm pointer-events-none">
-                            <Upload className="w-[14px] h-[14px] text-zinc-700 dark:text-zinc-200" strokeWidth={2} />
-                        </div>
+                        <TileChip>
+                            <Upload className="w-[13px] h-[13px]" strokeWidth={2} />
+                        </TileChip>
                     )}
 
                     {/* Upload state — queued items spin without progress; the single
                         actively uploading item fills a clock-style progress ring 0→100. */}
                     {!isGen && !isSource && !img.storage_path && img.src?.startsWith('blob:') && (
-                        <div className="absolute top-2 right-2 z-20 w-6 h-6 rounded-full flex items-center justify-center bg-white/85 dark:bg-zinc-800/85 shadow-sm pointer-events-none">
+                        <TileChip>
                             {img.uploadStatus === 'uploading' ? (
                                 <svg viewBox="0 0 20 20" className="w-[16px] h-[16px] -rotate-90">
                                     <circle cx="10" cy="10" r="8" fill="none" strokeWidth="2.5"
-                                        className="stroke-zinc-200 dark:stroke-zinc-600" />
+                                        className="stroke-white/30" />
                                     <circle cx="10" cy="10" r="8" fill="none" strokeWidth="2.5" strokeLinecap="round"
-                                        className="stroke-zinc-700 dark:stroke-zinc-200 transition-[stroke-dashoffset] duration-200"
+                                        className="stroke-white transition-[stroke-dashoffset] duration-200"
                                         strokeDasharray={2 * Math.PI * 8}
                                         strokeDashoffset={(2 * Math.PI * 8) * (1 - Math.min(100, img.uploadProgress ?? 0) / 100)} />
                                 </svg>
                             ) : (
-                                <Loader2 className="w-[14px] h-[14px] animate-[spin_3s_linear_infinite] text-zinc-700 dark:text-zinc-200" />
+                                <Loader2 className="w-[14px] h-[14px] animate-[spin_3s_linear_infinite]" />
                             )}
-                        </div>
+                        </TileChip>
                     )}
 
-                    {/* Group count badge — hidden for now (A/B test without counter) */}
-                    {/* {isGroup && !isGen && (
-                        <div className={`absolute bottom-2 right-2 z-10 flex items-center justify-center gap-1 bg-zinc-100/90 dark:bg-zinc-800/90 text-zinc-600 dark:text-zinc-300 text-[11px] font-medium pointer-events-none leading-none shadow-sm backdrop-blur-sm ${groupCount < 10 && !hasGenerating ? 'w-5 h-5 rounded-full' : 'rounded-full px-2 py-[3px]'}`}>
+                    {/* Anzahl der Bilder im Stapel.
+                        Oben rechts, derselbe Chip wie Quellbild und Upload — die
+                        Stelle ist frei, weil beide anderen nur in der
+                        Stapelansicht bzw. beim Hochladen auftreten, der Zaehler
+                        dagegen nur auf einem Deckbild in der Galerie.
+                        Der Punkt zeigt an, dass in diesem Stapel gerade etwas
+                        entsteht; dann ist die Zahl noch nicht endgueltig. */}
+                    {isGroup && !isGen && (
+                        /*
+                            Zahl und Auswahlkreis sind dasselbe Bedienelement.
+
+                            Die Zahl sagt, wie viele Bilder im Stapel liegen; ein
+                            Klick nimmt genau diese. Das ist die Handlung, die man
+                            an einem Deckbild ueberhaupt will — der Stapel ist die
+                            Einheit, nicht das zufaellig oberste Bild.
+
+                            Deshalb traegt ein Deckbild auch keinen eigenen
+                            Auswahlkreis mehr: Zwei Auswahlknoepfe auf derselben
+                            Kachel, von denen einer sechs Bilder nimmt und der
+                            andere eines, waeren nicht zu erraten.
+
+                            Sichtbar beim Ueberfahren, im Auswahlmodus und sobald
+                            etwas ausgewaehlt ist — sonst waere der Zustand
+                            unsichtbar. Auf Beruehrungsgeraeten bleibt sie
+                            sichtbar und bleibt reine Auskunft: Dort ist die
+                            Mehrfachauswahl ohnehin abgeschaltet.
+                        */
+                        <TileChip
+                            onClick={isMobile || !onToggleSelectStack ? undefined : (e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                onToggleSelectStack();
+                            }}
+                            className={`${isMobile || isSelectMode || isSelected ? '' : 'opacity-0 group-hover:opacity-100'} transition-[opacity,background-color] duration-150 ${
+                                isSelected ? '!bg-gradient-to-br !from-orange-400 !to-red-500 shadow-md' : ''
+                            }`}
+                        >
                             {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
                             {groupCount}
-                        </div>
-                    )} */}
+                        </TileChip>
+                    )}
 
                 </div>
 
@@ -274,6 +537,8 @@ interface FeedPageProps {
     isFetchingMore?: boolean;
     isSelectMode?: boolean;
     isSelectionSideSheetOpen?: boolean;
+    /** Waehlt alle Bilder eines Stapels aus bzw. ab — vom Zaehler auf dem Deckbild. */
+    onToggleSelectStack?: (ids: string[]) => void;
     selectedIds?: string[];
     onToggleSelect?: (id: string, isRange?: boolean) => void;
     state?: any;
@@ -293,7 +558,7 @@ interface FeedPageProps {
     columnsOverride?: number;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, returnToStackId, onReturnToStackHandled, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer, columnsOverride }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, onToggleSelectStack, expandedGroupId, onExpandedGroupChange, lastViewedId, returnToStackId, onReturnToStackHandled, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer, columnsOverride }) => {
     // URL-based fallback: expandedGroupId may still be null on first render after /stack/:id navigation
     const effectiveGroupId = expandedGroupId || (
         typeof window !== 'undefined' && window.location.pathname.startsWith('/stack/')
@@ -377,7 +642,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const sc = scrollRef.current;
             if (el && sc) {
                 const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
-                sc.scrollTo({ top: Math.max(0, top - 72), behavior: 'instant' as ScrollBehavior });
+                sc.scrollTo({ top: Math.max(0, top - NAV_SCROLL_OFFSET), behavior: 'instant' as ScrollBehavior });
             } else if (Date.now() - start < 600) {
                 requestAnimationFrame(scrollFn);
             }
@@ -489,6 +754,74 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         scrollGridToTile(targetId);
     }, [renderSelectMode, scrollGridToTile]);
 
+    // Eine Identitaet fuer alle Kacheln. Vorher entstand je Stapelkachel bei
+    // jedem Rendern eine neue Pfeilfunktion — damit war das memo() an
+    // FeedGridItem wirkungslos, und ein Mauszeiger-Wechsel (der nur
+    // activeIndex setzt) liess das gesamte Raster neu rendern.
+    const handleOpenGroup = React.useCallback((row: ImageRow) => {
+        actions?.markGroupSeen?.(row.items.map(i => i.id));
+        onExpandedGroupChange(row.id);
+    }, [actions, onExpandedGroupChange]);
+
+    /**
+     * Tagesabschnitte der Galerie.
+     *
+     * Nur dort: In einem geoeffneten Stapel und im Auswahlmodus bleibt das
+     * Raster flach, weil beide Ansichten bereits einen eigenen Fokus setzen.
+     *
+     * `rows` ist schon nach Datum sortiert, neueste zuerst — die Map behaelt
+     * die Einfuegereihenfolge, also stimmt die Reihenfolge der Abschnitte
+     * ohne zweites Sortieren.
+     */
+    const daySections = useMemo(() => {
+        if (effectiveGroupId || renderSelectMode) return null;
+        const byDay = new Map<string, CanvasImage[]>();
+        for (const row of rows) {
+            const cover = row.items[0];
+            if (!cover) continue;
+            const key = dayKeyOf(row.createdAt ?? cover.createdAt);
+            const bucket = byDay.get(key);
+            if (bucket) bucket.push(cover);
+            else byDay.set(key, [cover]);
+        }
+        return Array.from(byDay.entries()).map(([key, covers]) => ({
+            key,
+            label: dayLabelOf(key, state?.currentLang === 'de' ? 'de' : 'en'),
+            covers,
+            // Die Frist haengt am Tag, nicht an der einzelnen Kachel. Steht die
+            // Gruppe zu, sind die gelben Punkte an den Kacheln nicht zu sehen —
+            // ohne diesen Wert verschwaende die Warnung mit dem Zuklappen, und
+            // genau das waere der Moment, in dem sie gebraucht wird.
+            daysLeft: getDayDaysRemaining(key),
+        }));
+    }, [rows, effectiveGroupId, renderSelectMode, state?.currentLang]);
+
+    // AUFGEKLAPPTE Tage, nicht zugeklappte.
+    //
+    // Umgekehrt herum war es falsch: Die Liste der zugeklappten Tage wurde
+    // einmal beim ersten Aufbau gefuellt. Jeder Tag, der spaeter dazukam —
+    // und beim Scrollen kommen staendig aeltere nach — stand nicht darin und
+    // galt damit als offen. Deshalb klappte ausgerechnet der unterste Tag
+    // immer von selbst auf.
+    //
+    // Als Menge der offenen Tage kann das nicht passieren: Was nicht
+    // ausdruecklich geoeffnet wurde, ist zu. Nachgeladene Tage sind damit
+    // automatisch zu, ohne dass die Nachlade-Logik davon wissen muss.
+    const [openDays, setOpenDays] = React.useState<Set<string>>(new Set());
+    const daysSeededRef = React.useRef(false);
+    React.useEffect(() => {
+        if (daysSeededRef.current || !daySections || daySections.length === 0) return;
+        daysSeededRef.current = true;
+        setOpenDays(new Set([daySections[0].key]));
+    }, [daySections]);
+    const toggleDay = React.useCallback((key: string) => {
+        setOpenDays(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key); else next.add(key);
+            return next;
+        });
+    }, []);
+
     const displayImages = useMemo(() => {
         if (effectiveGroupId) {
             return rows.find(r => r.id === effectiveGroupId)?.items || [];
@@ -496,8 +829,15 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (renderSelectMode) {
             return rows.flatMap(r => r.items);
         }
+        // Nur was wirklich sichtbar ist — sonst zeigen Tastatur- und
+        // Sprachnavigation auf Kacheln, die gar nicht im Raster stehen.
+        if (daySections) {
+            return daySections
+                .filter(sec => openDays.has(sec.key))
+                .flatMap(sec => sec.covers);
+        }
         return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
-    }, [effectiveGroupId, renderSelectMode, rows]);
+    }, [effectiveGroupId, renderSelectMode, rows, daySections, openDays]);
 
     // Track which cover tile to animate when closing a group.
     // useLayoutEffect fires synchronously before paint so the first visible frame
@@ -519,7 +859,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const sc = scrollRef.current;
             if (el && sc) {
                 const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
-                sc.scrollTo({ top: Math.max(0, top - 72), behavior: 'instant' as ScrollBehavior });
+                sc.scrollTo({ top: Math.max(0, top - NAV_SCROLL_OFFSET), behavior: 'instant' as ScrollBehavior });
             } else if (Date.now() - start < 500) {
                 requestAnimationFrame(tryScroll);
             }
@@ -538,7 +878,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (!cover) return; // Reihen noch nicht geladen — nächster Durchlauf
         handledReturnRef.current = returnToStackId;
         setReturnCoverId(cover.id);
-        setTimeout(() => setReturnCoverId(null), 500);
+        setTimeout(() => setReturnCoverId(null), ZOOM_RETURN_CLEAR_MS);
         scrollTileToTop(cover.id);
         onReturnToStackHandled?.();
     }, [returnToStackId, rows, scrollTileToTop, onReturnToStackHandled]);
@@ -549,7 +889,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const cover = row?.items[0];
             if (cover) {
                 setReturnCoverId(cover.id);
-                setTimeout(() => setReturnCoverId(null), 500);
+                setTimeout(() => setReturnCoverId(null), ZOOM_RETURN_CLEAR_MS);
                 // Scroll the origin stack's cover to the top row after re-render.
                 scrollTileToTop(cover.id);
             }
@@ -587,7 +927,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (!rows.some(r => r.items.some(i => i.id === lastViewedRowCoverId))) return;
         handledLastViewedRef.current = lastViewedRowCoverId;
         setReturnCoverId(lastViewedRowCoverId);
-        setTimeout(() => setReturnCoverId(null), 600);
+        setTimeout(() => setReturnCoverId(null), ZOOM_RETURN_CLEAR_MS);
         scrollTileToTop(lastViewedRowCoverId);
     }, [lastViewedRowCoverId, rows, scrollTileToTop]);
 
@@ -645,7 +985,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     React.useEffect(() => {
         const updateColumns = () => {
             if (!gridRef.current || !gridRef.current.children.length) return;
-            const children = Array.from(gridRef.current.children) as HTMLElement[];
+            // Tages-Kopfzeilen sind vollbreite Rasterelemente und wuerden die
+            // Spaltenzaehlung auf 1 druecken — sie stehen allein in ihrer Zeile.
+            const children = (Array.from(gridRef.current.children) as HTMLElement[])
+                .filter(el => el.dataset.dayHeader !== '1');
             if (children.length === 0) return;
             const firstTop = children[0].offsetTop;
             let colCountRaw = 0;
@@ -729,6 +1072,65 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return () => observer.disconnect();
     }, [hasMore, isLoading, isFetchingMore, onLoadMore]);
 
+    // Eine Kachel. Herausgezogen, weil das Raster sie an zwei Stellen
+    // braucht: flach (Stapel, Auswahlmodus) und nach Tagen gruppiert.
+    const renderTile = (img: CanvasImage, idx: number) => {
+        const gc = (effectiveGroupId || renderSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
+        const row = (effectiveGroupId || renderSelectMode) ? null : groupRowMap.get(img.id);
+        const hasGen = row?.items.some(i => i.isGenerating) ?? false;
+        const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
+        const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
+        const unseenIds: Set<string> = state?.unseenIds ?? new Set();
+        // For group covers: dot if any item in group is unseen
+        const rowItems = row?.items ?? [img];
+        const isNew = !effectiveGroupId
+            ? rowItems.some(i => unseenIds.has(i.id))
+            : unseenIds.has(img.id);
+        // TTL: use root image's createdAt for group covers
+        const rootImg = rowItems.find(i => !i.parentId) ?? img;
+        const daysLeft = getDaysRemaining(rootImg.createdAt);
+        return (
+            <FeedGridItem
+                key={img.id}
+                img={img}
+                idx={idx}
+                isSelected={selectedIdSet.has(img.id)}
+                isKeyboardActive={activeIndex === idx || voiceFocusIndex === idx}
+                isSelectMode={!!isSelectMode}
+                onSelectImage={onSelectImage}
+                onToggleSelect={onToggleSelect}
+                setActiveIndex={setActiveIndex}
+                actions={actions}
+                parentSrc={parentSrc}
+                groupCount={gc}
+                hasGenerating={hasGen}
+                group={row}
+                onOpenGroup={gc > 1 && row ? handleOpenGroup : undefined}
+                onToggleSelectStack={gc > 1 && row && onToggleSelectStack
+                    ? () => onToggleSelectStack(row.items.map(i => i.id))
+                    : undefined}
+                staggerDelay={
+                    renderSelectMode
+                        // In select mode the tile the user just checked leads, the rest
+                        // follow a beat later so the eye keeps its anchor.
+                        ? (selectedIdSet.has(img.id) ? 0 : 90 + Math.min(idx * 22, 260))
+                        : effectiveGroupId ? Math.min(idx * 35, 350) : undefined
+                }
+                // Der Rückkehr-Zoom galt bisher nur in der Galerie
+                // (!effectiveGroupId) — aus der Detailansicht zurück in
+                // einen Stapel blieb er deshalb aus. Die Kachel ist dort
+                // genauso vorhanden, der Ausschluss war nicht begründet.
+                // Im Auswahlmodus bleibt er aus: Dort wird markiert,
+                // nicht navigiert.
+                isLastViewed={img.id === revealId || (!renderSelectMode && img.id === (returnCoverId ?? ''))}
+                isNew={isNew}
+                daysRemaining={daysLeft}
+                currentLang={state?.currentLang}
+                isSource={!img.parentId && !img.isGenerating && (!!effectiveGroupId || renderSelectMode)}
+            />
+        );
+    };
+
     if (isLoading && images.length === 0) {
         // Auch der Ladezustand nimmt Dateien an. Vorher kehrte FeedPage hier
         // zurück, bevor die Drop-Handler überhaupt im Baum standen — und der
@@ -791,69 +1193,101 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 )}
                 <div className="flex-1 flex flex-col">
                     <div className="flex-1 flex flex-col relative pb-16 min-h-[100dvh]">
-                        {displayImages.length > 0 ? (
+                        {/*
+                            Nicht an displayImages haengen, sondern daran, ob es
+                            ueberhaupt Bilder gibt.
+
+                            displayImages enthaelt seit den Tagesgruppen nur die
+                            SICHTBAREN Kacheln. Klappt jemand alle Tage zu, ist es
+                            leer — und der leere Zustand haette die Kopfzeilen
+                            verdraengt, mit denen man sie wieder aufklappt. Eine
+                            Sackgasse, aus der nur ein Neuladen herausfuehrt.
+                        */}
+                        {(displayImages.length > 0 || (daySections?.length ?? 0) > 0) ? (
                             <>
+                                {/*
+                                    Ablagestreifen ueber der Galerie.
+
+                                    Nur dort: In einem geoeffneten Stapel und im
+                                    Auswahlmodus hat die Ansicht eine andere
+                                    Aufgabe, und ein Hochladen-Angebot stuende im
+                                    Weg. Er scrollt mit dem Inhalt weg, statt
+                                    dauerhaft Platz zu belegen.
+
+                                    Gleiche Seitenabstaende wie das Raster, damit
+                                    er buendig mit den Kacheln steht.
+                                */}
+                                {!effectiveGroupId && !renderSelectMode && (
+                                    <div className="px-4 sm:px-8">
+                                        <UploadDropZone
+                                            row
+                                            onClick={triggerUpload}
+                                            active={isDropActive}
+                                            label={t?.('welcome_drop_cta') || 'Upload and edit'}
+                                            sub={t?.('welcome_drop_sub') || 'or drag photos here'}
+                                        />
+                                    </div>
+                                )}
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${renderSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
                                     className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-end gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out transition-opacity ${isGridFading ? 'opacity-0' : 'opacity-100'} ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 style={columnsOverride ? { gridTemplateColumns: `repeat(${columnsOverride}, minmax(0, 1fr))` } : undefined}
                                 >
-                                    {displayImages.map((img, idx) => {
-                                        const gc = (effectiveGroupId || renderSelectMode) ? 1 : (groupCountMap.get(img.id) ?? 1);
-                                        const row = (effectiveGroupId || renderSelectMode) ? null : groupRowMap.get(img.id);
-                                        const hasGen = row?.items.some(i => i.isGenerating) ?? false;
-                                        const parentImg = img.parentId ? imageIdMap.get(img.parentId) : undefined;
-                                        const parentSrc = parentImg ? (parentImg.thumbSrc || parentImg.src) : undefined;
-                                        const unseenIds: Set<string> = state?.unseenIds ?? new Set();
-                                        // For group covers: dot if any item in group is unseen
-                                        const rowItems = row?.items ?? [img];
-                                        const isNew = !effectiveGroupId
-                                            ? rowItems.some(i => unseenIds.has(i.id))
-                                            : unseenIds.has(img.id);
-                                        // TTL: use root image's createdAt for group covers
-                                        const rootImg = rowItems.find(i => !i.parentId) ?? img;
-                                        const daysLeft = getDaysRemaining(rootImg.createdAt);
-                                        return (
-                                            <FeedGridItem
-                                                key={img.id}
-                                                img={img}
-                                                idx={idx}
-                                                isSelected={selectedIdSet.has(img.id)}
-                                                isKeyboardActive={activeIndex === idx || voiceFocusIndex === idx}
-                                                isSelectMode={!!isSelectMode}
-                                                onSelectImage={onSelectImage}
-                                                onToggleSelect={onToggleSelect}
-                                                setActiveIndex={setActiveIndex}
-                                                actions={actions}
-                                                parentSrc={parentSrc}
-                                                groupCount={gc}
-                                                hasGenerating={hasGen}
-                                                onOpenGroup={gc > 1 && row ? () => {
-                                                    actions?.markGroupSeen?.(row.items.map(i => i.id));
-                                                    onExpandedGroupChange(row.id);
-                                                } : undefined}
-                                                staggerDelay={
-                                                    renderSelectMode
-                                                        // In select mode the tile the user just checked leads, the rest
-                                                        // follow a beat later so the eye keeps its anchor.
-                                                        ? (selectedIdSet.has(img.id) ? 0 : 90 + Math.min(idx * 22, 260))
-                                                        : effectiveGroupId ? Math.min(idx * 35, 350) : undefined
-                                                }
-                                                // Der Rückkehr-Zoom galt bisher nur in der Galerie
-                                                // (!effectiveGroupId) — aus der Detailansicht zurück in
-                                                // einen Stapel blieb er deshalb aus. Die Kachel ist dort
-                                                // genauso vorhanden, der Ausschluss war nicht begründet.
-                                                // Im Auswahlmodus bleibt er aus: Dort wird markiert,
-                                                // nicht navigiert.
-                                                isLastViewed={img.id === revealId || (!renderSelectMode && img.id === (returnCoverId ?? ''))}
-                                                isNew={isNew}
-                                                daysRemaining={daysLeft}
-                                                currentLang={state?.currentLang}
-                                                isSource={!img.parentId && !img.isGenerating && (!!effectiveGroupId || renderSelectMode)}
-                                            />
-                                        );
-                                    })}
+                                    {daySections ? (() => {
+                                        // Ein fortlaufender Index ueber die SICHTBAREN Kacheln, damit
+                                        // Tastatur- und Sprachnavigation mit displayImages uebereinstimmen.
+                                        let imgIdx = 0;
+                                        return daySections.flatMap(sec => {
+                                            const closed = !openDays.has(sec.key);
+                                            const header = (
+                                                <button
+                                                    key={`day-${sec.key}`}
+                                                    data-day-header="1"
+                                                    onClick={() => toggleDay(sec.key)}
+                                                    // Negative Aussenabstaende gegen den Zeilenabstand des
+                                                    // Rasters: Der ist fuer Bildkacheln gedacht und laesst
+                                                    // zwischen zwei zugeklappten Tagen sonst eine halbe
+                                                    // Bildhoehe Luft stehen.
+                                                    // Der Zeilenabstand des Rasters wird exakt
+                                                    // aufgehoben (-my-5 bzw. -my-8 bei gap-y-10/16)
+                                                    // und durch einen eigenen ersetzt. Vorher hob
+                                                    // ihn ein ungefaehrer Wert nur teilweise auf,
+                                                    // und zwar an beiden Breiten unterschiedlich —
+                                                    // daher die ungleichen Luecken zwischen den
+                                                    // Tagen.
+                                                    className="col-span-full flex items-center gap-2 py-2 -my-5 sm:-my-8 px-2 -mx-2 rounded-lg text-left
+                                                        hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors duration-150 group/day"
+                                                >
+                                                    <ChevronRight
+                                                        className={`w-4 h-4 shrink-0 text-zinc-400 transition-transform duration-200 ${closed ? '' : 'rotate-90'}`}
+                                                        strokeWidth={2}
+                                                    />
+                                                    {/* Dezenter: Die Kopfzeile ordnet, sie ist nicht
+                                                        der Inhalt. Typo.H4 ist halbfett und in
+                                                        Textfarbe — damit stand das Datum lauter da
+                                                        als die Bilder darunter. */}
+                                                    <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 group-hover/day:text-zinc-800 dark:group-hover/day:text-zinc-200 transition-colors">
+                                                        {sec.label}
+                                                    </span>
+                                                    {sec.daysLeft != null && sec.daysLeft <= WARNING_DAYS && (
+                                                        // Dezent, aber nicht zu uebersehen: Steht der Tag zu,
+                                                        // sind die gelben Punkte an den Kacheln verdeckt, und
+                                                        // dies ist die einzige Stelle, an der die Frist noch
+                                                        // auftaucht.
+                                                        <span className="ml-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium text-zinc-500 dark:text-zinc-400 bg-black/[0.04] dark:bg-white/[0.06]">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                                                            {state?.currentLang === 'de'
+                                                                ? `noch ${Math.max(0, sec.daysLeft)} ${sec.daysLeft === 1 ? 'Tag' : 'Tage'}`
+                                                                : `${Math.max(0, sec.daysLeft)} ${sec.daysLeft === 1 ? 'day' : 'days'} left`}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            );
+                                            if (closed) return [header];
+                                            return [header, ...sec.covers.map(img => renderTile(img, imgIdx++))];
+                                        });
+                                    })() : displayImages.map((img, idx) => renderTile(img, idx))}
 
                                     {/* Layer Composer entry — only inside an expanded stack with 2+ variants.
                                         Matches the parent image's aspect ratio (letterboxed in the square cell)
@@ -862,9 +1296,23 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         <button
                                             onClick={openComposer}
                                             style={{ aspectRatio: `${displayImages[0].width} / ${displayImages[0].height}`, width: '100%', height: 'auto' }}
-                                            className="relative bg-zinc-100 dark:bg-zinc-900/50 flex flex-col items-center justify-center gap-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-zinc-800/60 transition-colors"
+                                            // Dieselbe Flaechensprache wie die Ablagestreifen,
+                                            // aber die Ecken der Bildkacheln: Die sind eckig,
+                                            // und ein gerundeter Kasten mittendrin bricht die
+                                            // Reihe. Rundung ist hier kein Stil, sondern eine
+                                            // Aussage ueber Zugehoerigkeit.
+                                            className="relative flex flex-col items-center justify-center gap-2.5
+                                                bg-black/[0.03] dark:bg-white/[0.04]
+                                                hover:bg-black/[0.05] dark:hover:bg-white/[0.06]
+                                                text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300
+                                                transition-colors duration-200"
                                         >
-                                            <SquaresSubtract className="w-6 h-6" strokeWidth={1.5} />
+                                            {/* Layers2 statt SquaresSubtract: zwei ruhige
+                                                Flaechen uebereinander. Das alte Symbol trug
+                                                eine gestrichelte Kontur und einen Ausschnitt
+                                                und war damit das unruhigste Element im
+                                                ganzen Raster. */}
+                                            <Layers2 className="w-6 h-6" strokeWidth={1.5} />
                                             <span className="text-xs font-medium px-2 text-center leading-tight">
                                                 {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
                                             </span>
@@ -873,36 +1321,45 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                 </div>
                             </>
                         ) : !isLoading && (
-                            <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-lg mx-auto text-center gap-12 animate-in fade-in zoom-in-95 duration-1000 min-h-full">
-                                <div className="flex flex-col items-center gap-8">
-                                    <div className="space-y-2">
-                                        <h1 className="text-sm font-bold tracking-tight text-black dark:text-white">
-                                            {t?.('welcome_title') || 'Welcome to exposé'}
-                                        </h1>
-                                        <p className={`${Typo.Body} text-zinc-500 dark:text-zinc-400 mx-auto text-sm`}>
-                                            {t?.('welcome_empty_desc') || 'Upload photos to edit or generate something new.'}
-                                        </p>
-                                    </div>
+                            /*
+                                Leerer Zustand.
+
+                                Vorher standen hier zwei gleich schwere
+                                Vollbreit-Knoepfe untereinander, eine Ueberschrift
+                                in Fliesstextgroesse (text-sm font-bold) und eine
+                                Verschachtelung, deren aeussere Huelle nur ein
+                                einziges Kind hatte. Dazu siezte der deutsche Text,
+                                waehrend der Rest der App duzt.
+
+                                Jetzt eine Handlung im Vordergrund: die Flaeche
+                                selbst. Sie nimmt den Klick UND den Drop, also
+                                braucht es daneben keinen zweiten Hochladen-Knopf.
+                                Das Generieren bleibt als ruhiger Textlink darunter
+                                — vorhanden, aber nicht im Wettbewerb.
+                            */
+                            <div className="flex-1 flex flex-col items-center justify-center px-6 w-full max-w-[420px] mx-auto gap-7 animate-in fade-in duration-500 min-h-full">
+                                <div className="text-center space-y-1.5">
+                                    <h1 className={Typo.H1}>
+                                        {t?.('welcome_title') || 'Welcome to exposé'}
+                                    </h1>
+                                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                        {t?.('welcome_empty_desc') || 'Upload photos to edit or generate something new.'}
+                                    </p>
                                 </div>
 
-                                <div className="flex flex-col w-full gap-4 max-w-[320px]">
-                                    <Button
-                                        variant="primary-mono"
-                                        size="l"
-                                        onClick={triggerUpload}
-                                        icon={<Upload className="w-5 h-5" />}
-                                    >
-                                        {t?.('action_upload') || 'Upload'}
-                                    </Button>
-                                    <Button
-                                        variant="secondary"
-                                        size="l"
-                                        onClick={onGenerate ?? onCreateNew}
-                                        icon={<Plus className="w-5 h-5" />}
-                                    >
-                                        {t?.('action_generate') || 'Generate image'}
-                                    </Button>
-                                </div>
+                                <UploadDropZone
+                                    onClick={triggerUpload}
+                                    active={isDropActive}
+                                    label={t?.('welcome_drop_cta') || 'Upload and edit'}
+                                    sub={t?.('welcome_drop_sub') || 'or drag photos here'}
+                                />
+
+                                <button
+                                    onClick={onGenerate ?? onCreateNew}
+                                    className="text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
+                                >
+                                    {t?.('action_generate') || 'Generate image'}
+                                </button>
                             </div>
                         )}
                     </div>
@@ -956,7 +1413,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
             {/* Selection SideSheet */}
             {isSelectMode && !isMobile && isSelectionSideSheetOpen && (
-                <div className={`w-[380px] shrink-0 border-l ${Theme.Colors.Border} ${Theme.Colors.CanvasBg} flex flex-col z-10 relative`}>
+                <div className={`w-[380px] shrink-0 ${Theme.Colors.CanvasBg} flex flex-col z-10 relative`}>
                     {selectedIds.length > 0 ? (() => {
                         const selectedImages = images.filter(img => selectedIds.includes(img.id));
                         const selectedImage = selectedImages.length > 0 ? selectedImages[selectedImages.length - 1] : null;

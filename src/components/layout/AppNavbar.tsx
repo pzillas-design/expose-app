@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff, Folder } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, PanelBottom, Maximize2, Minus, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -7,6 +7,9 @@ import { DropdownMenu } from '../ui/DropdownMenu';
 import { GenerationProgressRing } from '../ui/GenerationProgressRing';
 import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
+import { MenuLines } from '@/components/ui/CustomIcons';
+import { useDetailLayout, setDetailLayout } from '@/utils/uiPrefs';
+import { NAV_H, NAV_H_EXPANDED_MOBILE, NAV_H_EXPANDED_DESKTOP } from '@/config/layout';
 import { CanvasImage } from '@/types';
 
 interface AppNavbarProps {
@@ -52,6 +55,10 @@ interface AppNavbarProps {
     onNavigateToImage?: (id: string) => void;
     onGenerateMoreById?: (id: string) => void;
     isGroupDrillDown?: boolean;
+    /** Spanne der Fassungen im Stapel, z. B. "v1–v12". */
+    groupVersionLabel?: string;
+    /** Fassung des gezeigten Bildes, z. B. "v3" — steht abgedunkelt hinter dem Namen. */
+    detailVersion?: string;
     onCloseGroup?: () => void;
     /** 0 = hero/expanded, 1 = compact. Grid mode only. */
     heroProgress?: number;
@@ -122,6 +129,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onNavigateToImage,
     onGenerateMoreById,
     isGroupDrillDown = false,
+    groupVersionLabel,
+    detailVersion,
     onCloseGroup,
     heroProgress,
     onHeroUploadClick,
@@ -142,6 +151,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onRetryVoiceMode
 }) => {
     const isMobile = useMobile();
+    // Direkt gelesen statt durchgereicht: Die Vorliebe meldet ihre Aenderung
+    // selbst, also brauchen weder App noch DetailPage davon zu wissen. Ein
+    // Durchreichen durch zwei Ebenen waere mehr Code fuer dasselbe Ergebnis.
+    const detailLayout = useDetailLayout();
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
     const [isDetailMenuOpen, setIsDetailMenuOpen] = useState(false);
@@ -253,31 +266,31 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const isBlogPost = /^\/blog\/.+/.test(currentPath);
 
     // Grid column adjuster inline item — shared across all grid menus
-    const columnAdjusterItem = onAdjustColumns && gridColumns ? [{
-        label: '',
-        onClick: () => {},
-        render: (
-            <div className="flex items-center justify-between px-4 py-2.5">
-                <span className="text-xs font-normal text-zinc-700 dark:text-zinc-300 font-medium">
-                    Zoom
-                </span>
-                {/* Pill with a thin break between the two buttons */}
-                <div className="flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onAdjustColumns(1); }}
-                        disabled={(gridColumns ?? 2) >= 6}
-                        className="w-8 h-7 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-base font-medium disabled:opacity-30 disabled:pointer-events-none"
-                    >−</button>
-                    <div className="self-stretch w-px bg-white dark:bg-black" />
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onAdjustColumns(-1); }}
-                        disabled={(gridColumns ?? 2) <= 2}
-                        className="w-8 h-7 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-base font-medium disabled:opacity-30 disabled:pointer-events-none"
-                    >+</button>
-                </div>
-            </div>
-        ),
-    }] : [];
+    /**
+     * Kachelgroesse als zwei Eintraege mit Text statt als Pille mit + und −.
+     *
+     * Die Pille war ein Fremdkoerper in einer Liste aus Eintraegen: anderer
+     * Treffbereich, anderes Verhalten beim Ueberfahren, und zwei Zeichen, die
+     * ohne die Ueberschrift "Zoom" daneben nichts sagen. Als Eintraege
+     * verhalten sie sich wie alles andere im Menue, und was sie tun, steht
+     * da.
+     *
+     * Das Menue bleibt offen: Wer vergroessert, will meist zweimal
+     * vergroessern.
+     */
+    const columnAdjusterItem = onAdjustColumns && gridColumns ? [
+        {
+            label: t('tiles_larger') || 'Kacheln größer',
+            icon: <Plus className="w-4 h-4" />,
+            separator: true,
+            onClick: () => { if ((gridColumns ?? 2) > 2) onAdjustColumns(-1); },
+        },
+        {
+            label: t('tiles_smaller') || 'Kacheln kleiner',
+            icon: <Minus className="w-4 h-4" />,
+            onClick: () => { if ((gridColumns ?? 2) < 6) onAdjustColumns(1); },
+        },
+    ] : [];
 
     const balanceDisplay = user && displayCredits !== null && (
         <Tooltip text={t('balance')}>
@@ -325,22 +338,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     const leftContent = isDetail ? (
         <div className="flex items-center gap-1">
-            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" tooltip={t('back')} />
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="soft" tooltip={t('back')} />
             {progressRing}
         </div>
     ) : isCreate ? (
         <div className="flex items-center gap-1">
-            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="ghost" tooltip={t('back')} />
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onBack} variant="soft" tooltip={t('back')} />
             {progressRing}
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
-            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCancelSelectMode} variant="ghost" />
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCancelSelectMode} variant="soft" />
             {progressRing}
         </div>
     ) : isGroupDrillDown ? (
         <div className="flex items-center gap-1">
-            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCloseGroup} variant="ghost" />
+            <RoundIconButton icon={<ChevronLeft className="w-5 h-5" />} onClick={onCloseGroup} variant="soft" />
             {progressRing}
         </div>
     ) : (
@@ -349,7 +362,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <RoundIconButton
                     icon={<ChevronLeft className="w-5 h-5" />}
                     onClick={() => window.history.back()}
-                    variant="ghost"
+                    variant="soft"
                     tooltip="Blog"
                 />
             ) : isSpecialPage ? (
@@ -387,36 +400,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[160px]">
                 {detailInfo}
             </span>
-            <span className="hidden md:contents">
-                <RoundIconButton
-                    icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
-                    onClick={() => setIsDetailMenuOpen(p => !p)}
-                    variant="ghost"
-                    active={isDetailMenuOpen}
-                    tooltip={t('nav_menu')}
-                />
-                {isDetailMenuOpen && (
-                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50">
-                        <DropdownMenu
-                            items={[
-                                { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                                ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
-                                { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
-                                { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
-                            ]}
-                        />
-                    </div>
-                )}
-            </span>
+            {detailVersion && (
+                <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                    {detailVersion}
+                </span>
+            )}
         </div>
     ) : isGroupDrillDown && groupInfo ? (
         <div className="flex items-center gap-1.5">
-            {groupItemCount && groupItemCount > 1 ? (
-                <Folder className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
-            ) : null}
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
                 {groupInfo}
             </span>
+            {groupVersionLabel && (
+                <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                    {groupVersionLabel}
+                </span>
+            )}
         </div>
     ) : (
         <button
@@ -434,7 +433,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             {!isPublic && user && balanceDisplay}
             <div className="relative" ref={gridMenuRef}>
                 <RoundIconButton
-                    icon={<MoreHorizontal className="w-4 h-4" />}
+                    icon={<MenuLines className="w-4 h-4" />}
                     onClick={() => setIsGridMenuOpen(p => !p)}
                     variant="ghost"
                     active={isGridMenuOpen}
@@ -468,28 +467,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         <div className="flex items-center gap-2">
             <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
             {/* Mobile: 3-dot menu in the right corner */}
-            <div className="relative md:hidden" ref={mobileDetailMenuRef}>
-                <RoundIconButton
-                    icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
-                    onClick={() => setIsDetailMenuOpen(p => !p)}
-                    variant="ghost"
-                    active={isDetailMenuOpen}
-                />
-                {isDetailMenuOpen && (
-                    <div className="absolute top-full mt-2 right-0 z-50">
-                        <DropdownMenu
-                            items={[
-                                ...voiceMenuItem.map(v => ({ ...v, onClick: () => { setIsDetailMenuOpen(false); v.onClick(); } })),
-                                { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                                ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
-                                { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
-                                { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
-                            ]}
-                        />
-                    </div>
-                )}
-            </div>
-            {/* Desktop: individual icons */}
+            {/* Herunterladen bleibt als eigener Knopf: Du hattest zwei Symbole
+                genannt, nicht drei, und dieses ist die haeufigste Handlung in
+                der Detailansicht. Es steht zusaetzlich im Menue. */}
             <span className="hidden md:contents">
                 <RoundIconButton
                     icon={<Download className="w-[18px] h-[18px]" />}
@@ -499,41 +479,62 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     tooltipShortcut="D"
                 />
             </span>
-            {detailHasPrompt && (
-                <span className="relative hidden md:block">
-                    <RoundIconButton
-                        icon={<Repeat className="w-[18px] h-[18px]" />}
-                        onClick={onDetailRegenerate}
-                        variant="ghost"
-                        tooltip={t('generate_more')}
-                        tooltipShortcut="M"
-                    />
-                    <ContextTip
-                        storageKey="expose_tip_generate_more_button_v4"
-                        content={
-                                <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
-                                    {lang === 'de' ? 'Tippe auf ' : 'Click '}
-                                <ContextTipChip
-                                    icon={<Repeat className="h-3.5 w-3.5" />}
-                                />
-                                {lang === 'de'
-                                    ? ', um mehr Varianten wie diese zu generieren.'
-                                    : ' to generate more variations like this.'}
-                                </p>
-                        }
-                        placement="below"
-                        enabled={detailIsNew && detailHasPrompt}
-                    />
-                </span>
-            )}
-            <span className="hidden md:contents">
+            {/* Ein Menue, rechts, auf allen Breiten. Vorher lag eines in der
+                Mitte neben dem Titel und ein zweites rechts fuer das Handy —
+                zwei Knoepfe mit demselben Inhalt an zwei Orten. */}
+            <div className="relative" ref={mobileDetailMenuRef}>
                 <RoundIconButton
-                    icon={<PanelRight className="w-[18px] h-[18px]" />}
-                    onClick={onToggleSideSheet}
+                    icon={<MenuLines className="w-[18px] h-[18px]" />}
+                    onClick={() => setIsDetailMenuOpen(p => !p)}
                     variant="ghost"
-                    tooltip={t('nav_sidebar')}
+                    active={isDetailMenuOpen}
+                    tooltip={t('nav_menu')}
                 />
-            </span>
+                {isDetailMenuOpen && (
+                    <div className="absolute top-full mt-2 right-0 z-50">
+                        <DropdownMenu
+                            items={[
+                                ...voiceMenuItem.map(v => ({ ...v, onClick: () => { setIsDetailMenuOpen(false); v.onClick(); } })),
+                                { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
+                                // Die Eingabe-Anordnung: ein Eintrag, drei Zustaende.
+                                //
+                                // Das Menue bleibt beim Klick OFFEN. Man sieht dann
+                                // unmittelbar, was passiert ist, und kann
+                                // weiterschalten, ohne es dreimal zu oeffnen — bei
+                                // einem Rundlauf aus drei Zustaenden ist Zumachen
+                                // nach jedem Schritt das Gegenteil von hilfreich.
+                                //
+                                // Die Beschriftung nennt den Zustand, nicht die
+                                // Handlung, und das Symbol zeigt ihn mit: "Eingabe
+                                // rechts" mit dem Symbol fuer rechts. Sonst muesste
+                                // man raten, ob der Text beschreibt, wo man ist,
+                                // oder wohin es geht.
+                                ...(isMobile ? [] : [{
+                                    label: !isSideSheetVisible
+                                        ? (t('view_fullscreen') || 'Ansicht: Vollbild')
+                                        : detailLayout === 'column'
+                                            ? (t('view_columns') || 'Ansicht: Spalten')
+                                            : (t('view_rows') || 'Ansicht: Zeilen'),
+                                    icon: !isSideSheetVisible
+                                        ? <Maximize2 className="w-4 h-4" />
+                                        : detailLayout === 'column'
+                                            ? <PanelRight className="w-4 h-4" />
+                                            : <PanelBottom className="w-4 h-4" />,
+                                    separator: true,
+                                    onClick: () => {
+                                        if (!isSideSheetVisible) { setDetailLayout('column'); onToggleSideSheet?.(); }
+                                        else if (detailLayout === 'column') setDetailLayout('row');
+                                        else onToggleSideSheet?.();
+                                    },
+                                }]),
+                                ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
+                                { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
+                                { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true, separator: true },
+                            ]}
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     ) : isSelectMode ? (
         <div className="flex items-center gap-1">
@@ -588,7 +589,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <VoiceModeIndicator active={voiceModeActive} state={voiceModeState} level={voiceLevel} error={voiceError} onStop={onStopVoiceMode} onRetry={onRetryVoiceMode} />
                     <div className="relative" ref={gridMenuRef}>
                         <RoundIconButton
-                            icon={<MoreHorizontal className="w-4 h-4" />}
+                            icon={<MenuLines className="w-4 h-4" />}
                             onClick={() => setIsGridMenuOpen(p => !p)}
                             variant="ghost"
                             active={isGridMenuOpen}
@@ -649,7 +650,30 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     if (isHeroMode) {
         const hp = heroProgress!;
         const isScrolled = hp > 0.4;
-        const showBorder = hp > 0.9;
+
+        // ── Die Leiste folgt dem Scroll, statt an Schwellen zu springen ──────
+        //
+        // heroProgress ist ein stetiger Wert zwischen 0 und 1, der pro
+        // Scroll-Frame aktualisiert wird. Vorher wurde davon nur `> 0.4` und
+        // `> 0.9` benutzt: Die Hoehe sprang an einem Punkt, der Hintergrund an
+        // einem zweiten, und eine 300-ms-Animation hat die beiden Spruenge
+        // nachtraeglich weichgezeichnet. Das ist der Grund, warum es nicht
+        // rund wirkte — animiert wurde eine Reaktion auf einen Sprung, nicht
+        // die Bewegung selbst. Zwischen 0,4 und 0,9 stand die Leiste
+        // ausserdem schon schmal da, aber noch voellig durchsichtig, sodass
+        // der Inhalt ohne alles dahinter durchlief.
+        //
+        // Jetzt werden Hoehe und Deckkraft direkt aus hp gerechnet. Die Hoehe
+        // bekommt bewusst KEINE CSS-Animation: Sie aendert sich ohnehin jeden
+        // Frame, und eine laufende Transition wuerde bei jedem neuen Wert von
+        // vorn beginnen — das ergibt genau das gummiartige Nachziehen.
+        const expandedH = isMobile ? NAV_H_EXPANDED_MOBILE : NAV_H_EXPANDED_DESKTOP;
+        const collapsedH = NAV_H;
+        const headerH = expandedH + (collapsedH - expandedH) * hp;
+        // Der Untergrund kommt frueher und ist bei zwei Dritteln des Weges
+        // voll da — so steht etwas hinter dem Inhalt, bevor er die Leiste
+        // erreicht, statt erst kurz vor Schluss aufzutauchen.
+        const surfaceOpacity = Math.min(1, Math.max(0, (hp - 0.1) / 0.55));
 
         return (
             <header
@@ -660,18 +684,44 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 // Weichzeichner ein, den es in dieser Ansicht gar nicht gibt.
                 // Mit key wird neu aufgebaut und startet im Endzustand.
                 key="nav-gallery"
-                className={`fixed top-0 left-0 right-0 z-50 flex items-center px-4 md:px-6 border-b ${
-                    // Auch die Kindelemente stillstellen: Knöpfe und Pfeil
-                    // skalieren mit isScrolled und würden sonst mitlaufen.
-                    heroTransitions ? 'transition-all duration-300' : 'transition-none [&_*]:!transition-none'
-                } ${showBorder
-                    ? 'border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/85'
-                    : 'border-transparent bg-white/0 dark:bg-zinc-950/0'
-                    } ${isScrolled
-                        ? 'h-14 backdrop-blur-none'
-                        : 'h-[88px] md:h-[148px] backdrop-blur-none border-transparent pointer-events-none'
-                    }`}
+                style={{ height: `${headerH}px` }}
+                className={`fixed top-0 left-0 right-0 z-50 flex items-center px-4 md:px-6 ${
+                    // Keine Linie mehr. Die Kante entsteht allein aus dem
+                    // Untergrund, und der laeuft unten weich aus.
+                    ''
+                } ${
+                    // Nur die Kindelemente stillstellen, solange die Ansicht
+                    // gerade wechselt — Knoepfe und Pfeil skalieren mit
+                    // isScrolled und wuerden sonst mitlaufen.
+                    heroTransitions ? '' : '[&_*]:!transition-none'
+                } ${hp < 0.4 ? 'pointer-events-none' : ''}`}
             >
+                {/*
+                    Untergrund als eigene Ebene.
+
+                    Der Weichzeichner sitzt bewusst NICHT auf der Kopfzeile
+                    selbst: Deren Hoehe aendert sich beim Scrollen jeden Frame,
+                    und ein backdrop-filter muesste dann jedes Mal neu
+                    abgetastet werden — das war das Flackern, wegen dem der
+                    Weichzeichner zwischenzeitlich ganz raus war. Diese Ebene
+                    hat eine feste Groesse innerhalb der Kopfzeile und aendert
+                    nur ihre Deckkraft, was die Grafikkarte allein erledigt.
+
+                    Stark weichgezeichnet, aber nur leicht eingefaerbt: Man
+                    sieht, dass etwas dahinter ist, ohne dass es zur Flaeche
+                    wird. Ohne Maske: Ein weiches Auslaufen nach unten sah auf
+                    Textseiten wie ein Farbverlauf aus statt wie eine Kante.
+                    Eine durchscheinende, weichgezeichnete Flaeche trennt auch
+                    mit gerader Unterkante genug — so machen es die
+                    Systemleisten von macOS und iOS auch.
+                */}
+                <div
+                    aria-hidden
+                    className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
+                    style={{
+                        opacity: surfaceOpacity,
+                    }}
+                />
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
                     {isBlogPost ? (
@@ -772,18 +822,23 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         {/* Official Logo */}
                         <Logo
                             className={`shrink-0 object-contain transition-all duration-500 ease-out ${isScrolled
-                                ? 'w-7 h-7'
-                                : 'w-[30.5px] h-[30.5px] md:w-[45px] md:h-[45px] lg:w-[52px] h-[52px] group-active:scale-95'
+                                ? 'w-6 h-6'
+                                // Eine Stufe kleiner. Nebenbei: In der ausgefahrenen
+                                // Angabe stand zweimal eine Hoehe (h-[30.5px] und
+                                // h-[52px] ohne lg:), die zweite hat die erste auf
+                                // allen Breiten ueberschrieben — das Logo war also
+                                // nie quadratisch, sondern immer 52 hoch.
+                                : 'w-[26px] h-[26px] md:w-[38px] md:h-[38px] lg:w-[44px] lg:h-[44px] group-active:scale-95'
                                 }`}
                         />
 
                         {/* Text "EXPOSE" — ml transitions to 0 when collapsed so icon stays centered */}
                         <div
-                            className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${isScrolled ? 'w-0 ml-0 opacity-0' : 'w-[72px] md:w-[106px] lg:w-[129px] ml-[11.4px] opacity-100'
+                            className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center ${isScrolled ? 'w-0 ml-0 opacity-0' : 'w-[62px] md:w-[90px] lg:w-[110px] ml-[10px] opacity-100'
                                 }`}
                         >
                             <span
-                                className="font-kumbh font-normal text-[18.5px] md:text-[27px] lg:text-[31.5px] text-zinc-900 dark:text-white whitespace-nowrap leading-none pb-[1px] md:pb-[1.5px] lg:pb-[2px]"
+                                className="font-kumbh font-normal text-[16px] md:text-[23px] lg:text-[27px] text-zinc-900 dark:text-white whitespace-nowrap leading-none pb-[1px] md:pb-[1.5px] lg:pb-[2px]"
                                 style={{ letterSpacing: '-0.005em' }}
                             >
                                 exposé
@@ -848,7 +903,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                             }`}
                                         onClick={() => setIsGridMenuOpen(p => !p)}
                                     >
-                                        <MoreHorizontal className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                        <MenuLines className={`shrink-0 transition-all duration-300 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
                                         <div
                                             className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'
                                                 }`}
@@ -925,8 +980,27 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 // Keine Übergänge: Diese Kopfzeile ist immer schmal, es gibt
                 // nichts zu animieren — und beim Ansichtswechsel wäre jede
                 // Animation ein Fehler, kein Effekt.
-                className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6"
+                className="fixed top-0 left-0 right-0 z-50 h-[var(--nav-h)] flex items-center px-4 md:px-6"
             >
+            {/*
+                Untergrund als eigene Ebene, nicht auf der Kopfzeile selbst.
+
+                Eine Maske beschneidet ALLE Nachkommen auf die Flaeche des
+                maskierten Elements. Lag sie auf der Kopfzeile, verschwand jedes
+                Aufklappmenue spurlos: Die Liste steht per `top-full` vollstaendig
+                unterhalb der Kopfzeile, also im vollstaendig transparenten Teil
+                der Maske. Genau deshalb liess sich das Menue in der
+                Detailansicht nicht mehr oeffnen — es wurde geoeffnet, aber nicht
+                gezeichnet.
+
+                Gleiche Bauweise wie in der Galerie-Kopfzeile: Der
+                Weichzeichner sitzt auf einer Ebene darunter, die Kopfzeile
+                selbst beschneidet nichts.
+            */}
+            <div
+                aria-hidden
+                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
+            />
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
                     <button
@@ -941,12 +1015,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 {/* CENTER: Group title — same font as the detail view; a folder icon
                     to the left of the title is the minimal "this is a stack" signal. */}
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-10 max-w-[60%]">
-                    {groupItemCount && groupItemCount > 1 ? (
-                        <Folder className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
-                    ) : null}
                     <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                         {groupInfo}
                     </span>
+                    {groupVersionLabel && (
+                        <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                            {groupVersionLabel}
+                        </span>
+                    )}
                 </div>
 
                 {/* RIGHT: balance + menu — the layer composer is now entered via the
@@ -961,8 +1037,27 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     return (
         <header
             key="nav-detail"
-            className={`fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6`}
+            className={`fixed top-0 left-0 right-0 z-50 h-[var(--nav-h)] flex items-center px-4 md:px-6`}
         >
+            {/*
+                Untergrund als eigene Ebene, nicht auf der Kopfzeile selbst.
+
+                Eine Maske beschneidet ALLE Nachkommen auf die Flaeche des
+                maskierten Elements. Lag sie auf der Kopfzeile, verschwand jedes
+                Aufklappmenue spurlos: Die Liste steht per `top-full` vollstaendig
+                unterhalb der Kopfzeile, also im vollstaendig transparenten Teil
+                der Maske. Genau deshalb liess sich das Menue in der
+                Detailansicht nicht mehr oeffnen — es wurde geoeffnet, aber nicht
+                gezeichnet.
+
+                Gleiche Bauweise wie in der Galerie-Kopfzeile: Der
+                Weichzeichner sitzt auf einer Ebene darunter, die Kopfzeile
+                selbst beschneidet nichts.
+            */}
+            <div
+                aria-hidden
+                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
+            />
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
                 {leftContent}

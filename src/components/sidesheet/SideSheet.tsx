@@ -5,7 +5,7 @@ import {
 } from '@/types';
 import {
     Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Play, Plus, Check,
-    Undo2, Redo2, Layers, MoreHorizontal, Settings2
+    Undo2, Redo2, Layers, MoreHorizontal, Settings2, CornerDownLeft
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
@@ -16,6 +16,50 @@ import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/D
 import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { GenerationSettingsModal } from '@/components/modals/GenerationSettingsModal';
 import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from '@/types';
+import { useEnterGenerates } from '@/utils/uiPrefs';
+
+/**
+ * Schluessel des einmaligen Hinweises auf das neue Standardmodell.
+ * ContextTip fuehrt darunter Buch, ob er schon gezeigt wurde, und sorgt
+ * nebenbei dafuer, dass nicht zwei Hinweise gleichzeitig aufgehen.
+ */
+const MODEL_HINT_KEY = 'expose_tip_seedream_default_v1';
+
+/**
+ * Die Chips unter "Vorlagen".
+ *
+ * Eine Angabe fuer alle drei Faelle: die Vorlagen selbst, der Knopf fuer eine
+ * neue, und der leere Zustand. Vorher dreimal dieselbe Kette abgeschrieben,
+ * mit je eigenen Abweichungen im Abstand.
+ */
+const TEMPLATE_CHIP = `flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium group
+    bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80
+    transition-colors duration-150`;
+
+/** Innenabstand des Panels oben und unten, in Pixeln (entspricht pt-6/pb-6). */
+const PANEL_PAD_Y = 24;
+
+/**
+ * Die Chips unter "Anmerkungen" — Pinselstriche, Stempel, Formen.
+ *
+ * Zweimal dieselbe Klassenkette abgeschrieben, und entsprechend uneben: links
+ * 10 Pixel Abstand, rechts 4, dazu ein Kreuz von 12 Pixeln in einem Feld von
+ * 20. Jetzt eine Angabe, rund wie die uebrigen Chips der Anwendung, innen
+ * gleichmaessig, und das Kreuz gross genug, um es zu treffen.
+ *
+ * Der Hintergrund in Schwarz/Weiss mit Deckkraft statt in Zink-Toenen: So
+ * sitzt der Chip auf hellem wie dunklem Grund gleich, und er passt zu den
+ * Ablageflaechen und dem Kachel-Abzeichen.
+ */
+const ANNOTATION_CHIP = `flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-full text-[12px] font-medium
+    bg-black/[0.06] dark:bg-white/[0.08] text-zinc-600 dark:text-zinc-300
+    hover:bg-black/[0.10] dark:hover:bg-white/[0.13] hover:text-zinc-900 dark:hover:text-zinc-100
+    transition-colors duration-150`;
+
+const ANNOTATION_CHIP_CLOSE = `w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0
+    text-zinc-400 dark:text-zinc-500
+    hover:text-zinc-900 dark:hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/[0.12]
+    transition-colors duration-150`;
 import { saveGenerationSettings, loadGenerationSettings } from '@/utils/generationSettings';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
@@ -69,6 +113,13 @@ interface SideSheetProps {
     qualityMode: GenerationQuality;
     onQualityModeChange: (mode: GenerationQuality) => void;
     templates: PromptTemplate[];
+    /**
+     * Zeilenanordnung der Detailansicht: Bild oben, Panel unten.
+     * Bewusst eine Prop und nicht direkt aus den Vorlieben gelesen — das
+     * Seitenpanel steht auch in der Galerie und auf der Erstellen-Seite, und
+     * dort gibt es diese Anordnung nicht.
+     */
+    rowLayout?: boolean;
     onRefreshTemplates?: () => void;
     onSaveTemplate?: (template: any) => Promise<any>;
     onEditTemplate?: (template: PromptTemplate) => void;
@@ -103,7 +154,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onAddUserItem, onDeleteUserItem, maskTool, onMaskToolChange,
         activeShape, onActiveShapeChange, onActiveAnnotationChange,
         onInteractionStart: onInteractionStartExt, onInteractionEnd: onInteractionEndExt,
-        qualityMode, onQualityModeChange, templates, onSaveTemplate, onEditTemplate,
+        qualityMode, onQualityModeChange, templates, rowLayout = false, onSaveTemplate, onEditTemplate,
         onDeleteTemplate, onSaveRecentPrompt, onUpdateImageTitle, onDownload,
         onGenerateMore, onNavigateParent, userProfile, width
     } = props;
@@ -129,7 +180,33 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     React.useEffect(() => {
         setPreviewSettings(prev => prev.resolution === qualityMode ? prev : { ...prev, resolution: qualityMode });
     }, [qualityMode]);
+    // Einmaliger Hinweis auf das neue Standardmodell.
+    //
+    // Nur fuer Bestandsnutzer: Wer schon eine Wahl gespeichert hat, bekommt den
+    // neuen Standard nicht aufgedrueckt — sonst wuerde eine bewusste
+    // Entscheidung ueberschrieben. Der Hinweis ist der Ersatz dafuer: zeigen,
+    // nicht umstellen. Wer bereits Seedream nutzt, sieht ihn nie.
+    const [showModelHint, setShowModelHint] = React.useState(false);
+    React.useEffect(() => {
+        // Ob der Hinweis schon gezeigt wurde, verwaltet ContextTip selbst ueber
+        // storageKey — hier nur die Frage, ob er ueberhaupt gemeint ist. Wer
+        // bereits Seedream nutzt, braucht ihn nicht.
+        //
+        // Absichtlich nur beim Aufbau: Er soll nicht bei jedem Modellwechsel
+        // wieder erscheinen.
+        if (previewSettings.provider !== 'seedream') setShowModelHint(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    // Das Wegblenden und Merken uebernimmt ContextTip ueber storageKey. Hier
+    // nur noch das vorzeitige Beenden, wenn der Nutzer von sich aus in die
+    // Einstellungen geht oder das Modell wechselt — dann hat der Hinweis seinen
+    // Zweck erfuellt und braucht nicht auszulaufen.
+    const dismissModelHint = React.useCallback(() => {
+        setShowModelHint(false);
+    }, []);
+
     const handleSettingsChange = (next: GenerationSettings) => {
+        dismissModelHint();
         setPreviewSettings(next);
         // Persist so imageService.generateImage can read at invoke time.
         saveGenerationSettings(next);
@@ -313,11 +390,34 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
 
     // ── Prompt auto-resize ──
+    //
+    // Waechst mit dem Text, aber zwischen zwei Grenzen. Leer faellt das Feld
+    // auf eine knappe Hoehe zurueck — ein halb leerer Kasten von 140 Pixeln war
+    // viel Flaeche fuer nichts. Nach oben ist Schluss, dann scrollt der Text
+    // IM Feld, statt die Knoepfe darunter immer weiter nach unten zu schieben.
+    //
+    // Das ist die Bauweise jedes Chat-Eingabefeldes, und sie loest nebenbei die
+    // Frage nach einer zweiten Spalte fuer die Knoepfe: Die braucht es nicht,
+    // wenn das Feld selbst nicht mehr waechst.
+    const isMobileSheet = isMobile && !props.disableMobileSheet;
+
+    // Mindesthoehe je nach Anordnung.
+    //
+    // In der Spaltenansicht hat die Eingabe die ganze Panelhoehe zur
+    // Verfuegung; dort wirkt ein flaches Feld gedrueckt, und etwas Luft unter
+    // dem Platzhalter laedt eher zum Schreiben ein. Im Zeilenmodus ist die
+    // Leiste selbst niedrig — dort waere dieselbe Hoehe der ganze Platz.
+    const PROMPT_MIN_H = rowLayout ? 72 : 128;
+    const PROMPT_MAX_H = 240;
     useLayoutEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${Math.max(textareaRef.current.scrollHeight, 80)}px`;
-        }
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = 'auto';
+        const next = Math.min(Math.max(el.scrollHeight, PROMPT_MIN_H), PROMPT_MAX_H);
+        el.style.height = `${next}px`;
+        // Nur scrollen, wenn die Obergrenze erreicht ist — sonst blitzt beim
+        // Tippen eine Bildlaufleiste auf.
+        el.style.overflowY = el.scrollHeight > PROMPT_MAX_H ? 'auto' : 'hidden';
     }, [prompt]);
 
     // ── Entwurf beim Bildwechsel laden ──────────────────────────────────────
@@ -567,6 +667,48 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onGenerate(finalPrompt, prompt, activeTemplate?.id, controlValues);
     };
 
+    /**
+     * Generieren per Tastatur.
+     *
+     * Bewusst ⌘↵ statt ⏎ allein: Das Prompt-Feld ist mehrzeilig, ein blankes
+     * Enter muss dort einen Zeilenumbruch machen. ⌘↵ ist ausserdem das, was
+     * Nutzer aus Slack, Linear und GitHub mitbringen.
+     *
+     * Der Abgleich laeuft ueber die gesamte Seite, nicht nur ueber das
+     * Textfeld: Wer gerade einen Variablen-Chip gesetzt hat, soll nicht erst
+     * zurueck ins Feld klicken muessen.
+     */
+    // Am Knopf steht der einfachere der beiden Wege. Befehls-/Strg+Enter gilt
+    // immer und greift ueberall auf der Seite; Enter allein laesst sich in den
+    // Einstellungen abschalten, und dann steht dort wieder das laengere
+    // Kuerzel — sonst verspraeche der Knopf etwas, das nicht mehr gilt.
+    const enterGenerates = useEnterGenerates();
+    const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    // Der Zeilenschalter als Symbol, nicht als Zeichen: ↵ ist ein
+    // Schriftzeichen, dessen Groesse und Lage zur Grundlinie die Schrift
+    // bestimmt — deshalb sass es nie mittig. Das Befehlstasten-Zeichen ⌘
+    // bleibt Text, das ist in allen Systemschriften sauber gezeichnet.
+    const enterIcon = <CornerDownLeft className="w-[1.05em] h-[1.05em]" strokeWidth={2} />;
+    const generateShortcutLabel = enterGenerates
+        ? enterIcon
+        : <>{isMac ? '⌘' : 'Strg'}{enterIcon}</>;
+    // Bewusst kein Hinweistext am Knopf: Das Zeichen im Knopf sagt es bereits,
+    // und wer es nicht kennt, klickt — was ohnehin funktioniert. Ein Kasten,
+    // der bei jedem Ueberfahren des wichtigsten Knopfes aufgeht, waere dauernd
+    // im Weg.
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return;
+            // Modale Dialoge haben eigene Enter-Bedeutungen — denen nicht
+            // dazwischenfunken.
+            if (document.querySelector('[role="dialog"]')) return;
+            e.preventDefault();
+            handleGenerate();
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    });
+
     // Voice: unified generation + prompt events (no more DOM hacks)
     useEffect(() => {
         const onTriggerGeneration = () => handleGenerate();
@@ -758,7 +900,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const hasCommentAnnotations = visibleAnns.length > 0;
 
     // ─── PROMPT MODE (Main View) ───────────────────────────────────────────────
-    const isMobileSheet = isMobile && !props.disableMobileSheet;
 
     const sheetContent = (
         <>
@@ -794,13 +935,51 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                     </div>
                 )}
 
-                <div className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6 flex flex-col gap-5">
+                {/*
+                    Im Zeilenmodus zwei Spalten statt einer langen Bahn.
+
+                    Die Spaltenanordnung quer gestreckt ergab ein breites, fast
+                    leeres Band: Die Eingabe lief ueber die ganze Breite, die
+                    Knoepfe standen an den gegenueberliegenden Bildschirmraendern,
+                    und die Vorlagen rutschten darunter aus dem Blick — auf
+                    einem grossen Bildschirm musste man scrollen, um etwas zu
+                    sehen, wofuer reichlich Platz da war.
+
+                    Jetzt: Eingabe links, Vorlagen rechts, zusammen auf eine
+                    lesbare Breite begrenzt und mittig gesetzt. Was an den
+                    Seiten frei bleibt, bleibt frei — das ist ruhiger als eine
+                    Zeile, die bis in beide Ecken reicht.
+                */}
+                <div
+                    className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6">
+                    {/* Eigene Ebene fuer die Anordnung, damit ihre Hoehe messbar
+                        ist: Der Behaelter traegt den Innenabstand, der sich
+                        aendert — sich selbst zu messen hiesse, das Ergebnis in
+                        die Messung einzurechnen. */}
+                    <div
+                        className={rowLayout
+                            // Die Textspalte bekommt eine eigene Obergrenze, nicht
+                            // nur das Paar. Eine Eingabe, die ueber 1000 Pixel breit
+                            // laeuft, liest sich schlecht und schiebt ihre Knoepfe an
+                            // die Raender — das Paar zu begrenzen haette das auf
+                            // breiten Schirmen nicht verhindert.
+                            ? 'w-full grid grid-cols-[minmax(0,760px)_minmax(240px,320px)] justify-center gap-x-8 gap-y-5 items-start'
+                            : 'flex flex-col gap-5'}
+                    >
 
                     <>
                             {/* ── REFINE Section ── */}
                             <section className="space-y-3">
 
-                                <div className={`bg-zinc-100/80 dark:bg-zinc-900/80 ${Theme.Geometry.RadiusXl} p-5 space-y-5 transition-all`}>
+                                {/* Aus dem System statt eigener Werte:
+                                    - RadiusLg (16 px) statt RadiusXl (24 px). Der Token
+                                      sagt selbst, wofuer er da ist — "Cards/side-sheets"
+                                      gegen "Modals/Overlays". Die Karte ist eine Karte.
+                                    - SurfaceSubtle statt zinc-100/80 bzw. zinc-900/80.
+                                      Letzteres lag im Dunkelmodus so dicht an der
+                                      Hintergrundfarbe zinc-950, dass die Karte kaum
+                                      abgesetzt war. */}
+                                <div className={`${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.RadiusLg} ${rowLayout ? 'p-5 space-y-4' : 'p-6 space-y-6'} transition-all`}>
                                     {/* Prompt Textarea */}
                                     <div>
                                         <textarea
@@ -808,13 +987,27 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             data-voice-action="prompt-input"
                                             value={prompt}
                                             onChange={e => handlePromptChange(e.target.value)}
+                                            onKeyDown={e => {
+                                                // Enter loest aus, Umschalt+Enter macht einen
+                                                // Zeilenumbruch — so, wie es Nutzer aus jedem
+                                                // Chatfenster kennen.
+                                                //
+                                                // Waehrend einer laufenden Umwandlung (IME, etwa
+                                                // bei japanischer Eingabe) bestaetigt Enter das
+                                                // Wort und darf nicht generieren.
+                                                if (!enterGenerates) return;
+                                                if (e.key !== 'Enter' || e.shiftKey || (e.nativeEvent as any).isComposing) return;
+                                                if (e.metaKey || e.ctrlKey) return; // uebernimmt der globale Abgleich
+                                                e.preventDefault();
+                                                handleGenerate();
+                                            }}
                                             placeholder={t('describe_changes') || 'Describe your changes…'}
                                             disabled={selectedImage?.isGenerating}
                                             autoComplete="off"
                                             autoCorrect="off"
                                             autoCapitalize="off"
                                             spellCheck={false}
-                                            className={`w-full bg-transparent outline-none ${Typo.Prompt} resize-none min-h-[140px] overflow-hidden text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600`}
+                                            className={`w-full bg-transparent outline-none ${Typo.Prompt} resize-none no-scrollbar text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600`}
                                         />
                                     </div>
 
@@ -939,15 +1132,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 key="masks"
                                                                 type="button"
                                                                 onClick={() => onModeChange('brush')}
-                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                                                                className={ANNOTATION_CHIP}
                                                             >
                                                                 <span>{masks.length > 1 ? `${masks.length}× ` : ''}{t('brush_label')}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); if (!selectedImage?.annotations) return; updateAnnotationsWithHistory(selectedImage.annotations.filter(a => a.type !== 'mask_path')); }}
-                                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-300/50 dark:hover:bg-zinc-600/50 transition-colors"
+                                                                    className={ANNOTATION_CHIP_CLOSE}
                                                                 >
-                                                                    <X className="w-3 h-3" />
+                                                                    <X className="w-3.5 h-3.5" strokeWidth={2.25} />
                                                                 </span>
                                                             </button>
                                                         );
@@ -963,15 +1156,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 key={ann.id}
                                                                 type="button"
                                                                 onClick={() => onModeChange('brush')}
-                                                                className="flex items-center gap-1.5 pl-2.5 pr-1 py-1.5 rounded-lg text-[12px] font-medium bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-all"
+                                                                className={ANNOTATION_CHIP}
                                                             >
                                                                 <span>{label}</span>
                                                                 <span
                                                                     role="button"
                                                                     onClick={e => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                                                                    className="w-5 h-5 rounded-full flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-300/50 dark:hover:bg-zinc-600/50 transition-colors"
+                                                                    className={ANNOTATION_CHIP_CLOSE}
                                                                 >
-                                                                    <X className="w-3 h-3" />
+                                                                    <X className="w-3.5 h-3.5" strokeWidth={2.25} />
                                                                 </span>
                                                             </button>
                                                         );
@@ -993,8 +1186,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         className="relative w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
                                                     >
                                                         <Camera className="w-4 h-4" />
+                                                        {/* 16 Pixel waren fuer eine Ziffer mit Fettschrift zu eng,
+                                                            die Zahl sass sichtbar ausser Mitte. Jetzt 18, mittig ueber
+                                                            grid, und ein Ring in der Hintergrundfarbe, damit das
+                                                            Abzeichen sich vom Knopf absetzt statt auf ihm zu kleben. */}
                                                         {(referenceAnns.length + (props.createReferenceFiles?.length ?? 0)) > 0 && (
-                                                            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                                            <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-orange-500 text-white text-[10px] font-semibold tabular-nums leading-none grid place-items-center ring-2 ring-white dark:ring-zinc-950">
                                                                 {referenceAnns.length + (props.createReferenceFiles?.length ?? 0)}
                                                             </span>
                                                         )}
@@ -1045,9 +1242,24 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         <div className="ml-auto flex items-center gap-3">
                                             {/* Settings — round icon button with Tooltip, same pattern as the reference-image button. */}
                                             <div className="relative shrink-0">
+                                                {showModelHint && (
+                                                    <ContextTip
+                                                        storageKey={MODEL_HINT_KEY}
+                                                        content={
+                                                            <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
+                                                                {lang === 'de'
+                                                                    ? 'Neu: Seedream 5 Flash — bessere Bilder, günstiger.'
+                                                                    : 'New: Seedream 5 Flash — better images, cheaper.'}
+                                                            </p>
+                                                        }
+                                                        placement="auto"
+                                                        enabled
+                                                        onDismiss={dismissModelHint}
+                                                    />
+                                                )}
                                                 <Tooltip text={lang === 'de' ? 'Bild-Einstellungen' : 'Image settings'} side="top">
                                                     <button
-                                                        onClick={() => setIsSettingsModalOpen(true)}
+                                                        onClick={() => { dismissModelHint(); setIsSettingsModalOpen(true); }}
                                                         aria-label={lang === 'de' ? 'Bild-Einstellungen' : 'Image settings'}
                                                         className="h-10 w-10 flex items-center justify-center rounded-full text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
                                                     >
@@ -1066,6 +1278,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         data-voice-action="generate-button"
                                                         variant="primary"
                                                         tooltip={t('generate')}
+                                                        tooltipShortcut={generateShortcutLabel}
                                                         tooltipSide="top"
                                                     />
                                                 ) : (
@@ -1074,6 +1287,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         data-voice-action="generate-button"
                                                         variant="generate"
                                                         size="m"
+                                                        // Die Button-Komponente hat das schon: <kbd> in
+                                                        // Monospace bei 40 % Deckkraft, auf dem Handy
+                                                        // ausgeblendet. Kein eigener Stil noetig.
+                                                        shortcut={w < 360 ? undefined : generateShortcutLabel}
                                                         className={`${w < 360 ? 'px-3 min-w-[44px]' : 'px-5'} shrink-0`}
                                                     >
                                                         {w < 360 ? (
@@ -1089,9 +1306,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                 </div>
                             </section>
 
-                                {/* ── PRESETS Section ── */}
-                                <div className="mt-auto pt-2 text-zinc-800 dark:text-zinc-200">
-                                    <div className="py-3">
+                                {/* ── PRESETS Section ──
+                                    `mt-auto` schob die Vorlagen an das untere Ende der
+                                    Spalte. Bei einem hohen Panel stand dadurch eine
+                                    Bildschirmhoehe Leere zwischen Eingabe und Vorlagen,
+                                    und man musste scrollen, um etwas zu sehen, das zur
+                                    Eingabe gehoert. Jetzt stehen sie direkt darunter;
+                                    was unten frei bleibt, bleibt frei. */}
+                                <div className="pt-1 text-zinc-800 dark:text-zinc-200">
+                                    <div className="pt-1 pb-2.5">
                                         <Eyebrow muted>{t('presets_label')}</Eyebrow>
                                     </div>
                                     <div className="animate-in fade-in slide-in-from-top-1 duration-150 flex flex-wrap gap-2">
@@ -1099,7 +1322,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             <button
                                                 key={tpl.id}
                                                 onClick={() => handleSelectTemplate(tpl)}
-                                                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 transition-all duration-150 group text-[12px] font-medium"
+                                                className={TEMPLATE_CHIP}
                                             >
                                                 {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
                                                 <span className="text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
@@ -1110,21 +1333,28 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         {displayTemplates.length === 0 ? (
                                             <button
                                                 onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80 transition-all text-[12px] font-medium text-zinc-500 dark:text-zinc-400"
+                                                className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
                                             >
                                                 <Plus className="w-3 h-3" />
                                                 {t('new_preset') || 'Neue Vorlage'}
                                             </button>
                                         ) : (
                                             <div className="relative inline-flex shrink-0">
-                                                <RoundIconButton
-                                                    icon={<MoreHorizontal className="w-4 h-4" />}
-                                                    onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
-                                                    tooltip={t('edit_presets')}
-                                                    tooltipSide="top"
-                                                    variant="ghost"
-                                                    data-voice-action="open-presets-manager"
-                                                />
+                                                {/* Derselbe Chip wie die Vorlagen daneben, nur mit
+                                                    einem Plus: Ein runder Knopf in einer Reihe
+                                                    eckiger Chips sah aus wie etwas anderes, obwohl
+                                                    er dazugehoert — und drei Punkte sagen "mehr
+                                                    davon", gemeint ist "eine neue". */}
+                                                <Tooltip text={t('edit_presets')} side="top">
+                                                    <button
+                                                        onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
+                                                        data-voice-action="open-presets-manager"
+                                                        aria-label={t('edit_presets')}
+                                                        className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </Tooltip>
                                                 <ContextTip
                                                     storageKey="expose_tip_presets_manage_v1"
                                                     text={lang === 'de'
@@ -1139,6 +1369,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     </div>
                                 </div>
                     </>
+                    </div>
                 </div>
             </div>
         </>
