@@ -271,7 +271,22 @@ export const Button: React.FC<ButtonProps> = ({
             {children}
             {!isLoading && icon && iconPosition === 'right' && React.cloneElement(icon as React.ReactElement, { className: `w-4 h-4 ${(icon as React.ReactElement).props.className || ''}` })}
             {!isLoading && shortcut && (
-                <kbd className="hidden sm:inline-flex items-center font-mono text-[11px] opacity-40 -ml-0.5">{shortcut}</kbd>
+                /*
+                    Groesse relativ zur Beschriftung, nicht in festen Pixeln.
+
+                    Die Prop gab es, benutzt wurde sie bis heute nirgends — die
+                    11 Pixel waren also nie an einem echten Fall geprueft. Sie
+                    stammen aus der Tooltip-Darstellung, wo Kuerzel einzelne
+                    Grossbuchstaben sind (A, M, E). Symbole wie ⌘ und ↵ zeichnen
+                    die meisten Schriften deutlich kleiner als einen Buchstaben
+                    derselben Groesse, und bei 11 Pixeln bleibt davon nichts
+                    Lesbares uebrig.
+
+                    1em folgt der Beschriftung und waechst mit jeder Knopfgroesse
+                    mit. Mehr Deckkraft dazu: 40 % waren auf dem Farbverlauf des
+                    Generieren-Knopfes kaum zu sehen.
+                */
+                <kbd className="hidden sm:inline-flex items-center font-mono text-[1em] leading-none opacity-60 ml-0.5">{shortcut}</kbd>
             )}
         </button>
     );
