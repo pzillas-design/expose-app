@@ -1116,13 +1116,21 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     // Linie daneben waere eine zweite Aussage ueber dieselbe
                     // Grenze. Der Ziehgriff zum Verbreitern sitzt ohnehin dort
                     // und zeigt sie an, sobald man ihn braucht.
-                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 ${isResizing ? 'select-none' : 'md:transition-[width,height] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
+                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 ${isResizing ? 'select-none' : 'md:transition-[width,height] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && (isMobile || isRowLayout) ? 'hidden' : ''}`}
                     style={isMobile
                         ? undefined
                         : isRowLayout
                             // Keine gesetzte Hoehe: Die Leiste nimmt, was das Bild
                             // uebrig laesst. Damit rueckt sie unmittelbar an das
                             // Bild heran, und es gibt nichts mehr zu ziehen.
+                            //
+                            // Ausgeblendet wird sie ueber `hidden` in der
+                            // Klassenliste, nicht ueber eine Hoehe von 0: Im
+                            // Seitenmodus schrumpft eine Breite sichtbar zusammen,
+                            // hier gibt es nichts zu schrumpfen — die Leiste
+                            // bekommt ihre Hoehe vom uebrigen Platz, und 0 waere
+                            // wirkungslos geblieben. Genau daran lag es, dass
+                            // Ausblenden im Zeilenmodus nichts tat.
                             ? { width: '100%' }
                             : { width: isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px' }}
                 >

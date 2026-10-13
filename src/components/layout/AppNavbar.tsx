@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, PanelBottom, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
+import { ChevronLeft, MoreHorizontal, PanelBottom, PanelRightClose, Minus, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -266,31 +266,31 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     const isBlogPost = /^\/blog\/.+/.test(currentPath);
 
     // Grid column adjuster inline item — shared across all grid menus
-    const columnAdjusterItem = onAdjustColumns && gridColumns ? [{
-        label: '',
-        onClick: () => {},
-        render: (
-            <div className="flex items-center justify-between px-4 py-2.5">
-                <span className="text-xs font-normal text-zinc-700 dark:text-zinc-300 font-medium">
-                    Zoom
-                </span>
-                {/* Pill with a thin break between the two buttons */}
-                <div className="flex items-center rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onAdjustColumns(1); }}
-                        disabled={(gridColumns ?? 2) >= 6}
-                        className="w-8 h-7 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-base font-medium disabled:opacity-30 disabled:pointer-events-none"
-                    >−</button>
-                    <div className="self-stretch w-px bg-white dark:bg-black" />
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onAdjustColumns(-1); }}
-                        disabled={(gridColumns ?? 2) <= 2}
-                        className="w-8 h-7 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors text-base font-medium disabled:opacity-30 disabled:pointer-events-none"
-                    >+</button>
-                </div>
-            </div>
-        ),
-    }] : [];
+    /**
+     * Kachelgroesse als zwei Eintraege mit Text statt als Pille mit + und −.
+     *
+     * Die Pille war ein Fremdkoerper in einer Liste aus Eintraegen: anderer
+     * Treffbereich, anderes Verhalten beim Ueberfahren, und zwei Zeichen, die
+     * ohne die Ueberschrift "Zoom" daneben nichts sagen. Als Eintraege
+     * verhalten sie sich wie alles andere im Menue, und was sie tun, steht
+     * da.
+     *
+     * Das Menue bleibt offen: Wer vergroessert, will meist zweimal
+     * vergroessern.
+     */
+    const columnAdjusterItem = onAdjustColumns && gridColumns ? [
+        {
+            label: t('tiles_larger') || 'Kacheln größer',
+            icon: <Plus className="w-4 h-4" />,
+            separator: true,
+            onClick: () => { if ((gridColumns ?? 2) > 2) onAdjustColumns(-1); },
+        },
+        {
+            label: t('tiles_smaller') || 'Kacheln kleiner',
+            icon: <Minus className="w-4 h-4" />,
+            onClick: () => { if ((gridColumns ?? 2) < 6) onAdjustColumns(1); },
+        },
+    ] : [];
 
     const balanceDisplay = user && displayCredits !== null && (
         <Tooltip text={t('balance')}>
@@ -484,21 +484,32 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             items={[
                                 ...voiceMenuItem.map(v => ({ ...v, onClick: () => { setIsDetailMenuOpen(false); v.onClick(); } })),
                                 { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                                // Frueher ein eigener Knopf in der Leiste. Drei
-                                // Einzelknoepfe neben einem Menue, das dieselben Dinge
-                                // noch einmal fuehrt, sind drei Gelegenheiten, an der
-                                // falschen Stelle zu suchen.
+                                // Die Eingabe-Anordnung: ein Eintrag, drei Zustaende.
+                                //
+                                // Das Menue bleibt beim Klick OFFEN. Man sieht dann
+                                // unmittelbar, was passiert ist, und kann
+                                // weiterschalten, ohne es dreimal zu oeffnen — bei
+                                // einem Rundlauf aus drei Zustaenden ist Zumachen
+                                // nach jedem Schritt das Gegenteil von hilfreich.
+                                //
+                                // Die Beschriftung nennt den Zustand, nicht die
+                                // Handlung, und das Symbol zeigt ihn mit: "Eingabe
+                                // rechts" mit dem Symbol fuer rechts. Sonst muesste
+                                // man raten, ob der Text beschreibt, wo man ist,
+                                // oder wohin es geht.
                                 ...(isMobile ? [] : [{
                                     label: !isSideSheetVisible
-                                        ? (t('panel_show_right') || 'Eingabe rechts')
+                                        ? (t('panel_state_hidden') || 'Eingabe aus')
                                         : detailLayout === 'column'
-                                            ? (t('panel_move_bottom') || 'Eingabe nach unten')
-                                            : (t('panel_hide') || 'Eingabe ausblenden'),
-                                    icon: !isSideSheetVisible || detailLayout === 'column'
-                                        ? <PanelRight className="w-4 h-4" />
-                                        : <PanelBottom className="w-4 h-4" />,
+                                            ? (t('panel_state_right') || 'Eingabe rechts')
+                                            : (t('panel_state_bottom') || 'Eingabe unten'),
+                                    icon: !isSideSheetVisible
+                                        ? <PanelRightClose className="w-4 h-4" />
+                                        : detailLayout === 'column'
+                                            ? <PanelRight className="w-4 h-4" />
+                                            : <PanelBottom className="w-4 h-4" />,
+                                    separator: true,
                                     onClick: () => {
-                                        setIsDetailMenuOpen(false);
                                         if (!isSideSheetVisible) { setDetailLayout('column'); onToggleSideSheet?.(); }
                                         else if (detailLayout === 'column') setDetailLayout('row');
                                         else onToggleSideSheet?.();
@@ -506,7 +517,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                                 }]),
                                 ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
                                 { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
-                                { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true },
+                                { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true, separator: true },
                             ]}
                         />
                     </div>

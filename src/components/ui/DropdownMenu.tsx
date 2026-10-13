@@ -6,7 +6,15 @@ export interface DropdownItem {
     icon?: React.ReactNode;
     onClick: () => void;
     danger?: boolean;
-    separator?: boolean; // renders a separator above this item
+    /**
+     * Setzt einen Abstand ueber diesen Eintrag und trennt damit Gruppen.
+     *
+     * Bewusst ein Abstand und keine Linie: Eine Linie behauptet eine Grenze,
+     * ein Abstand zeigt eine Zusammengehoerigkeit. In einem Menue mit vier bis
+     * sechs Eintraegen reicht das — und es passt zu den uebrigen Flaechen, aus
+     * denen wir heute die Linien entfernt haben.
+     */
+    separator?: boolean;
     render?: React.ReactNode; // custom content, bypasses default button layout
 }
 
@@ -37,7 +45,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({ items, className = '
     `}>
         {items.map((item, i) => (
             <React.Fragment key={i}>
-                {item.separator && <div className="h-px bg-zinc-100 dark:bg-zinc-800 my-1 mx-2" />}
+                {item.separator && <div className="h-2" aria-hidden />}
                 {item.render ? item.render : (
                     <button
                         onClick={item.onClick}
