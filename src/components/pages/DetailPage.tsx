@@ -1219,7 +1219,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                 {/* Side Sheet — below image on mobile, side panel on desktop */}
                 <aside
-                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-200 dark:md:border-zinc-800' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
+                    // Ohne Trennlinien, wie unter der Navigationsleiste. Die
+                    // Kante entsteht aus dem Flaechenwechsel; eine gezogene
+                    // Linie daneben waere eine zweite Aussage ueber dieselbe
+                    // Grenze. Der Ziehgriff zum Verbreitern sitzt ohnehin dort
+                    // und zeigt sie an, sobald man ihn braucht.
+                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
                     style={{ width: isMobile ? undefined : (isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px') }}
                 >
                     {/* Resizer Handle — desktop only */}

@@ -1328,7 +1328,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
             {/* Selection SideSheet */}
             {isSelectMode && !isMobile && isSelectionSideSheetOpen && (
-                <div className={`w-[380px] shrink-0 border-l ${Theme.Colors.Border} ${Theme.Colors.CanvasBg} flex flex-col z-10 relative`}>
+                <div className={`w-[380px] shrink-0 ${Theme.Colors.CanvasBg} flex flex-col z-10 relative`}>
                     {selectedIds.length > 0 ? (() => {
                         const selectedImages = images.filter(img => selectedIds.includes(img.id));
                         const selectedImage = selectedImages.length > 0 ? selectedImages[selectedImages.length - 1] : null;
