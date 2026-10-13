@@ -195,13 +195,22 @@ html:not(.dark) {
 
 @keyframes feed-zoom-return {
   from {
-    opacity: 0.6;
-    transform: scale(1.10);
+    opacity: 0.5;
+    transform: scale(1.28);
   }
 
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Ohne Bewegung bleibt die Einblendung — der Blick wird weiterhin zur
+     richtigen Kachel geführt, nur ohne Zoom. */
+  @keyframes feed-zoom-return {
+    from { opacity: 0.5; }
+    to   { opacity: 1; }
   }
 }
 
@@ -301,4 +310,27 @@ html:not(.dark) {
 @keyframes cursor-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+/* Stapelwechsel in der Detailansicht: ein kurzes Wischen quer zur Leserichtung
+   macht spürbar, dass man das Objekt verlassen hat. Innerhalb eines Stapels
+   wird bewusst NICHT animiert — dort vergleicht man Varianten, und jede
+   Bewegung stört den direkten Vergleich. */
+@keyframes detail-img-swipe-next {
+  from { opacity: 0; transform: translateX(64px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes detail-img-swipe-prev {
+  from { opacity: 0; transform: translateX(-64px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Wer Bewegung reduziert haben will, bekommt nur die Einblendung. */
+  @keyframes detail-img-swipe-next {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  @keyframes detail-img-swipe-prev {
+    from { opacity: 0; } to { opacity: 1; }
+  }
 }

@@ -11,6 +11,7 @@ import { loadGenerationSettings } from '@/utils/generationSettings';
 import { sendGenerationCompleteNotification } from '@/utils/notifications';
 import { trackImageGenerated } from '@/utils/analytics';
 import { logError } from '@/services/errorLogger';
+import { stackIdOf, sortRowItems } from '@/utils/stacks';
 
 interface UseGenerationProps {
     rows: ImageRow[];
@@ -254,14 +255,23 @@ export const useGeneration = ({
 
         // Server (edge function + pg_cron) owns all job state — client just polls.
         // pg_cron marks failed after 8 min; we poll for up to 10 min as a safety net.
-        const maxAttempts = 120; // 120 × 5s = 600s (10 min)
+        //
+        // Die Obergrenze ist die Zeit, nicht die Anzahl der Versuche. Vorher
+        // stand hier "120 × 5s = 600s" — zwei Zahlen, die zusammen eine dritte
+        // ergeben mussten. Wer den Abstand ändert, verschiebt damit unbemerkt
+        // das Zeitfenster. Genau diese Art gekoppelter Annahme hat uns diesen
+        // Monat mehrfach Fehler gekostet.
+        const POLL_MAX_MS = 600_000;           // 10 min Decke
+        const POLL_SLOW_MS = 5_000;            // solange ohnehin nichts fertig sein kann
+        const POLL_FAST_MS = 1_200;            // im Zielbereich
+        const POLL_FAST_AFTER_MS = 15_000;     // frühestes realistisches Ende
+        const pollStart = Date.now();
 
-        let attempts = 0;
         let googleOverloadWarningShown = false; // show yellow toast only once per job
 
         const poll = async () => {
-            attempts++;
-            if (attempts > maxAttempts) {
+            const elapsed = Date.now() - pollStart;
+            if (elapsed > POLL_MAX_MS) {
                 // Same race-guard as the failed-status path: maybe the image landed
                 // *just* as we were giving up — don't show a refund toast then.
                 const { data: lateImg } = await supabase
@@ -398,7 +408,14 @@ export const useGeneration = ({
             }
 
             // 3. Continue polling
-            setTimeout(poll, 5000);
+            //
+            // Der Abstand war durchgehend 5 s. Das Bild liegt im Schnitt nach
+            // 30 s in der Datenbank, der Nutzer sah es aber erst beim nächsten
+            // Durchlauf — im Mittel 2,5 s später, schlimmstenfalls 5 s. Diese
+            // Zeit steckt in keiner Messung, weil duration_ms beim Insert endet,
+            // und sie ist die billigste, die wir haben: Vor der 15-Sekunden-Marke
+            // kann nichts fertig sein, danach wird dicht geschaut.
+            setTimeout(poll, elapsed < POLL_FAST_AFTER_MS ? POLL_SLOW_MS : POLL_FAST_MS);
         };
 
         poll();
@@ -492,11 +509,11 @@ export const useGeneration = ({
         // 1. VERSION CALCULATION (Sync)
         // Use folderId to scope siblings — avoids counting versions from *other* stacks
         // that happen to share the same base name (e.g. two different "Wohnzimmer" uploads).
-        const sourceFolderId = sourceImage.folderId ?? sourceImage.id;
+        const sourceFolderId = stackIdOf(sourceImage);
         const allImages = rows.flatMap(r => r.items);
         const siblings = allImages.filter(i => {
             if (!i) return false;
-            return (i.folderId ?? i.id) === sourceFolderId;
+            return stackIdOf(i) === sourceFolderId;
         });
         // Derive the next version from the visible "_vN" in the *titles*, not the
         // `version` column — persisted generations get a global counter in that
@@ -530,7 +547,7 @@ export const useGeneration = ({
             src: sourceImage.src,
             annotations: [], // Generated results start blank — reference images stay on the source image
             parentId: sourceImage.id,
-            folderId: sourceImage.folderId ?? sourceImage.id, // Inherit stack root — never changes
+            folderId: stackIdOf(sourceImage), // Inherit stack root — never changes
             generationPrompt: prompt,
             // Store full request body on the child so "Mehr" can replay it exactly.
             // userDraftPrompt stores the user-facing prompt so SideSheet can display it when revisiting.
@@ -547,7 +564,10 @@ export const useGeneration = ({
             const newRows = [...prev];
             const idx = newRows.findIndex(r => r.items.some(i => i.id === sourceImage.id));
             if (idx === -1) return prev;
-            newRows[idx] = { ...newRows[idx], items: [placeholder, ...newRows[idx].items] };
+            // Über dieselbe Sortierung einfügen wie beim Laden — sonst sitzt der
+            // Platzhalter bis zum nächsten Neuladen an einer anderen Stelle und
+            // springt dann sichtbar um.
+            newRows[idx] = { ...newRows[idx], items: sortRowItems([placeholder, ...newRows[idx].items]) };
             return newRows;
         });
 

@@ -9,7 +9,8 @@ import { EditorCanvas } from '@/components/canvas/EditorCanvas';
 import { ObjectsTab } from '@/components/sidesheet/ObjectsTab';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { GenerationProgressBar } from '@/components/canvas/ImageItem';
-import { useToast } from '@/components/ui/Toast';
+import { useToast } from '@/components/ui/Toast';import { stackIdOf } from '@/utils/stacks';
+
 
 /* ── Circular progress for thumb strip generating placeholders ── */
 const ThumbCircularProgress: React.FC<{ startTime?: number; estimatedDuration?: number }> = ({ startTime, estimatedDuration }) => {
@@ -202,13 +203,30 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     // O(1) lookups via Map instead of O(n) find/findIndex on every render
     const imageMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
-    const imageIndexMap = useMemo(() => new Map(images.map((i, idx) => [i.id, idx])), [images]);
+
+    // Die EINE Liste, auf der sich Pfeile, Thumbnail-Leiste und Nachladen
+    // bewegen. Vorher stand dieser Filter dreimal im File und die Pfeile
+    // benutzten ihn gar nicht — ein Bild ohne Vorschau war damit per Pfeil
+    // erreichbar, in der Leiste aber unsichtbar, und der Markierungsindex
+    // verschob sich.
+    //
+    // Platzhalter gehören ausdrücklich dazu: Sie sind vollwertige Einträge,
+    // nur eben noch ohne Bild. Würden sie fehlen, übersprängen die Pfeile
+    // gerade entstehende Varianten.
+    const navigableImages = useMemo(
+        () => images.filter(i => i.isGenerating || i.thumbSrc || i.src),
+        [images],
+    );
+    const imageIndexMap = useMemo(
+        () => new Map(navigableImages.map((i, idx) => [i.id, idx])),
+        [navigableImages],
+    );
 
     // Thumbstrip: render ALL displayable images — stable DOM width prevents layout shifts from mx-auto
     // opacity-0 items beyond ±8 are pointer-events-none so they cost nothing at runtime
     const stripImages = useMemo(() => {
-        const displayable = images.filter(i => i.isGenerating || i.thumbSrc || i.src);
-        const currentIdx = displayable.findIndex(i => i.id === selectedId);
+        const displayable = navigableImages;
+        const currentIdx = imageIndexMap.get(selectedId) ?? -1;
         return displayable.map((img, index) => ({
             img,
             distance: currentIdx === -1 ? 0 : Math.abs(index - currentIdx),
@@ -252,8 +270,18 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // intermediate re-renders during loading (imgNaturalDims, displayBox, etc.) also stay suppressed.
     const suppressEntryAnimRef = useRef(false);
     useEffect(() => { if (isMainLoaded) suppressEntryAnimRef.current = false; }, [isMainLoaded]);
+
+    // Art des Übergangs beim Bildwechsel. Innerhalb eines Stapels vergleicht
+    // man Varianten — jede Bewegung stört dabei, also wird sofort gewechselt.
+    // Beim Wechsel in einen anderen Stapel macht ein kurzes Wischen spürbar,
+    // dass man das Objekt verlassen hat.
+    const transitionRef = useRef<'none' | 'next' | 'prev'>('none');
+    const [transition, setTransition] = useState<'none' | 'next' | 'prev'>('none');
+    useEffect(() => { setTransition(transitionRef.current); }, [selectedId]);
+
     const handleSelectWithin = useCallback((id: string) => {
         suppressEntryAnimRef.current = true;
+        transitionRef.current = 'none';
         onSelectImage(id);
     }, [onSelectImage]);
 
@@ -303,46 +331,66 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         img ? images.find(i => i.parentId === img.id && i.isGenerating) : undefined,
         [images, img]
     );
-    // Auto-navigate to finished child: was generating → now done.
-    // Disabled if the user navigated at any point during generation (even if they came back).
-    const prevGeneratingChildRef = useRef<{ childId: string; parentId: string } | null>(null);
+    /**
+     * Begleitet eine laufende Generierung: beim Start auf den Platzhalter
+     * wechseln, am Ende auf das Ergebnis — sofern der Nutzer zwischendurch
+     * nicht selbst woanders hingegangen ist.
+     *
+     * Die verfolgte Generierung wird über ihre ID nachgeschlagen, NICHT über
+     * generatingChild. Letzteres sucht Kinder des gerade angezeigten Bildes und
+     * ist leer, sobald man den Platzhalter selbst ansieht — der Code hielt die
+     * Generierung dann für beendet, verwarf den Merker, und beim nächsten
+     * Schritt auf das Quellbild galt sie als neu entdeckt. Ergebnis war eine
+     * Falle: Ein Pfeil in Richtung Quellbild warf einen sofort zum Platzhalter
+     * zurück, während die Gegenrichtung funktionierte.
+     *
+     * Zusätzlich merkt sich autoJumpedRef jeden Platzhalter, zu dem bereits
+     * gesprungen wurde. Derselbe Sprung passiert damit höchstens einmal, egal
+     * wie oft man danach am Quellbild vorbeikommt.
+     */
+    const trackedGenRef = useRef<{ childId: string; parentId: string } | null>(null);
+    const autoJumpedRef = useRef<Set<string>>(new Set());
     const navHappenedDuringGenRef = useRef(false);
+
     useEffect(() => {
-        if (generatingChild) {
-            if (!prevGeneratingChildRef.current) {
-                // New generation started — record starting position and reset nav flag
-                prevGeneratingChildRef.current = { childId: generatingChild.id, parentId: selectedId };
-                navHappenedDuringGenRef.current = false;
-                // Direkt auf den Platzhalter wechseln, damit der Fortschritt dort
-                // zu sehen ist, wo das Ergebnis erscheint — statt auf dem Quellbild
-                // zu warten und am Ende wegzuspringen. Beim Tippen bleibt die
-                // Ansicht stehen, gleiche Regel wie beim Sprung nach Abschluss.
-                if (selectedId !== generatingChild.id && !isTypingNow()) {
-                    onSelectImage(generatingChild.id);
-                }
-            } else if (prevGeneratingChildRef.current.childId === generatingChild.id
-                       && selectedId !== prevGeneratingChildRef.current.parentId
-                       && selectedId !== generatingChild.id) {
-                // User navigated while this generation was in progress.
-                // Der Platzhalter selbst zählt nicht — dorthin haben wir oben
-                // selbst gewechselt, das ist keine Nutzeraktion.
+        // Neue Generierung am aktuell angezeigten Bild entdeckt
+        if (generatingChild && !trackedGenRef.current && !autoJumpedRef.current.has(generatingChild.id)) {
+            trackedGenRef.current = { childId: generatingChild.id, parentId: selectedId };
+            navHappenedDuringGenRef.current = false;
+            if (selectedId !== generatingChild.id && !isTypingNow()) {
+                autoJumpedRef.current.add(generatingChild.id);
+                onSelectImage(generatingChild.id);
+            }
+            return;
+        }
+
+        const tracked = trackedGenRef.current;
+        if (!tracked) return;
+
+        const trackedImage = imageMap.get(tracked.childId);
+        // Fehlt das Bild (noch nicht geladen), weiter abwarten statt abbrechen.
+        if (!trackedImage) return;
+
+        if (trackedImage.isGenerating) {
+            // Weder Quellbild noch Platzhalter: Der Nutzer ist selbst woanders
+            // hingegangen, der Sprung zum Ergebnis entfällt.
+            if (selectedId !== tracked.parentId && selectedId !== tracked.childId) {
                 navHappenedDuringGenRef.current = true;
             }
-        } else if (prevGeneratingChildRef.current) {
-            const { childId, parentId } = prevGeneratingChildRef.current;
-            const userNavigated = navHappenedDuringGenRef.current || selectedId !== parentId;
-            prevGeneratingChildRef.current = null;
-            navHappenedDuringGenRef.current = false;
-            if (userNavigated) return;
-            const finishedImage = imageMap.get(childId);
-            // Steht die Ansicht schon auf dem Platzhalter, ist nichts zu tun —
-            // er wird an Ort und Stelle zum fertigen Bild.
-            if (finishedImage && !finishedImage.isGenerating && !isTypingNow()) {
-                setIsSideSheetVisible(false);
-                onSelectImage(childId);
-            }
+            return;
         }
-    }, [generatingChild, images, selectedId, onSelectImage, isTypingNow]);
+
+        // Fertig
+        const userNavigated = navHappenedDuringGenRef.current
+            || (selectedId !== tracked.parentId && selectedId !== tracked.childId);
+        trackedGenRef.current = null;
+        navHappenedDuringGenRef.current = false;
+        if (userNavigated || isTypingNow()) return;
+        // Steht die Ansicht schon auf dem Platzhalter, ist das ein Nichtstun —
+        // er wird an Ort und Stelle zum fertigen Bild.
+        setIsSideSheetVisible(false);
+        onSelectImage(tracked.childId);
+    }, [generatingChild, imageMap, selectedId, onSelectImage, isTypingNow]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
 
     // Keep blob visible after generation completes until the real image has loaded
@@ -518,11 +566,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // the end of the loaded list, so non-scroll navigation still triggers paging.
     useEffect(() => {
         if (!hasMore || !onLoadMore) return;
-        const displayable = images.filter(i => i.isGenerating || i.thumbSrc || i.src);
-        const idx = displayable.findIndex(i => i.id === selectedId);
+        const idx = imageIndexMap.get(selectedId) ?? -1;
         if (idx === -1) return;
-        if (displayable.length - idx <= 20) onLoadMore();
-    }, [selectedId, images, hasMore, onLoadMore]);
+        if (navigableImages.length - idx <= 20) onLoadMore();
+    }, [selectedId, navigableImages, imageIndexMap, hasMore, onLoadMore]);
 
     // Track actual image dimensions — initialized from DB values, updated from real load.
     // Also preloads via Image() so displayBox can be computed even when the visible <img>
@@ -671,11 +718,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
     const navigate = useCallback((d: 1 | -1) => {
         const n = idx + d;
-        if (n >= 0 && n < images.length) {
-            suppressEntryAnimRef.current = true;
-            onSelectImage(images[n].id);
-        }
-    }, [idx, images, onSelectImage]);
+        if (n < 0 || n >= navigableImages.length) return;
+        const from = navigableImages[idx];
+        const to = navigableImages[n];
+        // Gleicher Stapel → sofort, damit der Vergleich nicht gestört wird.
+        const crossesStack = !!from && !!to && stackIdOf(from) !== stackIdOf(to);
+        suppressEntryAnimRef.current = true;
+        transitionRef.current = crossesStack ? (d === 1 ? 'next' : 'prev') : 'none';
+        onSelectImage(to.id);
+    }, [idx, navigableImages, onSelectImage]);
 
     // Keyboard Navigation
     useEffect(() => {
@@ -901,7 +952,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             <img
                                                 src={img.thumbSrc}
                                                 className={`w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-100 dark:brightness-50 scale-110' : ''}`}
-                                                style={suppressEntryAnimRef.current ? {} : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }}
+                                                style={
+                                                    transition !== 'none'
+                                                        ? { animation: `detail-img-swipe-${transition} 260ms cubic-bezier(0.25,1,0.5,1) both` }
+                                                        : suppressEntryAnimRef.current
+                                                            ? {}
+                                                            : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }
+                                                }
                                                 alt=""
                                             />
                                         </div>
@@ -1162,7 +1219,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
 
                 {/* Side Sheet — below image on mobile, side panel on desktop */}
                 <aside
-                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 border-t border-zinc-100 dark:border-zinc-900 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-100 dark:md:border-zinc-900' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
+                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 border-t border-zinc-200 dark:border-zinc-800 md:border-t-0 md:shrink-0 ${isSideSheetActuallyVisible ? 'md:border-l md:border-zinc-200 dark:md:border-zinc-800' : ''} ${isResizing ? 'select-none' : 'md:transition-[width] md:duration-300 md:ease-in-out'} ${!isSideSheetActuallyVisible && isMobile ? 'hidden' : ''}`}
                     style={{ width: isMobile ? undefined : (isSideSheetActuallyVisible ? `${sidebarWidth}px` : '0px') }}
                 >
                     {/* Resizer Handle — desktop only */}

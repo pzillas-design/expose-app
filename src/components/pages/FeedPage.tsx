@@ -10,6 +10,7 @@ import { Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { FeedHeroSection } from '../layout/FeedHeroSection';
 import { LayerComposer } from '@/components/composer/LayerComposer';
+import { GeneratingRing } from '@/components/ui/GeneratingRing';
 
 /* ── TTL helpers ── */
 // Muss mit DEFAULT_TTL_DAYS in supabase/functions/cleanup-expired-images
@@ -82,9 +83,11 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     // Set the 'from' keyframe values as inline style so the very first paint
                     // already shows the zoomed-in state — avoids the brief normal-size flash
                     // that occurs before the CSS animation engine kicks in.
-                    transform: 'scale(1.1)',
-                    opacity: 0.6,
-                    animation: 'feed-zoom-return 400ms cubic-bezier(0.25,1,0.5,1) both',
+                    // MUSS mit dem Keyframe feed-zoom-return übereinstimmen —
+                    // sonst blitzt vor dem Start der Animation ein Zwischenwert auf.
+                    transform: 'scale(1.28)',
+                    opacity: 0.5,
+                    animation: 'feed-zoom-return 480ms cubic-bezier(0.25,1,0.5,1) both',
                 }
                 : staggerDelay !== undefined
                     ? { animation: `feed-fade-in 280ms ${staggerDelay}ms both ease-out` }
@@ -149,7 +152,11 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                 );
                             })()}
                             <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
-                                <Loader2 className="w-7 h-7 animate-[spin_3s_linear_infinite] text-white/70" />
+                                <GeneratingRing
+                                    generationStartTime={img.generationStartTime}
+                                    estimatedDuration={img.estimatedDuration}
+                                    size={28}
+                                />
                             </div>
                         </>
                     ) : previewSrc ? (
@@ -275,6 +282,9 @@ interface FeedPageProps {
     expandedGroupId: string | null;
     onExpandedGroupChange: (id: string | null) => void;
     lastViewedId?: string | null;
+    /** Stapel, den der Nutzer gerade verlassen hat — wird in die erste Zeile gescrollt. */
+    returnToStackId?: string | null;
+    onReturnToStackHandled?: () => void;
     onScrollProgress?: (p: number) => void;
     voiceFocusIndex?: number | null;
     showComposer?: boolean;
@@ -283,7 +293,7 @@ interface FeedPageProps {
     columnsOverride?: number;
 }
 
-export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer, columnsOverride }) => {
+export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, hasMore, onSelectImage, onCreateNew, onGenerate, onUpload, onLoadMore, isFetchingMore = false, isSelectMode, isSelectionSideSheetOpen, selectedIds = [], onToggleSelect, expandedGroupId, onExpandedGroupChange, lastViewedId, returnToStackId, onReturnToStackHandled, state, actions, t, onScrollProgress, voiceFocusIndex, showComposer: showComposerProp, onOpenComposer, onCloseComposer, columnsOverride }) => {
     // URL-based fallback: expandedGroupId may still be null on first render after /stack/:id navigation
     const effectiveGroupId = expandedGroupId || (
         typeof window !== 'undefined' && window.location.pathname.startsWith('/stack/')
@@ -517,6 +527,22 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         requestAnimationFrame(tryScroll);
     }, []);
 
+    // Rückkehr aus einem Stapel über den Routenwechsel: Die ID kommt von App,
+    // weil sie den Neuaufbau dieser Komponente überleben muss. Greift einmal
+    // pro Rückkehr, danach meldet die Komponente zurück und App vergisst sie.
+    const handledReturnRef = React.useRef<string | null>(null);
+    React.useLayoutEffect(() => {
+        if (!returnToStackId || handledReturnRef.current === returnToStackId) return;
+        const row = rows.find(r => r.id === returnToStackId);
+        const cover = row?.items[0];
+        if (!cover) return; // Reihen noch nicht geladen — nächster Durchlauf
+        handledReturnRef.current = returnToStackId;
+        setReturnCoverId(cover.id);
+        setTimeout(() => setReturnCoverId(null), 500);
+        scrollTileToTop(cover.id);
+        onReturnToStackHandled?.();
+    }, [returnToStackId, rows, scrollTileToTop, onReturnToStackHandled]);
+
     React.useLayoutEffect(() => {
         if (prevExpandedGroupId.current && !expandedGroupId) {
             const row = rows.find(r => r.id === prevExpandedGroupId.current);
@@ -540,24 +566,30 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return row.items[0].id;
     }, [lastViewedId, displayImages, rows]);
 
-    // Gate the return-from-detail animation so it plays only once per mount.
-    // Without this, after returnCoverId (group-close animation) clears, lastViewedRowCoverId
-    // kicks in and causes a second spurious zoom animation on a different tile.
-    // FeedPage remounts fresh on each grid entry, so useState(true) → false after 600ms is correct.
-    const [lastViewedAnimActive, setLastViewedAnimActive] = React.useState(true);
-    React.useEffect(() => {
-        const t = setTimeout(() => setLastViewedAnimActive(false), 600);
-        return () => clearTimeout(t);
-    }, []); // intentionally empty: run once per mount
-
-    // Scroll the last-viewed cover tile into view when returning from detail
-    const didScrollRef = React.useRef(false);
-    React.useEffect(() => {
-        if (!lastViewedRowCoverId || didScrollRef.current) return;
-        // Return from detail view → put the origin row at the top of the viewport.
-        didScrollRef.current = true;
+    // Rückkehr aus der Detailansicht — exakt derselbe Weg wie die Rückkehr aus
+    // einem Stapel. Vorher war er schwächer gebaut und blieb deshalb hinter
+    // dem Stapel-Verhalten zurück:
+    //
+    //   - Er löste nur den Scroll aus, nie den Zoom. Der hing stattdessen an
+    //     einem Zeitfenster nach dem Aufbau — ein Wettlauf mit dem Laden, den
+    //     die Bilder regelmäßig gewannen.
+    //   - Er merkte sich "erledigt", bevor die Kachel überhaupt existierte.
+    //     War sie noch nicht da, war der eine Versuch verbraucht.
+    //   - Er lief nach dem Zeichnen statt davor, was den Sprung sichtbar macht.
+    //
+    // Jetzt: vor dem Zeichnen, wartet auf die Kachel, löst Zoom und Scroll
+    // gemeinsam aus, und gilt erst dann als erledigt.
+    const handledLastViewedRef = React.useRef<string | null>(null);
+    React.useLayoutEffect(() => {
+        if (!lastViewedRowCoverId) return;
+        if (handledLastViewedRef.current === lastViewedRowCoverId) return;
+        // Steht die Kachel noch nicht in den Reihen, übernimmt der nächste Durchlauf.
+        if (!rows.some(r => r.items.some(i => i.id === lastViewedRowCoverId))) return;
+        handledLastViewedRef.current = lastViewedRowCoverId;
+        setReturnCoverId(lastViewedRowCoverId);
+        setTimeout(() => setReturnCoverId(null), 600);
         scrollTileToTop(lastViewedRowCoverId);
-    }, [lastViewedRowCoverId, displayImages, scrollTileToTop]);
+    }, [lastViewedRowCoverId, rows, scrollTileToTop]);
 
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -797,7 +829,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                         ? (selectedIdSet.has(img.id) ? 0 : 90 + Math.min(idx * 22, 260))
                                                         : effectiveGroupId ? Math.min(idx * 35, 350) : undefined
                                                 }
-                                                isLastViewed={img.id === revealId || (!effectiveGroupId && !renderSelectMode && img.id === (returnCoverId ?? (lastViewedAnimActive ? lastViewedRowCoverId : null) ?? ''))}
+                                                // Der Rückkehr-Zoom galt bisher nur in der Galerie
+                                                // (!effectiveGroupId) — aus der Detailansicht zurück in
+                                                // einen Stapel blieb er deshalb aus. Die Kachel ist dort
+                                                // genauso vorhanden, der Ausschluss war nicht begründet.
+                                                // Im Auswahlmodus bleibt er aus: Dort wird markiert,
+                                                // nicht navigiert.
+                                                isLastViewed={img.id === revealId || (!renderSelectMode && img.id === (returnCoverId ?? ''))}
                                                 isNew={isNew}
                                                 daysRemaining={daysLeft}
                                                 currentLang={state?.currentLang}

@@ -93,8 +93,21 @@ export function App() {
     const [infoImageId, setInfoImageId] = React.useState<string | null>(null);
     const [detailSidebarWidth, setDetailSidebarWidth] = React.useState(380);
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
-    const [feedSideSheetVisible, setFeedSideSheetVisible] = React.useState(false);
+    // Auswahl-Panel der Galerie: wie das Detail-Panel standardmaessig offen.
+    // Sichtbar wird es ohnehin nur im Auswahlmodus, und ohne Auswahl zeigt es
+    // einen Hinweis statt leerer Flaeche — es gibt also keinen Grund, erst
+    // einen Klick auf „Bearbeiten“ zu verlangen.
+    const [feedSideSheetVisible, setFeedSideSheetVisible] = React.useState(true);
     const [expandedGroupId, setExpandedGroupId] = React.useState<string | null>(null);
+    // Zuletzt verlassener Stapel — die Galerie scrollt ihn beim Aufbau in die
+    // erste sichtbare Zeile, damit man dort weitermacht, wo man aufgehört hat.
+    const [returnToStackId, setReturnToStackId] = React.useState<string | null>(null);
+    // Zuletzt betrachtetes Bild. Muss getrennt gemerkt werden: activeId wird
+    // beim Verlassen der Detailansicht auf null gesetzt, ist also leer, wenn
+    // die Galerie rendert. Stapel fiel das nicht auf, weil sie über
+    // returnCoverId einen eigenen Weg haben — Einzelbilder hingen allein an
+    // activeId und bekamen deshalb nie eine Rückkehr-Animation.
+    const [lastViewedImageId, setLastViewedImageId] = React.useState<string | null>(null);
     const [voiceFocusIndex, setVoiceFocusIndex] = React.useState<number | null>(null);
     const [isVoiceUploadOpen, setIsVoiceUploadOpen] = React.useState(false);
     const [voiceDownloadImage, setVoiceDownloadImage] = React.useState<{ id: string; name: string } | null>(null);
@@ -234,7 +247,15 @@ export function App() {
                 setExpandedGroupId(stackId);
             }
         } else if (location.pathname === '/') {
-            if (expandedGroupId) setExpandedGroupId(null);
+            if (expandedGroupId) {
+                // Welchen Stapel wir gerade verlassen, muss hier gemerkt werden:
+                // '/' und '/stack/:id' sind getrennte Routen, FeedPage wird beim
+                // Wechsel neu aufgebaut. Ein Ref INNERHALB von FeedPage ist dann
+                // wieder leer — deshalb griff die Scroll-Wiederherstellung bisher
+                // nur manchmal, nämlich wenn kein Routenwechsel stattfand.
+                setReturnToStackId(expandedGroupId);
+                setExpandedGroupId(null);
+            }
         }
 
         // Sync Detail view from URL
@@ -246,6 +267,7 @@ export function App() {
                     navigate(`/image/${state.activeId}`);
                     return;
                 }
+                setLastViewedImageId(state.activeId);
                 actions.handleSelection(null, false, false);
             }
             return;
@@ -292,15 +314,17 @@ export function App() {
         actions.handleSelection(id, false, false);
         isNavigatingProgrammatically.current = true;
         const img = allImages.find(i => i.id === id);
-        const isGenerated = !!(img?.generationPrompt || img?.parentId);
         const isMobile = window.innerWidth < 768;
         const alreadyInDetail = location.pathname.startsWith('/image/');
         if (isMobile) {
             // Mobile always shows sidesheet
             setDetailSideSheetVisible(true);
         } else if (!alreadyInDetail) {
-            // Entering detail view fresh from grid: apply default rule (original=show, generated=hide)
-            setDetailSideSheetVisible(!isGenerated);
+            // Panel ist immer offen. Die frühere Regel schloss es bei erzeugten
+            // Bildern — das kostete im häufigsten Fall einen Klick, weil man
+            // genau dort weiterarbeitet, und beruhte nur auf einer Annahme über
+            // die Absicht des Nutzers.
+            setDetailSideSheetVisible(true);
         }
         // else: navigating within detail view — keep current sidesheet toggle state
         navigate(`/image/${id}`);
@@ -1118,7 +1142,8 @@ export function App() {
                     onCancelSelectMode={() => {
                         actions.setIsSelectMode(false);
                         actions.deselectAll();
-                        setFeedSideSheetVisible(false);
+                        // Nicht zurueckstellen: Das Panel ist im Auswahlmodus der
+                        // Standard, und beim Verlassen verschwindet es ohnehin.
                     }}
                     onDeleteSelected={async () => {
                         const count = state.selectedIds?.length || 0;
@@ -1354,7 +1379,9 @@ export function App() {
                                     }}
                                     expandedGroupId={expandedGroupId}
                                     onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate("/")}
-                                    lastViewedId={state.activeId}
+                                    returnToStackId={returnToStackId}
+                                    onReturnToStackHandled={() => setReturnToStackId(null)}
+                                    lastViewedId={lastViewedImageId}
                                     state={state}
                                     actions={actions}
                                     t={t}
@@ -1412,7 +1439,7 @@ export function App() {
                                     }}
                                     expandedGroupId={expandedGroupId}
                                     onExpandedGroupChange={(id) => id ? navigate(`/stack/${id}`) : navigate("/")}
-                                    lastViewedId={state.activeId}
+                                    lastViewedId={lastViewedImageId}
                                     state={state}
                                     actions={actions}
                                     t={t}

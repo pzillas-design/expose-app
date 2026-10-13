@@ -24,7 +24,17 @@ interface GenerationProgressRingProps {
 }
 
 /** Progress for the ring and individual bars — caps at 85% so 100% only fires when the image truly arrived. */
-function calcBarProgress(startTime: number | undefined, duration: number): number {
+/**
+ * Fortschritt aus verstrichener Zeit und Schätzung, gedeckelt bei 85 %.
+ *
+ * Der Deckel ist Absicht: Die Schätzung stammt aus Durchschnittswerten, ein
+ * einzelner Lauf kann deutlich länger dauern. Ein Ring, der bei 100 % stehen
+ * bleibt, während nichts passiert, wirkt wie ein Fehler. Bei 85 % wirkt er
+ * wie "gleich fertig" — und das Ende setzt ohnehin das echte Ergebnis.
+ *
+ * Exportiert, damit Kachel und Übersichtspanel denselben Verlauf zeigen.
+ */
+export function calcBarProgress(startTime: number | undefined, duration: number): number {
     const start = startTime || Date.now();
     const elapsed = Date.now() - start;
     const p = (elapsed / duration) * 100;

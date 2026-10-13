@@ -3,6 +3,7 @@ import { generateId } from '@/utils/ids';
 import { imageService } from '@/services/imageService';
 import { storageService } from '@/services/storageService';
 import { CanvasImage, ImageRow } from '@/types';
+import { sortRowItems } from '@/utils/stacks';
 
 interface UseFileHandlerProps {
     user: any;
@@ -67,9 +68,11 @@ export const useFileHandler = ({
                 if (targetFolderId) {
                     const idx = prev.findIndex(r => r.id === targetFolderId);
                     if (idx !== -1) {
-                        // In den offenen Stapel einreihen (neueste zuerst, wie sonst auch).
+                        // In den offenen Stapel einreihen — über dieselbe Sortierung
+                        // wie beim Laden, damit das Bild nach dem nächsten
+                        // Neuladen an derselben Stelle steht.
                         const next = [...prev];
-                        next[idx] = { ...next[idx], items: [skeleton, ...next[idx].items] };
+                        next[idx] = { ...next[idx], items: sortRowItems([skeleton, ...next[idx].items]) };
                         return next;
                     }
                 }

@@ -229,6 +229,24 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     const isDetail = mode === 'detail';
     const isCreate = mode === 'create';
+
+    // Beim Betreten der Galerie meldet diese zuerst Scrollposition 0 und erst
+    // danach die wiederhergestellte Position. Die Leiste klappt dadurch
+    // sichtbar ein, obwohl niemand gescrollt hat — das wirkt wie ein Ruckeln.
+    //
+    // Übergänge werden deshalb erst freigegeben, wenn sich die Ansicht gesetzt
+    // hat. Bis dahin steht die Leiste sofort im richtigen Zustand. Animiert
+    // wird nur noch, was der Nutzer selbst durch Scrollen auslöst.
+    //
+    // 500 ms entsprechen dem Fenster, in dem die Galerie ihre Scrollposition
+    // wiederherstellt (siehe scrollTileToTop in FeedPage).
+    const inHeroMode = heroProgress !== undefined && !isDetail && !isCreate && !isSelectMode && !isGroupDrillDown;
+    const [heroTransitions, setHeroTransitions] = useState(false);
+    useEffect(() => {
+        if (!inHeroMode) { setHeroTransitions(false); return; }
+        const t = window.setTimeout(() => setHeroTransitions(true), 500);
+        return () => window.clearTimeout(t);
+    }, [inHeroMode]);
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
     const isGallery = !isDetail && !isCreate && (currentPath === '/' || currentPath === '');
     const isSpecialPage = ['/about', '/legal', '/impressum', '/contact', '/privacy', '/datenschutz', '/blog'].includes(currentPath);
@@ -635,7 +653,18 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
         return (
             <header
-                className={`fixed top-0 left-0 right-0 z-50 flex items-center px-4 md:px-6 transition-all duration-300 border-b ${showBorder
+                // Eigener key je Variante: Ohne ihn verwendet React beim Wechsel
+                // zwischen Galerie und Detailansicht dasselbe DOM-Element weiter,
+                // und transition-all animiert dann zwischen den Zuständen — die
+                // Kopfzeile fährt sichtbar ein und blendet kurz einen
+                // Weichzeichner ein, den es in dieser Ansicht gar nicht gibt.
+                // Mit key wird neu aufgebaut und startet im Endzustand.
+                key="nav-gallery"
+                className={`fixed top-0 left-0 right-0 z-50 flex items-center px-4 md:px-6 border-b ${
+                    // Auch die Kindelemente stillstellen: Knöpfe und Pfeil
+                    // skalieren mit isScrolled und würden sonst mitlaufen.
+                    heroTransitions ? 'transition-all duration-300' : 'transition-none [&_*]:!transition-none'
+                } ${showBorder
                     ? 'border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/85'
                     : 'border-transparent bg-white/0 dark:bg-zinc-950/0'
                     } ${isScrolled
@@ -892,7 +921,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         // so navigating between the levels never jumps.
         return (
             <header
-                className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6 transition-all duration-300"
+                key="nav-stack"
+                // Keine Übergänge: Diese Kopfzeile ist immer schmal, es gibt
+                // nichts zu animieren — und beim Ansichtswechsel wäre jede
+                // Animation ein Fehler, kein Effekt.
+                className="fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6"
             >
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
@@ -927,7 +960,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
     return (
         <header
-            className={`fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6 transition-all duration-300`}
+            key="nav-detail"
+            className={`fixed top-0 left-0 right-0 z-50 h-14 bg-white/90 dark:bg-zinc-950/85 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 md:px-6`}
         >
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">

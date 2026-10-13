@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
         // Load the job + its stored async context.
         const { data: job } = await supabaseAdmin
             .from('generation_jobs')
-            .select('id, status, request_payload')
+            .select('id, status, request_payload, timings')
             .eq('id', jobId)
             .maybeSingle();
         if (!job) {
@@ -57,6 +57,12 @@ Deno.serve(async (req) => {
         }
 
         const ctx: AsyncContext | undefined = job.request_payload?.async;
+        // Ankunft des Rückrufs, gemessen ab dem Absenden. Das ist der Abschnitt,
+        // den wir selbst nicht in der Hand haben — fals Warteschlange plus die
+        // eigentliche Generierung. Erst im Vergleich dazu ist zu sehen, ob die
+        // fehlende Zeit bei fal oder bei uns liegt.
+        const marks: Record<string, number> = { ...(job.timings ?? {}) };
+        if (ctx?.submitAt) marks.webhook = Date.now() - ctx.submitAt;
         if (!ctx) {
             console.warn(`[fal-webhook] job ${jobId} has no async context`);
             return new Response(JSON.stringify({ ok: true, note: 'no ctx' }), { status: 200 });
@@ -106,7 +112,7 @@ Deno.serve(async (req) => {
             width: first.width,
             height: first.height,
             contentType: first.content_type,
-        });
+        }, marks);
 
         if (!result.ok) {
             await supabaseAdmin.from('generation_jobs')
