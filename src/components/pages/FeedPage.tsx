@@ -84,12 +84,10 @@ const dayLabelOf = (ts: string | number | undefined, lang: 'de' | 'en'): string 
  */
 const TileChip: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
     <div
-        className={`absolute top-2 right-2 z-20 h-6 min-w-6 px-1.5 rounded-full flex items-center justify-center
-            backdrop-blur-md bg-white/75 dark:bg-black/55
-            ring-1 ring-black/[0.06] dark:ring-white/[0.12]
-            shadow-[0_1px_2px_rgba(0,0,0,0.12)]
-            text-[11px] font-semibold tabular-nums leading-none
-            text-zinc-700 dark:text-zinc-100
+        className={`absolute top-2 right-2 z-20 h-[22px] min-w-[22px] px-1.5 rounded-full
+            grid grid-flow-col auto-cols-max items-center justify-center gap-1
+            bg-black/45 backdrop-blur-[3px]
+            text-[11px] font-medium tabular-nums leading-none text-white
             pointer-events-none ${className}`}
     >
         {children}
@@ -163,12 +161,26 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
     // Ein bereits zwischengespeichertes Bild wird NICHT eingeblendet: Dort ist
     // `complete` schon beim ersten Anfassen wahr, und eine Blende auf etwas,
     // das sofort da ist, waere selbst wieder ein Flackern.
-    const [imgLoaded, setImgLoaded] = React.useState(false);
+    // Zieldeckkraft: im Auswahlmodus ist ein markiertes Bild gedaempft.
+    const targetOpacity = isSelectMode && isSelected ? 0.6 : 1;
+    // Bewusst OHNE React-Zustand.
+    //
+    // Mit useState begann das Bild bei opacity 0 und wurde erst durch ein
+    // erneutes Rendern sichtbar. Bei einem bereits zwischengespeicherten Bild
+    // liegt dazwischen ein gezeichneter Frame — und genau der ist das kurze
+    // Leersein nach der Animation.
+    //
+    // Ein ref-Callback laeuft waehrend des Commits, also VOR dem ersten
+    // Zeichnen. Was im Zwischenspeicher liegt, ist damit sofort sichtbar; alles
+    // andere blendet per onLoad ein. Nebenbei entfaellt ein Zustands-Update je
+    // Kachel.
     const imgRef = React.useCallback((node: HTMLImageElement | null) => {
-        if (node?.complete) setImgLoaded(true);
-    }, []);
+        if (node?.complete) node.style.opacity = String(targetOpacity);
+    }, [targetOpacity]);
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
+    const playedReturnRef = React.useRef(false);
+    if (isLastViewed) playedReturnRef.current = true;
 
     // Tile hugs the image's natural aspect ratio at full column width — no square
     // letterboxing. Row height then follows the tallest image in that row.
@@ -184,6 +196,12 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
             onPointerLeave={(e) => { if (e.pointerType !== 'touch') setActiveIndex(null); }}
             data-image-id={img.id}
             className={`relative isolate group cursor-pointer`}
+            // Eine Kachel, die den Rueckkehr-Zoom gespielt hat, darf danach nicht
+            // in die gestaffelte Einblendung zurueckfallen: Die laeuft mit
+            // `both` und haelt waehrend ihrer Verzoegerung den Startwert
+            // opacity 0 — die Kachel waere nach dem Zoom noch einmal
+            // unsichtbar. Im Stapel, wo es eine Staffelung gibt, war das der
+            // zweite leere Frame.
             style={isLastViewed
                 ? {
                     // Set the 'from' keyframe values as inline style so the very first paint
@@ -195,7 +213,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     opacity: 0.5,
                     animation: `feed-zoom-return ${ZOOM_RETURN_MS}ms cubic-bezier(0.25,1,0.5,1) both`,
                 }
-                : staggerDelay !== undefined
+                : staggerDelay !== undefined && !playedReturnRef.current
                     ? { animation: `feed-fade-in 280ms ${staggerDelay}ms both ease-out` }
                     : undefined}
         >
@@ -286,11 +304,12 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                 ref={imgRef}
                                 src={previewSrc}
                                 alt={img.title}
-                                onLoad={() => setImgLoaded(true)}
+                                onLoad={e => { e.currentTarget.style.opacity = String(targetOpacity); }}
                                 // Ein Bild, das nicht laedt, darf nicht unsichtbar
                                 // bleiben — lieber ohne Blende zeigen.
-                                onError={() => setImgLoaded(true)}
-                                className={`w-full h-full object-cover transition-opacity duration-300 ease-out ${!imgLoaded ? 'opacity-0' : isSelectMode && isSelected ? 'opacity-60' : 'opacity-100'}`}
+                                onError={e => { e.currentTarget.style.opacity = String(targetOpacity); }}
+                                style={{ opacity: 0, transition: 'opacity 300ms ease-out' }}
+                                className="w-full h-full object-cover" 
                                 // Die zurueckkehrende Kachel wartet nicht auf den
                                 // Scroll-Ausloeser: Sonst laeuft der Zoom auf einem
                                 // leeren Kasten und das Bild springt hinterher herein.
@@ -343,7 +362,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     {/* Source image badge — same weight + size as the Euro icon in the navbar. */}
                     {isSource && (
                         <TileChip>
-                            <Upload className="w-[14px] h-[14px]" strokeWidth={2} />
+                            <Upload className="w-[13px] h-[13px]" strokeWidth={2} />
                         </TileChip>
                     )}
 
@@ -354,9 +373,9 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                             {img.uploadStatus === 'uploading' ? (
                                 <svg viewBox="0 0 20 20" className="w-[16px] h-[16px] -rotate-90">
                                     <circle cx="10" cy="10" r="8" fill="none" strokeWidth="2.5"
-                                        className="stroke-zinc-200 dark:stroke-zinc-600" />
+                                        className="stroke-white/30" />
                                     <circle cx="10" cy="10" r="8" fill="none" strokeWidth="2.5" strokeLinecap="round"
-                                        className="stroke-zinc-700 dark:stroke-zinc-200 transition-[stroke-dashoffset] duration-200"
+                                        className="stroke-white transition-[stroke-dashoffset] duration-200"
                                         strokeDasharray={2 * Math.PI * 8}
                                         strokeDashoffset={(2 * Math.PI * 8) * (1 - Math.min(100, img.uploadProgress ?? 0) / 100)} />
                                 </svg>
@@ -1084,16 +1103,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                     key={`day-${sec.key}`}
                                                     data-day-header="1"
                                                     onClick={() => toggleDay(sec.key)}
-                                                    className="col-span-full flex items-center gap-2 py-1 text-left group/day"
+                                                    // Negative Aussenabstaende gegen den Zeilenabstand des
+                                                    // Rasters: Der ist fuer Bildkacheln gedacht und laesst
+                                                    // zwischen zwei zugeklappten Tagen sonst eine halbe
+                                                    // Bildhoehe Luft stehen.
+                                                    className="col-span-full flex items-center gap-2 py-1 -my-4 sm:-my-6 text-left group/day"
                                                 >
                                                     <ChevronRight
                                                         className={`w-4 h-4 shrink-0 text-zinc-400 transition-transform duration-200 ${closed ? '' : 'rotate-90'}`}
                                                         strokeWidth={2}
                                                     />
                                                     <span className={Typo.H4}>{sec.label}</span>
-                                                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                                                        {sec.covers.length}
-                                                    </span>
                                                     {sec.daysLeft != null && sec.daysLeft <= WARNING_DAYS && (
                                                         // Dezent, aber nicht zu uebersehen: Steht der Tag zu,
                                                         // sind die gelben Punkte an den Kacheln verdeckt, und
