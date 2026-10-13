@@ -401,7 +401,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // wenn das Feld selbst nicht mehr waechst.
     const isMobileSheet = isMobile && !props.disableMobileSheet;
 
-    const PROMPT_MIN_H = 72;
+    // Mindesthoehe je nach Anordnung.
+    //
+    // In der Spaltenansicht hat die Eingabe die ganze Panelhoehe zur
+    // Verfuegung; dort wirkt ein flaches Feld gedrueckt, und etwas Luft unter
+    // dem Platzhalter laedt eher zum Schreiben ein. Im Zeilenmodus ist die
+    // Leiste selbst niedrig — dort waere dieselbe Hoehe der ganze Platz.
+    const PROMPT_MIN_H = rowLayout ? 72 : 128;
     const PROMPT_MAX_H = 240;
     useLayoutEffect(() => {
         const el = textareaRef.current;
@@ -973,7 +979,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                       Letzteres lag im Dunkelmodus so dicht an der
                                       Hintergrundfarbe zinc-950, dass die Karte kaum
                                       abgesetzt war. */}
-                                <div className={`${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.RadiusLg} p-5 space-y-5 transition-all`}>
+                                <div className={`${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.RadiusLg} ${rowLayout ? 'p-5 space-y-4' : 'p-6 space-y-6'} transition-all`}>
                                     {/* Prompt Textarea */}
                                     <div>
                                         <textarea
