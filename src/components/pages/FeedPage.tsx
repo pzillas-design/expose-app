@@ -730,8 +730,19 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     }, [hasMore, isLoading, isFetchingMore, onLoadMore]);
 
     if (isLoading && images.length === 0) {
+        // Auch der Ladezustand nimmt Dateien an. Vorher kehrte FeedPage hier
+        // zurück, bevor die Drop-Handler überhaupt im Baum standen — und der
+        // globale Handler in App.tsx steigt auf '/' ausdrücklich aus, weil er
+        // FeedPage den Vortritt lässt. In den ersten Sekunden nach dem Öffnen
+        // fiel ein Drop damit durch, ohne Hinweis.
         return (
-            <div className="flex-1 flex items-center justify-center bg-white dark:bg-zinc-950">
+            <div
+                className="flex-1 flex items-center justify-center bg-white dark:bg-zinc-950"
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+            >
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-400 dark:text-zinc-800" />
             </div>
         );

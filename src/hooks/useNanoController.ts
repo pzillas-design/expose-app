@@ -547,10 +547,21 @@ export const useNanoController = () => {
     }, [user, rows, setRows, setAuthModalMode, setIsAuthModalOpen, showToast, currentLang]);
 
     const handleProcessFiles = useCallback((files: FileList | DataTransferItemList | File[], targetFolderId?: string) => {
-        const fileArray = (Array.from(files as any) as any[]).map(f => f instanceof File ? f : f.getAsFile?.()).filter((f): f is File => !!f && f.type.startsWith('image/'));
-        if (fileArray.length === 0) return;
+        const dropped = (Array.from(files as any) as any[]).map(f => f instanceof File ? f : f.getAsFile?.()).filter((f): f is File => !!f);
+        const fileArray = dropped.filter(f => f.type.startsWith('image/'));
+        if (fileArray.length === 0) {
+            // Vorher ein stummes return: Der Nutzer sah die Einladung "Dateien
+            // hier ablegen", liess los, und nichts geschah. Ein PDF wird nicht
+            // plötzlich hochladbar, aber es soll gesagt werden.
+            if (dropped.length > 0) {
+                showToast(currentLang === 'de'
+                    ? 'Es lassen sich nur Bilddateien hochladen.'
+                    : 'Only image files can be uploaded.', 'error');
+            }
+            return;
+        }
         processFiles(fileArray, targetFolderId);
-    }, [processFiles]);
+    }, [processFiles, showToast, currentLang]);
 
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {
         e.preventDefault();

@@ -120,6 +120,7 @@ export const translations = {
     preset_created: "Preset created",
     preset_updated: "Preset updated",
     preset_deleted: "Preset deleted",
+    new_preset: "New preset",
     new_preset_title: "Create New Preset",
     edit_preset_title: "Edit Preset",
     title_label: "Title",
@@ -164,6 +165,7 @@ export const translations = {
     empty_feed_message: "Click \"+\" to generate your first image.",
     action_upload: "Upload",
     drop_files_here: "Drop files here",
+    upload_only_images: "Only image files can be uploaded.",
     action_generate: "Generate image",
 
     // Settings / User
@@ -682,6 +684,7 @@ export const translations = {
     preset_created: "Preset erstellt",
     preset_updated: "Preset aktualisiert",
     preset_deleted: "Preset gelöscht",
+    new_preset: "Neue Vorlage",
     new_preset_title: "Neue Vorlage erstellen",
     edit_preset_title: "Vorlage bearbeiten",
     title_label: "Titel",
@@ -726,6 +729,7 @@ export const translations = {
     empty_feed_message: "Über \"+\" erstellen Sie Ihr erstes Bild.",
     action_upload: "Hochladen",
     drop_files_here: "Dateien hier ablegen",
+    upload_only_images: "Es lassen sich nur Bilddateien hochladen.",
     action_generate: "Erstellen",
 
     // Settings / User
