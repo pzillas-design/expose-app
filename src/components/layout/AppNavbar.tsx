@@ -57,6 +57,8 @@ interface AppNavbarProps {
     isGroupDrillDown?: boolean;
     /** Spanne der Fassungen im Stapel, z. B. "v1–v12". */
     groupVersionLabel?: string;
+    /** Fassung des gezeigten Bildes, z. B. "v3" — steht abgedunkelt hinter dem Namen. */
+    detailVersion?: string;
     onCloseGroup?: () => void;
     /** 0 = hero/expanded, 1 = compact. Grid mode only. */
     heroProgress?: number;
@@ -128,6 +130,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onGenerateMoreById,
     isGroupDrillDown = false,
     groupVersionLabel,
+    detailVersion,
     onCloseGroup,
     heroProgress,
     onHeroUploadClick,
@@ -397,6 +400,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[160px]">
                 {detailInfo}
             </span>
+            {detailVersion && (
+                <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                    {detailVersion}
+                </span>
+            )}
             <span className="hidden md:contents">
                 <RoundIconButton
                     icon={<MenuLines className="w-[18px] h-[18px]" />}

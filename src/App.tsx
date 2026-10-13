@@ -6,6 +6,7 @@ import { useModalStack } from '@/components/ui/ModalStack';
 import { useNanoController } from '@/hooks/useNanoController';
 import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
 import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
+import { imageNameOf } from '@/utils/imageName';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
@@ -1180,13 +1181,24 @@ export function App() {
                     rightInset={location.pathname.startsWith('/image/') ? detailSidebarWidth : 0}
                     hasImages={allImages.length > 0}
                     imageCount={allImages.length}
+                    // Name und Fassung getrennt: Die Leiste setzt die Fassung
+                    // abgedunkelt dahinter, statt sie als Teil des Namens zu
+                    // zeigen. Der Unterstrich faellt damit weg, ohne dass ein
+                    // einziger Titel in der Datenbank angefasst werden muss.
                     detailInfo={(() => {
                         if (location.pathname.startsWith('/image/')) {
                             const id = location.pathname.split('/').pop();
                             const img = allImages.find(i => i.id === id);
-                            if (img) return img.title || 'Untitled';
+                            if (img) return imageNameOf(img).base || 'Untitled';
                         }
                         return undefined;
+                    })()}
+                    detailVersion={(() => {
+                        if (!location.pathname.startsWith('/image/')) return undefined;
+                        const id = location.pathname.split('/').pop();
+                        const img = allImages.find(i => i.id === id);
+                        const v = img ? imageNameOf(img).version : null;
+                        return v ? `v${v}` : undefined;
                     })()}
                     groupInfo={(() => {
                         if (expandedGroupId) {
