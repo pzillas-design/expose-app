@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
 import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
-import { useDetailLayout } from '@/utils/uiPrefs';
+import { useDetailLayout, useThumbStripVisible } from '@/utils/uiPrefs';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
@@ -815,6 +815,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     // Zumutung, und deshalb ist die Hoehe dort auch nicht ziehbar: Der Platz
     // reicht gerade fuer beides, es gibt nichts zu verteilen.
     const detailLayout = useDetailLayout();
+    const thumbStripVisible = useThumbStripVisible();
     const isRowLayout = !isMobile && detailLayout === 'row';
     // Anteilig am Fenster statt einer festen Zahl: 320 Pixel sind auf einem
     // 13-Zoll-Bildschirm ein Drittel und auf einem grossen ein Streifen, unter
@@ -1051,10 +1052,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     </div>{/* closes image container */}
 
                     {/* Bottom Area: Fixed space so canvas never jumps (desktop only in brush mode; mobile uses fixed toolbar) */}
-                    <div className={`${state.sideSheetMode !== 'brush' ? 'h-20' : (isMobile ? 'h-0' : 'h-20')} shrink-0 relative z-30 w-full overflow-visible`}>
+                    {/* Ist die Leiste aus, faellt auch der Platz weg, den sie
+                        belegt — sonst bliebe ein leerer Streifen stehen und das
+                        Bild haette nichts gewonnen. Im Pinselmodus bleibt die
+                        Hoehe wie gehabt, dort haengt die Werkzeugleiste darin. */}
+                    <div className={`${state.sideSheetMode !== 'brush' ? (thumbStripVisible ? 'h-20' : 'h-0') : (isMobile ? 'h-0' : 'h-20')} shrink-0 relative z-30 w-full overflow-visible`}>
                         {/* Thumbnail Strip — width is capped to a fixed thumb count
                             (11 desktop / 5 mobile), centered. Cell = 36px thumb + 8px gap = 44px. */}
-                        <div
+                        {thumbStripVisible && <div
                             ref={thumbStripRef}
                             className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-[220px] md:max-w-[484px] flex items-center overflow-x-auto no-scrollbar bg-zinc-50 dark:bg-zinc-950 transition-all duration-150 ease-in-out ${state.sideSheetMode !== 'brush' ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-8 opacity-0 pointer-events-none'}`}
                             style={{
@@ -1103,7 +1108,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 );
                             })}
                             </div>
-                        </div>
+                        </div>}
 
                         {/* Annotations Toolbar — fixed bottom on mobile, absolute on desktop */}
                         {state.sideSheetMode === 'brush' && <div className={`${isMobile ? 'fixed bottom-6' : 'absolute bottom-6'} left-0 right-0 z-50 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-150`}>

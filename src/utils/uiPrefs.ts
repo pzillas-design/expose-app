@@ -86,3 +86,44 @@ export const useDetailLayout = (): DetailLayout => {
     }, []);
     return value;
 };
+
+/**
+ * Bilderleiste unter dem Bild in der Detailansicht.
+ *
+ * Abschaltbar, weil sie Platz kostet, den sonst das Bild bekaeme — und weil
+ * die Pfeile und der Wisch dasselbe leisten. Wer sie vermisst, holt sie im
+ * Menue zurueck.
+ *
+ * Standard bleibt an: Ein stillschweigendes Verschwinden waere fuer alle, die
+ * sie benutzen, ein Verlust ohne Ankuendigung.
+ */
+const THUMB_STRIP_KEY = 'expose:ui:detail-thumbstrip-v1';
+
+export const getThumbStripVisible = (): boolean => {
+    try {
+        return window.localStorage.getItem(THUMB_STRIP_KEY) !== '0';
+    } catch (_) {
+        return true;
+    }
+};
+
+export const setThumbStripVisible = (on: boolean): void => {
+    try {
+        window.localStorage.setItem(THUMB_STRIP_KEY, on ? '1' : '0');
+    } catch (_) { /* privater Modus: dann gilt der Standard */ }
+    window.dispatchEvent(new CustomEvent(CHANGED_EVENT));
+};
+
+export const useThumbStripVisible = (): boolean => {
+    const [value, setValue] = React.useState(getThumbStripVisible);
+    React.useEffect(() => {
+        const onChange = () => setValue(getThumbStripVisible());
+        window.addEventListener(CHANGED_EVENT, onChange);
+        window.addEventListener('storage', onChange);
+        return () => {
+            window.removeEventListener(CHANGED_EVENT, onChange);
+            window.removeEventListener('storage', onChange);
+        };
+    }, []);
+    return value;
+};
