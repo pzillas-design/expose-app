@@ -82,6 +82,41 @@ const dayLabelOf = (ts: string | number | undefined, lang: 'de' | 'en'): string 
  * - Waechst mit dem Inhalt: ein Icon bleibt rund, eine zweistellige Zahl
  *   bekommt Luft, statt gequetscht zu werden.
  */
+/**
+ * Die Flaeche zum Ablegen oder Auswaehlen von Bildern.
+ *
+ * Eine Definition fuer beide Vorkommen — den leeren Zustand und den Streifen
+ * ueber der Galerie. Sie unterscheiden sich nur in der Anordnung, nicht in der
+ * Erscheinung; zwei Abschriften waeren die naechste Stelle gewesen, an der
+ * Farbwerte auseinanderlaufen.
+ *
+ * Der Untergrund ist bewusst in Schwarz bzw. Weiss mit niedriger Deckkraft
+ * angegeben statt in festen Grautoenen: So sitzt er in beiden Themen gleich
+ * und bleibt der blosse Hauch, der gewuenscht ist.
+ */
+const UploadDropZone: React.FC<{
+    onClick: () => void;
+    label: string;
+    active?: boolean;
+    row?: boolean;
+    className?: string;
+}> = ({ onClick, label, active = false, row = false, className = '' }) => (
+    <button
+        onClick={onClick}
+        className={`w-full rounded-2xl flex items-center justify-center transition-colors duration-200
+            ${row ? 'flex-row gap-2.5 py-6' : 'flex-col gap-3 px-6 py-10'}
+            ${active
+                // Beim Ziehen etwas deutlicher, aber in derselben Tonlage —
+                // kein Farbwechsel, nur mehr davon.
+                ? 'bg-black/[0.06] dark:bg-white/[0.08]'
+                : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}
+            ${className}`}
+    >
+        <ImagePlus className="w-5 h-5 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.5} />
+        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{label}</span>
+    </button>
+);
+
 const TileChip: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
     <div
         className={`absolute top-2 right-2 z-20 h-[22px] min-w-[22px] px-1.5 rounded-full
@@ -1086,6 +1121,28 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                         */}
                         {(displayImages.length > 0 || (daySections?.length ?? 0) > 0) ? (
                             <>
+                                {/*
+                                    Ablagestreifen ueber der Galerie.
+
+                                    Nur dort: In einem geoeffneten Stapel und im
+                                    Auswahlmodus hat die Ansicht eine andere
+                                    Aufgabe, und ein Hochladen-Angebot stuende im
+                                    Weg. Er scrollt mit dem Inhalt weg, statt
+                                    dauerhaft Platz zu belegen.
+
+                                    Gleiche Seitenabstaende wie das Raster, damit
+                                    er buendig mit den Kacheln steht.
+                                */}
+                                {!effectiveGroupId && !renderSelectMode && (
+                                    <div className="px-4 sm:px-8 pt-2 sm:pt-4">
+                                        <UploadDropZone
+                                            row
+                                            onClick={triggerUpload}
+                                            active={isDropActive}
+                                            label={t?.('welcome_drop_cta') || 'Drop photos or click to choose'}
+                                        />
+                                    </div>
+                                )}
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${renderSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
@@ -1177,22 +1234,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     </p>
                                 </div>
 
-                                <button
+                                <UploadDropZone
                                     onClick={triggerUpload}
-                                    className={`w-full rounded-2xl px-6 py-10 flex flex-col items-center justify-center gap-3
-                                        transition-colors duration-200
-                                        ${isDropActive
-                                            // Beim Ziehen etwas deutlicher, aber in
-                                            // derselben Tonlage — kein Farbwechsel,
-                                            // nur mehr davon.
-                                            ? 'bg-black/[0.06] dark:bg-white/[0.08]'
-                                            : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}`}
-                                >
-                                    <ImagePlus className="w-5 h-5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
-                                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
-                                        {t?.('welcome_drop_cta') || 'Drop photos or click to choose'}
-                                    </span>
-                                </button>
+                                    active={isDropActive}
+                                    label={t?.('welcome_drop_cta') || 'Drop photos or click to choose'}
+                                />
 
                                 <button
                                     onClick={onGenerate ?? onCreateNew}
