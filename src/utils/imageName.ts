@@ -45,3 +45,31 @@ export const formatImageName = (img: Parameters<typeof imageNameOf>[0]): string 
     const { base, version } = imageNameOf(img);
     return version ? `${base} v${version}` : base;
 };
+
+/**
+ * Liest eine Fassungsangabe aus einem Dateinamen.
+ *
+ * `haus_v2.jpg` wird zu { base: "haus", version: 2 }. Damit faengt ein
+ * hochgeladenes v2 nicht wieder bei 1 an, und die naechste Bearbeitung heisst
+ * v3 statt v2 — vorher trugen zwei verschiedene Bilder dieselbe Nummer.
+ *
+ * Jede Datei bleibt ihr eigener Stapel, auch wenn zwei Dateien denselben
+ * Namensstamm haben. `haus_v2.jpg` und `haus_v5.jpg` sind zwei Bilder, die
+ * jemand getrennt bearbeiten will — sie zusammenzulegen hiesse zu raten, dass
+ * das eine aus dem anderen hervorgegangen ist, und dazwischen fehlten dann
+ * die Fassungen 3 und 4.
+ *
+ * Erkannt wird nur eine Endung am Ende des Namens, mit oder ohne Trennzeichen
+ * davor: `_v2`, `-v2`, ` v2`, `v2`. Ein `v` mitten im Namen bleibt
+ * unangetastet, und eine 0 oder etwas Unsinniges faellt auf die 1 zurueck.
+ */
+export const parseUploadName = (fileName: string): { base: string; version: number } => {
+    const withoutExt = fileName.replace(/\.[^/.]+$/, '');
+    const m = /^(.*?)[ _-]?v(\d{1,3})$/i.exec(withoutExt);
+    if (!m) return { base: withoutExt, version: 1 };
+    const base = m[1].trim();
+    const version = Number(m[2]);
+    // Ohne Namensrest waere der Stamm leer — dann war das "v12" der Name.
+    if (!base) return { base: withoutExt, version: 1 };
+    return { base, version: version >= 1 ? version : 1 };
+};
