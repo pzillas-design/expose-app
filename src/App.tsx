@@ -93,7 +93,11 @@ export function App() {
     const [infoImageId, setInfoImageId] = React.useState<string | null>(null);
     const [detailSidebarWidth, setDetailSidebarWidth] = React.useState(380);
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
-    const [feedSideSheetVisible, setFeedSideSheetVisible] = React.useState(false);
+    // Auswahl-Panel der Galerie: wie das Detail-Panel standardmaessig offen.
+    // Sichtbar wird es ohnehin nur im Auswahlmodus, und ohne Auswahl zeigt es
+    // einen Hinweis statt leerer Flaeche — es gibt also keinen Grund, erst
+    // einen Klick auf „Bearbeiten“ zu verlangen.
+    const [feedSideSheetVisible, setFeedSideSheetVisible] = React.useState(true);
     const [expandedGroupId, setExpandedGroupId] = React.useState<string | null>(null);
     // Zuletzt verlassener Stapel — die Galerie scrollt ihn beim Aufbau in die
     // erste sichtbare Zeile, damit man dort weitermacht, wo man aufgehört hat.
@@ -1138,7 +1142,8 @@ export function App() {
                     onCancelSelectMode={() => {
                         actions.setIsSelectMode(false);
                         actions.deselectAll();
-                        setFeedSideSheetVisible(false);
+                        // Nicht zurueckstellen: Das Panel ist im Auswahlmodus der
+                        // Standard, und beim Verlassen verschwindet es ohnehin.
                     }}
                     onDeleteSelected={async () => {
                         const count = state.selectedIds?.length || 0;
