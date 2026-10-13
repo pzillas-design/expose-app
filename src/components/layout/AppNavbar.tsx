@@ -752,17 +752,17 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
 
                     Stark weichgezeichnet, aber nur leicht eingefaerbt: Man
                     sieht, dass etwas dahinter ist, ohne dass es zur Flaeche
-                    wird. Die Maske laesst die unteren 20 Pixel auslaufen, damit
-                    unten keine sichtbare Kante entsteht — der Ersatz fuer die
-                    Linie, die vorher dort stand.
+                    wird. Ohne Maske: Ein weiches Auslaufen nach unten sah auf
+                    Textseiten wie ein Farbverlauf aus statt wie eine Kante.
+                    Eine durchscheinende, weichgezeichnete Flaeche trennt auch
+                    mit gerader Unterkante genug — so machen es die
+                    Systemleisten von macOS und iOS auch.
                 */}
                 <div
                     aria-hidden
                     className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
                     style={{
                         opacity: surfaceOpacity,
-                        maskImage: 'linear-gradient(to bottom, black calc(100% - 20px), transparent 100%)',
-                        WebkitMaskImage: 'linear-gradient(to bottom, black calc(100% - 20px), transparent 100%)',
                     }}
                 />
                 {/* LEFT: Upload + Create (with labels when expanded) */}
@@ -1036,15 +1036,13 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 Detailansicht nicht mehr oeffnen — es wurde geoeffnet, aber nicht
                 gezeichnet.
 
-                Gleiche Bauweise wie in der Galerie-Kopfzeile: Weichzeichner und
-                Maske sitzen auf einer Ebene darunter, die Kopfzeile selbst
-                beschneidet nichts.
+                Gleiche Bauweise wie in der Galerie-Kopfzeile: Der
+                Weichzeichner sitzt auf einer Ebene darunter, die Kopfzeile
+                selbst beschneidet nichts.
             */}
             <div
                 aria-hidden
-                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50
-                    [mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]
-                    [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]"
+                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
             />
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
@@ -1095,15 +1093,13 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 Detailansicht nicht mehr oeffnen — es wurde geoeffnet, aber nicht
                 gezeichnet.
 
-                Gleiche Bauweise wie in der Galerie-Kopfzeile: Weichzeichner und
-                Maske sitzen auf einer Ebene darunter, die Kopfzeile selbst
-                beschneidet nichts.
+                Gleiche Bauweise wie in der Galerie-Kopfzeile: Der
+                Weichzeichner sitzt auf einer Ebene darunter, die Kopfzeile
+                selbst beschneidet nichts.
             */}
             <div
                 aria-hidden
-                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50
-                    [mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]
-                    [-webkit-mask-image:linear-gradient(to_bottom,black_calc(100%-16px),transparent_100%)]"
+                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
             />
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
