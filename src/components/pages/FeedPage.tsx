@@ -746,18 +746,26 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         }));
     }, [rows, effectiveGroupId, renderSelectMode, state?.currentLang]);
 
-    // Zugeklappte Tage. Beim ersten Aufbau ist nur der juengste Tag offen —
-    // danach entscheidet der Nutzer, und ein spaeter hinzukommender Tag (etwa
-    // nach Mitternacht) ist der neue juengste und damit offen.
-    const [closedDays, setClosedDays] = React.useState<Set<string>>(new Set());
+    // AUFGEKLAPPTE Tage, nicht zugeklappte.
+    //
+    // Umgekehrt herum war es falsch: Die Liste der zugeklappten Tage wurde
+    // einmal beim ersten Aufbau gefuellt. Jeder Tag, der spaeter dazukam —
+    // und beim Scrollen kommen staendig aeltere nach — stand nicht darin und
+    // galt damit als offen. Deshalb klappte ausgerechnet der unterste Tag
+    // immer von selbst auf.
+    //
+    // Als Menge der offenen Tage kann das nicht passieren: Was nicht
+    // ausdruecklich geoeffnet wurde, ist zu. Nachgeladene Tage sind damit
+    // automatisch zu, ohne dass die Nachlade-Logik davon wissen muss.
+    const [openDays, setOpenDays] = React.useState<Set<string>>(new Set());
     const daysSeededRef = React.useRef(false);
     React.useEffect(() => {
         if (daysSeededRef.current || !daySections || daySections.length === 0) return;
         daysSeededRef.current = true;
-        setClosedDays(new Set(daySections.slice(1).map(sec => sec.key)));
+        setOpenDays(new Set([daySections[0].key]));
     }, [daySections]);
     const toggleDay = React.useCallback((key: string) => {
-        setClosedDays(prev => {
+        setOpenDays(prev => {
             const next = new Set(prev);
             if (next.has(key)) next.delete(key); else next.add(key);
             return next;
@@ -775,11 +783,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         // Sprachnavigation auf Kacheln, die gar nicht im Raster stehen.
         if (daySections) {
             return daySections
-                .filter(sec => !closedDays.has(sec.key))
+                .filter(sec => openDays.has(sec.key))
                 .flatMap(sec => sec.covers);
         }
         return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
-    }, [effectiveGroupId, renderSelectMode, rows, daySections, closedDays]);
+    }, [effectiveGroupId, renderSelectMode, rows, daySections, openDays]);
 
     // Track which cover tile to animate when closing a group.
     // useLayoutEffect fires synchronously before paint so the first visible frame
@@ -1178,7 +1186,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         // Tastatur- und Sprachnavigation mit displayImages uebereinstimmen.
                                         let imgIdx = 0;
                                         return daySections.flatMap(sec => {
-                                            const closed = closedDays.has(sec.key);
+                                            const closed = !openDays.has(sec.key);
                                             const header = (
                                                 <button
                                                     key={`day-${sec.key}`}

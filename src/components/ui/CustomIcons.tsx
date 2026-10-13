@@ -21,13 +21,18 @@ export const InfoFilled: React.FC<{ className?: string }> = ({ className = "w-4 
  * ganze Anwendung betrifft (Einstellungen, Konto, Abmelden). Vorher trugen
  * beide dasselbe Symbol, und man musste raten, worauf sich ein Menue bezieht.
  *
- * Zwei statt drei Strichen, und der untere kuerzer: Ein Hamburger mit drei
- * gleich langen Balken ist in einer Leiste mit lauter runden Symbolen das
- * lauteste Element. Zwei Striche sagen dasselbe und bleiben ruhig.
+ * Zwei statt drei Strichen: Ein Hamburger mit drei Balken ist in einer Leiste
+ * mit lauter runden Symbolen das lauteste Element. Zwei Striche sagen dasselbe
+ * und bleiben ruhig.
+ *
+ * Beide gleich lang. Ein verkuerzter unterer Strich sollte das Symbol
+ * auflockern, liess es aber schief aussehen — bei nur zwei Linien gibt es
+ * nichts, worauf sich die Verkuerzung beziehen koennte, und sie wirkt wie ein
+ * Fehler statt wie eine Form.
  */
 export const MenuLines: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" xmlns="http://www.w3.org/2000/svg" className={className}>
         <path d="M5 9.5h14" />
-        <path d="M5 14.5h9" />
+        <path d="M5 14.5h14" />
     </svg>
 );
