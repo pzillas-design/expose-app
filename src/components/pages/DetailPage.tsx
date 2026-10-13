@@ -825,30 +825,40 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         {/* Floating action buttons */}
                         {state.sideSheetMode !== 'brush' && (
                             <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
-                                <div className="flex items-center gap-1.5 pointer-events-auto">
-                                    {/* Blaettern steht jetzt in derselben Zeile wie die
-                                        uebrigen Handlungen am Bild. An den Seitenraendern
-                                        lagen die Pfeile weit auseinander und mitten im
-                                        Motiv; unten bilden sie mit "Mehr" und "Bearbeiten"
-                                        eine Gruppe, die man an einem Ort findet. */}
-                                    {idx > 0 && (
-                                        <button
-                                            onClick={() => handleSelectWithin(images[idx - 1].id)}
-                                            aria-label={t('previous') || 'Zurück'}
-                                            className={FLOATING_BTN_ICON}
-                                        >
-                                            <ChevronLeft className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                    {idx < images.length - 1 && (
-                                        <button
-                                            onClick={() => handleSelectWithin(images[idx + 1].id)}
-                                            aria-label={t('next') || 'Weiter'}
-                                            className={FLOATING_BTN_ICON}
-                                        >
-                                            <ChevronRight className="w-4 h-4" />
-                                        </button>
-                                    )}
+                                {/*
+                                    Die Pfeile stehen fest in der Mitte, alles andere
+                                    haengt rechts daran.
+
+                                    Vorher war die ganze Gruppe zentriert: Kam "Mehr"
+                                    dazu oder fiel weg, verschob sich alles um dessen
+                                    halbe Breite — und am ersten und letzten Bild fehlte
+                                    zusaetzlich ein Pfeil, was den anderen um eine
+                                    Knopfbreite versetzte. Wer zehnmal weiterblaettert,
+                                    muss die Maus nicht neun Mal nachfuehren.
+
+                                    Deshalb: beide Pfeile immer da, am Rand der Liste
+                                    abgeschaltet statt entfernt, und die uebrigen
+                                    Knoepfe absolut daneben, wo sie die Mitte nicht
+                                    verschieben.
+                                */}
+                                <div className="relative flex items-center gap-1.5 pointer-events-auto">
+                                    <button
+                                        onClick={() => idx > 0 && handleSelectWithin(images[idx - 1].id)}
+                                        disabled={idx <= 0}
+                                        aria-label={t('previous') || 'Zurück'}
+                                        className={`${FLOATING_BTN_ICON} disabled:opacity-30 disabled:cursor-default`}
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => idx < images.length - 1 && handleSelectWithin(images[idx + 1].id)}
+                                        disabled={idx >= images.length - 1}
+                                        aria-label={t('next') || 'Weiter'}
+                                        className={`${FLOATING_BTN_ICON} disabled:opacity-30 disabled:cursor-default`}
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                    <div className="absolute left-full top-0 ml-1.5 flex items-center gap-1.5">
                                     {img.generationPrompt && (
                                         <Tooltip text={t('generate_more')} shortcut="M">
                                             <button
@@ -867,6 +877,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             </button>
                                         </Tooltip>
                                     )}
+                                    </div>
                                 </div>
                             </div>
                         )}
