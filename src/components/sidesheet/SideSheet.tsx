@@ -666,7 +666,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // Schriftzeichen, dessen Groesse und Lage zur Grundlinie die Schrift
     // bestimmt — deshalb sass es nie mittig. Das Befehlstasten-Zeichen ⌘
     // bleibt Text, das ist in allen Systemschriften sauber gezeichnet.
-    const enterIcon = <CornerDownLeft className="w-[15px] h-[15px]" strokeWidth={2} />;
+    const enterIcon = <CornerDownLeft className="w-[1.05em] h-[1.05em]" strokeWidth={2} />;
     const generateShortcutLabel = enterGenerates
         ? enterIcon
         : <>{isMac ? '⌘' : 'Strg'}{enterIcon}</>;
@@ -944,7 +944,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                             {/* ── REFINE Section ── */}
                             <section className="space-y-3">
 
-                                <div className={`bg-zinc-100/80 dark:bg-zinc-900/80 ${Theme.Geometry.RadiusXl} p-5 space-y-5 transition-all`}>
+                                {/* Aus dem System statt eigener Werte:
+                                    - RadiusLg (16 px) statt RadiusXl (24 px). Der Token
+                                      sagt selbst, wofuer er da ist — "Cards/side-sheets"
+                                      gegen "Modals/Overlays". Die Karte ist eine Karte.
+                                    - SurfaceSubtle statt zinc-100/80 bzw. zinc-900/80.
+                                      Letzteres lag im Dunkelmodus so dicht an der
+                                      Hintergrundfarbe zinc-950, dass die Karte kaum
+                                      abgesetzt war. */}
+                                <div className={`${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.RadiusLg} p-5 space-y-5 transition-all`}>
                                     {/* Prompt Textarea */}
                                     <div>
                                         <textarea

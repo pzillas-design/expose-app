@@ -255,10 +255,13 @@ export const Button: React.FC<ButtonProps> = ({
     const base = `flex items-center justify-center gap-2 rounded-full ${Theme.Effects.Transition} active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 ${Typo.ButtonLabel}`;
 
     // Size variants — height & padding only, font is always from ButtonLabel
+    // Hoehe, Innenabstand UND Schriftgroesse je Stufe. Vorher trugen s bis l
+    // dieselbe Schrift aus Typo.ButtonLabel, nur xl wich ab — ein 48 Pixel
+    // hoher Knopf mit derselben Schrift wie ein 32 Pixel hoher wirkt leer.
     const sizes = {
-        s: 'h-8 px-4',
-        m: 'h-10 px-5',
-        l: 'h-12 px-6',
+        s: 'h-8 px-4 text-[13px]',
+        m: 'h-10 px-5 text-[15px]',
+        l: 'h-12 px-6 text-[15px]',
         xl: 'h-16 px-10 text-base',
     };
 
@@ -271,7 +274,11 @@ export const Button: React.FC<ButtonProps> = ({
         secondary: `bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700`,
         danger: `bg-red-500 text-white hover:bg-red-600 shadow-sm`,
         ghost: `bg-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100`,
-        generate: `bg-gradient-to-r from-orange-500 to-red-600 text-white dark:text-zinc-950 shadow-sm hover:brightness-110`
+        // Weiss in BEIDEN Themen. Der Hintergrund ist ein Orange-Rot-Verlauf
+        // und wechselt mit dem Thema nicht — die Schrift tat es trotzdem und
+        // stand im Dunkelmodus fast schwarz auf Orange. Das war kein
+        // Geschmacksfrage, sondern zu wenig Kontrast.
+        generate: `bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm hover:brightness-110`
     };
 
     const btn = (
