@@ -184,7 +184,7 @@ interface DetailPageProps {
  *
  * Immer sichtbar, auf jedem Untergrund — mit einer Regel statt mehrerer.
  *
- * Der Kniff ist `backdrop-contrast(0.55)`: Kontrast senken zieht jeden Tonwert
+ * Der Kniff ist `backdrop-contrast(0.78)`: Kontrast senken zieht jeden Tonwert
  * zur Mitte. Schwarz wird dadurch grau, Weiss ebenfalls. Die Flaeche hebt sich
  * also von selbst ab, egal was darunter liegt — ohne Fallunterscheidung, ohne
  * Rahmen, ohne eine Farbe, die auf der einen Haelfte der Bilder falsch ist.
@@ -195,10 +195,14 @@ interface DetailPageProps {
  *
  * Dazu eine sehr schwache helle Fuellung fuer mittlere Tonwerte, wo das Senken
  * des Kontrasts wenig bewirkt, und ein leichter Schlagschatten am Zeichen.
+ *
+ * Der Wert ist bewusst nah an 1: Bei 0,55 hoben sich die Knoepfe auf schwarzem
+ * Grund als deutlich helle Scheiben ab — sichtbar ja, aber lauter als das Bild,
+ * ueber dem sie liegen. Sie sollen auffindbar sein, nicht auffallen.
  */
 const FLOATING_BTN_BASE = `text-white rounded-full flex items-center
-    backdrop-blur-md backdrop-contrast-[0.55] backdrop-brightness-110 backdrop-saturate-[0.9]
-    bg-white/[0.06] hover:bg-white/[0.14]
+    backdrop-blur-md backdrop-contrast-[0.78] backdrop-brightness-105 backdrop-saturate-[0.95]
+    bg-white/[0.04] hover:bg-white/[0.10]
     [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]
     transition-[background-color] duration-150`;
 
