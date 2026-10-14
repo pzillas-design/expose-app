@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
+import React, { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef, memo } from 'react';
 import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
 import { useDetailLayout } from '@/utils/uiPrefs';
@@ -384,6 +384,28 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const trackedGenRef = useRef<{ childId: string; parentId: string } | null>(null);
     const autoJumpedRef = useRef<Set<string>>(new Set());
     const navHappenedDuringGenRef = useRef(false);
+
+    /**
+     * Beim Oeffnen laufende Generierungen gelten als bereits gesehen.
+     *
+     * Der Sprung zum Platzhalter gilt der Generierung, die man GERADE hier
+     * ausgeloest hat. Lief sie schon, als die Ansicht aufging, hat der Nutzer
+     * bewusst ein anderes Bild angetippt — und landete trotzdem auf dem
+     * Ladebildschirm, weil der Platzhalter ein Kind des geoeffneten Bildes ist.
+     * Aus der Galerie heraus traf das jedes Mal zu: Die Ansicht wird neu
+     * aufgebaut, der Merker gegen Wiederholungen ist dann leer.
+     *
+     * Ein Layout-Effekt, nicht useEffect: Er laeuft vor dem Effekt unten, der
+     * sonst im selben Durchgang schon gesprungen waere.
+     */
+    const seededRef = useRef(false);
+    useLayoutEffect(() => {
+        // Erst wenn ueberhaupt Bilder da sind: Bei einem Direktaufruf steht die
+        // Liste anfangs leer, und ein Merker aus einer leeren Liste merkt nichts.
+        if (seededRef.current || images.length === 0) return;
+        seededRef.current = true;
+        images.forEach(i => { if (i.isGenerating) autoJumpedRef.current.add(i.id); });
+    }, [images]);
 
     useEffect(() => {
         // Neue Generierung am aktuell angezeigten Bild entdeckt
