@@ -637,9 +637,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const prevSelectModeRef = React.useRef(false);
     const prevSelectedCountRef = React.useRef(0);
     const lastSelectImageRef = React.useRef<string | null>(null);
-    // Set when entering select mode — the scroll for it fires once the grid has
-    // actually swapped to the select-mode layout (see renderSelectMode below).
-    const pendingSelectScrollRef = React.useRef<string | null>(null);
+    /**
+     * Beim Betreten des Auswahlmodus gemerkt: die Kachel und die Hoehe, auf der
+     * sie in diesem Moment auf dem Bildschirm stand.
+     *
+     * Der Modus klappt die Stapel auf, es kommen also Kacheln oberhalb der
+     * angetippten hinzu und alles darunter rutscht nach unten. Gemerkt wird
+     * deshalb nicht "nach oben scrollen", sondern die Bildschirmhoehe — nach
+     * dem Umbau wird genau um die Differenz nachgezogen. Die angetippte Kachel
+     * bleibt dort, wo der Finger sie verlassen hat.
+     */
+    const pendingSelectScrollRef = React.useRef<{ id: string; viewportTop: number } | null>(null);
 
     // Time-based retry: waits for the tile to exist in the DOM (up to 600ms)
     // before scrolling. Aligns it to the FIRST visible row (just below the
@@ -671,7 +679,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     React.useEffect(() => {
         const isEntering = !!isSelectMode && !prevSelectModeRef.current;
         const isExiting = !isSelectMode && prevSelectModeRef.current;
-        const isFirstSelection = !!isSelectMode && prevSelectModeRef.current && prevSelectedCountRef.current === 0 && selectedIds.length > 0;
 
         prevSelectModeRef.current = !!isSelectMode;
         prevSelectedCountRef.current = selectedIds.length;
@@ -688,11 +695,18 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             // (still-showing) grid too, so scrolling immediately would land against
             // stale coordinates that the swap invalidates a moment later — the
             // tile ends up out of view. Defer until the swap actually happened.
-            pendingSelectScrollRef.current = selectedIds[0];
-        } else if (isFirstSelection && selectedIds.length > 0) {
-            // Already showing the select-mode grid — safe to scroll right away.
-            scrollGridToTile(selectedIds[0]);
+            const el = gridRef.current?.querySelector(`[data-image-id="${selectedIds[0]}"]`) as HTMLElement | null;
+            pendingSelectScrollRef.current = {
+                id: selectedIds[0],
+                // Steckte die Kachel in einem zugeklappten Stapel, gibt es
+                // keine Hoehe zu halten. NaN heisst: nach dem Umbau an den
+                // oberen Rand holen, damit sie ueberhaupt zu sehen ist.
+                viewportTop: el ? el.getBoundingClientRect().top : NaN,
+            };
         }
+        // Eine weitere Auswahl im laufenden Modus baut das Raster NICHT um.
+        // Hier zu scrollen hiesse, eine angetippte Kachel aus einer anderen
+        // Reihe nach oben zu reissen, ohne dass sich etwas verschoben haette.
 
         // Scroll to the cover tile of the last selected image's group when exiting select mode
         if (isExiting && lastSelectImageRef.current) {
@@ -758,9 +772,28 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // instead of a pre-swap layout that's about to shift underneath it.
     React.useEffect(() => {
         if (!renderSelectMode || !pendingSelectScrollRef.current) return;
-        const targetId = pendingSelectScrollRef.current;
+        const { id, viewportTop } = pendingSelectScrollRef.current;
         pendingSelectScrollRef.current = null;
-        scrollGridToTile(targetId);
+
+        if (Number.isNaN(viewportTop)) {
+            scrollGridToTile(id);
+            return;
+        }
+
+        const start = Date.now();
+        const hold = () => {
+            const el = gridRef.current?.querySelector(`[data-image-id="${id}"]`) as HTMLElement | null;
+            const sc = scrollRef.current;
+            if (el && sc) {
+                const delta = el.getBoundingClientRect().top - viewportTop;
+                if (Math.abs(delta) > 1) {
+                    sc.scrollTo({ top: Math.max(0, sc.scrollTop + delta), behavior: 'instant' as ScrollBehavior });
+                }
+            } else if (Date.now() - start < 600) {
+                requestAnimationFrame(hold);
+            }
+        };
+        requestAnimationFrame(hold);
     }, [renderSelectMode, scrollGridToTile]);
 
     // Eine Identitaet fuer alle Kacheln. Vorher entstand je Stapelkachel bei

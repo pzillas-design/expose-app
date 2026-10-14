@@ -1,0 +1,252 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { GoogleGenAI } from '@google/genai';
+import { createClient } from '@supabase/supabase-js';
+
+/**
+ * "Fuer dieses Bild" — bildbezogene Bearbeitungsvorschlaege.
+ *
+ * Ein Vision-Modell sieht das Foto an und nennt drei bis fuenf konkrete
+ * Bearbeitungen. Jeder Vorschlag ist ein Chip, der eine Zeile in den Prompt
+ * schreibt — dieselbe Mechanik wie die Vorlagen-Chips, damit es nur EINE
+ * Quelle fuer das gibt, was zum Bildmodell geht.
+ *
+ * Warum diese Route und nicht eine Supabase-Function: Der Google-Schluessel
+ * liegt hier schon (siehe gemini-live-token.ts). Ein zweiter Ort fuer
+ * denselben Schluessel waere ein zweiter Ort, an dem er ablaufen kann.
+ *
+ * Das Ergebnis wird am Bild gespeichert. Das Modell wird pro Bild genau
+ * einmal gefragt, jedes weitere Oeffnen liest aus der Datenbank.
+ */
+
+const ALLOWED_ORIGINS = [
+    'https://expose.ae',
+    'https://www.expose.ae',
+    'https://staging.expose.ae',
+    'http://localhost:5173',
+    'http://localhost:3000',
+];
+
+function getCorsOrigin(req: VercelRequest): string {
+    const origin = req.headers.origin || '';
+    return ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+}
+
+function setCors(res: VercelResponse, origin: string) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Vary', 'Origin');
+}
+
+/**
+ * Flash-Lite, nicht Flash: Die Aufgabe ist "was ist auf dem Bild und was
+ * davon stoert" — dafuer braucht es kein grosses Modell. Ueberschreibbar,
+ * weil Google die Namen seiner Vorschau-Modelle regelmaessig aendert.
+ */
+const DEFAULT_SUGGEST_MODEL = 'gemini-3.1-flash-lite';
+
+/** Obergrenze fuer das gesendete Bild. Die Vorschau der Galerie liegt bei ~60 KB. */
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
+const SUGGESTION_SCHEMA = {
+    type: 'object',
+    properties: {
+        suggestions: {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    label: { type: 'string' },
+                    line: { type: 'string' },
+                },
+                required: ['label', 'line'],
+            },
+        },
+    },
+    required: ['suggestions'],
+} as const;
+
+/**
+ * Die Regeln sind der eigentliche Wert dieser Route.
+ *
+ * Zwei davon sind nicht kosmetisch: Maengel bleiben im Bild (ein wegretuschierter
+ * Feuchtefleck ist kein Bildfehler, sondern eine Falschangabe), und nichts wird
+ * dazugebaut, was es nicht gibt. Ein Makler, der so ein Bild verschickt, haftet
+ * dafuer — nicht wir.
+ */
+function buildInstruction(lang: string): string {
+    if (lang === 'en') {
+        return [
+            'You are looking at a photo an estate agent wants to retouch for a property listing.',
+            'Name 3 to 5 concrete edits that would improve THIS photo.',
+            '',
+            'Rules:',
+            '- Only name what is actually visible in the photo. No generic advice.',
+            '- Never remove defects, damage, cracks, damp patches or wear. They belong in the photo.',
+            '- Do not add anything that is not there. Virtual staging only for visibly empty rooms.',
+            '- No structural changes.',
+            '- "label": the chip caption, at most 3 words, imperative.',
+            '- "line": one short, complete instruction for an image model, at most 14 words, no preamble.',
+            '- If the photo needs nothing, return an empty list. An empty list is a valid answer.',
+        ].join('\n');
+    }
+    return [
+        'Du siehst ein Foto, das ein Makler fuer ein Exposé bearbeiten lassen will.',
+        'Nenne 3 bis 5 konkrete Bearbeitungen, die GENAU DIESES Foto besser machen.',
+        '',
+        'Regeln:',
+        '- Nur was wirklich im Bild zu sehen ist. Keine allgemeinen Ratschlaege.',
+        '- Niemals Maengel entfernen: keine Risse, Schaeden, Feuchteflecken, Abnutzung. Die gehoeren ins Bild.',
+        '- Nichts hinzufuegen, was es nicht gibt. Moeblierung nur bei sichtbar leeren Raeumen.',
+        '- Keine baulichen Veraenderungen.',
+        '- "label": die Aufschrift des Chips, hoechstens 3 Woerter, Imperativ.',
+        '- "line": ein kurzer, vollstaendiger Auftrag an ein Bildmodell, hoechstens 14 Woerter, ohne Einleitung.',
+        '- Gibt das Bild nichts her, gib eine leere Liste zurueck. Eine leere Liste ist eine gueltige Antwort.',
+    ].join('\n');
+}
+
+interface Suggestion { label: string; line: string }
+
+/** Was vom Modell kommt, ist Text — nicht vertrauenswuerdig und nicht unbegrenzt. */
+function sanitize(raw: unknown): Suggestion[] {
+    if (!Array.isArray(raw)) return [];
+    const out: Suggestion[] = [];
+    for (const item of raw) {
+        const label = typeof item?.label === 'string' ? item.label.trim().slice(0, 40) : '';
+        const line = typeof item?.line === 'string' ? item.line.trim().replace(/\s+/g, ' ').slice(0, 160) : '';
+        if (!label || !line) continue;
+        out.push({ label, line });
+        if (out.length >= 5) break;
+    }
+    return out;
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    const corsOrigin = getCorsOrigin(req);
+
+    if (req.method === 'OPTIONS') {
+        setCors(res, corsOrigin);
+        return res.status(200).end();
+    }
+    if (req.method !== 'POST') {
+        setCors(res, corsOrigin);
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+    setCors(res, corsOrigin);
+
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader?.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Missing authorization token' });
+        }
+        const accessToken = authHeader.slice('Bearer '.length);
+
+        const imageId = typeof req.body?.imageId === 'string' ? req.body.imageId : '';
+        const imageBase64 = typeof req.body?.imageBase64 === 'string' ? req.body.imageBase64 : '';
+        const mimeType = typeof req.body?.mimeType === 'string' ? req.body.mimeType : 'image/jpeg';
+        const lang = req.body?.lang === 'en' ? 'en' : 'de';
+
+        if (!imageId) return res.status(400).json({ error: 'imageId required' });
+
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+        const anonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+        if (!supabaseUrl || !anonKey) {
+            console.error('[suggest-edits] Supabase env vars missing');
+            return res.status(500).json({ error: 'Not configured' });
+        }
+
+        /**
+         * Der Zugriff laeuft mit dem Token des Nutzers, nicht mit dem
+         * Service-Schluessel. Damit entscheidet RLS, wessen Bild gelesen und
+         * beschrieben werden darf — und nicht eine Pruefung, die ich hier
+         * selbst schreibe und irgendwann vergesse.
+         */
+        const supabase = createClient(supabaseUrl, anonKey, {
+            global: { headers: { Authorization: `Bearer ${accessToken}` } },
+            auth: { persistSession: false, autoRefreshToken: false },
+        });
+
+        const { data: row, error: rowError } = await supabase
+            .from('images')
+            .select('id, edit_suggestions')
+            .eq('id', imageId)
+            .maybeSingle();
+
+        if (rowError) {
+            console.error('[suggest-edits] row lookup failed', rowError);
+            return res.status(500).json({ error: 'Lookup failed' });
+        }
+        // Kein Treffer heisst: fremdes oder geloeschtes Bild. RLS hat entschieden.
+        if (!row) return res.status(404).json({ error: 'Image not found' });
+
+        const cached = row.edit_suggestions as { v?: number; lang?: string; items?: unknown } | null;
+        if (cached && cached.v === 1 && cached.lang === lang && Array.isArray(cached.items)) {
+            return res.status(200).json({ suggestions: cached.items, cached: true });
+        }
+
+        if (!imageBase64) return res.status(400).json({ error: 'imageBase64 required' });
+        if (Buffer.byteLength(imageBase64, 'base64') > MAX_IMAGE_BYTES) {
+            return res.status(413).json({ error: 'Image too large' });
+        }
+
+        const apiKey = process.env.VOICE_ASSIST_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            console.error('[suggest-edits] Missing Google API key');
+            return res.status(500).json({ error: 'Not configured' });
+        }
+
+        const ai = new GoogleGenAI({ apiKey });
+        const model = process.env.SUGGEST_MODEL || DEFAULT_SUGGEST_MODEL;
+
+        const response = await ai.models.generateContent({
+            model,
+            contents: [{
+                role: 'user',
+                parts: [
+                    { text: buildInstruction(lang) },
+                    { inlineData: { mimeType, data: imageBase64 } },
+                ],
+            }],
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: SUGGESTION_SCHEMA as any,
+                // Niedrig, aber nicht null: Bei null liefert das Modell fuer
+                // aehnliche Fotos immer dieselben vier Saetze, auch wenn das
+                // Bild etwas anderes hergibt.
+                temperature: 0.4,
+                maxOutputTokens: 500,
+            },
+        });
+
+        let suggestions: Suggestion[] = [];
+        try {
+            const parsed = JSON.parse(response.text || '{}');
+            suggestions = sanitize(parsed?.suggestions);
+        } catch (parseError) {
+            console.error('[suggest-edits] unparseable model answer', parseError);
+        }
+
+        /**
+         * Auch eine leere Liste wird gespeichert. Sonst fragen wir fuer ein
+         * Bild, das nichts hergibt, bei jedem Oeffnen erneut — und das ist
+         * genau der Fall, der am haeufigsten vorkommt.
+         */
+        const { error: writeError } = await supabase
+            .from('images')
+            .update({ edit_suggestions: { v: 1, lang, items: suggestions } })
+            .eq('id', imageId);
+
+        if (writeError) {
+            // Nicht toedlich: Der Nutzer bekommt seine Chips, nur ohne Cache.
+            console.error('[suggest-edits] cache write failed', writeError);
+        }
+
+        return res.status(200).json({ suggestions, cached: false });
+    } catch (error) {
+        console.error('[suggest-edits] failed', error);
+        return res.status(500).json({
+            error: 'Unable to suggest edits',
+            message: error instanceof Error ? error.message : 'Unknown error',
+        });
+    }
+}

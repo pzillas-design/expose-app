@@ -64,6 +64,16 @@ export interface CanvasImage {
   modelVersion?: string; // Verified model version from API response
   estimatedDuration?: number; // Estimated time in ms, accounting for concurrency
 
+  /**
+   * Bildbezogene Vorschlaege ("Fuer dieses Bild"), aus edit_suggestions.
+   *
+   * Kommt mit dem Datensatz mit, damit die Chips beim Oeffnen eines bereits
+   * angesehenen Bildes ohne Netzanfrage im ersten Bild dastehen.
+   */
+  editSuggestions?: { label: string; line: string }[];
+  /** Sprache, in der die Vorschlaege erzeugt wurden — bei Wechsel neu fragen. */
+  editSuggestionsLang?: string;
+
   userId?: string; // Owner ID (mapped from DB user_id)
   jobId?: string; // generation_jobs FK — used for download tracking
   createdAt?: number; // DB Prep

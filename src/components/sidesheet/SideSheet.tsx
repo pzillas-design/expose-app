@@ -101,6 +101,7 @@ import { saveGenerationSettings, loadGenerationSettings } from '@/utils/generati
 import { useItemDialog } from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
+import { useImageSuggestions } from '@/hooks/useImageSuggestions';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { ManagePresetsModal } from '@/components/modals/ManagePresetsModal';
 
@@ -901,6 +902,42 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     };
 
     /**
+     * "Fuer dieses Bild": Vorschlaege, die aus dem Bild selbst kommen.
+     *
+     * Nur bei genau einem Bild. Bei einer Mehrfachauswahl gilt jeder Vorschlag
+     * nur fuer eines davon — das waere ein Chip, der am falschen Bild etwas
+     * anderes anstellt als am richtigen.
+     */
+    const suggestionTarget = (selectedImages && selectedImages.length > 1) ? null : selectedImage;
+    const { suggestions: imageSuggestions, loading: suggestionsLoading } =
+        useImageSuggestions(suggestionTarget, lang);
+
+    /**
+     * Ein Vorschlag ist eine ganze Zeile, kein Wert zu einer Beschriftung.
+     *
+     * "Rasen aufbereiten" hat keine Gegenstuecke, zwischen denen man waehlt —
+     * es gilt oder es gilt nicht. Deshalb kein "Beschriftung: Wert", sondern
+     * die Zeile selbst, und ein zweiter Klick nimmt sie wieder heraus. Danach
+     * ist es gewoehnlicher Text wie alles andere im Feld.
+     */
+    const bareLine = (l: string) => l.trimStart().replace(VAR_LINE_PREFIX, '').trim().toLowerCase();
+
+    const isLineInPrompt = (line: string): boolean =>
+        prompt.split('\n').some(l => bareLine(l) === line.trim().toLowerCase());
+
+    const toggleSuggestionLine = (line: string) => {
+        const lines = prompt.split('\n');
+        const at = lines.findIndex(l => bareLine(l) === line.trim().toLowerCase());
+        if (at !== -1) {
+            lines.splice(at, 1);
+            handlePromptChange(lines.join('\n').replace(/\n{3,}/g, '\n\n').trim());
+            return;
+        }
+        const next = prompt.trimEnd();
+        handlePromptChange(next ? `${next}\n${VAR_LINE_PREFIX}${line}` : `${VAR_LINE_PREFIX}${line}`);
+    };
+
+    /**
      * Die Gruppen, die unter der aufgeklappten Vorlage stehen.
      *
      * Ohne aufgeklappte Vorlage die per Sprache angelegten Gruppen — sonst
@@ -1464,6 +1501,64 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     und man musste scrollen, um etwas zu sehen, das zur
                                     Eingabe gehoert. Jetzt stehen sie direkt darunter;
                                     was unten frei bleibt, bleibt frei. */}
+                                {/* ── FUER DIESES BILD ──
+                                    Steht ueber den Vorlagen, weil es das
+                                    Speziellere ist: Eine Vorlage gilt fuer alle
+                                    Bilder, das hier nur fuer dieses eine. Und es
+                                    ist der Platz, an dem man beim Oeffnen zuerst
+                                    hinsieht.
+
+                                    Die Chips sind eckig wie die Werte einer
+                                    Vorlage, nicht rund wie die Vorlagen selbst:
+                                    Form folgt der Funktion, und die Funktion ist
+                                    dieselbe — ein Klick schreibt eine Zeile nach
+                                    oben. Keine dritte Form fuer eine zweite
+                                    Herkunft. */}
+                                {suggestionTarget && (suggestionsLoading || imageSuggestions.length > 0) && (
+                                    <div className="pt-1 text-zinc-800 dark:text-zinc-200">
+                                        <div className="pt-1 pb-2.5">
+                                            <Eyebrow muted>
+                                                {lang === 'de' ? 'Für dieses Bild' : 'For this photo'}
+                                            </Eyebrow>
+                                        </div>
+                                        {suggestionsLoading ? (
+                                            /* Platzhalter in Chipform und Chiphoehe: Wenn die
+                                               echten kommen, rutscht nichts nach. Ein Kreisel
+                                               an dieser Stelle waere ein Versprechen, das wir
+                                               nicht halten muessen — kommt nichts, verschwindet
+                                               die Gruppe einfach wieder. */
+                                            <div className="flex flex-wrap gap-2" aria-hidden>
+                                                {[104, 132, 88].map(w => (
+                                                    <div
+                                                        key={w}
+                                                        style={{ width: w }}
+                                                        className="h-[36px] rounded-xl bg-black/[0.035] dark:bg-white/[0.05] animate-pulse"
+                                                    />
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-wrap gap-2 animate-in fade-in duration-200">
+                                                {imageSuggestions.map(sug => {
+                                                    const active = isLineInPrompt(sug.line);
+                                                    return (
+                                                        <Tooltip key={sug.line} text={sug.line} side="top">
+                                                            <button
+                                                                type="button"
+                                                                onClick={e => { e.preventDefault(); toggleSuggestionLine(sug.line); }}
+                                                                className={`${VALUE_CHIP_BASE} ${active
+                                                                    ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
+                                                                    : 'bg-black/[0.035] dark:bg-white/[0.05] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/[0.07] dark:hover:bg-white/[0.09]'}`}
+                                                            >
+                                                                {sug.label}
+                                                            </button>
+                                                        </Tooltip>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 <div className="pt-1 text-zinc-800 dark:text-zinc-200">
                                     <div className="pt-1 pb-2.5">
                                         <Eyebrow muted>{t('presets_label')}</Eyebrow>
