@@ -49,6 +49,19 @@ const TEMPLATE_CHIP = `flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] 
  */
 const VAR_LINE_PREFIX = '– ';
 
+/**
+ * Beschriftungen und Vorschlaege fuer Anmerkungen und Referenzen.
+ *
+ * Deutsch, weil sie im Prompt des Nutzers landen und von ihm gelesen und
+ * geaendert werden. Die technische Zuordnung der Bilder ("Image 2: annotation
+ * overlay") bleibt davon unberuehrt und englisch — sie richtet sich an das
+ * Modell, nicht an den Nutzer.
+ */
+const ANN_LABEL = 'Markierungen';
+const ANN_DEFAULT = 'nur die markierten Bereiche ändern';
+const REF_LABEL = 'Referenzen';
+const REF_DEFAULT = 'nur als Stilvorlage, nicht als Bildinhalt';
+
 /** Innenabstand des Panels oben und unten, in Pixeln (entspricht pt-6/pb-6). */
 const PANEL_PAD_Y = 24;
 
@@ -1025,6 +1038,44 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // ── Count of active visual annotations ──
     const visibleAnns = annotations.filter(a => ['mask_path', 'stamp', 'shape'].includes(a.type));
     const referenceAnns = annotations.filter(a => a.type === 'reference_image');
+
+    /**
+     * Was Anmerkungen und Referenzen BEDEUTEN, steht sichtbar im Prompt.
+     *
+     * Hintergrund dazu aus der Recherche zu Seedream: Das Markieren im Bild und
+     * das Beschreiben der Markierung im Text ist die dokumentierte Technik
+     * ("Insert a TV where the red area is marked"). Der Text ist dabei nicht
+     * Beiwerk — ohne ihn weiss das Modell nicht, was die roten Striche sollen.
+     * Ebenso empfohlen: die Aenderung nennen und danach aufzaehlen, was
+     * unveraendert bleiben soll.
+     *
+     * Beides sind Urteile ueber DIESES Bild und gehoeren deshalb dem Nutzer:
+     * ob die Markierung eine harte Grenze ist oder nur ein Hinweis, und was an
+     * seinem Foto auf keinen Fall angefasst werden darf, kann niemand fuer ihn
+     * entscheiden.
+     *
+     * Eingesetzt wird einmalig beim ersten Mal und nur, wenn die Zeile nicht
+     * schon dasteht. Wer sie loescht, bekommt sie nicht wieder aufgedraengt —
+     * sie ist ein Vorschlag, keine Pflicht.
+     */
+    const annHintRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (!selectedImage?.id) return;
+        const key = `${selectedImage.id}:${visibleAnns.length > 0}:${referenceAnns.length > 0}`;
+        if (annHintRef.current === key) return;
+        const wasSameImage = annHintRef.current?.startsWith(`${selectedImage.id}:`);
+        annHintRef.current = key;
+        // Nur reagieren, wenn sich am SELBEN Bild etwas geaendert hat. Beim
+        // Blaettern soll nichts von selbst in den Prompt geschrieben werden.
+        if (!wasSameImage) return;
+        if (visibleAnns.length > 0 && !isValueInPrompt(ANN_LABEL, ANN_DEFAULT)) {
+            upsertVariableLine(ANN_LABEL, ANN_DEFAULT, false);
+        }
+        if (referenceAnns.length > 0 && !isValueInPrompt(REF_LABEL, REF_DEFAULT)) {
+            upsertVariableLine(REF_LABEL, REF_DEFAULT, false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedImage?.id, visibleAnns.length, referenceAnns.length]);
     const hasPromptText = !!prompt?.trim();
     const hasCommentAnnotations = visibleAnns.length > 0;
 
