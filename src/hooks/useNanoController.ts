@@ -44,17 +44,59 @@ export const useNanoController = () => {
         try { return new Set(JSON.parse(localStorage.getItem('expose_unseen_ids') || '[]')); }
         catch { return new Set(); }
     });
-    // Mark as seen when user opens image in detail
-    React.useEffect(() => {
-        if (!activeId) return;
+    const clearUnseen = React.useCallback((ids: string[]) => {
         setUnseenIds(prev => {
-            if (!prev.has(activeId)) return prev;
+            if (!ids.some(id => prev.has(id))) return prev;
             const next = new Set(prev);
-            next.delete(activeId);
+            ids.forEach(id => next.delete(id));
             localStorage.setItem('expose_unseen_ids', JSON.stringify([...next]));
             return next;
         });
-    }, [activeId]);
+    }, []);
+
+    /**
+     * Wann ein Bild als gesehen gilt.
+     *
+     * Frueher: sobald activeId darauf stand. Das heisst beim Durchblaettern mit
+     * den Pfeiltasten im Vorbeigehen, und beim Antippen eines Stapels gleich
+     * fuer alle Varianten darin. Der Punkt war damit weg, bevor jemand
+     * hingesehen hatte -- und ein Hinweis, der sich von selbst aufloest, ist
+     * keiner.
+     *
+     * Jetzt drei Regeln:
+     *  - Nur in der Detailansicht. Eine Kachel ist zu klein, um ein Ergebnis
+     *    zu beurteilen; sie zu streifen ist kein Ansehen.
+     *  - Und erst nach 1,2 Sekunden darauf. Wer durchblaettert, laesst alles
+     *    stehen; wer anhaelt, hat hingesehen.
+     *  - Die Zeit laeuft nur, solange der Tab vorne ist. Ein Bild, das in
+     *    einem Hintergrundtab stand, hat niemand gesehen.
+     *
+     * Ausserdem gilt eine Handlung am Bild als gesehen, sofort: Wer es
+     * herunterlaedt oder damit weiterarbeitet, kennt es.
+     */
+    const SEEN_DWELL_MS = 1200;
+    React.useEffect(() => {
+        if (!activeId || !unseenIds.has(activeId)) return;
+
+        let timer: any = null;
+        const stop = () => { if (timer) { clearTimeout(timer); timer = null; } };
+        const start = () => {
+            if (timer || document.visibilityState !== 'visible') return;
+            timer = setTimeout(() => {
+                // Beim Ablauf noch einmal pruefen: In der Galerie setzt eine
+                // Auswahl ebenfalls activeId, und dort gilt die Regel nicht.
+                if (window.location.pathname.startsWith('/image/')) clearUnseen([activeId]);
+            }, SEEN_DWELL_MS);
+        };
+        const onVisibility = () => { document.visibilityState === 'visible' ? start() : stop(); };
+
+        start();
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => {
+            stop();
+            document.removeEventListener('visibilitychange', onVisibility);
+        };
+    }, [activeId, unseenIds, clearUnseen]);
     const [isCanvasLoading, setIsCanvasLoading] = useState(false);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
@@ -585,6 +627,10 @@ export const useNanoController = () => {
         const valid = resolved.filter(r => !!r.src);
         if (valid.length === 0) return;
 
+        // Wer ein Bild herunterlaedt, hat es gesehen -- auch wenn er es nie
+        // gross geoeffnet hat.
+        clearUnseen(imagesToDownload.map(img => img.id));
+
         if (valid.length === 1) {
             // Single file — direct download, no ZIP needed
             await downloadImage(valid[0].src, valid[0].filename);
@@ -610,7 +656,7 @@ export const useNanoController = () => {
                 .in('id', jobIds)
                 .then(({ error }) => { if (error) console.warn('Download tracking failed:', error); });
         }
-    }, [allImages]);
+    }, [allImages, clearUnseen]);
 
     const handleModeChange = useCallback((newMode: 'prompt' | 'brush' | 'objects') => {
         if ((newMode === 'brush' || newMode === 'objects') && !selectedImage) {
@@ -631,6 +677,10 @@ export const useNanoController = () => {
         if (activeTemplateId) {
             recordPresetUsage(activeTemplateId);
         }
+
+        // Mit einem Bild zu arbeiten heisst, es zu kennen: Die Quellen einer
+        // Generierung verlieren ihren Punkt sofort, ohne Wartezeit.
+        if (selectedImages.length > 0) clearUnseen(selectedImages.map(i => i.id));
 
         if (isSelectMode && selectedImages.length > 1) {
             const result = await confirm({
@@ -679,7 +729,7 @@ export const useNanoController = () => {
             }
             performGeneration(selectedImage, finalPrompt, 1, true, draftPrompt, activeTemplateId, variableValues, undefined, !!selectedImage.parentId);
         }
-    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, showToast, currentLang]);
+    }, [selectedImage, selectedImages, performGeneration, recordPresetUsage, confirm, t, showToast, currentLang, clearUnseen]);
 
     const handleGenerateMore = useCallback(async (idOrImg: string | CanvasImage) => {
         let img: CanvasImage | undefined;
@@ -689,6 +739,7 @@ export const useNanoController = () => {
             img = idOrImg;
         }
         if (!img) return;
+        clearUnseen([img.id]);
 
         // Full request body is stored on the image (generationPrompt + variableValues + activeTemplateId).
         // "Mehr" simply replays it. userDraftPrompt is '' for children (clean SideSheet), so fall back to generationPrompt.
@@ -712,7 +763,7 @@ export const useNanoController = () => {
             : img;
         // isRepeat=true so Gemini's implicit input caching is busted with a variation ID
         performGeneration(directParent, prompt, 1, true, img.userDraftPrompt, img.activeTemplateId, img.variableValues, undefined, true);
-    }, [allImages, performGeneration, showToast, currentLang]);
+    }, [allImages, performGeneration, showToast, currentLang, clearUnseen]);
 
     const handleCreateNew = useCallback(async (prompt: string, model: string, ratio: string, attachments: string[] = []) => {
         performNewGeneration(prompt, model, ratio, attachments);
@@ -821,12 +872,8 @@ export const useNanoController = () => {
         performGeneration,
         handleGenerate,
         handleGenerateMore,
-        markGroupSeen: (ids: string[]) => setUnseenIds(prev => {
-            const next = new Set(prev);
-            ids.forEach(id => next.delete(id));
-            localStorage.setItem('expose_unseen_ids', JSON.stringify([...next]));
-            return next;
-        }),
+        // Ausdruecklich, nicht nebenbei: Nur Handlungen am Bild rufen das auf.
+        markSeen: clearUnseen,
         handleNavigateParent,
         setIsBrushResizing,
         handleCreateNew,

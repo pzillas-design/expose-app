@@ -801,7 +801,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // FeedGridItem wirkungslos, und ein Mauszeiger-Wechsel (der nur
     // activeIndex setzt) liess das gesamte Raster neu rendern.
     const handleOpenGroup = React.useCallback((row: ImageRow) => {
-        actions?.markGroupSeen?.(row.items.map(i => i.id));
+        // Kein Loeschen der Punkte beim Aufklappen: Ein Tipp auf den Stapel
+        // raeumte bisher ALLE Varianten darin ab, gesehen oder nicht. Jede
+        // Variante bekommt ihren eigenen Moment in der Detailansicht.
         onExpandedGroupChange(row.id);
     }, [actions, onExpandedGroupChange]);
 
