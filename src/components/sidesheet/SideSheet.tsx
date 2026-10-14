@@ -32,8 +32,8 @@ const MODEL_HINT_KEY = 'expose_tip_seedream_default_v1';
  * neue, und der leere Zustand. Vorher dreimal dieselbe Kette abgeschrieben,
  * mit je eigenen Abweichungen im Abstand.
  */
-const TEMPLATE_CHIP = `flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium group
-    bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80
+const TEMPLATE_CHIP = `flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium group
+    bg-black/[0.05] dark:bg-white/[0.07] hover:bg-black/[0.09] dark:hover:bg-white/[0.12]
     transition-colors duration-150`;
 
 /**
@@ -443,8 +443,20 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // Verfuegung; dort wirkt ein flaches Feld gedrueckt, und etwas Luft unter
     // dem Platzhalter laedt eher zum Schreiben ein. Im Zeilenmodus ist die
     // Leiste selbst niedrig — dort waere dieselbe Hoehe der ganze Platz.
-    const PROMPT_MIN_H = rowLayout ? 72 : 128;
-    const PROMPT_MAX_H = 240;
+    const PROMPT_MIN_H = rowLayout ? 72 : 160;
+    /**
+     * In der Spaltenansicht waechst das Feld NICHT.
+     *
+     * Darunter stehen die Vorlagen und ihre Gruppen. Jede eingesetzte Zeile
+     * machte das Feld hoeher und schob alles darunter nach unten — genau in dem
+     * Moment, in dem man den naechsten Chip treffen will. Ein Eingabefeld, das
+     * sich bewegt, waehrend man daneben klickt, ist schlimmer als eines, in dem
+     * man scrollen muss.
+     *
+     * Im Zeilenmodus darf es wachsen: Dort steht nichts darunter, und die Leiste
+     * ist ohnehin niedrig.
+     */
+    const PROMPT_MAX_H = rowLayout ? 240 : PROMPT_MIN_H;
     useLayoutEffect(() => {
         const el = textareaRef.current;
         if (!el) return;
@@ -1510,14 +1522,20 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         fuer das, was zum Modell geht.
                                     */}
                                     {expandedControls.length > 0 && (
-                                        <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="mt-6 space-y-5 animate-in fade-in slide-in-from-top-1 duration-200">
                                             {expandedControls.map(ctrl => {
                                                 const ctrlLabel = labelOverrides[ctrl.id] || ctrl.label;
                                                 const multi = ctrl.type !== 'single';
                                                 return (
-                                                    <div key={ctrl.id} className="space-y-2">
-                                                        <Eyebrow muted>{ctrlLabel}</Eyebrow>
-                                                        <div className="flex flex-wrap gap-1.5">
+                                                    <div key={ctrl.id} className="space-y-2.5">
+                                                        {/* Die Gruppenzeile steht deutlich ueber den
+                                                            Chips: Vorher war sie so leise wie die
+                                                            Chips selbst, und die Liste las sich als
+                                                            ein langer Teppich ohne Gliederung. */}
+                                                        <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500">
+                                                            {ctrlLabel}
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2">
                                                             {ctrl.options.map(opt => {
                                                                 const active = isValueInPrompt(ctrlLabel, opt.value);
                                                                 return (
@@ -1525,7 +1543,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                         key={opt.id}
                                                                         type="button"
                                                                         onClick={e => { e.preventDefault(); upsertVariableLine(ctrlLabel, opt.value, multi); }}
-                                                                        className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors duration-150 ${active
+                                                                        className={`px-4 py-2 rounded-full text-[13px] font-medium transition-colors duration-150 ${active
                                                                             ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
                                                                             : 'bg-black/[0.05] dark:bg-white/[0.07] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/[0.09] dark:hover:bg-white/[0.12]'}`}
                                                                     >
