@@ -417,7 +417,12 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         if (userNavigated || isTypingNow()) return;
         // Steht die Ansicht schon auf dem Platzhalter, ist das ein Nichtstun —
         // er wird an Ort und Stelle zum fertigen Bild.
-        setIsSideSheetVisible(false);
+        //
+        // Die Eingabe wird dabei NICHT mehr ausgeblendet. Das sollte einmal das
+        // Ergebnis gross zeigen, war aber eine Ansichtsaenderung, die niemand
+        // angefordert hat — und seit es drei Ansichtsmodi gibt, wirft sie den
+        // Nutzer aus dem, den er eingestellt hat. Wer das fertige Bild gross
+        // sehen will, hat dafuer den Vollbildmodus.
         onSelectImage(tracked.childId);
     }, [generatingChild, imageMap, selectedId, onSelectImage, isTypingNow]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
