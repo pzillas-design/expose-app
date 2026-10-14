@@ -524,10 +524,17 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 setPrompt('');
                 setActiveTemplateId(null);
                 setControlValues({});
+                setExpandedTemplateId(null);
             } else {
                 setPrompt(selectedImage.userDraftPrompt || '');
                 setActiveTemplateId(selectedImage.activeTemplateId || null);
                 setControlValues(selectedImage.variableValues || {});
+                // Auch aufgeklappt, nicht nur vermerkt: Sonst steht nach einem
+                // Neuladen ein Text voller eingesetzter Zeilen da, und die
+                // Chips, mit denen man eine davon aendert, sind nicht zu sehen.
+                // Keine neue Speicherung dafuer — die Vorlage ist schon am Bild
+                // vermerkt.
+                setExpandedTemplateId(selectedImage.activeTemplateId || null);
             }
         }
 
@@ -821,19 +828,37 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         }
         setExpandedTemplateId(tpl.id);
 
-        // Replace prompt with template text
-        const newText = tpl.prompt;
-        setPrompt(newText);
-        persistPrompt(newText);
+        /**
+         * Aufklappen darf den Text nicht ueberschreiben.
+         *
+         * Vorher ersetzte jeder Griff an eine Vorlage den ganzen Prompt durch
+         * ihren eigenen. Nach einem Neuladen stand die Vorlage zugeklappt da —
+         * wer sie oeffnete, um "modern" auf "klassisch" zu aendern, verlor
+         * dabei "Raum: Wohnzimmer" und "viel Tageslicht" und musste alles neu
+         * eintippen. Genau der Fall, der gemeldet wurde.
+         *
+         * Jetzt: Ist das Feld leer, steht danach der Text der Vorlage drin.
+         * Ist etwas drin, kommt der Text der Vorlage dazu, einmal — und was
+         * schon dasteht, bleibt stehen. Ein zweites Aufklappen fuegt nichts
+         * erneut hinzu.
+         */
+        const tplText = (tpl.prompt || '').trim();
+        const current = prompt.trim();
+        if (tplText && !current.includes(tplText)) {
+            const newText = current ? `${current}\n${tplText}` : tplText;
+            setPrompt(newText);
+            persistPrompt(newText);
+        }
 
         // Merge controls if activeTemplate is a custom "merged" template or just replace activeTemplateId
         // but the prompt asked specifically to just paste the content.
         // If we set activeTemplateId = tpl.id, it will load its variables, but it won't show as active if we removed the check.
         setActiveTemplateId(tpl.id);
-        // Switching templates must DROP the previous template's values. Only the
-        // new template's controls are rendered, so leftover keys are invisible in
-        // the UI but were still passed to onGenerate and appended to the prompt
-        // by the edge function (with the raw control id as label).
+        // Die alten Werte fallen weiter weg: Sie waren Zustand NEBEN dem Text,
+        // und nur die Bedienelemente der neuen Vorlage werden gezeichnet —
+        // uebrig gebliebene Schluessel waeren unsichtbar, gingen aber mit zur
+        // Generierung. Was der Nutzer gewaehlt hat, steht im Text und bleibt
+        // davon unberuehrt.
         setControlValues({});
         persistVariables(tpl.id, {});
         textareaRef.current?.focus();
