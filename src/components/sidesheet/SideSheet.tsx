@@ -1462,10 +1462,21 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             <button
                                                 key={tpl.id}
                                                 onClick={() => handleSelectTemplate(tpl)}
-                                                className={TEMPLATE_CHIP}
+                                                // Eigene Farbe fuer die aufgeklappte Vorlage:
+                                                // kraeftiger als eine ruhende, aber nicht
+                                                // umgekehrt wie ein gewaehlter Wert darunter.
+                                                // Beides umgekehrt zu faerben hiesse, zwei
+                                                // verschiedene Dinge gleich auszuzeichnen —
+                                                // "hier bin ich gerade" und "das ist gewaehlt"
+                                                // sagen nicht dasselbe.
+                                                className={`${TEMPLATE_CHIP} ${expandedTemplateId === tpl.id
+                                                    ? '!bg-black/[0.12] dark:!bg-white/[0.16]'
+                                                    : ''}`}
                                             >
                                                 {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
-                                                <span className="text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+                                                <span className={expandedTemplateId === tpl.id
+                                                    ? 'text-zinc-900 dark:text-zinc-100'
+                                                    : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100'}>
                                                     {tpl.title}
                                                 </span>
                                             </button>
