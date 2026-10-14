@@ -36,6 +36,19 @@ const TEMPLATE_CHIP = `flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] 
     bg-zinc-100/80 dark:bg-zinc-900/80 hover:bg-zinc-200/80 dark:hover:bg-zinc-800/80
     transition-colors duration-150`;
 
+/**
+ * Zeichen vor einer eingesetzten Zeile.
+ *
+ * Macht auf einen Blick erkennbar, was aus einem Chip kam und was selbst
+ * geschrieben wurde — ohne eine zweite Darstellung dafuer zu bauen. Ein Strich
+ * statt einer Raute: Er liest sich als Aufzaehlung und nicht als Schlagwort,
+ * und das ist es ja auch.
+ *
+ * Beim Wiederfinden einer Zeile wird er ignoriert. Wer ihn beim Bearbeiten
+ * loescht, soll seine Zeile trotzdem behalten.
+ */
+const VAR_LINE_PREFIX = '– ';
+
 /** Innenabstand des Panels oben und unten, in Pixeln (entspricht pt-6/pb-6). */
 const PANEL_PAD_Y = 24;
 
@@ -164,6 +177,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // ── State ──
     const [prompt, setPrompt] = useState(() => props.initialPrompt ?? selectedImage?.userDraftPrompt ?? '');
     const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+    /**
+     * Welche Vorlage gerade aufgeklappt ist und ihre Chips zeigt.
+     *
+     * Getrennt von activeTemplateId: Die sagt, welche Vorlage zuletzt benutzt
+     * wurde, und wird mit dem Auftrag vermerkt. Dies hier ist nur die Frage, ob
+     * die Liste gerade offen steht — zwei verschiedene Dinge, die man leicht in
+     * einen Wert presst und sich damit die Auswertung verdirbt.
+     */
+    const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
     const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
     const [isQualityOpen, setIsQualityOpen] = useState(false);
@@ -239,6 +261,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
     // Resolve active template + standalone controls early so voice event handlers can reference them
     const activeTemplate = templates?.find(t => t.id === activeTemplateId) || null;
+    const expandedTemplate = templates?.find(t => t.id === expandedTemplateId) || null;
     const [standaloneControlsMap, setStandaloneControlsMap] = useState<Record<string, PresetControl[]>>({});
     // On create page (no selectedImage), use a dedicated key '_create'
     const standaloneControlsKey = selectedImage?.id ?? '_create';
@@ -752,6 +775,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     });
 
     const handleSelectTemplate = (tpl: PromptTemplate) => {
+        // Nochmal auf dieselbe Vorlage: nur zuklappen. Der Prompt bleibt stehen —
+        // was man geschrieben hat, verschwindet nicht, weil man die Liste
+        // schliesst.
+        if (expandedTemplateId === tpl.id) {
+            setExpandedTemplateId(null);
+            return;
+        }
+        setExpandedTemplateId(tpl.id);
+
         // Replace prompt with template text
         const newText = tpl.prompt;
         setPrompt(newText);
@@ -769,6 +801,78 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         persistVariables(tpl.id, {});
         textareaRef.current?.focus();
     };
+
+    /**
+     * Schreibt "Beschriftung: Wert" in den Prompt.
+     *
+     * Der Kern des neuen Ablaufs: Ein Chip setzt keinen Zustand mehr, er
+     * schreibt Text. Danach gibt es nur noch EINE Quelle fuer das, was zum
+     * Modell geht — das, was dasteht. Vorher waren es zwei, und was am Ende
+     * ankam, setzte der Code zusammen, ohne dass es jemand sah.
+     *
+     * Gibt es die Zeile schon, wird sie fortgeschrieben statt verdoppelt:
+     * - Bei einfacher Wahl ersetzt der neue Wert den alten. Wer von
+     *   "Wohnzimmer" auf "Kueche" wechselt, will nicht beides.
+     * - Bei Mehrfachwahl kommt er dazu, und ein zweiter Klick auf denselben
+     *   Wert nimmt ihn wieder heraus. Bleibt nichts uebrig, verschwindet die
+     *   ganze Zeile.
+     *
+     * Die Zeile wird ueber ihre Beschriftung gefunden, nicht ueber eine
+     * gespeicherte Position: Der Nutzer darf den Text dazwischen beliebig
+     * umbauen, und solange "Raum:" am Zeilenanfang steht, findet der naechste
+     * Klick sie wieder.
+     */
+    const upsertVariableLine = (label: string, value: string, multi: boolean) => {
+        const lines = prompt.split('\n');
+        const head = `${VAR_LINE_PREFIX}${label}:`;
+        // Beim Suchen ist der Strich egal: Wer ihn beim Bearbeiten entfernt,
+        // soll seine Zeile trotzdem wiederfinden.
+        const matches = (l: string) => l.trimStart().replace(VAR_LINE_PREFIX, '').toLowerCase()
+            .startsWith(`${label.toLowerCase()}:`);
+        const at = lines.findIndex(matches);
+
+        if (at === -1) {
+            const next = prompt.trimEnd();
+            const text = next ? `${next}\n${head} ${value}` : `${head} ${value}`;
+            handlePromptChange(text);
+            return;
+        }
+
+        const current = lines[at].slice(lines[at].indexOf(':') + 1)
+            .split(',').map(v => v.trim()).filter(Boolean);
+
+        let updated: string[];
+        if (!multi) {
+            updated = current.length === 1 && current[0].toLowerCase() === value.toLowerCase() ? [] : [value];
+        } else {
+            updated = current.some(v => v.toLowerCase() === value.toLowerCase())
+                ? current.filter(v => v.toLowerCase() !== value.toLowerCase())
+                : [...current, value];
+        }
+
+        if (updated.length === 0) lines.splice(at, 1);
+        else lines[at] = `${head} ${updated.join(', ')}`;
+        handlePromptChange(lines.join('\n').replace(/\n{3,}/g, '\n\n').trimStart());
+    };
+
+    /** Steht dieser Wert schon im Prompt? Faerbt den Chip. */
+    const isValueInPrompt = (label: string, value: string): boolean => {
+        const line = prompt.split('\n').find(l => l.trimStart().replace(VAR_LINE_PREFIX, '')
+            .toLowerCase().startsWith(`${label.toLowerCase()}:`));
+        if (!line) return false;
+        return line.slice(line.indexOf(':') + 1).split(',')
+            .some(v => v.trim().toLowerCase() === value.toLowerCase());
+    };
+
+    /**
+     * Die Gruppen, die unter der aufgeklappten Vorlage stehen.
+     *
+     * Ohne aufgeklappte Vorlage die per Sprache angelegten Gruppen — sonst
+     * waeren sie nirgends mehr zu sehen, seit die Eingabekarte sie nicht mehr
+     * traegt.
+     */
+    const expandedControls = (expandedTemplate?.controls ?? (expandedTemplateId ? [] : standaloneControls))
+        .filter(c => !hiddenControlIds.includes(c.id));
 
     const toggleControlOption = (controlId: string, value: string) => {
         const cur = controlValues[controlId] || [];
@@ -1077,61 +1181,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         </div>
                                     )}
 
-                                    {/* Active Template Variable Chips — blenden mit dem
-                                        Prompt zusammen ein; beide gehoeren dem Bild. */}
-                                    <div className={draftFadeClass}>
-                                    {(activeTemplate?.controls ?? (standaloneControls.length > 0 ? standaloneControls : null))?.filter(c => !hiddenControlIds.includes(c.id)).map(ctrl => {
-                                        const displayLabel = labelOverrides[ctrl.id] || ctrl.label;
-                                        const isEditing = editingControlId === ctrl.id;
-
-                                        return (
-                                            <div key={ctrl.id} className="space-y-2.5 pt-1 relative group">
-                                                <div className="flex items-center gap-2">
-                                                    {isEditing ? (
-                                                        <input
-                                                            autoFocus
-                                                            value={editControlValue}
-                                                            onChange={e => setEditControlValue(e.target.value)}
-                                                            onBlur={saveControlLabel}
-                                                            onKeyDown={e => { if (e.key === 'Enter') saveControlLabel(); }}
-                                                            className="bg-transparent border-none outline-none text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-900 dark:text-zinc-100 m-0 p-0"
-                                                        />
-                                                    ) : (
-                                                        <Eyebrow>{displayLabel}</Eyebrow>
-                                                    )}
-                                                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button
-                                                            onClick={() => handleClearControl(ctrl.id)}
-                                                            className="p-1 rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                                                        >
-                                                            <X className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {ctrl.options.map(opt => {
-                                                        const isActive = (controlValues[ctrl.id] || []).includes(opt.value);
-                                                        return (
-                                                            <button
-                                                                key={opt.id}
-                                                                type="button"
-                                                                onClick={(e) => {
-                                                                    e.preventDefault();
-                                                                    e.stopPropagation();
-                                                                    toggleControlOption(ctrl.id, opt.value);
-                                                                }}
-                                                                className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-all ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 ' + Theme.Effects.ShadowSm : 'bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700'}`}
-                                                            >
-                                                                {opt.label}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                    </div>
-
                                     {/* Annotations Section */}
                                     {!isMulti && visibleAnns.length > 0 && (
                                         <>
@@ -1395,6 +1444,62 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             </div>
                                         )}
                                     </div>
+
+                                    {/*
+                                        Die Gruppen der aufgeklappten Vorlage.
+
+                                        Sie standen frueher IN der Eingabekarte und haben sie
+                                        auf Bildschirmhoehe aufgeblaeht — der eigentliche Prompt
+                                        stand dann oben als Nebensache. Hier gehoeren sie hin:
+                                        zu der Vorlage, aus der sie stammen.
+
+                                        Ein Klick schreibt die Zeile nach oben in den Text.
+                                        Danach ist es gewoehnlicher Text, den man bearbeiten
+                                        oder loeschen kann — und es gibt nur noch EINE Quelle
+                                        fuer das, was zum Modell geht.
+                                    */}
+                                    {expandedControls.length > 0 && (
+                                        <div className="mt-4 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                                            {expandedControls.map(ctrl => {
+                                                const ctrlLabel = labelOverrides[ctrl.id] || ctrl.label;
+                                                const multi = ctrl.type !== 'single';
+                                                return (
+                                                    <div key={ctrl.id} className="space-y-2">
+                                                        <Eyebrow muted>{ctrlLabel}</Eyebrow>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {ctrl.options.map(opt => {
+                                                                const active = isValueInPrompt(ctrlLabel, opt.value);
+                                                                return (
+                                                                    <button
+                                                                        key={opt.id}
+                                                                        type="button"
+                                                                        onClick={e => { e.preventDefault(); upsertVariableLine(ctrlLabel, opt.value, multi); }}
+                                                                        className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors duration-150 ${active
+                                                                            ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
+                                                                            : 'bg-black/[0.05] dark:bg-white/[0.07] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/[0.09] dark:hover:bg-white/[0.12]'}`}
+                                                                    >
+                                                                        {opt.label}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+
+                                            {/* Bearbeiten am Ende der aufgeklappten Vorlage —
+                                                dort, wo man gerade merkt, dass eine Gruppe fehlt
+                                                oder eine Option falsch heisst. */}
+                                            {expandedTemplate && (
+                                                <button
+                                                    onClick={() => { setEditingTemplate(expandedTemplate); setIsPresetModalOpen(true); }}
+                                                    className="text-[12px] font-medium text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                                                >
+                                                    {t('edit_preset_title') || 'Vorlage bearbeiten'}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                     </>
                     </div>
