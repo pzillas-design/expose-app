@@ -783,15 +783,23 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
      * ohne zweites Sortieren.
      */
     const daySections = useMemo(() => {
-        if (effectiveGroupId || renderSelectMode) return null;
+        // Auch im Auswahlmodus nach Tagen gruppiert. Dort stehen alle Bilder
+        // einzeln statt nur die Deckbilder — eine Bibliothek ohne Gliederung
+        // ist genau dann am unuebersichtlichsten, wenn man darin etwas
+        // heraussuchen soll.
+        if (effectiveGroupId) return null;
         const byDay = new Map<string, CanvasImage[]>();
         for (const row of rows) {
             const cover = row.items[0];
             if (!cover) continue;
             const key = dayKeyOf(row.createdAt ?? cover.createdAt);
+            // Der Tag richtet sich in BEIDEN Faellen nach der Reihe, nicht nach
+            // dem einzelnen Bild: Sonst lagen die Varianten eines Stapels auf
+            // mehreren Tagen verteilt, und derselbe Stapel taeuchte dreimal auf.
+            const items = renderSelectMode ? row.items : [cover];
             const bucket = byDay.get(key);
-            if (bucket) bucket.push(cover);
-            else byDay.set(key, [cover]);
+            if (bucket) bucket.push(...items);
+            else byDay.set(key, [...items]);
         }
         return Array.from(byDay.entries()).map(([key, covers]) => ({
             key,
@@ -834,9 +842,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const displayImages = useMemo(() => {
         if (effectiveGroupId) {
             return rows.find(r => r.id === effectiveGroupId)?.items || [];
-        }
-        if (renderSelectMode) {
-            return rows.flatMap(r => r.items);
         }
         // Nur was wirklich sichtbar ist — sonst zeigen Tastatur- und
         // Sprachnavigation auf Kacheln, die gar nicht im Raster stehen.
@@ -1232,7 +1237,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     er buendig mit den Kacheln steht.
                                 */}
                                 {!effectiveGroupId && !renderSelectMode && (
-                                    <div className="px-4 sm:px-8">
+                                    <div className="px-4 sm:px-8 pb-4 sm:pb-6">
                                         <UploadDropZone
                                             row
                                             onClick={triggerUpload}

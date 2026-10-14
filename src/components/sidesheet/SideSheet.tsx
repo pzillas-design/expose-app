@@ -32,9 +32,20 @@ const MODEL_HINT_KEY = 'expose_tip_seedream_default_v1';
  * neue, und der leere Zustand. Vorher dreimal dieselbe Kette abgeschrieben,
  * mit je eigenen Abweichungen im Abstand.
  */
+/**
+ * Die Vorlagen-Chips oben: rund, und eine Spur kraeftiger als die Werte
+ * darunter.
+ *
+ * Zwei Ebenen, zwei Formen: Die Vorlage ist die Wahl, ihre Werte sind der
+ * Inhalt. Gleiche Form und gleiche Farbe liessen beides als eine lange Reihe
+ * lesen — man sah nicht, was wozu gehoert.
+ */
 const TEMPLATE_CHIP = `flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium group
-    bg-black/[0.05] dark:bg-white/[0.07] hover:bg-black/[0.09] dark:hover:bg-white/[0.12]
+    bg-black/[0.06] dark:bg-white/[0.09] hover:bg-black/[0.10] dark:hover:bg-white/[0.14]
     transition-colors duration-150`;
+
+/** Die Werte innerhalb einer Vorlage: eckiger und leiser als die Vorlage selbst. */
+const VALUE_CHIP_BASE = `px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors duration-150`;
 
 /**
  * Zeichen vor einer eingesetzten Zeile.
@@ -1491,11 +1502,12 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             </button>
                                         ) : (
                                             <div className="relative inline-flex shrink-0">
-                                                {/* Derselbe Chip wie die Vorlagen daneben, nur mit
-                                                    einem Plus: Ein runder Knopf in einer Reihe
-                                                    eckiger Chips sah aus wie etwas anderes, obwohl
-                                                    er dazugehoert — und drei Punkte sagen "mehr
-                                                    davon", gemeint ist "eine neue". */}
+                                                {/* Drei Punkte, nicht ein Plus: Dahinter liegt die
+                                                    Verwaltung der Vorlagen — anlegen, aendern,
+                                                    loeschen. Ein Plus verspraeche nur das Anlegen.
+                                                    Damit entfaellt auch der Textlink unter den
+                                                    Gruppen; zwei Wege zur selben Stelle sind einer
+                                                    zu viel. */}
                                                 <Tooltip text={t('edit_presets')} side="top">
                                                     <button
                                                         onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
@@ -1503,7 +1515,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         aria-label={t('edit_presets')}
                                                         className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
                                                     >
-                                                        <Plus className="w-3.5 h-3.5" />
+                                                        <MoreHorizontal className="w-4 h-4" />
                                                     </button>
                                                 </Tooltip>
                                                 <ContextTip
@@ -1533,7 +1545,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         fuer das, was zum Modell geht.
                                     */}
                                     {expandedControls.length > 0 && (
-                                        <div className="mt-6 space-y-5 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className="mt-6 space-y-7 animate-in fade-in slide-in-from-top-1 duration-200">
                                             {expandedControls.map(ctrl => {
                                                 const ctrlLabel = labelOverrides[ctrl.id] || ctrl.label;
                                                 const multi = ctrl.type !== 'single';
@@ -1543,7 +1555,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                             Chips: Vorher war sie so leise wie die
                                                             Chips selbst, und die Liste las sich als
                                                             ein langer Teppich ohne Gliederung. */}
-                                                        <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-400 dark:text-zinc-500">
+                                                        <div className="text-[12px] font-medium text-zinc-400 dark:text-zinc-500">
                                                             {ctrlLabel}
                                                         </div>
                                                         <div className="flex flex-wrap gap-2">
@@ -1554,9 +1566,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                         key={opt.id}
                                                                         type="button"
                                                                         onClick={e => { e.preventDefault(); upsertVariableLine(ctrlLabel, opt.value, multi); }}
-                                                                        className={`px-4 py-2 rounded-full text-[13px] font-medium transition-colors duration-150 ${active
+                                                                        className={`${VALUE_CHIP_BASE} ${active
                                                                             ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
-                                                                            : 'bg-black/[0.05] dark:bg-white/[0.07] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/[0.09] dark:hover:bg-white/[0.12]'}`}
+                                                                            : 'bg-black/[0.035] dark:bg-white/[0.05] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/[0.07] dark:hover:bg-white/[0.09]'}`}
                                                                     >
                                                                         {opt.label}
                                                                     </button>
@@ -1567,17 +1579,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 );
                                             })}
 
-                                            {/* Bearbeiten am Ende der aufgeklappten Vorlage —
-                                                dort, wo man gerade merkt, dass eine Gruppe fehlt
-                                                oder eine Option falsch heisst. */}
-                                            {expandedTemplate && (
-                                                <button
-                                                    onClick={() => { setEditingTemplate(expandedTemplate); setIsPresetModalOpen(true); }}
-                                                    className="text-[12px] font-medium text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                                                >
-                                                    {t('edit_preset_title') || 'Vorlage bearbeiten'}
-                                                </button>
-                                            )}
                                         </div>
                                     )}
                                 </div>
