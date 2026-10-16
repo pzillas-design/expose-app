@@ -909,6 +909,52 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         daysSeededRef.current = true;
         setOpenDays(new Set([daySections[0].key]));
     }, [daySections]);
+    /*
+        Was gerade hereinkommt, wird aufgeklappt.
+
+        Ein Upload, der in einem zugeklappten Tag landet, sieht aus wie ein
+        Upload, der nicht funktioniert hat: Die Kachel entsteht, aber niemand
+        sieht sie. Deshalb oeffnet jeder Tag, in dem gerade etwas hochgeladen
+        oder erzeugt wird, von selbst — EINMAL, und danach darf man ihn
+        wieder zuklappen.
+
+        Das "einmal" ist der ganze Aufwand hier: Waehrend etwas laeuft,
+        aendern sich die Bilder im Sekundentakt (Fortschritt, Vorschau,
+        Speicherpfad). Ein Effekt, der stumpf auf diese Liste hoert, haette
+        den Tag bei jeder dieser Meldungen erneut aufgeklappt — wer ihn
+        zwischendurch zuklappt, bekaeme ihn sofort wieder aufgedraengt.
+        Deshalb ein Schluessel als Zeichenkette (gleiche Tage, gleicher Wert,
+        kein neuer Lauf) und eine Merkliste der Tage, die bereits von selbst
+        aufgingen. Beruhigt sich ein Tag, faellt er aus der Merkliste — der
+        naechste Upload an diesem Tag klappt ihn wieder auf.
+    */
+    const busyDayKey = useMemo(() => {
+        const keys = new Set<string>();
+        images.forEach(i => {
+            if (!i.isGenerating && !i.uploadStatus) return;
+            if (!i.createdAt) return;
+            keys.add(dayKeyOf(i.createdAt));
+        });
+        return Array.from(keys).sort().join('|');
+    }, [images]);
+
+    const autoOpenedDaysRef = React.useRef<Set<string>>(new Set());
+    React.useEffect(() => {
+        const keys = busyDayKey ? busyDayKey.split('|') : [];
+        const current = new Set(keys);
+        autoOpenedDaysRef.current.forEach(k => { if (!current.has(k)) autoOpenedDaysRef.current.delete(k); });
+
+        const fresh = keys.filter(k => !autoOpenedDaysRef.current.has(k));
+        if (fresh.length === 0) return;
+        fresh.forEach(k => autoOpenedDaysRef.current.add(k));
+        setOpenDays(prev => {
+            let changed = false;
+            const next = new Set(prev);
+            fresh.forEach(k => { if (!next.has(k)) { next.add(k); changed = true; } });
+            return changed ? next : prev;
+        });
+    }, [busyDayKey]);
+
     const toggleDay = React.useCallback((key: string) => {
         setOpenDays(prev => {
             const next = new Set(prev);
@@ -1220,9 +1266,20 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         const isNew = !effectiveGroupId
             ? rowItems.some(i => unseenIds.has(i.id))
             : unseenIds.has(img.id);
-        // TTL: use root image's createdAt for group covers
-        const rootImg = rowItems.find(i => !i.parentId) ?? img;
-        const daysLeft = getDaysRemaining(rootImg.createdAt);
+        /*
+            Die Frist dieses Bildes, nicht die seines Stapels.
+
+            Vorher zaehlte der Stammvater: Ein heute bearbeitetes Bild zeigte
+            die Restzeit des Originals, das vor zwei Wochen hochgeladen wurde —
+            und bekam seinen gelben Punkt, obwohl es noch dreizehn Tage hat.
+            Seit jedes Bild vierzehn Tage ab SEINER Entstehung lebt, ist der
+            Stammvater die falsche Auskunft.
+
+            Dass ein Stapel aeltere Mitglieder hat, die frueher gehen, sagt die
+            Tageszeile darueber — dort gehoert es hin, denn es betrifft den Tag
+            und nicht dieses eine Bild.
+        */
+        const daysLeft = getDaysRemaining(img.createdAt);
         return (
             <FeedGridItem
                 key={img.id}
