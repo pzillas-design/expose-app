@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef, memo } from 'react';
 import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
-import { CanvasImage } from '@/types';
+import { CanvasImage, ImageRow } from '@/types';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
@@ -508,13 +508,39 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const showBlob = img?.isGenerating || waitingForGeneratedLoad === selectedId;
 
     /**
-     * Punktereihe statt Zaehlung im Kopf.
+     * Die Balkenreihe unter dem Bild: wo man im STAPEL steht.
      *
-     * Nur bis zwoelf Bilder: Darueber ist eine Punktereihe keine Auskunft mehr,
-     * sondern ein Muster, und die einzelnen Punkte waeren kleiner als der
-     * Unterschied, den sie zeigen sollen.
+     * Nicht ueber alle Bilder — bei fuenfzig waere die Reihe kein Hinweis
+     * mehr, sondern ein Muster. Gezeigt wird der Stapel, zu dem das Bild
+     * gehoert; links und rechts deutet je ein kurzer Stummel an, dass dahinter
+     * der naechste Stapel liegt.
+     *
+     * Die Reihenfolge kommt aus der flachen Liste, nach der auch die Pfeile
+     * blaettern. Haette die Reihe eine eigene, zeigte sie beim Weiterblaettern
+     * irgendwann woanders hin als die Navigation.
      */
-    const showDots = !isMobile && images.length > 1 && images.length <= 12;
+    const stackBars = React.useMemo(() => {
+        const row = state.rows?.find((r: ImageRow) => r.items.some(i => i.id === selectedId));
+        if (!row || row.items.length < 2) return null;
+        const ids = new Set(row.items.map(i => i.id));
+        const members: { id: string; at: number }[] = [];
+        images.forEach((im, at) => { if (ids.has(im.id)) members.push({ id: im.id, at }); });
+        if (members.length < 2) return null;
+        const first = members[0].at;
+        const last = members[members.length - 1].at;
+        return {
+            members,
+            current: members.findIndex(m => m.id === selectedId),
+            hasPrevStack: first > 0,
+            hasNextStack: last < images.length - 1,
+            // Steht man am Rand des Stapels, wird der Stummel in dieser
+            // Richtung eine Spur heller: Der naechste Schritt fuehrt hinaus.
+            atStart: selectedId === members[0].id,
+            atEnd: selectedId === members[members.length - 1].id,
+        };
+    }, [state.rows, images, selectedId]);
+
+    const showDots = !isMobile && !!stackBars && stackBars.members.length <= 14;
 
     const thumbStripInnerRef = useRef<HTMLDivElement>(null);
     // First-mount flag: use instant scroll on entry, smooth on subsequent navigation
@@ -903,21 +929,31 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             </div>
                         )}
 
-                        {/* Punkte: wo man im Stapel steht. Nur bei ueberschaubarer
-                            Anzahl — bei fuenfzig Bildern waere eine Punktereihe keine
-                            Auskunft mehr, sondern ein Muster. Und nur beim Darueberfahren:
-                            Beim Ansehen gehoert die Flaeche dem Bild. */}
-                        {state.sideSheetMode !== 'brush' && showDots && (
-                            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-[7px] pointer-events-none z-40
-                                opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                {images.map((im, i) => (
+                        {/* Balken: wo man im Stapel steht, und dass es daneben
+                            weitergeht. Nur beim Darueberfahren — beim Ansehen
+                            gehoert die Flaeche dem Bild. */}
+                        {state.sideSheetMode !== 'brush' && showDots && stackBars && (
+                            <div className="absolute bottom-5 left-0 right-0 flex justify-center items-center gap-1.5 pointer-events-none z-40
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                {/* Der Stummel links: nur eine Andeutung, dass dort ein
+                                    weiterer Stapel liegt. Am Anfang des Stapels wird er
+                                    heller — dann fuehrt der naechste Schritt dorthin. */}
+                                {stackBars.hasPrevStack && (
+                                    <span className={`h-[3px] w-2 rounded-full mr-1 transition-all duration-200
+                                        ${stackBars.atStart ? 'bg-white/45' : 'bg-white/15'}`} />
+                                )}
+                                {stackBars.members.map((m, i) => (
                                     <span
-                                        key={im.id}
-                                        className={`rounded-full transition-all duration-150 ${i === idx
-                                            ? 'w-1.5 h-1.5 bg-white'
-                                            : 'w-[5px] h-[5px] bg-white/30'}`}
+                                        key={m.id}
+                                        className={`h-[3px] rounded-full transition-all duration-200 ${i === stackBars.current
+                                            ? 'w-7 bg-white/90'
+                                            : 'w-4 bg-white/30'}`}
                                     />
                                 ))}
+                                {stackBars.hasNextStack && (
+                                    <span className={`h-[3px] w-2 rounded-full ml-1 transition-all duration-200
+                                        ${stackBars.atEnd ? 'bg-white/45' : 'bg-white/15'}`} />
+                                )}
                             </div>
                         )}
 
@@ -925,7 +961,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             sie eine Reihe hoeher — zwei Dinge auf derselben Linie
                             uebereinander waeren weder lesbar noch treffbar. */}
                         {state.sideSheetMode !== 'brush' && (
-                            <div className={`absolute ${showDots ? 'bottom-14' : 'bottom-6'} left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
+                            <div className={`absolute ${showDots ? 'bottom-12' : 'bottom-6'} left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
                                 <div className="relative flex items-center gap-1.5 pointer-events-auto">
                                     <div className="flex items-center gap-1.5">
                                     {/* "Mehr" steht oben im Blatt, hinter dem Herunterladen.
