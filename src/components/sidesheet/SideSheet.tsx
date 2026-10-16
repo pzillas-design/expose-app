@@ -98,15 +98,15 @@ const PANEL_PAD_Y = 24;
  * sitzt der Chip auf hellem wie dunklem Grund gleich, und er passt zu den
  * Ablageflaechen und dem Kachel-Abzeichen.
  */
-const ANNOTATION_CHIP = `flex items-center gap-1 pl-3 pr-1.5 py-1.5 rounded-full text-[12px] font-medium
+const ANNOTATION_CHIP = `inline-flex items-center gap-2 pl-[18px] pr-2.5 py-2.5 rounded-full text-[14px] font-medium
     bg-black/[0.06] dark:bg-white/[0.08] text-zinc-600 dark:text-zinc-300
-    hover:bg-black/[0.10] dark:hover:bg-white/[0.13] hover:text-zinc-900 dark:hover:text-zinc-100
+    hover:bg-black/[0.10] dark:hover:bg-white/[0.12] hover:text-zinc-900 dark:hover:text-zinc-100
     transition-colors duration-150`;
 
-const ANNOTATION_CHIP_CLOSE = `w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0
-    text-zinc-400 dark:text-zinc-500
-    hover:text-zinc-900 dark:hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/[0.12]
+const ANNOTATION_CHIP_CLOSE = `w-[24px] h-[24px] rounded-full grid place-items-center shrink-0
+    bg-black/[0.07] dark:bg-white/[0.10] hover:bg-black/[0.15] dark:hover:bg-white/[0.20]
     transition-colors duration-150`;
+
 import { saveGenerationSettings, loadGenerationSettings } from '@/utils/generationSettings';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
@@ -1357,25 +1357,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         </div>
                                     )}
 
-                                    {/* Annotations Section */}
+                                    {/*
+                                        Die Anmerkungen: nur noch Chips, keine Ueberschrift.
+
+                                        "Anmerkungen" stand ueber genau einem Chip, der
+                                        "Pinselstriche" heisst — die Ueberschrift sagte nichts,
+                                        was der Chip nicht selbst sagt. Das Kreuz daneben loeschte
+                                        alle auf einmal; geloescht wird aber einzeln, und zwar am
+                                        Chip. Beides weg.
+                                    */}
                                     {!isMulti && visibleAnns.length > 0 && (
                                         <>
-                                            <div className="space-y-2.5 relative group">
-                                                <div className="flex items-center gap-2">
-                                                    <Eyebrow>{t('annotations_label')}</Eyebrow>
-                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button
-                                                            onClick={() => {
-                                                                if (!selectedImage?.annotations) return;
-                                                                updateAnnotationsWithHistory(selectedImage.annotations.filter(a => !['mask_path', 'stamp', 'shape'].includes(a.type)));
-                                                            }}
-                                                            className="p-1 rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                                                        >
-                                                            <X className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
+                                            <div className="relative">
+                                                <div className="flex flex-wrap gap-2.5">
                                                     {/* Mask strokes — grouped as one chip */}
                                                     {(() => {
                                                         const masks = visibleAnns.filter(a => a.type === 'mask_path');
