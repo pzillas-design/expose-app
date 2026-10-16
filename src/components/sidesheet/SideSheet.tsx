@@ -1580,75 +1580,120 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     und die Vorlagen.
 
                                     Sie tun dasselbe — ein Klick schreibt eine Zeile in den
-                                    Prompt — und sahen seit dem letzten Durchgang auch gleich
-                                    aus. Zwei Ueberschriften und zwei Bloecke darueber zu
-                                    setzen, hiess denselben Unterschied zweimal zu behaupten.
-
-                                    Sie sitzen unten am Rand des Blattes: Man greift danach,
-                                    man liest sie nicht. Der freie Platz sammelt sich darueber,
-                                    zwischen dem, was man schreibt, und dem, womit man es tut.
+                                    Prompt — und sehen auch gleich aus. Sie sitzen unten am
+                                    Rand des Blattes: Man greift danach, man liest sie nicht.
                                 */}
                                 <div className="pt-1 mt-auto text-zinc-800 dark:text-zinc-200">
 
                                     {/*
-                                        Zu: eine Reihe Chips. Offen: AUS dem Chip wird die
-                                        Flaeche.
+                                        Ist eine Vorlage offen, treten ALLE Chips beiseite —
+                                        auch die Vorschlaege. Das offene Panel ist der
+                                        gewachsene Chip; eine Reihe weiterer daneben waere die
+                                        Unruhe, die hier verschwinden sollte.
 
-                                        Vorher standen oben der Chip und darunter eine zweite
-                                        Box mit seinem Inhalt — zwei Elemente fuer eine Sache,
-                                        und der Zusammenhang musste ueber die Naehe erraten
-                                        werden. Jetzt waechst der Chip selbst: dieselbe Farbe,
-                                        dieselbe Form, nur gross, und der Inhalt liegt darin.
+                                        Das Raster faehrt dafuer von 1fr auf 0fr: Der Behaelter
+                                        schrumpft auf null, der Inhalt wird abgeschnitten statt
+                                        gestaucht, und der frei werdende Platz geht an das
+                                        wachsende Panel. Ein blosses Ausblenden haette eine
+                                        Luecke stehen lassen, ein Entfernen haette alles
+                                        darunter springen lassen.
                                     */}
-                                    {/*
-                                        Die Vorschlaege bleiben stehen, auch wenn eine Vorlage
-                                        offen ist: Sie sind keine Alternative zu ihr, sondern
-                                        etwas, das man zusaetzlich einsetzt — Vorlage waehlen,
-                                        Werte setzen, und trotzdem noch "Spiegelung entfernen"
-                                        antippen. Nur die anderen VORLAGEN treten beiseite;
-                                        die sind Alternativen, und eine Reihe davon neben der
-                                        geoeffneten waere die Unruhe, die wir gerade loswerden.
-                                    */}
-                                    {/*
-                                        Kein Platzhalter mehr, solange gesucht wird.
+                                    <div
+                                        className="grid transition-[grid-template-rows,opacity] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                                        style={{
+                                            gridTemplateRows: expandedTemplate ? '0fr' : '1fr',
+                                            opacity: expandedTemplate ? 0 : 1,
+                                        }}
+                                        aria-hidden={!!expandedTemplate}
+                                    >
+                                        <div className="overflow-hidden min-h-0">
+                                            {suggestionTarget && imageSuggestions.length > 0 && (
+                                                <div className="flex flex-wrap gap-2.5 pb-2.5">
+                                                    {imageSuggestions.map((sug, i) => {
+                                                        const active = isLineInPrompt(sug.line);
+                                                        return (
+                                                            <Tooltip key={sug.line} text={sug.line} side="top">
+                                                                {/*
+                                                                    Sie kommen nacheinander herein: der
+                                                                    Unterschied zwischen "war schon immer
+                                                                    da" und "wurde gerade fuer dieses Bild
+                                                                    gefunden".
+                                                                */}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={e => { e.preventDefault(); toggleSuggestionLine(sug.line); }}
+                                                                    style={{ animation: `chip-in 420ms cubic-bezier(0.16,1,0.3,1) ${i * 60}ms both` }}
+                                                                    className={`${TEMPLATE_CHIP} ${active ? TEMPLATE_CHIP_OPEN : ''}`}
+                                                                >
+                                                                    {sug.label}
+                                                                </button>
+                                                            </Tooltip>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
 
-                                        Die pulsierenden Attrappen standen da und wackelten,
-                                        bevor irgendetwas da war — ein Versprechen, das die
-                                        Anwendung gar nicht halten muss, denn kommt nichts,
-                                        verschwinden sie wieder. Jetzt ist dort nichts, und
-                                        die Chips kommen, wenn sie da sind. Weil die Gruppe
-                                        unten angedockt ist, waechst sie dabei nach oben: Die
-                                        Vorlagen bleiben, wo sie sind.
-                                    */}
-                                    {suggestionTarget && imageSuggestions.length > 0 && (
-                                        <div className="flex flex-wrap gap-2.5 pb-2.5">
-                                            {imageSuggestions.map((sug, i) => {
-                                                    const active = isLineInPrompt(sug.line);
-                                                    return (
-                                                        <Tooltip key={sug.line} text={sug.line} side="top">
-                                                            {/*
-                                                                Sie kommen nacheinander herein: der
-                                                                Unterschied zwischen "war schon immer da"
-                                                                und "wurde gerade fuer dieses Bild
-                                                                gefunden".
-                                                            */}
+                                            {/* Die Vorlagen in derselben Reihe: gleiche Form,
+                                                gleiche Farbe, das Lesezeichen als einziger
+                                                Unterschied — es sagt "die hier hast du selbst
+                                                angelegt". */}
+                                            <div className="flex flex-wrap gap-2.5">
+                                                {displayTemplates.map((tpl) => (
+                                                    <button
+                                                        key={tpl.id}
+                                                        onClick={() => handleSelectTemplate(tpl)}
+                                                        className={TEMPLATE_CHIP}
+                                                    >
+                                                        {tpl.emoji
+                                                            ? <span className="text-sm">{tpl.emoji}</span>
+                                                            : tpl.isCustom && <Bookmark className="w-3 h-3 shrink-0 opacity-60" fill="currentColor" strokeWidth={0} />}
+                                                        <span>{tpl.title}</span>
+                                                    </button>
+                                                ))}
+
+                                                {displayTemplates.length === 0 ? (
+                                                    <button
+                                                        onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
+                                                        className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
+                                                    >
+                                                        <Plus className="w-3 h-3" />
+                                                        {t('new_preset') || 'Neue Vorlage'}
+                                                    </button>
+                                                ) : (
+                                                    <div className="relative inline-flex shrink-0">
+                                                        <Tooltip text={t('edit_presets')} side="top">
                                                             <button
-                                                                type="button"
-                                                                onClick={e => { e.preventDefault(); toggleSuggestionLine(sug.line); }}
-                                                                style={{ animation: `chip-in 420ms cubic-bezier(0.16,1,0.3,1) ${i * 60}ms both` }}
-                                                                className={`${TEMPLATE_CHIP} ${active ? TEMPLATE_CHIP_OPEN : ''}`}
+                                                                onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
+                                                                data-voice-action="open-presets-manager"
+                                                                aria-label={t('edit_presets')}
+                                                                className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
                                                             >
-                                                                {sug.label}
+                                                                <MoreHorizontal className="w-4 h-4" />
                                                             </button>
                                                         </Tooltip>
-                                                    );
-                                                })}
+                                                        <ContextTip
+                                                            storageKey="expose_tip_presets_manage_v1"
+                                                            text={lang === 'de'
+                                                                ? 'Hier kannst du Prompt-Vorlagen erstellen und bearbeiten.'
+                                                                : 'Manage your presets here so you can reuse them later.'}
+                                                            placement="auto"
+                                                            enabled={hasPromptText}
+                                                            anchorClassName="absolute inset-0 pointer-events-none"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
+                                    </div>
 
-                                    {expandedTemplate ? (
+                                    {/*
+                                        Zu: eine Reihe Chips. Offen: AUS dem Chip wird die
+                                        Flaeche — dieselbe Farbe, dieselbe Form, nur gross, und
+                                        der Inhalt liegt darin.
+                                    */}
+                                    {expandedTemplate && (
                                         <div
-                                            style={{ animation: 'panel-grow 260ms cubic-bezier(0.16,1,0.3,1) both' }}
+                                            style={{ animation: 'panel-grow 320ms cubic-bezier(0.16,1,0.3,1) both' }}
                                             className="rounded-[22px] p-4 bg-orange-500/[0.11] dark:bg-orange-500/[0.12] origin-bottom"
                                         >
                                             {/* Die Kopfzeile IST der Chip: gleiche Schrift,
@@ -1660,21 +1705,18 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     : expandedTemplate.isCustom && <Bookmark className="w-3 h-3 shrink-0 opacity-60" fill="currentColor" strokeWidth={0} />}
                                                 <span className="truncate">{expandedTemplate.title}</span>
                                                 <div className="flex-1" />
+                                                {/* Der Kreis steht immer, nicht erst beim
+                                                    Darueberfahren: Ein Zeichen ohne Flaeche sieht
+                                                    aus wie Text und wird entsprechend selten
+                                                    getroffen. */}
                                                 <button
                                                     type="button"
                                                     aria-label={t('close') || 'Schließen'}
                                                     onClick={() => setExpandedTemplateId(null)}
-                                                    /*
-                                                        Ohne eigene Flaeche im Ruhezustand: In der Kopfzeile
-                                                        steht links das Lesezeichen und der Name, rechts
-                                                        soll nur ein Zeichen stehen, kein zweiter Knopf. Die
-                                                        Farbe ist die der Ueberschrift, nur zurueckgenommen —
-                                                        ein grauer Kreis auf Orange sah aus wie ein Loch,
-                                                        ein oranger wie ein zweites Abzeichen.
-                                                    */
-                                                    className="w-8 h-8 -mr-0.5 rounded-full grid place-items-center
-                                                        text-orange-950/55 dark:text-orange-50/55
-                                                        hover:bg-orange-950/[0.10] dark:hover:bg-black/30
+                                                    className="w-8 h-8 -mr-0.5 rounded-full grid place-items-center shrink-0
+                                                        text-orange-950/70 dark:text-orange-50/70
+                                                        bg-orange-950/[0.08] dark:bg-black/25
+                                                        hover:bg-orange-950/[0.16] dark:hover:bg-black/40
                                                         hover:text-orange-950 dark:hover:text-orange-50 transition-colors"
                                                 >
                                                     <X className="w-4 h-4" strokeWidth={2.25} />
@@ -1682,7 +1724,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             </div>
 
                                             <div
-                                                style={{ animation: 'panel-content-in 260ms cubic-bezier(0.16,1,0.3,1) 80ms both' }}
+                                                style={{ animation: 'panel-content-in 280ms cubic-bezier(0.16,1,0.3,1) 110ms both' }}
                                                 className="pt-3 space-y-5"
                                             >
                                                 {expandedControls.map(ctrl => {
@@ -1704,13 +1746,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                             /*
                                                                                 Ruhend in der Farbe des Blattes — auf der
                                                                                 orangen Flaeche liegen sie dadurch wie
-                                                                                Karten darauf, statt sich in ihr zu
-                                                                                verlieren. Halbdurchsichtiges Weiss war
-                                                                                beides nicht richtig: zu schwach gegen
-                                                                                die Flaeche, zu schwach fuer die Schrift.
-
-                                                                                Gewaehlt ist kein zweites Weiss, sondern
-                                                                                die Flaeche selbst, nur kraeftiger.
+                                                                                Karten darauf. Gewaehlt ist kein zweites
+                                                                                Weiss, sondern die Flaeche selbst, nur
+                                                                                kraeftiger.
                                                                             */
                                                                             className={`${VALUE_CHIP_BASE} ${active
                                                                                 ? 'bg-orange-950/[0.14] dark:bg-white/[0.20] text-orange-950 dark:text-white'
@@ -1725,57 +1763,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     );
                                                 })}
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-wrap gap-2.5">
-                                            {/* Die Vorlagen in derselben Reihe: gleiche Form,
-                                                gleiche Farbe, das Lesezeichen als einziger
-                                                Unterschied — es sagt "die hier hast du selbst
-                                                angelegt". */}
-                                            {displayTemplates.map((tpl) => (
-                                                <button
-                                                    key={tpl.id}
-                                                    onClick={() => handleSelectTemplate(tpl)}
-                                                    className={TEMPLATE_CHIP}
-                                                >
-                                                    {tpl.emoji
-                                                        ? <span className="text-sm">{tpl.emoji}</span>
-                                                        : tpl.isCustom && <Bookmark className="w-3 h-3 shrink-0 opacity-60" fill="currentColor" strokeWidth={0} />}
-                                                    <span>{tpl.title}</span>
-                                                </button>
-                                            ))}
-
-                                            {displayTemplates.length === 0 ? (
-                                                <button
-                                                    onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
-                                                    className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
-                                                >
-                                                    <Plus className="w-3 h-3" />
-                                                    {t('new_preset') || 'Neue Vorlage'}
-                                                </button>
-                                            ) : (
-                                                <div className="relative inline-flex shrink-0">
-                                                    <Tooltip text={t('edit_presets')} side="top">
-                                                        <button
-                                                            onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
-                                                            data-voice-action="open-presets-manager"
-                                                            aria-label={t('edit_presets')}
-                                                            className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
-                                                        >
-                                                            <MoreHorizontal className="w-4 h-4" />
-                                                        </button>
-                                                    </Tooltip>
-                                                    <ContextTip
-                                                        storageKey="expose_tip_presets_manage_v1"
-                                                        text={lang === 'de'
-                                                            ? 'Hier kannst du Prompt-Vorlagen erstellen und bearbeiten.'
-                                                            : 'Manage your presets here so you can reuse them later.'}
-                                                        placement="auto"
-                                                        enabled={hasPromptText}
-                                                        anchorClassName="absolute inset-0 pointer-events-none"
-                                                    />
-                                                </div>
-                                            )}
                                         </div>
                                     )}
                                 </div>
