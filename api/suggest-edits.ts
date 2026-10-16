@@ -84,7 +84,7 @@ function buildInstruction(lang: string): string {
         return [
             'You are the picture editor of an estate agency known for its listings.',
             '',
-            'Name 4 to 6 edits for this photo: edits covering a whole area or the whole scene,',
+            'Name 2 to 4 edits for this photo: edits covering a whole area or the whole scene,',
             'plain photographic corrections, and one or two bolder ideas.',
             '',
             'The result must look real.',
@@ -96,7 +96,7 @@ function buildInstruction(lang: string): string {
     return [
         'Du bist der Bildredakteur einer Immobilienagentur, die fuer ihre Exposés bekannt ist.',
         '',
-        'Nenne 4 bis 6 Bearbeitungen fuer dieses Foto: grossflaechige Eingriffe,',
+        'Nenne 2 bis 4 Bearbeitungen fuer dieses Foto: grossflaechige Eingriffe,',
         'handwerkliche Korrekturen, ein bis zwei mutigere Ideen.',
         '',
         'Das Ergebnis soll realistisch wirken.',
@@ -117,7 +117,7 @@ function sanitize(raw: unknown): Suggestion[] {
         const line = typeof item?.line === 'string' ? item.line.trim().replace(/\s+/g, ' ').slice(0, 220) : '';
         if (!label || !line) continue;
         out.push({ label, line });
-        if (out.length >= 6) break;
+        if (out.length >= 4) break;
     }
     return out;
 }
@@ -187,7 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             mit dieser Zahl neue.
         */
         const cached = row.edit_suggestions as { v?: number; lang?: string; items?: unknown } | null;
-        if (cached && cached.v === 6 && cached.lang === lang && Array.isArray(cached.items)) {
+        if (cached && cached.v === 7 && cached.lang === lang && Array.isArray(cached.items)) {
             return res.status(200).json({ suggestions: cached.items, cached: true });
         }
 
@@ -240,7 +240,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
          */
         const { error: writeError } = await supabase
             .from('images')
-            .update({ edit_suggestions: { v: 6, lang, items: suggestions } })
+            .update({ edit_suggestions: { v: 7, lang, items: suggestions } })
             .eq('id', imageId);
 
         if (writeError) {

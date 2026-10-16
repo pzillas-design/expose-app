@@ -40,7 +40,7 @@ const MODEL_HINT_KEY = 'expose_tip_seedream_default_v1';
  * Inhalt. Gleiche Form und gleiche Farbe liessen beides als eine lange Reihe
  * lesen — man sah nicht, was wozu gehoert.
  */
-const TEMPLATE_CHIP = `inline-flex items-center gap-2 px-[18px] py-2.5 rounded-full text-[14px] font-medium group
+const TEMPLATE_CHIP = `inline-flex items-center gap-2 h-10 px-[18px] rounded-full text-[14px] font-medium group
     bg-orange-500/[0.12] dark:bg-orange-500/[0.13] text-orange-950/75 dark:text-orange-50/75
     hover:bg-orange-500/[0.18] dark:hover:bg-orange-500/[0.19] hover:text-orange-950 dark:hover:text-orange-50
     transition-colors duration-150`;
@@ -55,7 +55,7 @@ const TEMPLATE_CHIP_OPEN = `!bg-orange-500/[0.20] dark:!bg-orange-500/[0.21]
     !text-orange-950 dark:!text-orange-50`;
 
 /** Die Werte innerhalb einer Vorlage: eckiger, kleiner und leiser als die Vorlage selbst. */
-const VALUE_CHIP_BASE = `px-3.5 py-2 rounded-[10px] text-[13px] font-medium transition-colors duration-150`;
+const VALUE_CHIP_BASE = `inline-flex items-center h-8 px-3.5 rounded-[10px] text-[13px] font-medium transition-colors duration-150`;
 
 /**
  * Zeichen vor einer eingesetzten Zeile.
@@ -117,7 +117,7 @@ const PROMPT_ICON_BTN_IDLE = `bg-black/[0.06] dark:bg-white/[0.08] text-zinc-600
 /** Eingeschaltet: dieselbe Flaeche, nur kraeftiger — wie bei den Chips. */
 const PROMPT_ICON_BTN_ON = `bg-black/[0.14] dark:bg-white/[0.18] text-zinc-900 dark:text-white`;
 
-const ANNOTATION_CHIP = `inline-flex items-center gap-2 pl-[18px] pr-2.5 py-2.5 rounded-full text-[14px] font-medium
+const ANNOTATION_CHIP = `inline-flex items-center gap-2 h-10 pl-[18px] pr-2.5 rounded-full text-[14px] font-medium
     bg-black/[0.06] dark:bg-white/[0.08] text-zinc-600 dark:text-zinc-300
     hover:bg-black/[0.10] dark:hover:bg-white/[0.12] hover:text-zinc-900 dark:hover:text-zinc-100
     transition-colors duration-150`;
@@ -983,8 +983,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
      * anderes anstellt als am richtigen.
      */
     const suggestionTarget = (selectedImages && selectedImages.length > 1) ? null : selectedImage;
-    const { suggestions: imageSuggestions, loading: suggestionsLoading } =
-        useImageSuggestions(suggestionTarget, lang);
+    // Der Ladezustand wird nicht angezeigt: Es gibt keinen Platzhalter mehr,
+    // und ein Kreisel fuer etwas, das niemand angefordert hat, waere einer zu viel.
+    const { suggestions: imageSuggestions } = useImageSuggestions(suggestionTarget, lang);
 
     /**
      * Ein Vorschlag ist eine ganze Zeile, kein Wert zu einer Beschriftung.
@@ -1606,18 +1607,20 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         die sind Alternativen, und eine Reihe davon neben der
                                         geoeffneten waere die Unruhe, die wir gerade loswerden.
                                     */}
-                                    {suggestionTarget && (suggestionsLoading || imageSuggestions.length > 0) && (
+                                    {/*
+                                        Kein Platzhalter mehr, solange gesucht wird.
+
+                                        Die pulsierenden Attrappen standen da und wackelten,
+                                        bevor irgendetwas da war — ein Versprechen, das die
+                                        Anwendung gar nicht halten muss, denn kommt nichts,
+                                        verschwinden sie wieder. Jetzt ist dort nichts, und
+                                        die Chips kommen, wenn sie da sind. Weil die Gruppe
+                                        unten angedockt ist, waechst sie dabei nach oben: Die
+                                        Vorlagen bleiben, wo sie sind.
+                                    */}
+                                    {suggestionTarget && imageSuggestions.length > 0 && (
                                         <div className="flex flex-wrap gap-2.5 pb-2.5">
-                                            {suggestionsLoading
-                                                ? [112, 140, 96].map(w => (
-                                                    <div
-                                                        key={w}
-                                                        aria-hidden
-                                                        style={{ width: w }}
-                                                        className="h-[42px] rounded-full bg-orange-500/[0.08] dark:bg-orange-500/[0.09] animate-pulse"
-                                                    />
-                                                ))
-                                                : imageSuggestions.map((sug, i) => {
+                                            {imageSuggestions.map((sug, i) => {
                                                     const active = isLineInPrompt(sug.line);
                                                     return (
                                                         <Tooltip key={sug.line} text={sug.line} side="top">
@@ -1659,9 +1662,20 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     type="button"
                                                     aria-label={t('close') || 'Schließen'}
                                                     onClick={() => setExpandedTemplateId(null)}
-                                                    className="w-[24px] h-[24px] -mr-0.5 rounded-full grid place-items-center text-orange-950 dark:text-orange-50 bg-black/[0.07] dark:bg-black/25 hover:bg-black/[0.14] dark:hover:bg-black/40 transition-colors"
+                                                    /*
+                                                        Ohne eigene Flaeche im Ruhezustand: In der Kopfzeile
+                                                        steht links das Lesezeichen und der Name, rechts
+                                                        soll nur ein Zeichen stehen, kein zweiter Knopf. Die
+                                                        Farbe ist die der Ueberschrift, nur zurueckgenommen —
+                                                        ein grauer Kreis auf Orange sah aus wie ein Loch,
+                                                        ein oranger wie ein zweites Abzeichen.
+                                                    */
+                                                    className="w-8 h-8 -mr-0.5 rounded-full grid place-items-center
+                                                        text-orange-950/55 dark:text-orange-50/55
+                                                        hover:bg-orange-950/[0.10] dark:hover:bg-black/30
+                                                        hover:text-orange-950 dark:hover:text-orange-50 transition-colors"
                                                 >
-                                                    <X className="w-3.5 h-3.5" strokeWidth={2.25} />
+                                                    <X className="w-4 h-4" strokeWidth={2.25} />
                                                 </button>
                                             </div>
 
@@ -1685,11 +1699,20 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                             key={opt.id}
                                                                             type="button"
                                                                             onClick={e => { e.preventDefault(); upsertVariableLine(ctrlLabel, opt.value, multi); }}
-                                                                            // Auf der orangen Flaeche traegt Weiss, nicht Grau:
-                                                                            // Ein grauer Chip darauf saehe aus wie ein Loch.
+                                                                            /*
+                                                                                Ruhend in der Farbe des Blattes — auf der
+                                                                                orangen Flaeche liegen sie dadurch wie
+                                                                                Karten darauf, statt sich in ihr zu
+                                                                                verlieren. Halbdurchsichtiges Weiss war
+                                                                                beides nicht richtig: zu schwach gegen
+                                                                                die Flaeche, zu schwach fuer die Schrift.
+
+                                                                                Gewaehlt ist kein zweites Weiss, sondern
+                                                                                die Flaeche selbst, nur kraeftiger.
+                                                                            */
                                                                             className={`${VALUE_CHIP_BASE} ${active
-                                                                                ? 'bg-white/80 dark:bg-white/[0.22] text-orange-950 dark:text-white'
-                                                                                : 'bg-white/35 dark:bg-white/[0.07] text-orange-950/65 dark:text-orange-50/65 hover:bg-white/60 dark:hover:bg-white/[0.13] hover:text-orange-950 dark:hover:text-orange-50'}`}
+                                                                                ? 'bg-orange-950/[0.14] dark:bg-white/[0.20] text-orange-950 dark:text-white'
+                                                                                : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)]'}`}
                                                                         >
                                                                             {opt.label}
                                                                         </button>
