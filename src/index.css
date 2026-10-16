@@ -248,6 +248,38 @@ html:not(.dark) {
 }
 
 /*
+ * Aus dem Chip wird die Flaeche.
+ *
+ * Kein Einblenden einer zweiten Box, sondern dasselbe Element, das waechst:
+ * Es startet in Chipgroesse und geht auf seine volle Hoehe. Deshalb von
+ * 0.96 statt von 0 — bei 0 saehe es aus, als erschiene etwas Neues.
+ */
+@keyframes panel-grow {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Der Inhalt kommt eine Spur spaeter als die Flaeche, die ihn traegt. */
+@keyframes panel-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/*
  * Das Blatt kommt von seiner Seite herein, nicht aus dem Nichts.
  *
  * Wird mit fill-mode `backwards` benutzt, nicht `both`: Bei `both` bleibt der
@@ -294,6 +326,16 @@ html:not(.dark) {
   }
 
   @keyframes sheet-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes panel-grow {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes panel-content-in {
     from { opacity: 0; }
     to   { opacity: 1; }
   }

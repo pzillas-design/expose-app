@@ -1559,66 +1559,60 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                 </div>
                             </section>
 
-                                {/* ── PRESETS Section ──
-                                    `mt-auto` schob die Vorlagen an das untere Ende der
-                                    Spalte. Bei einem hohen Panel stand dadurch eine
-                                    Bildschirmhoehe Leere zwischen Eingabe und Vorlagen,
-                                    und man musste scrollen, um etwas zu sehen, das zur
-                                    Eingabe gehoert. Jetzt stehen sie direkt darunter;
-                                    was unten frei bleibt, bleibt frei. */}
-                                {/* ── FUER DIESES BILD ──
-                                    Steht ueber den Vorlagen, weil es das
-                                    Speziellere ist: Eine Vorlage gilt fuer alle
-                                    Bilder, das hier nur fuer dieses eine. Und es
-                                    ist der Platz, an dem man beim Oeffnen zuerst
-                                    hinsieht.
+                                {/*
+                                    EINE Gruppe fuer beides: die Vorschlaege zu diesem Bild
+                                    und die Vorlagen.
 
-                                    Die Chips sind eckig wie die Werte einer
-                                    Vorlage, nicht rund wie die Vorlagen selbst:
-                                    Form folgt der Funktion, und die Funktion ist
-                                    dieselbe — ein Klick schreibt eine Zeile nach
-                                    oben. Keine dritte Form fuer eine zweite
-                                    Herkunft. */}
-                                {suggestionTarget && (suggestionsLoading || imageSuggestions.length > 0) && (
-                                    /* Ohne Ueberschrift: Die Chips sagen selbst, was sie
-                                       sind, und der Unterschied zu den Vorlagen darunter
-                                       liegt im Abstand und darin, wie sie erscheinen. */
-                                    <div className="pt-1 pb-1 text-zinc-800 dark:text-zinc-200">
-                                        {suggestionsLoading ? (
-                                            /* Platzhalter in Chipform und Chiphoehe: Wenn die
-                                               echten kommen, rutscht nichts nach. Ein Kreisel
-                                               an dieser Stelle waere ein Versprechen, das wir
-                                               nicht halten muessen — kommt nichts, verschwindet
-                                               die Gruppe einfach wieder. */
-                                            <div className="flex flex-wrap gap-2.5" aria-hidden>
-                                                {[112, 140, 96].map(w => (
+                                    Sie tun dasselbe — ein Klick schreibt eine Zeile in den
+                                    Prompt — und sahen seit dem letzten Durchgang auch gleich
+                                    aus. Zwei Ueberschriften und zwei Bloecke darueber zu
+                                    setzen, hiess denselben Unterschied zweimal zu behaupten.
+
+                                    Sie sitzen unten am Rand des Blattes: Man greift danach,
+                                    man liest sie nicht. Der freie Platz sammelt sich darueber,
+                                    zwischen dem, was man schreibt, und dem, womit man es tut.
+                                */}
+                                <div className="pt-1 mt-auto text-zinc-800 dark:text-zinc-200">
+
+                                    {/*
+                                        Zu: eine Reihe Chips. Offen: AUS dem Chip wird die
+                                        Flaeche.
+
+                                        Vorher standen oben der Chip und darunter eine zweite
+                                        Box mit seinem Inhalt — zwei Elemente fuer eine Sache,
+                                        und der Zusammenhang musste ueber die Naehe erraten
+                                        werden. Jetzt waechst der Chip selbst: dieselbe Farbe,
+                                        dieselbe Form, nur gross, und der Inhalt liegt darin.
+                                    */}
+                                    {/*
+                                        Die Vorschlaege bleiben stehen, auch wenn eine Vorlage
+                                        offen ist: Sie sind keine Alternative zu ihr, sondern
+                                        etwas, das man zusaetzlich einsetzt — Vorlage waehlen,
+                                        Werte setzen, und trotzdem noch "Spiegelung entfernen"
+                                        antippen. Nur die anderen VORLAGEN treten beiseite;
+                                        die sind Alternativen, und eine Reihe davon neben der
+                                        geoeffneten waere die Unruhe, die wir gerade loswerden.
+                                    */}
+                                    {suggestionTarget && (suggestionsLoading || imageSuggestions.length > 0) && (
+                                        <div className="flex flex-wrap gap-2.5 pb-2.5">
+                                            {suggestionsLoading
+                                                ? [112, 140, 96].map(w => (
                                                     <div
                                                         key={w}
+                                                        aria-hidden
                                                         style={{ width: w }}
                                                         className="h-[42px] rounded-full bg-orange-500/[0.08] dark:bg-orange-500/[0.09] animate-pulse"
                                                     />
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-wrap gap-2.5">
-                                                {imageSuggestions.map((sug, i) => {
+                                                ))
+                                                : imageSuggestions.map((sug, i) => {
                                                     const active = isLineInPrompt(sug.line);
                                                     return (
                                                         <Tooltip key={sug.line} text={sug.line} side="top">
-                                                            {/* Dieselbe Form und dieselbe Farbe wie eine Vorlage:
-                                                                Beides schreibt eine Zeile in den Prompt. Zwei
-                                                                Formen fuer dieselbe Handlung waren eine zu viel. */}
                                                             {/*
-                                                                Sie kommen nacheinander herein, nicht alle
-                                                                auf einmal: Das ist der Unterschied zwischen
-                                                                "war schon immer da" und "wurde gerade fuer
-                                                                dieses Bild gefunden".
-
-                                                                60 ms Versatz, 420 ms Dauer, und eine Kurve,
-                                                                die schnell anfaengt und weich auslaeuft. Die
-                                                                vorige Fassung lief kurz und gleichfoermig —
-                                                                das wirkte stockend, weil jeder Chip fuer sich
-                                                                anhielt, statt dass die Reihe durchlaeuft.
+                                                                Sie kommen nacheinander herein: der
+                                                                Unterschied zwischen "war schon immer da"
+                                                                und "wurde gerade fuer dieses Bild
+                                                                gefunden".
                                                             */}
                                                             <button
                                                                 type="button"
@@ -1631,170 +1625,119 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         </Tooltip>
                                                     );
                                                 })}
+                                        </div>
+                                    )}
+
+                                    {expandedTemplate ? (
+                                        <div
+                                            style={{ animation: 'panel-grow 260ms cubic-bezier(0.16,1,0.3,1) both' }}
+                                            className="rounded-[22px] p-4 bg-orange-500/[0.11] dark:bg-orange-500/[0.12] origin-bottom"
+                                        >
+                                            {/* Die Kopfzeile IST der Chip: gleiche Schrift,
+                                                gleiches Lesezeichen, nur ohne eigene Flaeche —
+                                                die Flaeche ist jetzt das ganze Feld. */}
+                                            <div className="flex items-center gap-2 px-1.5 pb-1 text-[14px] font-medium text-orange-950 dark:text-orange-50">
+                                                {expandedTemplate.emoji
+                                                    ? <span className="text-sm">{expandedTemplate.emoji}</span>
+                                                    : expandedTemplate.isCustom && <Bookmark className="w-3 h-3 shrink-0 opacity-60" fill="currentColor" strokeWidth={0} />}
+                                                <span className="truncate">{expandedTemplate.title}</span>
+                                                <div className="flex-1" />
+                                                <button
+                                                    type="button"
+                                                    aria-label={t('close') || 'Schließen'}
+                                                    onClick={() => setExpandedTemplateId(null)}
+                                                    className="w-[24px] h-[24px] -mr-0.5 rounded-full grid place-items-center text-orange-950 dark:text-orange-50 bg-black/[0.07] dark:bg-black/25 hover:bg-black/[0.14] dark:hover:bg-black/40 transition-colors"
+                                                >
+                                                    <X className="w-3.5 h-3.5" strokeWidth={2.25} />
+                                                </button>
                                             </div>
-                                        )}
-                                    </div>
-                                )}
 
-                                {/*
-                                    Die Vorlagen sitzen unten am Rand des Blattes.
-
-                                    Sie sind das, wonach man greift, nicht das, was man
-                                    liest — und griffbereit heisst am Rand, nicht in der
-                                    Mitte einer Spalte. Der freie Platz sammelt sich
-                                    darueber, zwischen dem, was man schreibt, und dem,
-                                    womit man es tut.
-
-                                    Reicht der Inhalt nicht bis unten, schiebt mt-auto
-                                    ihn dorthin; reicht er darueber hinaus, scrollt das
-                                    Blatt wie zuvor.
-                                */}
-                                <div className="pt-1 mt-auto text-zinc-800 dark:text-zinc-200">
-                                    <div className="pt-1 pb-2.5">
-                                        <Eyebrow muted>{t('presets_label')}</Eyebrow>
-                                    </div>
-                                    <div className="animate-in fade-in slide-in-from-top-1 duration-150 flex flex-wrap gap-2.5">
-                                        {/*
-                                            Zwei Zustaende, ein Ort.
-
-                                            Zu: alle Vorlagen nebeneinander, gleich gross,
-                                            gleich laut. Offen: nur noch die eine, mit dem Weg
-                                            hinaus an ihr selbst — die anderen treten beiseite,
-                                            damit die Liste darunter eindeutig zu ihr gehoert.
-
-                                            Das Lesezeichen traegt, was der Nutzer selbst
-                                            angelegt hat. Vorher sah eine mitgelieferte
-                                            Vorlage genauso aus wie eine eigene, obwohl sich
-                                            nur die eine loeschen laesst.
-                                        */}
-                                        {displayTemplates
-                                            .filter(tpl => !expandedTemplateId || tpl.id === expandedTemplateId)
-                                            .map((tpl) => {
-                                                const isOpen = expandedTemplateId === tpl.id;
-                                                return (
-                                                    <button
-                                                        key={tpl.id}
-                                                        onClick={() => handleSelectTemplate(tpl)}
-                                                        className={`${TEMPLATE_CHIP} ${isOpen ? `${TEMPLATE_CHIP_OPEN} !pr-2.5` : ''}`}
-                                                    >
-                                                        {tpl.emoji
-                                                            ? <span className="text-sm">{tpl.emoji}</span>
-                                                            : tpl.isCustom && <Bookmark className="w-3 h-3 shrink-0 opacity-60" fill="currentColor" strokeWidth={0} />}
-                                                        <span>{tpl.title}</span>
-                                                        {isOpen && (
-                                                            <span
-                                                                role="button"
-                                                                aria-label={t('close') || 'Schließen'}
-                                                                onClick={e => { e.stopPropagation(); setExpandedTemplateId(null); }}
-                                                                className="w-[22px] h-[22px] -mr-0.5 rounded-full grid place-items-center bg-black/10 dark:bg-black/30 hover:bg-black/20 dark:hover:bg-black/45 transition-colors"
-                                                            >
-                                                                <X className="w-3 h-3" strokeWidth={2.5} />
-                                                            </span>
-                                                        )}
-                                                    </button>
-                                                );
-                                            })}
-                                        {displayTemplates.length === 0 ? (
-                                            <button
-                                                onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
-                                                className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
+                                            <div
+                                                style={{ animation: 'panel-content-in 260ms cubic-bezier(0.16,1,0.3,1) 80ms both' }}
+                                                className="pt-3 space-y-5"
                                             >
-                                                <Plus className="w-3 h-3" />
-                                                {t('new_preset') || 'Neue Vorlage'}
-                                            </button>
-                                        ) : expandedTemplateId ? null : (
-                                            <div className="relative inline-flex shrink-0">
-                                                {/* Drei Punkte, nicht ein Plus: Dahinter liegt die
-                                                    Verwaltung der Vorlagen — anlegen, aendern,
-                                                    loeschen. Ein Plus verspraeche nur das Anlegen.
-                                                    Damit entfaellt auch der Textlink unter den
-                                                    Gruppen; zwei Wege zur selben Stelle sind einer
-                                                    zu viel. */}
-                                                <Tooltip text={t('edit_presets')} side="top">
-                                                    <button
-                                                        onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
-                                                        data-voice-action="open-presets-manager"
-                                                        aria-label={t('edit_presets')}
-                                                        className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
-                                                    >
-                                                        <MoreHorizontal className="w-4 h-4" />
-                                                    </button>
-                                                </Tooltip>
-                                                <ContextTip
-                                                    storageKey="expose_tip_presets_manage_v1"
-                                                    text={lang === 'de'
-                                                        ? 'Hier kannst du Prompt-Vorlagen erstellen und bearbeiten.'
-                                                        : 'Manage your presets here so you can reuse them later.'}
-                                                    placement="auto"
-                                                    enabled={hasPromptText}
-                                                    anchorClassName="absolute inset-0 pointer-events-none"
-                                                />
+                                                {expandedControls.map(ctrl => {
+                                                    const ctrlLabel = labelOverrides[ctrl.id] || ctrl.label;
+                                                    const multi = ctrl.type !== 'single';
+                                                    return (
+                                                        <div key={ctrl.id} className="space-y-2">
+                                                            <div className="px-1.5 text-[12px] font-medium text-orange-950/50 dark:text-orange-50/50">
+                                                                {ctrlLabel}
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {ctrl.options.map(opt => {
+                                                                    const active = isValueInPrompt(ctrlLabel, opt.value);
+                                                                    return (
+                                                                        <button
+                                                                            key={opt.id}
+                                                                            type="button"
+                                                                            onClick={e => { e.preventDefault(); upsertVariableLine(ctrlLabel, opt.value, multi); }}
+                                                                            // Auf der orangen Flaeche traegt Weiss, nicht Grau:
+                                                                            // Ein grauer Chip darauf saehe aus wie ein Loch.
+                                                                            className={`${VALUE_CHIP_BASE} ${active
+                                                                                ? 'bg-white/80 dark:bg-white/[0.22] text-orange-950 dark:text-white'
+                                                                                : 'bg-white/35 dark:bg-white/[0.07] text-orange-950/65 dark:text-orange-50/65 hover:bg-white/60 dark:hover:bg-white/[0.13] hover:text-orange-950 dark:hover:text-orange-50'}`}
+                                                                        >
+                                                                            {opt.label}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
-                                        )}
-                                    </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-2.5">
+                                            {/* Die Vorlagen in derselben Reihe: gleiche Form,
+                                                gleiche Farbe, das Lesezeichen als einziger
+                                                Unterschied — es sagt "die hier hast du selbst
+                                                angelegt". */}
+                                            {displayTemplates.map((tpl) => (
+                                                <button
+                                                    key={tpl.id}
+                                                    onClick={() => handleSelectTemplate(tpl)}
+                                                    className={TEMPLATE_CHIP}
+                                                >
+                                                    {tpl.emoji
+                                                        ? <span className="text-sm">{tpl.emoji}</span>
+                                                        : tpl.isCustom && <Bookmark className="w-3 h-3 shrink-0 opacity-60" fill="currentColor" strokeWidth={0} />}
+                                                    <span>{tpl.title}</span>
+                                                </button>
+                                            ))}
 
-                                    {/*
-                                        Die Gruppen der aufgeklappten Vorlage.
-
-                                        Sie standen frueher IN der Eingabekarte und haben sie
-                                        auf Bildschirmhoehe aufgeblaeht — der eigentliche Prompt
-                                        stand dann oben als Nebensache. Hier gehoeren sie hin:
-                                        zu der Vorlage, aus der sie stammen.
-
-                                        Ein Klick schreibt die Zeile nach oben in den Text.
-                                        Danach ist es gewoehnlicher Text, den man bearbeiten
-                                        oder loeschen kann — und es gibt nur noch EINE Quelle
-                                        fuer das, was zum Modell geht.
-                                    */}
-                                    {expandedControls.length > 0 && (
-                                        /*
-                                            Eine eigene Karte, wie die Eingabe darueber:
-                                            dieselbe Flaeche, derselbe Radius, dasselbe
-                                            Innenmass. Der Inhalt einer Vorlage ist etwas
-                                            Abgegrenztes, und im Panel gibt es dafuer schon
-                                            eine Form — eine zweite zu erfinden hiesse, zwei
-                                            Sprachen fuer dieselbe Aussage zu fuehren.
-                                        */
-                                        <div className={`mt-4 p-5 space-y-7
-                                            ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.RadiusLg}
-                                            animate-in fade-in slide-in-from-top-1 duration-200`}>
-                                            {expandedControls.map(ctrl => {
-                                                const ctrlLabel = labelOverrides[ctrl.id] || ctrl.label;
-                                                const multi = ctrl.type !== 'single';
-                                                return (
-                                                    <div key={ctrl.id} className="space-y-2.5">
-                                                        {/* Die Gruppenzeile steht deutlich ueber den
-                                                            Chips: Vorher war sie so leise wie die
-                                                            Chips selbst, und die Liste las sich als
-                                                            ein langer Teppich ohne Gliederung. */}
-                                                        <div className="text-[12px] font-medium text-zinc-400 dark:text-zinc-500">
-                                                            {ctrlLabel}
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {ctrl.options.map(opt => {
-                                                                const active = isValueInPrompt(ctrlLabel, opt.value);
-                                                                return (
-                                                                    <button
-                                                                        key={opt.id}
-                                                                        type="button"
-                                                                        onClick={e => { e.preventDefault(); upsertVariableLine(ctrlLabel, opt.value, multi); }}
-                                                                        className={`${VALUE_CHIP_BASE} ${active
-                                                                            // Gewaehlt heisst nicht umgekehrt: Eine schwarze
-                                                                            // Pille zwischen hellen war das Lauteste im Panel,
-                                                                            // obwohl sie nur einen Zustand meldet. Jetzt dieselbe
-                                                                            // Flaeche, nur kraeftiger, und die Schrift traegt es.
-                                                                            ? 'bg-black/[0.11] dark:bg-white/[0.13] text-zinc-900 dark:text-zinc-50'
-                                                                            : 'bg-black/[0.035] dark:bg-white/[0.05] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/[0.07] dark:hover:bg-white/[0.09]'}`}
-                                                                    >
-                                                                        {opt.label}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-
+                                            {displayTemplates.length === 0 ? (
+                                                <button
+                                                    onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
+                                                    className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
+                                                >
+                                                    <Plus className="w-3 h-3" />
+                                                    {t('new_preset') || 'Neue Vorlage'}
+                                                </button>
+                                            ) : (
+                                                <div className="relative inline-flex shrink-0">
+                                                    <Tooltip text={t('edit_presets')} side="top">
+                                                        <button
+                                                            onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
+                                                            data-voice-action="open-presets-manager"
+                                                            aria-label={t('edit_presets')}
+                                                            className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
+                                                        >
+                                                            <MoreHorizontal className="w-4 h-4" />
+                                                        </button>
+                                                    </Tooltip>
+                                                    <ContextTip
+                                                        storageKey="expose_tip_presets_manage_v1"
+                                                        text={lang === 'de'
+                                                            ? 'Hier kannst du Prompt-Vorlagen erstellen und bearbeiten.'
+                                                            : 'Manage your presets here so you can reuse them later.'}
+                                                        placement="auto"
+                                                        enabled={hasPromptText}
+                                                        anchorClassName="absolute inset-0 pointer-events-none"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
