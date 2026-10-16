@@ -825,11 +825,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     */
 
     /**
-     * Die schwebende Insel: nur dort, wo das Blatt seinen eigenen Kopf traegt
-     * (Desktop, Spaltenansicht). Im Zeilenmodus liegt es als Leiste unter dem
-     * Bild — eine Insel ueber die ganze Breite waere keine mehr.
+     * Die feste Spalte: nur dort, wo das Blatt seinen eigenen Kopf traegt
+     * (Desktop). Auf schmalen Geraeten liegt es unter dem Bild und ist dann
+     * keine Spalte, sondern die Fortsetzung der Seite.
      */
-    const isIsland = !!headerSlot && !isMobile;
+    const isSheetColumn = !!headerSlot && !isMobile;
 
     /**
      * Breite des Seitenpanels — fest, nicht mehr ziehbar.
@@ -1001,12 +1001,17 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // das Blatt heranrueckt. Mittig blieb zwischen beiden ein
                             // Streifen leeren Grundes stehen, der nach Luecke aussah
                             // und nicht nach Rand. Ohne Insel wie bisher mittig.
-                            className={`absolute inset-0 flex items-center ${isIsland ? 'justify-start' : 'justify-center'}`}
+                            className={`absolute inset-0 flex items-center ${isSheetColumn ? 'justify-start' : 'justify-center'}`}
                             style={state.sideSheetMode === 'brush' ? { paddingBottom: BRUSH_BOTTOM_RESERVE } : undefined}
                         >
                             {displayBox.width > 0 && displayBox.height > 0 && (
                                 <div
-                                    className={`relative shrink-0 transition-[opacity,transform] duration-[180ms] ease-in ${isExiting ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}
+                                    // Hinaus ist die Spiegelung von hinein: derselbe
+                                    // Massstab (94 %), nur kuerzer und anziehend statt
+                                    // ausklingend. Vorher waren es 90 % in 180 ms gegen
+                                    // 93 % in 380 ms — zwei Bewegungen, die nichts
+                                    // miteinander zu tun hatten.
+                                    className={`relative shrink-0 transition-[opacity,transform] duration-[180ms] ease-[cubic-bezier(0.4,0,1,1)] ${isExiting ? 'opacity-0 scale-[0.94]' : 'opacity-100 scale-100'}`}
                                     style={{ width: displayBox.width, height: displayBox.height }}
                                 >
                                     {/* Loading state while generating or waiting for image */}
@@ -1046,7 +1051,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                                             // weicher auslaufend als frueher (0.96 in 220 ms
                                                             // sah man kaum). Das Bild kommt aus einer Kachel,
                                                             // es soll sichtbar ankommen.
-                                                            : { animation: 'detail-enter 380ms cubic-bezier(0.16,1,0.3,1) both' }
+                                                            : { animation: 'view-in 280ms cubic-bezier(0.16,1,0.3,1) both' }
                                                 }
                                                 alt=""
                                             />
@@ -1280,21 +1285,23 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         was man tun kann, dann das Bild.
                     */
                     className={`flex flex-col relative md:overflow-hidden md:shrink-0 md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none
-                        ${isIsland
+                        ${isSheetColumn
                             // Im hellen Modus eine Haarlinie dazu: Weiss auf Zink-50
                             // ist ein Unterschied von drei Prozent Helligkeit — der
                             // Schatten allein traegt die Kante dort nicht.
-                            ? `md:order-first md:m-4 md:rounded-[20px] ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowSm}
-                                ring-1 ring-black/[0.035] dark:ring-white/[0.03]
-                                hover:ring-black/[0.07] dark:hover:ring-white/[0.07]
-                                transition-[box-shadow] duration-300
+                            // Eine Spalte, keine Insel: Sie reicht oben, unten und
+                            // links an den Rand. Die Insel brauchte Abstand ringsum,
+                            // und genau der lag auch zwischen Blatt und Bild — jetzt
+                            // stossen sie aneinander, und die Kante entsteht aus dem
+                            // Wechsel der Flaeche.
+                            ? `md:order-first ${Theme.Colors.PanelBg}
                                 md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
                             // Schmale Geraete: keine eigene Flaeche. Das Blatt ist dort
                             // kein Blatt, sondern die Fortsetzung der Seite unter dem
                             // Bild — ein eigener Untergrund waere eine Kante, die nichts
                             // trennt.
                             : 'bg-transparent'}
-                        ${!isSideSheetActuallyVisible && isIsland ? 'hidden' : ''}`}
+                        ${!isSideSheetActuallyVisible && isSheetColumn ? 'hidden' : ''}`}
                     style={isMobile
                         ? undefined
                         : {

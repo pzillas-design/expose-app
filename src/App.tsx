@@ -1182,10 +1182,20 @@ export function App() {
         : "min-h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
 
     const mainContainerClasses = isAppLayout
-        ? `flex-1 flex flex-col overflow-hidden ${isDetailSheetLayout ? '' : 'pt-[var(--nav-h)]'}`
+        ? `flex-1 flex flex-col overflow-hidden transition-[padding-top] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${isDetailSheetLayout ? 'pt-0' : 'pt-[var(--nav-h)]'}`
         : "flex-1 flex flex-col";
 
-    const showGlobalNavbar = !isAdminRoute && !isDetailSheetLayout;
+    /*
+        Die Leiste bleibt haengen, sie wird nur weggefahren.
+
+        Vorher verschwand sie beim Oeffnen eines Bildes von einem Bild zum
+        naechsten, und der Innenabstand des Inhalts sprang im selben Moment um
+        ihre Hoehe — ein Ruck quer durch die ganze Seite. Jetzt schiebt sie
+        sich nach oben hinaus, waehrend der Abstand darunter in derselben Zeit
+        zusammenlaeuft. Zwei Bewegungen, eine Dauer, kein Sprung.
+    */
+    const showGlobalNavbar = !isAdminRoute;
+    const navbarHidden = isDetailSheetLayout;
 
     return (
         <div className={outerContainerClasses}>
@@ -1199,6 +1209,10 @@ export function App() {
             />
 
             {showGlobalNavbar && (
+                <div
+                    className={`fixed top-0 left-0 right-0 z-50 transition-[transform,opacity] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none
+                        ${navbarHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
+                >
                 <AppNavbar
                     user={user}
                     userProfile={userProfile}
@@ -1391,6 +1405,7 @@ export function App() {
                     onStopVoiceMode={voice.stop}
                     onRetryVoiceMode={() => { voice.stop(); void voice.start(); }}
                 />
+                </div>
             )}
 
 
