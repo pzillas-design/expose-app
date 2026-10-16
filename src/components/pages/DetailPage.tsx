@@ -1286,6 +1286,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // Schatten allein traegt die Kante dort nicht.
                             ? `md:order-first md:m-4 md:rounded-[20px] ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowSm}
                                 ring-1 ring-black/[0.035] dark:ring-white/[0.03]
+                                hover:ring-black/[0.07] dark:hover:ring-white/[0.07]
+                                transition-[box-shadow] duration-300
                                 md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
                             // Schmale Geraete: keine eigene Flaeche. Das Blatt ist dort
                             // kein Blatt, sondern die Fortsetzung der Seite unter dem

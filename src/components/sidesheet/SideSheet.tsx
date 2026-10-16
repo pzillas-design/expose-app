@@ -6,7 +6,7 @@ import {
 } from '@/types';
 import {
     Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Play, Plus, Check,
-    Undo2, Redo2, Layers, MoreHorizontal, Settings2, CornerDownLeft, Bookmark, Sparkle, Square, SquareCheck, Settings
+    Undo2, Redo2, Layers, MoreHorizontal, Settings2, CornerDownLeft, Bookmark, Sparkle
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
@@ -253,6 +253,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
      * einen Wert presst und sich damit die Auswertung verdirbt.
      */
     const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
+    const [isPromptFocused, setIsPromptFocused] = useState(false);
     const [isChipMenuOpen, setIsChipMenuOpen] = useState(false);
     /*
         Die Lage des Menues, in Fensterkoordinaten.
@@ -1054,9 +1055,21 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
      * anderes anstellt als am richtigen.
      */
     const suggestionTarget = (selectedImages && selectedImages.length > 1) ? null : selectedImage;
-    // Der Ladezustand wird nicht angezeigt: Es gibt keinen Platzhalter mehr,
-    // und ein Kreisel fuer etwas, das niemand angefordert hat, waere einer zu viel.
-    const { suggestions: imageSuggestions } = useImageSuggestions(suggestionTarget, lang);
+    /*
+        Ausgeblendet heisst: gar nicht erst fragen.
+
+        Wer die Vorschlaege weggeschaltet hat, soll dafuer auch nicht bezahlen —
+        weder mit Rechenzeit bei Google noch mit dem Bild, das dafuer das Haus
+        verlaesst. Die Vorliebe haengt deshalb am Abruf, nicht nur an der
+        Anzeige.
+
+        Der Ladezustand wird nicht angezeigt: Es gibt keinen Platzhalter mehr,
+        und ein Kreisel fuer etwas, das niemand angefordert hat, waere einer zu
+        viel.
+    */
+    const { suggestions: imageSuggestions } = useImageSuggestions(
+        suggestionTarget, lang, !hideSuggestions,
+    );
 
     /**
      * Ein Vorschlag ist eine ganze Zeile, kein Wert zu einer Beschriftung.
@@ -1378,9 +1391,39 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                       Letzteres lag im Dunkelmodus so dicht an der
                                       Hintergrundfarbe zinc-950, dass die Karte kaum
                                       abgesetzt war. */}
-                                <div className={`${Theme.Colors.SurfaceSunken} ${Theme.Geometry.RadiusLg} p-6 space-y-6 transition-all`}>
+                                {/*
+                                    Die Eingabe reagiert, bevor man sie anfasst.
+
+                                    Vorher war sie eine stille Flaeche: kein Unterschied
+                                    zwischen "da kann man hinschreiben" und "da steht etwas".
+                                    Jetzt hellt sie beim Darueberfahren auf, und sobald der
+                                    Cursor drin ist, traegt sie einen Ring in der
+                                    Akzentfarbe — dieselbe Sprache wie die Chips, die auch
+                                    ueber die Flaeche sprechen und nicht ueber Linien.
+                                */}
+                                <div className={`group/prompt relative ${Theme.Colors.SurfaceSunken} ${Theme.Geometry.RadiusLg} p-6 space-y-6
+                                    ring-1 ring-transparent
+                                    hover:bg-black/[0.055] dark:hover:bg-white/[0.045]
+                                    focus-within:ring-orange-500/35 dark:focus-within:ring-orange-400/30
+                                    transition-[background-color,box-shadow] duration-200`}>
                                     {/* Prompt Textarea */}
-                                    <div className={draftFadeClass}>
+                                    <div className={`relative ${draftFadeClass}`}>
+                                        {/*
+                                            Ein blinkender Strich im leeren Feld: Er sagt
+                                            "hier wird geschrieben", bevor man geklickt hat.
+                                            Er verschwindet, sobald wirklich ein Cursor da
+                                            ist oder Text steht — zwei Striche waeren einer
+                                            zu viel.
+                                        */}
+                                        {!prompt && !isPromptFocused && (
+                                            <span
+                                                aria-hidden
+                                                className="pointer-events-none absolute left-0 top-[3px] w-px h-[18px]
+                                                    bg-zinc-400 dark:bg-zinc-500 animate-[cursor-blink_1.1s_steps(1,start)_infinite]
+                                                    opacity-0 group-hover/prompt:opacity-100
+                                                    transition-opacity duration-150"
+                                            />
+                                        )}
                                         <textarea
                                             ref={textareaRef}
                                             data-voice-action="prompt-input"
@@ -1406,6 +1449,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                             autoCorrect="off"
                                             autoCapitalize="off"
                                             spellCheck={false}
+                                            onFocus={() => setIsPromptFocused(true)}
+                                            onBlur={() => setIsPromptFocused(false)}
                                             className={`w-full bg-transparent outline-none ${Typo.Prompt} resize-none no-scrollbar text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600`}
                                         />
                                     </div>
@@ -1703,7 +1748,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                         fuer die andere Herkunft. In der
                                                                         Akzentfarbe, weil er zu uns gehoert
                                                                         und nicht zu einem fremden Dienst. */}
-                                                                    <Sparkle className="w-3 h-3 shrink-0 text-orange-500 dark:text-orange-400"
+                                                                    <Sparkle className="w-3 h-3 shrink-0 text-orange-500/60 dark:text-orange-400/50"
                                                                         fill="currentColor" strokeWidth={0} />
                                                                     {sug.label}
                                                                 </button>
@@ -1798,9 +1843,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                             label: hideSuggestions
                                                                                 ? (lang === 'de' ? 'KI-Vorschläge einblenden' : 'Show AI suggestions')
                                                                                 : (lang === 'de' ? 'KI-Vorschläge ausblenden' : 'Hide AI suggestions'),
-                                                                            icon: hideSuggestions
-                                                                                ? <Square className="w-4 h-4" />
-                                                                                : <SquareCheck className="w-4 h-4" />,
+                                                                            // Nur ein Haken, wenn es an ist — ein leerer
+                                                                            // Kasten sagt nichts, was die Beschriftung
+                                                                            // nicht schon sagt.
+                                                                            icon: hideSuggestions ? undefined : <Check className="w-4 h-4" />,
                                                                             separator: hiddenTemplates.length > 0,
                                                                             onClick: () => { setHideSuggestions(!hideSuggestions); setIsChipMenuOpen(false); },
                                                                         },
@@ -1808,14 +1854,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                             label: hideTemplates
                                                                                 ? (lang === 'de' ? 'Vorlagen einblenden' : 'Show presets')
                                                                                 : (lang === 'de' ? 'Vorlagen ausblenden' : 'Hide presets'),
-                                                                            icon: hideTemplates
-                                                                                ? <Square className="w-4 h-4" />
-                                                                                : <SquareCheck className="w-4 h-4" />,
+                                                                            icon: hideTemplates ? undefined : <Check className="w-4 h-4" />,
                                                                             onClick: () => { setHideTemplates(!hideTemplates); setIsChipMenuOpen(false); },
                                                                         },
                                                                         {
                                                                             label: t('edit_presets'),
-                                                                            icon: <Settings className="w-4 h-4" />,
+                                                                            // Derselbe Stift wie in der Eingabezeile:
+                                                                            // dort bearbeitet man das Bild, hier die
+                                                                            // Vorlage. Dieselbe Handlung, dasselbe Zeichen.
+                                                                            icon: <Pen className="w-4 h-4" />,
                                                                             separator: true,
                                                                             onClick: () => { setIsChipMenuOpen(false); setEditingTemplate(null); setIsPresetModalOpen(true); },
                                                                         },

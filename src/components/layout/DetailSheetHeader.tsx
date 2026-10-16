@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, Download, Repeat, AudioLines, MicOff, MoreHorizontal } from 'lucide-react';
-import { RoundIconButton } from '@/components/ui/DesignSystem';
+import { RoundIconButton, Tooltip } from '@/components/ui/DesignSystem';
 import { DropdownMenu, type DropdownItem } from '@/components/ui/DropdownMenu';
 import { buildDetailMenuItems } from '@/components/layout/detailMenu';
 
@@ -62,6 +62,39 @@ export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
         return () => document.removeEventListener('mousedown', onDown);
     }, [isMenuOpen]);
 
+    /*
+        Das Menue schliesst sich auch, wenn man einfach weggeht.
+
+        Klicken, um etwas zu schliessen, das man gar nicht wollte, ist eine
+        Handlung zu viel. Eine halbe Sekunde Nachlauf, damit der Weg vom Knopf
+        zum Eintrag nicht schon als "weg" gilt — und jedes Zurueckkommen hebt
+        sie wieder auf.
+    */
+    const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const cancelLeave = () => { if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null; } };
+    const scheduleLeave = () => {
+        cancelLeave();
+        leaveTimer.current = setTimeout(() => setIsMenuOpen(false), 500);
+    };
+    useEffect(() => cancelLeave, []);
+
+    /*
+        Taste M ist "Mehr", D ist "Herunterladen" — fuer dieses Menue bleibt
+        der Punkt: dasselbe Zeichen, das auf dem Knopf steht.
+    */
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key !== '.' || e.metaKey || e.ctrlKey || e.altKey) return;
+            const el = document.activeElement as HTMLElement | null;
+            const tag = el?.tagName;
+            if (tag === 'TEXTAREA' || tag === 'INPUT' || el?.isContentEditable) return;
+            e.preventDefault();
+            setIsMenuOpen(o => !o);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
+
     return (
         <div className="flex items-start gap-1.5 pb-5">
             <RoundIconButton
@@ -81,8 +114,14 @@ export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
                 zeigt das. Die Fassung steht dicht am Namen, ohne Luecke:
                 "5 v6" ist eine Angabe, nicht zwei.
             */}
-            <div className="flex-1 min-w-0 flex items-center pl-2.5" ref={menuRef}>
+            <div
+                className="flex-1 min-w-0 flex items-center pl-2.5"
+                ref={menuRef}
+                onMouseEnter={cancelLeave}
+                onMouseLeave={() => { if (isMenuOpen) scheduleLeave(); }}
+            >
                 <div className="relative min-w-0">
+                    <Tooltip text={title} shortcut="." side="bottom">
                     <button
                         type="button"
                         onClick={() => setIsMenuOpen(p => !p)}
@@ -110,8 +149,13 @@ export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
                                 ? 'text-zinc-900 dark:text-zinc-100'
                                 : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'}`} />
                     </button>
+                    </Tooltip>
                     {isMenuOpen && (
-                        <div className="absolute top-full mt-2 left-0 z-50">
+                        <div
+                            className="absolute top-full mt-2 left-0 z-50"
+                            onMouseEnter={cancelLeave}
+                            onMouseLeave={scheduleLeave}
+                        >
                             <DropdownMenu
                                 items={buildDetailMenuItems({
                                     t,
