@@ -15,6 +15,11 @@ export const Theme = {
                 PanelBg       was darauf liegt (Blatt, Dialog) — heller
                 SurfaceSunken was darin vertieft ist (Eingaben, Felder) — wieder dunkler
 
+            Die Abstaende zwischen den Ebenen sind bewusst groesser als eine
+            Zink-Stufe: Zwischen zinc-950 und zinc-900 liegen im Dunkeln nur
+            wenige Prozent Helligkeit, und auf einem hellen Bildschirm in einem
+            hellen Raum sieht man davon nichts. Jetzt rund das Doppelte.
+
             Im dunklen Modus war das vorher umgekehrt: Das Blatt (zinc-900) lag
             auf einem fast gleich dunklen Grund, und die Eingabekarte darin war
             HELLER als das Blatt — sie sah aus, als laege sie obenauf, obwohl
@@ -24,13 +29,13 @@ export const Theme = {
             Grund ist leicht grau, das Blatt weiss, die Eingabe wieder grau.
             Eine Vertiefung zeigt den Grund durch.
         */
-        CanvasBg: "bg-zinc-100 dark:bg-[#0B0B0D]",
-        PanelBg: "bg-white dark:bg-zinc-900",
-        ModalBg: "bg-white dark:bg-zinc-900",
+        CanvasBg: "bg-[#EDEDF0] dark:bg-[#08080A]",
+        PanelBg: "bg-white dark:bg-[#1B1B20]",
+        ModalBg: "bg-white dark:bg-[#1B1B20]",
 
         // Interactive Surfaces (New Standard)
         Surface: "bg-white dark:bg-zinc-900",
-        SurfaceSunken: "bg-zinc-100 dark:bg-[#0E0E11]",
+        SurfaceSunken: "bg-[#E6E6EA] dark:bg-[#121216]",
         SurfaceHover: "hover:bg-zinc-50 dark:hover:bg-zinc-800/10",
         SurfaceActive: "bg-zinc-100 dark:bg-zinc-800",
 
