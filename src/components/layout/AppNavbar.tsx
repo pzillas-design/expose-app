@@ -687,7 +687,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <div
                     aria-hidden
                     className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
-                        bg-[#EDEDF0]/70 dark:bg-[#0C0C11]/60"
+                        bg-[#EDEDF0]/85 dark:bg-[#0C0C11]/78"
                     style={{
                         opacity: surfaceOpacity,
                     }}
@@ -981,7 +981,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <div
                 aria-hidden
                 className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
-                    bg-[#EDEDF0]/70 dark:bg-[#0C0C11]/60"
+                    bg-[#EDEDF0]/85 dark:bg-[#0C0C11]/78"
             />
             <div
                 aria-hidden

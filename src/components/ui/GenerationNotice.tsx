@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
 import type { CanvasImage } from '@/types';
 import { calcBarProgress } from '@/utils/progress';
 
@@ -47,9 +47,19 @@ export const GenerationNotice: React.FC<GenerationNoticeProps> = ({
     const [phase, setPhase] = useState<Phase>('idle');
     const [expanded, setExpanded] = useState(false);
     const [doneId, setDoneId] = useState<string | null>(null);
+    const [doneTitle, setDoneTitle] = useState<string | null>(null);
+    /*
+        Beim Darueberfahren faehrt sie auf — auch im eingeklappten Zustand.
+
+        Eingeklappt steht nur der Ring da; wer wissen will, was laeuft, soll
+        nicht klicken muessen. Der Zeiger darueber reicht.
+    */
+    const [hovered, setHovered] = useState(false);
     const [, setTick] = useState(0);
 
     const prevIdsRef = useRef<Set<string>>(new Set());
+    /** Namen der laufenden Bilder, damit die Fertigmeldung sagen kann, welches. */
+    const prevTitlesRef = useRef<Map<string, string>>(new Map());
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const clearTimer = () => { if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; } };
 
@@ -63,6 +73,7 @@ export const GenerationNotice: React.FC<GenerationNoticeProps> = ({
     // Laufende Generierungen erkennen und das Ende eines Auftrags bemerken.
     useEffect(() => {
         const ids = new Set(generatingImages.map(i => i.id));
+        generatingImages.forEach(i => prevTitlesRef.current.set(i.id, i.title || ''));
         const prev = prevIdsRef.current;
         const started = [...ids].filter(id => !prev.has(id));
         const finished = [...prev].filter(id => !ids.has(id));
@@ -79,7 +90,9 @@ export const GenerationNotice: React.FC<GenerationNoticeProps> = ({
 
         if (finished.length > 0) {
             clearTimer();
-            setDoneId(finished[finished.length - 1]);
+            const id = finished[finished.length - 1];
+            setDoneId(id);
+            setDoneTitle(prevTitlesRef.current.get(id) ?? null);
             setPhase('done');
             setExpanded(true);
         }
@@ -153,6 +166,10 @@ export const GenerationNotice: React.FC<GenerationNoticeProps> = ({
             : (isGerman ? 'Bild wird erzeugt' : 'Generating image');
 
     const clickable = phase === 'done' && !!doneId && !!onNavigateToImage;
+    const open = expanded || hovered;
+    const text = phase === 'done'
+        ? (doneTitle ? `${doneTitle} ${isGerman ? 'ist fertig' : 'is ready'}` : label)
+        : label;
 
     return createPortal(
         <div className="fixed top-4 right-4 z-[900] pointer-events-none flex justify-end">
@@ -160,22 +177,29 @@ export const GenerationNotice: React.FC<GenerationNoticeProps> = ({
                 type="button"
                 disabled={!clickable}
                 onClick={() => { if (clickable) { onNavigateToImage!(doneId!); hide(); } }}
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
                 aria-live="polite"
-                className={`pointer-events-auto h-10 pl-3 pr-3.5 rounded-full inline-flex items-center gap-2.5
-                    bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md
-                    ring-1 ring-black/[0.05] dark:ring-white/[0.06] shadow-sm
+                // Groesser und luftiger als zuvor, und ohne Rand: Die Flaeche
+                // traegt, wie ueberall sonst.
+                className={`pointer-events-auto h-12 pl-4 pr-4 rounded-full inline-flex items-center gap-3
+                    bg-white/90 dark:bg-[#1B1B20]/90 backdrop-blur-xl shadow-sm
                     animate-[chip-in_320ms_cubic-bezier(0.16,1,0.3,1)_both]
-                    ${clickable ? 'cursor-pointer hover:bg-white dark:hover:bg-zinc-900' : 'cursor-default'}
+                    ${clickable ? 'cursor-pointer hover:bg-white dark:hover:bg-[#1B1B20]' : 'cursor-default'}
                     transition-colors duration-150`}
             >
                 {/* Links das Zeichen: waehrend des Laufs der Fortschritt, am
                     Ende der Haken. Beide an derselben Stelle, gleich gross —
                     der eine wird zum anderen. */}
-                <span className="relative w-[18px] h-[18px] shrink-0 grid place-items-center">
+                <span className="relative w-[22px] h-[22px] shrink-0 grid place-items-center">
                     {phase === 'done' ? (
-                        <Check className="w-[15px] h-[15px] text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+                        <Check className="w-[18px] h-[18px] text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
                     ) : (
-                        <svg viewBox="0 0 24 24" className="w-[18px] h-[18px] -rotate-90">
+                        // Der Kreis sitzt mittig in seinem Feld: Beide Kreise
+                        // teilen denselben Mittelpunkt (12/12) und dieselbe
+                        // Groesse wie das Feld — vorher stand er sichtbar
+                        // daneben, weil das Feld kleiner war als der Ring.
+                        <svg viewBox="0 0 24 24" className="w-[22px] h-[22px] -rotate-90 block">
                             <circle cx="12" cy="12" r="9" fill="none" strokeWidth="3"
                                 className="stroke-black/[0.09] dark:stroke-white/[0.12]" />
                             <circle cx="12" cy="12" r="9" fill="none" strokeWidth="3" strokeLinecap="round"
@@ -191,14 +215,20 @@ export const GenerationNotice: React.FC<GenerationNoticeProps> = ({
                     das ist dieselbe Bewegung wie beim Aufklappen einer Vorlage. */}
                 <span
                     className="grid transition-[grid-template-columns,opacity] duration-[320ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
-                    style={{ gridTemplateColumns: expanded ? '1fr' : '0fr', opacity: expanded ? 1 : 0 }}
+                    style={{ gridTemplateColumns: open ? '1fr' : '0fr', opacity: open ? 1 : 0 }}
                 >
-                    <span className="overflow-hidden whitespace-nowrap text-[13px] font-medium text-zinc-800 dark:text-zinc-100">
-                        {label}
+                    <span className="overflow-hidden whitespace-nowrap text-[14px] font-medium text-zinc-800 dark:text-zinc-100 flex items-center gap-2">
+                        {text}
+                        {clickable && (
+                            // Der Pfeil erscheint erst beim Darueberfahren: Er
+                            // sagt "hier geht es hin", und das braucht man erst,
+                            // wenn man ueberlegt zu klicken.
+                            <ArrowRight className="w-4 h-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
+                        )}
                     </span>
                 </span>
 
-                {count > 1 && !expanded && (
+                {count > 1 && !open && (
                     <span className="text-[13px] font-medium tabular-nums text-zinc-500 dark:text-zinc-400">
                         {count}
                     </span>

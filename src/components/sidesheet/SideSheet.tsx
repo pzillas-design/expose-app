@@ -1840,43 +1840,40 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 <DropdownMenu
                                                                     items={[
                                                                         /*
-                                                                            Oben die Vorlagen, fuer die im Blatt
-                                                                            kein Platz ist: Das ist, wonach man hier
-                                                                            greift. Was die Reihe zeigt, ist eine
-                                                                            Einstellung und steht darunter.
+                                                                            Was ausgeblendet ist, steht hier.
+
+                                                                            Ausblenden heisst "nicht im Weg", nicht
+                                                                            "weg": Wer die Vorschlaege oder die Vorlagen
+                                                                            weggeschaltet hat, kommt hier an sie heran,
+                                                                            ohne sie wieder einzublenden. Sichtbar ist
+                                                                            die Reihe, das Menue ist der Rest.
                                                                         */
-                                                                        ...hiddenTemplates.map(tpl => ({
+                                                                        ...(hideSuggestions ? imageSuggestions.map(sug => ({
+                                                                            label: sug.label,
+                                                                            icon: <Sparkle className="w-4 h-4 text-orange-500/60 dark:text-orange-400/50" fill="currentColor" strokeWidth={0} />,
+                                                                            onClick: () => { setIsChipMenuOpen(false); toggleSuggestionLine(sug.line); },
+                                                                        })) : []),
+                                                                        ...(hideTemplates ? displayTemplates : hiddenTemplates).map((tpl, i) => ({
                                                                             label: tpl.title,
+                                                                            // Das Emoji der Vorlage steht auch hier davor:
+                                                                            // Es gehoert zu ihr, nicht zur Chip-Reihe.
+                                                                            icon: tpl.emoji
+                                                                                ? <span className="text-sm leading-none">{tpl.emoji}</span>
+                                                                                : tpl.isCustom
+                                                                                    ? <Bookmark className="w-4 h-4 opacity-60" fill="currentColor" strokeWidth={0} />
+                                                                                    : undefined,
+                                                                            separator: i === 0 && hideSuggestions && imageSuggestions.length > 0,
                                                                             onClick: () => { setIsChipMenuOpen(false); handleSelectTemplate(tpl); },
                                                                         })),
-                                                                        /*
-                                                                            Zwei Schalter, eine Form: ein Kaestchen,
-                                                                            das den jetzigen Zustand zeigt, und eine
-                                                                            Beschriftung, die sagt, was der Klick tut.
-                                                                            Vorher trug jeder ein eigenes Sinnbild
-                                                                            (Funke, Lesezeichen) — drei Zeichensorten
-                                                                            in einer Spalte, und keine sagte, ob
-                                                                            gerade an oder aus ist.
-                                                                        */
                                                                         {
                                                                             /*
                                                                                 Die Beschriftung bleibt stehen, nur der
-                                                                                Haken wechselt.
-
-                                                                                Vorher wechselte beides, und der Eintrag
-                                                                                sprang beim Klicken von "ausblenden" auf
-                                                                                "einblenden" — man liest beim Treffen
-                                                                                noch das alte Wort. Jetzt benennt die
-                                                                                Zeile die Sache ("einblenden"), der Haken
-                                                                                sagt, ob sie gilt. So machen es
-                                                                                Ansichtsmenues ueberall.
+                                                                                Haken wechselt: Die Zeile benennt die
+                                                                                Sache, der Haken sagt, ob sie gilt.
                                                                             */
                                                                             label: lang === 'de' ? 'KI-Vorschläge einblenden' : 'Show AI suggestions',
-                                                                            // Nur ein Haken, wenn es an ist — ein leerer
-                                                                            // Kasten sagt nichts, was die Beschriftung
-                                                                            // nicht schon sagt.
                                                                             icon: hideSuggestions ? undefined : <Check className="w-4 h-4" />,
-                                                                            separator: hiddenTemplates.length > 0,
+                                                                            separator: true,
                                                                             onClick: () => { setHideSuggestions(!hideSuggestions); setIsChipMenuOpen(false); },
                                                                         },
                                                                         {
@@ -1886,10 +1883,6 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                         },
                                                                         {
                                                                             label: t('edit_presets'),
-                                                                            // Derselbe Stift wie in der Eingabezeile:
-                                                                            // dort bearbeitet man das Bild, hier die
-                                                                            // Vorlage. Dieselbe Handlung, dasselbe Zeichen.
-                                                                            icon: <Pen className="w-4 h-4" />,
                                                                             separator: true,
                                                                             onClick: () => { setIsChipMenuOpen(false); setEditingTemplate(null); setIsPresetModalOpen(true); },
                                                                         },

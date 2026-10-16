@@ -121,7 +121,9 @@ export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
                 onMouseLeave={() => { if (isMenuOpen) scheduleLeave(); }}
             >
                 <div className="relative min-w-0">
-                    <Tooltip text={title} shortcut="." side="bottom">
+                    {/* Nicht den Namen wiederholen — der steht daneben. Der
+                        Tooltip sagt, was der Knopf TUT. */}
+                    <Tooltip text={t('nav_menu')} shortcut="." side="bottom">
                     <button
                         type="button"
                         onClick={() => setIsMenuOpen(p => !p)}

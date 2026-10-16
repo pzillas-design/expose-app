@@ -381,113 +381,20 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const { confirm } = useItemDialog();
 
     // Track generating children of current image
-    /**
-     * Schreibt der Nutzer gerade in ein Feld (Prompt, Titel)? Dann darf die
-     * Ansicht nicht wechseln — der Cursor würde mitten im Satz herausgerissen.
-     * Gilt für beide Sprünge: zum Platzhalter beim Start und zum Ergebnis am
-     * Ende. Dieselbe Regel steckt in useGeneration für den dortigen Pfad.
-     */
-    const isTypingNow = useCallback((): boolean => {
-        if (typeof document === 'undefined') return false;
-        const el = document.activeElement as HTMLElement | null;
-        if (!el) return false;
-        const tag = el.tagName;
-        return tag === 'TEXTAREA'
-            || (tag === 'INPUT' && !['checkbox', 'radio', 'button', 'submit', 'range', 'file'].includes((el as HTMLInputElement).type))
-            || el.isContentEditable;
-    }, []);
 
-    const generatingChild = useMemo(() =>
-        img ? images.find(i => i.parentId === img.id && i.isGenerating) : undefined,
-        [images, img]
-    );
-    /**
-     * Begleitet eine laufende Generierung: beim Start auf den Platzhalter
-     * wechseln, am Ende auf das Ergebnis — sofern der Nutzer zwischendurch
-     * nicht selbst woanders hingegangen ist.
-     *
-     * Die verfolgte Generierung wird über ihre ID nachgeschlagen, NICHT über
-     * generatingChild. Letzteres sucht Kinder des gerade angezeigten Bildes und
-     * ist leer, sobald man den Platzhalter selbst ansieht — der Code hielt die
-     * Generierung dann für beendet, verwarf den Merker, und beim nächsten
-     * Schritt auf das Quellbild galt sie als neu entdeckt. Ergebnis war eine
-     * Falle: Ein Pfeil in Richtung Quellbild warf einen sofort zum Platzhalter
-     * zurück, während die Gegenrichtung funktionierte.
-     *
-     * Zusätzlich merkt sich autoJumpedRef jeden Platzhalter, zu dem bereits
-     * gesprungen wurde. Derselbe Sprung passiert damit höchstens einmal, egal
-     * wie oft man danach am Quellbild vorbeikommt.
-     */
-    const trackedGenRef = useRef<{ childId: string; parentId: string } | null>(null);
-    const autoJumpedRef = useRef<Set<string>>(new Set());
-    const navHappenedDuringGenRef = useRef(false);
+    /*
+        Die Ansicht folgt keiner Generierung mehr.
 
-    /**
-     * Beim Oeffnen laufende Generierungen gelten als bereits gesehen.
-     *
-     * Der Sprung zum Platzhalter gilt der Generierung, die man GERADE hier
-     * ausgeloest hat. Lief sie schon, als die Ansicht aufging, hat der Nutzer
-     * bewusst ein anderes Bild angetippt — und landete trotzdem auf dem
-     * Ladebildschirm, weil der Platzhalter ein Kind des geoeffneten Bildes ist.
-     * Aus der Galerie heraus traf das jedes Mal zu: Die Ansicht wird neu
-     * aufgebaut, der Merker gegen Wiederholungen ist dann leer.
-     *
-     * Ein Layout-Effekt, nicht useEffect: Er laeuft vor dem Effekt unten, der
-     * sonst im selben Durchgang schon gesprungen waere.
-     */
-    const seededRef = useRef(false);
-    useLayoutEffect(() => {
-        // Erst wenn ueberhaupt Bilder da sind: Bei einem Direktaufruf steht die
-        // Liste anfangs leer, und ein Merker aus einer leeren Liste merkt nichts.
-        if (seededRef.current || images.length === 0) return;
-        seededRef.current = true;
-        images.forEach(i => { if (i.isGenerating) autoJumpedRef.current.add(i.id); });
-    }, [images]);
+        Sie sprang frueher auf den Platzhalter, sobald am gezeigten Bild etwas
+        startete, und am Ende auf das Ergebnis. Beides nahm einem die Ansicht
+        aus der Hand: Man sieht ein Bild an, und ploetzlich steht ein grauer
+        Kasten da. Wer weiterarbeiten will, muss zurueckblaettern.
 
-    useEffect(() => {
-        // Neue Generierung am aktuell angezeigten Bild entdeckt
-        if (generatingChild && !trackedGenRef.current && !autoJumpedRef.current.has(generatingChild.id)) {
-            trackedGenRef.current = { childId: generatingChild.id, parentId: selectedId };
-            navHappenedDuringGenRef.current = false;
-            if (selectedId !== generatingChild.id && !isTypingNow()) {
-                autoJumpedRef.current.add(generatingChild.id);
-                onSelectImage(generatingChild.id);
-            }
-            return;
-        }
+        Jetzt bleibt man, wo man ist. Dass etwas laeuft und dass etwas fertig
+        ist, meldet die Pille oben rechts — und ein Klick darauf fuehrt hin,
+        wenn man will. Melden statt verschieben.
+    */
 
-        const tracked = trackedGenRef.current;
-        if (!tracked) return;
-
-        const trackedImage = imageMap.get(tracked.childId);
-        // Fehlt das Bild (noch nicht geladen), weiter abwarten statt abbrechen.
-        if (!trackedImage) return;
-
-        if (trackedImage.isGenerating) {
-            // Weder Quellbild noch Platzhalter: Der Nutzer ist selbst woanders
-            // hingegangen, der Sprung zum Ergebnis entfällt.
-            if (selectedId !== tracked.parentId && selectedId !== tracked.childId) {
-                navHappenedDuringGenRef.current = true;
-            }
-            return;
-        }
-
-        // Fertig
-        const userNavigated = navHappenedDuringGenRef.current
-            || (selectedId !== tracked.parentId && selectedId !== tracked.childId);
-        trackedGenRef.current = null;
-        navHappenedDuringGenRef.current = false;
-        if (userNavigated || isTypingNow()) return;
-        // Steht die Ansicht schon auf dem Platzhalter, ist das ein Nichtstun —
-        // er wird an Ort und Stelle zum fertigen Bild.
-        //
-        // Die Eingabe wird dabei NICHT mehr ausgeblendet. Das sollte einmal das
-        // Ergebnis gross zeigen, war aber eine Ansichtsaenderung, die niemand
-        // angefordert hat — und seit es drei Ansichtsmodi gibt, wirft sie den
-        // Nutzer aus dem, den er eingestellt hat. Wer das fertige Bild gross
-        // sehen will, hat dafuer den Vollbildmodus.
-        onSelectImage(tracked.childId);
-    }, [generatingChild, imageMap, selectedId, onSelectImage, isTypingNow]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
     // Im Zeilenmodus wird die Bildhoehe gesetzt statt gemessen. Gemessen wird
     // deshalb der Hauptbereich: Wuerde der Bildbereich sich selbst messen,
@@ -971,8 +878,18 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             weitergeht. Nur beim Darueberfahren — beim Ansehen
                             gehoert die Flaeche dem Bild. */}
                         {state.sideSheetMode !== 'brush' && showDots && stackBars && (
-                            <div className="absolute bottom-5 left-0 right-0 flex justify-center items-center gap-1.5 pointer-events-none z-40
-                                opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div
+                                // Eigene Identitaet je Stapel: Beim Wechsel wird die
+                                // Reihe neu aufgebaut und kommt aus der Richtung herein,
+                                // in die man gegangen ist. Innerhalb eines Stapels bleibt
+                                // sie stehen, dort wandert nur der helle Balken.
+                                key={stackBars.members[0]?.id ?? 'bars'}
+                                style={transition !== 'none'
+                                    ? { animation: `bars-in-${transition} 320ms cubic-bezier(0.16,1,0.3,1) both` }
+                                    : undefined}
+                                className="absolute bottom-5 left-0 right-0 flex justify-center items-center gap-1.5 pointer-events-none z-40
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            >
                                 {/* Der Stummel links: nur eine Andeutung, dass dort ein
                                     weiterer Stapel liegt. Am Anfang des Stapels wird er
                                     heller — dann fuehrt der naechste Schritt dorthin. */}
