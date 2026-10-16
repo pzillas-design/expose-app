@@ -1335,11 +1335,11 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     - RadiusLg (16 px) statt RadiusXl (24 px). Der Token
                                       sagt selbst, wofuer er da ist — "Cards/side-sheets"
                                       gegen "Modals/Overlays". Die Karte ist eine Karte.
-                                    - SurfaceSubtle statt zinc-100/80 bzw. zinc-900/80.
+                                    - SurfaceSunken statt zinc-100/80 bzw. zinc-900/80.
                                       Letzteres lag im Dunkelmodus so dicht an der
                                       Hintergrundfarbe zinc-950, dass die Karte kaum
                                       abgesetzt war. */}
-                                <div className={`${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.RadiusLg} p-6 space-y-6 transition-all`}>
+                                <div className={`${Theme.Colors.SurfaceSunken} ${Theme.Geometry.RadiusLg} p-6 space-y-6 transition-all`}>
                                     {/* Prompt Textarea */}
                                     <div className={draftFadeClass}>
                                         <textarea
@@ -1846,7 +1846,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                             */
                                                                             className={`${VALUE_CHIP_BASE} ${active
                                                                                 ? 'bg-orange-950/[0.14] dark:bg-white/[0.20] text-orange-950 dark:text-white'
-                                                                                : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)]'}`}
+                                                                                : 'bg-white dark:bg-white/[0.08] text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none'}`}
                                                                         >
                                                                             {opt.label}
                                                                         </button>

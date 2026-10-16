@@ -872,7 +872,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     if (!img) return null;
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-[#121214]">
+        <div className={`flex-1 flex flex-col overflow-hidden ${Theme.Colors.CanvasBg}`}>
             {/* Removed internal header - handled by AppNavbar */}
 
             {/* Auf schmalen Geraeten scrollt die SEITE, nicht ein Kasten darin:
@@ -882,7 +882,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             <main ref={mainRef} className={`flex-1 flex flex-col md:flex-row md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
                 {/* Canvas Area — mobile brush: flex-1 (fills screen); mobile normal: fixed aspect-ratio height; desktop: flex-1 */}
                 <div
-                    className={`flex flex-col bg-zinc-100 dark:bg-[#121214] relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
+                    className={`flex flex-col ${Theme.Colors.CanvasBg} relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
                     style={isMobile && state.sideSheetMode !== 'brush'
                         ? {
                             height: (imgNaturalDims.width ?? 0) > 0 && (imgNaturalDims.height ?? 0) > 0

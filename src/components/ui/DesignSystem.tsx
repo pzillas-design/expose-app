@@ -8,14 +8,29 @@ import { X, Loader2 } from 'lucide-react';
 
 export const Theme = {
     Colors: {
-        // Structural Backgrounds
-        CanvasBg: "bg-white dark:bg-zinc-950", // App Background
-        PanelBg: "bg-white dark:bg-zinc-900", // Sidebars, Sheets
-        ModalBg: "bg-white dark:bg-zinc-900", // Modals
+        /*
+            Drei Ebenen, eine Regel: Flaechen steigen, Eingaben sinken.
+
+                CanvasBg      der Grund, auf dem alles liegt — am dunkelsten
+                PanelBg       was darauf liegt (Blatt, Dialog) — heller
+                SurfaceSunken was darin vertieft ist (Eingaben, Felder) — wieder dunkler
+
+            Im dunklen Modus war das vorher umgekehrt: Das Blatt (zinc-900) lag
+            auf einem fast gleich dunklen Grund, und die Eingabekarte darin war
+            HELLER als das Blatt — sie sah aus, als laege sie obenauf, obwohl
+            man hineinschreibt. Darum wirkte die Tiefe falsch.
+
+            Im hellen Modus gilt dasselbe, nur umgekehrt in den Werten: Der
+            Grund ist leicht grau, das Blatt weiss, die Eingabe wieder grau.
+            Eine Vertiefung zeigt den Grund durch.
+        */
+        CanvasBg: "bg-zinc-100 dark:bg-[#0B0B0D]",
+        PanelBg: "bg-white dark:bg-zinc-900",
+        ModalBg: "bg-white dark:bg-zinc-900",
 
         // Interactive Surfaces (New Standard)
         Surface: "bg-white dark:bg-zinc-900",
-        SurfaceSubtle: "bg-zinc-50 dark:bg-zinc-800/50",
+        SurfaceSunken: "bg-zinc-100 dark:bg-[#0E0E11]",
         SurfaceHover: "hover:bg-zinc-50 dark:hover:bg-zinc-800/10",
         SurfaceActive: "bg-zinc-100 dark:bg-zinc-800",
 
