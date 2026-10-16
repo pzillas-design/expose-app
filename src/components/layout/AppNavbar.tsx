@@ -638,7 +638,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         // Der Untergrund kommt frueher und ist bei zwei Dritteln des Weges
         // voll da — so steht etwas hinter dem Inhalt, bevor er die Leiste
         // erreicht, statt erst kurz vor Schluss aufzutauchen.
-        const surfaceOpacity = Math.min(1, Math.max(0, (hp - 0.1) / 0.55));
+        // Sanfter als zuvor: Der Untergrund kommt ueber die ganze Strecke
+        // herauf statt in der ersten Haelfte fertig zu sein. Beim Scrollen
+        // soll man ihn nicht auftauchen sehen, sondern irgendwann bemerken,
+        // dass er da ist.
+        const surfaceOpacity = Math.min(1, Math.max(0, (hp - 0.04) / 0.85));
 
         return (
             <header
@@ -682,10 +686,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 */}
                 <div
                     aria-hidden
-                    className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
+                    className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
+                        bg-[#EDEDF0]/70 dark:bg-[#0C0C11]/60"
                     style={{
                         opacity: surfaceOpacity,
                     }}
+                />
+                {/* Die Unterkante als Flaeche, nicht als Linie: 20 Pixel, die
+                    nach unten auslaufen. Sie trennt, ohne etwas zu behaupten —
+                    eine gezogene Linie waere an dieser Stelle die einzige in
+                    der ganzen Anwendung. */}
+                <div
+                    aria-hidden
+                    className="absolute left-0 right-0 top-full h-5 -z-10
+                        bg-gradient-to-b from-black/[0.045] to-transparent
+                        dark:from-black/40 dark:to-transparent"
+                    style={{ opacity: surfaceOpacity }}
                 />
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
@@ -964,7 +980,14 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             */}
             <div
                 aria-hidden
-                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
+                className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
+                    bg-[#EDEDF0]/70 dark:bg-[#0C0C11]/60"
+            />
+            <div
+                aria-hidden
+                className="absolute left-0 right-0 top-full h-5 -z-10
+                    bg-gradient-to-b from-black/[0.045] to-transparent
+                    dark:from-black/40 dark:to-transparent"
             />
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">

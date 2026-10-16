@@ -251,6 +251,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const isMainLoaded = loadedImageId === selectedId;
     // Track previous loaded image src so it stays visible during navigation flicker
     const prevLoadedSrcRef = useRef<string | null>(null);
+    /*
+        Wann das Vorschaubild des neuen Bildes steht.
+
+        Bis dahin bleibt das vorige sichtbar, damit es nicht weiss aufblitzt.
+        Danach muss es WEG: Zwei Bilder uebereinander, von denen das obere das
+        untere nicht ganz verdeckt (anderes Seitenverhaeltnis), ergeben einen
+        Rahmen aus dem alten Bild um das neue — das war das Ueberlagern.
+    */
+    const [thumbReadyId, setThumbReadyId] = useState<string | null>(null);
     const [subMenu, setSubMenu] = useState<'text' | 'shapes' | 'brush'>('text');
     // SideSheet visibility — controlled from outside if prop provided
     const [isSideSheetVisibleLocal, setIsSideSheetVisibleLocal] = useState(true);
@@ -521,11 +530,14 @@ export const DetailPage: React.FC<DetailPageProps> = ({
      */
     const stackBars = React.useMemo(() => {
         const row = state.rows?.find((r: ImageRow) => r.items.some(i => i.id === selectedId));
-        if (!row || row.items.length < 2) return null;
-        const ids = new Set(row.items.map(i => i.id));
+        // Auch ein einzelnes Bild bekommt seine Reihe: dann besteht sie aus
+        // einem Balken und den beiden Stummeln daneben. Sie sagt dann nicht
+        // "du bist bei 3 von 6", sondern "hier geht es weiter" — und das ist
+        // genau das, was man an einem Einzelbild wissen will.
+        const ids = new Set((row?.items ?? [{ id: selectedId }]).map(i => i.id));
         const members: { id: string; at: number }[] = [];
         images.forEach((im, at) => { if (ids.has(im.id)) members.push({ id: im.id, at }); });
-        if (members.length < 2) return null;
+        if (members.length === 0) return null;
         const first = members[0].at;
         const last = members[members.length - 1].at;
         return {
@@ -1029,8 +1041,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         }
                                         return <BlobBackground />;
                                     })()}
-                                    {/* Previous image stays visible during navigation to prevent white flash */}
-                                    {!isMainLoaded && !showBlob && prevLoadedSrcRef.current && (
+                                    {/*
+                                        Das vorige Bild haelt die Flaeche, bis das neue
+                                        etwas zu zeigen hat — innerhalb eines Stapels bis
+                                        dessen Vorschaubild steht, beim Wechsel zwischen
+                                        Stapeln bis das Wischen vorbei ist (dort IST es
+                                        das, worueber gewischt wird).
+                                    */}
+                                    {!isMainLoaded && !showBlob && prevLoadedSrcRef.current
+                                        && (transition !== 'none' || thumbReadyId !== img.id) && (
                                         <img
                                             src={prevLoadedSrcRef.current}
                                             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
@@ -1041,6 +1060,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         <div className={`absolute inset-0 ${showBlob ? 'overflow-hidden' : ''}`}>
                                             <img
                                                 src={img.thumbSrc}
+                                                onLoad={() => setThumbReadyId(img.id)}
                                                 className={`w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-100 dark:brightness-50 scale-110' : ''}`}
                                                 style={
                                                     transition !== 'none'
