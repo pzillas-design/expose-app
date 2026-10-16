@@ -5,7 +5,6 @@ import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSyste
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
 import { DropdownMenu } from '../ui/DropdownMenu';
 import { buildDetailMenuItems } from './detailMenu';
-import { GenerationProgressRing } from '../ui/GenerationProgressRing';
 import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
 import { MenuLines } from '@/components/ui/CustomIcons';
@@ -51,9 +50,6 @@ interface AppNavbarProps {
     onToggleSideSheet?: () => void;
     onToggleFeedSideSheet?: () => void;
     rightInset?: number;
-    generatingImages?: CanvasImage[];
-    onNavigateToImage?: (id: string) => void;
-    onGenerateMoreById?: (id: string) => void;
     isGroupDrillDown?: boolean;
     /** Spanne der Fassungen im Stapel, z. B. "v1–v12". */
     groupVersionLabel?: string;
@@ -125,9 +121,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onToggleSideSheet,
     onToggleFeedSideSheet,
     rightInset = 0,
-    generatingImages = [],
-    onNavigateToImage,
-    onGenerateMoreById,
     isGroupDrillDown = false,
     groupVersionLabel,
     detailVersion,
@@ -307,16 +300,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </Tooltip>
     );
 
-    const progressRing = (
-        <GenerationProgressRing
-            generatingImages={generatingImages}
-            lang={lang}
-            onNavigateToImage={onNavigateToImage}
-            onGenerateMore={onGenerateMoreById}
-            t={t}
-            autoCloseWhenDone={mode === 'detail'}
-        />
-    );
+    /*
+        Der Ladekreis in der Leiste ist weg.
+
+        Er war immer da, immer gleich gross, und sagte nur "es laeuft etwas" —
+        wer wissen wollte was, musste ihn anklicken. An seiner Stelle meldet
+        sich jetzt die Benachrichtigung oben rechts von selbst und
+        verschwindet wieder (GenerationNotice).
+    */
+    const progressRing = null;
 
     const voiceMenuItem = voiceFeatureEnabled
         ? [{

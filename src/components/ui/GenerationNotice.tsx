@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check } from 'lucide-react';
 import type { CanvasImage } from '@/types';
-import { calcBarProgress } from './GenerationProgressRing';
+import { calcBarProgress } from '@/utils/progress';
 
 /**
  * Die Meldung oben rechts.

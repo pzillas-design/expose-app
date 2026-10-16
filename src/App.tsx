@@ -9,7 +9,7 @@ import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/t
 import { imageNameOf } from '@/utils/imageName';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { DetailSheetHeader } from '@/components/layout/DetailSheetHeader';
-import { GenerationProgressRing } from '@/components/ui/GenerationProgressRing';
+import { GenerationNotice } from '@/components/ui/GenerationNotice';
 import { useMobile } from '@/hooks/useMobile';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
@@ -1106,6 +1106,21 @@ export function App() {
         || location.pathname === '/blog'
         || location.pathname.startsWith('/blog/');
 
+    /*
+        Die laufenden Generierungen — einmal berechnet, mit stabiler Identitaet.
+
+        Vorher stand dieser Filter direkt in den Eigenschaften der Leiste und
+        ergab bei jedem Rendern ein neues Feld. Ein Empfaenger, der daran einen
+        Effekt haengt, laeuft dadurch bei jedem Rendern erneut; setzt er dabei
+        Zustand, dreht sich das Ganze im Kreis. Genau diese Bauart hat uns
+        heute eine weisse Seite beschert — an anderer Stelle, aber nach
+        demselben Muster.
+    */
+    const runningGenerations = React.useMemo(
+        () => allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId)),
+        [allImages],
+    );
+
     const isMobileApp = useMobile();
 
     /**
@@ -1145,16 +1160,6 @@ export function App() {
                 onStart: () => { void voice.start(); },
                 onStop: voice.stop,
             }}
-            statusSlot={
-                <GenerationProgressRing
-                    generatingImages={allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId))}
-                    lang={state.currentLang}
-                    onNavigateToImage={(id) => handleSelectImage(id)}
-                    onGenerateMore={(id) => actions.handleGenerateMore(id)}
-                    t={t}
-                    autoCloseWhenDone
-                />
-            }
         />
     ) : null;
 
@@ -1170,6 +1175,14 @@ export function App() {
 
     return (
         <div className={outerContainerClasses}>
+
+            {/* Meldet sich, wenn eine Generierung startet und wenn eine fertig
+                ist — und verschwindet wieder, sobald sie jemand gesehen hat. */}
+            <GenerationNotice
+                generatingImages={runningGenerations}
+                lang={state.currentLang}
+                onNavigateToImage={handleSelectImage}
+            />
 
             {showGlobalNavbar && (
                 <AppNavbar
@@ -1341,9 +1354,6 @@ export function App() {
                     isFeedSideSheetVisible={feedSideSheetVisible}
                     onToggleSideSheet={() => setDetailSideSheetVisible(v => !v)}
                     onToggleFeedSideSheet={() => setFeedSideSheetVisible(v => !v)}
-                    generatingImages={allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId))}
-                    onNavigateToImage={(id) => { handleSelectImage(id); }}
-                    onGenerateMoreById={(id) => actions.handleGenerateMore(id)}
                     heroProgress={isExpandableRoute
                         ? (location.pathname === '/' && user ? feedHeroProgress : globalScrollProgress)
                         : undefined}
