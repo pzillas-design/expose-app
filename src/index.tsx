@@ -4,17 +4,39 @@ import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { App } from './App';
 
-// After a new deploy, old lazy-loaded chunk filenames no longer exist on the
-// server. The browser gets back index.html (the SPA fallback) with MIME type
-// "text/html", which causes a hard-to-understand error. Catch it globally and
-// force a full reload so the user automatically gets the fresh bundle.
-window.addEventListener('vite:preloadError', () => { window.location.reload(); });
+/*
+    Nach einem Deploy gibt es die alten Chunk-Dateinamen nicht mehr. Der
+    Browser bekommt stattdessen index.html zurueck (die SPA-Weiche) und
+    scheitert beim Auswerten — ein Fehler, den niemand deuten kann. Ein
+    vollstaendiges Neuladen holt das frische Buendel.
+
+    Aber genau EINMAL. Laedt die Seite danach wieder dasselbe kaputte Buendel,
+    waere eine Schleife die Folge: weisse Seite, Nachladen, weisse Seite, und
+    kein Weg heraus. Beim zweiten Mal faellt der Fehler deshalb durch — zum
+    Auffangnetz, das eine Meldung zeigt.
+*/
+const RELOAD_FLAG = 'expose_chunk_reload';
+const reloadOnce = (): boolean => {
+    try {
+        if (sessionStorage.getItem(RELOAD_FLAG)) return false;
+        sessionStorage.setItem(RELOAD_FLAG, '1');
+    } catch (_) { /* privater Modus: dann lieber einmal zu viel laden */ }
+    window.location.reload();
+    return true;
+};
+// Ein Aufbau, der durchlaeuft, hebt den Merker wieder auf.
+window.addEventListener('load', () => {
+    try { sessionStorage.removeItem(RELOAD_FLAG); } catch (_) { /* egal */ }
+});
+
+window.addEventListener('vite:preloadError', (e) => {
+    if (reloadOnce()) e.preventDefault();
+});
 // Fallback for browsers that don't fire vite:preloadError
 const originalError = window.onerror;
 window.onerror = (msg, src, _line, _col, err) => {
     if (typeof msg === 'string' && msg.includes('dynamically imported module')) {
-        window.location.reload();
-        return true;
+        if (reloadOnce()) return true;
     }
     return originalError ? originalError(msg, src, _line, _col, err) : false;
 };
@@ -23,6 +45,7 @@ import { DialogProvider } from './components/ui/Dialog';
 import { ModalStackProvider } from './components/ui/ModalStack';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { AppErrorBoundary } from './components/ui/AppErrorBoundary';
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -33,6 +56,7 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
+    <AppErrorBoundary>
     <HelmetProvider>
     <BrowserRouter>
       <ToastProvider>
@@ -46,5 +70,6 @@ root.render(
       </ToastProvider>
     </BrowserRouter>
     </HelmetProvider>
+    </AppErrorBoundary>
   </React.StrictMode>
 );
