@@ -219,9 +219,20 @@ const FLOATING_BTN_ICON = `${FLOATING_BTN_BASE} h-9 w-9 justify-center`;
  * Vor und Zurueck sind gegenlaeufige Richtungen. Nebeneinander in einer Reihe
  * unten waren sie das nicht mehr — und der Weg der Maus war fuer beide gleich
  * weit nach unten statt zur jeweiligen Seite.
+ *
+ * Ohne Weichzeichner, anders als die uebrigen schwebenden Knoepfe: Diese hier
+ * liegen IMMER ueber dem Bild, und ein verwaschener Fleck, der staendig da ist,
+ * faellt mehr auf als eine ruhige dunkle Scheibe. Dafuer eine Klickflaeche, die
+ * ueber den sichtbaren Kreis hinausgeht — getroffen wird mit der Maus im Lauf,
+ * nicht mit dem Zirkel.
  */
-const FLOATING_ARROW = `${FLOATING_BTN_BASE} h-11 w-11 justify-center absolute top-1/2 -translate-y-1/2 z-40
-    pointer-events-auto disabled:opacity-25 disabled:cursor-default`;
+const FLOATING_ARROW = `text-white rounded-full flex items-center justify-center
+    absolute top-1/2 -translate-y-1/2 z-40 h-12 w-12
+    bg-black/25 hover:bg-black/40
+    [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]
+    transition-[background-color] duration-150
+    pointer-events-auto disabled:opacity-25 disabled:cursor-default
+    before:absolute before:-inset-2 before:content-['']`;
 
 export const DetailPage: React.FC<DetailPageProps> = ({
     images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange, headerSlot,
