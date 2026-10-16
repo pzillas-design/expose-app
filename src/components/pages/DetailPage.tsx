@@ -904,6 +904,32 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         : undefined
                     }
                 >
+                    {/*
+                        Der Schein des Bildes auf dem Grund.
+
+                        Dasselbe Vorschaubild, stark weichgezeichnet, gross
+                        gezogen und auf wenige Prozent gedimmt: Die Flaeche
+                        nimmt dadurch die Farbe des Bildes an, ohne dass man
+                        ein zweites Bild sieht. Bei einem Aussenfoto wird der
+                        Grund leicht gruen, bei einem Abendbild warm.
+
+                        Es kostet nichts: Das Vorschaubild ist ohnehin geladen.
+                        Im hellen Modus schwaecher als im dunklen — auf Weiss
+                        faellt Farbe staerker auf als auf Schwarz.
+                    */}
+                    {!isMobile && img.thumbSrc && !showBlob && (
+                        <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <img
+                                key={img.id}
+                                src={img.thumbSrc}
+                                className="w-full h-full object-cover scale-[1.35] blur-[90px]
+                                    opacity-[0.10] dark:opacity-[0.16]
+                                    animate-[view-in_700ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                                alt=""
+                            />
+                        </div>
+                    )}
+
                     {/* Image Container */}
                     <div
                         className="relative overflow-hidden min-h-0 flex-1"

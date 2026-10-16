@@ -635,12 +635,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 setPrompt(selectedImage.userDraftPrompt || '');
                 setActiveTemplateId(selectedImage.activeTemplateId || null);
                 setControlValues(selectedImage.variableValues || {});
-                // Auch aufgeklappt, nicht nur vermerkt: Sonst steht nach einem
-                // Neuladen ein Text voller eingesetzter Zeilen da, und die
-                // Chips, mit denen man eine davon aendert, sind nicht zu sehen.
-                // Keine neue Speicherung dafuer — die Vorlage ist schon am Bild
-                // vermerkt.
-                setExpandedTemplateId(selectedImage.activeTemplateId || null);
+                /*
+                    Zugeklappt starten, immer.
+
+                    Aufgeklappt wiederherzustellen war richtig, solange die
+                    Gruppen unter einer Chip-Reihe standen. Seit das Aufklappen
+                    die ganze Reihe verdraengt, ist es etwas anderes: ein
+                    geoeffnetes Menue. Ein Menue, das beim naechsten Bild von
+                    selbst wieder offensteht, hat niemand aufgemacht.
+
+                    Was wirklich zaehlt, steht ohnehin im Prompt: Die
+                    eingesetzten Zeilen bleiben, der Aufklapp-Zustand nicht.
+                */
+                setExpandedTemplateId(null);
             }
         }
 
@@ -1401,11 +1408,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     Akzentfarbe — dieselbe Sprache wie die Chips, die auch
                                     ueber die Flaeche sprechen und nicht ueber Linien.
                                 */}
+                                {/*
+                                    Keine Umrandung beim Schreiben.
+
+                                    Der Ring in der Akzentfarbe war die einzige gezogene
+                                    Linie im ganzen Blatt — und er sagte nichts, was die
+                                    Flaeche nicht sagen kann: Wer schreibt, sieht seinen
+                                    Cursor. Was bleibt, ist die Flaeche selbst, die beim
+                                    Ueberfahren und beim Schreiben eine Spur heller wird.
+                                */}
                                 <div className={`group/prompt relative ${Theme.Colors.SurfaceSunken} ${Theme.Geometry.RadiusLg} p-6 space-y-6
-                                    ring-1 ring-transparent
                                     hover:bg-black/[0.055] dark:hover:bg-white/[0.045]
-                                    focus-within:ring-orange-500/35 dark:focus-within:ring-orange-400/30
-                                    transition-[background-color,box-shadow] duration-200`}>
+                                    focus-within:bg-black/[0.055] dark:focus-within:bg-white/[0.045]
+                                    transition-[background-color] duration-200`}>
                                     {/* Prompt Textarea */}
                                     <div className={`relative ${draftFadeClass}`}>
                                         {/*
