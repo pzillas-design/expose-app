@@ -78,11 +78,15 @@ function buildInstruction(lang: string): string {
     if (lang === 'en') {
         return [
             'You are looking at a photo an estate agent wants to retouch for a property listing.',
-            'Name 3 to 4 edits that would lift THIS photo as a whole.',
+            'Name 4 to 6 suggestions that together form a SPECTRUM for THIS photo:',
+            '- 2 to 3 comprehensive scene edits — the backbone. Where aspects belong together,',
+            '  combine them into one: lawn, planting and facade; sky, light and shadows.',
+            '- 1 to 2 practical fixes a photographer would do: converging verticals, white balance,',
+            '  window reflections, distracting objects at the edge of the frame.',
+            '- 1 to 2 creative ideas that give the photo a different character: evening mood,',
+            '  staging in one clear style, a different season.',
             '',
-            'Each suggestion is a comprehensive change to the whole scene, not a touch-up.',
-            'Where several aspects belong together, combine them into one suggestion:',
-            'lawn, planting and facade; sky, light and shadows; lighting, white balance and mood.',
+            'Order them by what helps this photo most, not by category.',
             '',
             'Good: "Lush healthy lawn" — lawn evenly green and dense, beds tidy, paths clean.',
             '"Sky with light clouds" — natural sky with soft clouds, light and shadows to match.',
@@ -109,11 +113,15 @@ function buildInstruction(lang: string): string {
     }
     return [
         'Du siehst ein Foto, das ein Makler fuer ein Exposé bearbeiten lassen will.',
-        'Nenne 3 bis 4 Bearbeitungen, die GENAU DIESES Foto als Ganzes auf ein hoeheres Niveau heben.',
+        'Nenne 4 bis 6 Vorschlaege, die zusammen ein SPEKTRUM fuer GENAU DIESES Foto ergeben:',
+        '- 2 bis 3 umfassende Eingriffe in die ganze Szene — das Rueckgrat. Was zusammengehoert,',
+        '  gehoert in EINEN Vorschlag: Rasen, Bepflanzung und Fassade; Himmel, Licht und Schatten.',
+        '- 1 bis 2 praktische Retuschen, die ein Fotograf machen wuerde: stuerzende Linien,',
+        '  Weissabgleich, Spiegelungen in den Scheiben, Stoerendes am Bildrand.',
+        '- 1 bis 2 kreative Ideen, die dem Bild einen anderen Charakter geben: Abendstimmung,',
+        '  Einrichtung in einem klaren Stil, eine andere Jahreszeit.',
         '',
-        'Jeder Vorschlag ist ein umfassender Eingriff in die ganze Szene, keine Retusche.',
-        'Was zusammengehoert, gehoert in EINEN Vorschlag:',
-        'Rasen, Bepflanzung und Fassade; Himmel, Licht und Schatten; Beleuchtung, Weissabgleich und Stimmung.',
+        'Sortiere nach dem, was diesem Bild am meisten bringt, nicht nach Kategorie.',
         '',
         'Gut: "Rasen satt und gesund" — Rasen durchgehend gruen und dicht, Beete gepflegt, Wege sauber.',
         '"Himmel mit Wolken" — natuerlicher Himmel mit leichten Wolken, Licht und Schatten passend dazu.',
@@ -151,7 +159,7 @@ function sanitize(raw: unknown): Suggestion[] {
         const line = typeof item?.line === 'string' ? item.line.trim().replace(/\s+/g, ' ').slice(0, 220) : '';
         if (!label || !line) continue;
         out.push({ label, line });
-        if (out.length >= 4) break;
+        if (out.length >= 6) break;
     }
     return out;
 }
@@ -254,7 +262,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 // aehnliche Fotos immer dieselben vier Saetze, auch wenn das
                 // Bild etwas anderes hergibt.
                 temperature: 0.4,
-                maxOutputTokens: 500,
+                maxOutputTokens: 800,
             },
         });
 
