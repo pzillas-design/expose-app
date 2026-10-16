@@ -138,10 +138,23 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         gesetzt und anschliessend nur so weit verschoben, wie er tatsaechlich
         ueber den Rand steht.
     */
+    const adjustedRef = React.useRef(false);
     React.useLayoutEffect(() => {
-        if (!isVisible) return;
+        if (!isVisible) { adjustedRef.current = false; return; }
+        // GENAU EINMAL je Anzeige korrigieren.
+        //
+        // Die erste Fassung hing an `coords` und setzte `coords` — und weil
+        // getBoundingClientRect gebrochene Werte liefert, kam die Korrektur nie
+        // exakt zur Ruhe: 7,9999 statt 8, also noch ein Zehntel, und noch
+        // eines. React zaehlt das als Endlosschleife (Fehler #185) und wirft
+        // den ganzen Baum weg — die weisse Seite.
+        //
+        // Eine Messung reicht auch: Danach steht der Kasten, bis er wieder
+        // verschwindet.
+        if (adjustedRef.current) return;
         const el = tipRef.current;
         if (!el) return;
+        adjustedRef.current = true;
         const r = el.getBoundingClientRect();
         const pad = 8;
         let left = coords.left;
@@ -150,7 +163,10 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         else if (r.right > window.innerWidth - pad) left -= r.right - (window.innerWidth - pad);
         if (r.top < pad) top += pad - r.top;
         else if (r.bottom > window.innerHeight - pad) top -= r.bottom - (window.innerHeight - pad);
-        if (left !== coords.left || top !== coords.top) setCoords({ left, top });
+        // Unter einem halben Pixel lohnt keine zweite Runde.
+        if (Math.abs(left - coords.left) > 0.5 || Math.abs(top - coords.top) > 0.5) {
+            setCoords({ left: Math.round(left), top: Math.round(top) });
+        }
     }, [isVisible, coords]);
 
     const handleMouseEnter = (e: React.MouseEvent) => {
