@@ -117,8 +117,27 @@ const UploadDropZone: React.FC<{
         // zerfiel die Einheit in zwei Dinge, die zufaellig nebeneinander
         // stehen; uebereinander liest es sich als eine Sache. `row` regelt
         // seither nur noch, wie viel Luft die Flaeche bekommt.
-        className={`w-full rounded-2xl flex flex-col items-center justify-center transition-colors duration-200
-            ${row ? 'gap-3.5 py-10' : 'gap-4 px-6 py-14'}
+        /*
+            Ueber der Galerie eine ZEILE, kein Block.
+
+            Vorher war es eine hohe leere Flaeche mit Symbol ueber Schrift —
+            daneben die Tageszeilen, schmal und leise. Zwei Tonlagen direkt
+            uebereinander, und die obere behauptete mehr, als sie wert ist:
+            Hochladen ist der seltenere Weg, die meisten Bilder kommen per
+            Ziehen herein.
+
+            Jetzt dieselbe Hoehe und dieselbe Leserichtung wie eine
+            Tageszeile: Symbol und Text nebeneinander, links beginnend, gleiche
+            Rundung, gleiche Flaeche beim Ueberfahren. Der Kopf der Seite liest
+            sich damit als eine Liste: hochladen, heute, gestern.
+
+            Beim Ziehen wird daraus wieder eine Flaeche (siehe `active`): Dann
+            braucht das Ziel Groesse, und der Rest der Seite tritt zurueck.
+        */
+        className={`w-full rounded-2xl flex transition-[background-color,padding] duration-200
+            ${row
+                ? `flex-row items-center gap-3 px-4 ${active ? 'py-10 justify-center' : 'py-3.5'}`
+                : 'flex-col items-center justify-center gap-4 px-6 py-14'}
             ${active
                 // Beim Ziehen etwas deutlicher, aber in derselben Tonlage —
                 // kein Farbwechsel, nur mehr davon.
@@ -126,10 +145,10 @@ const UploadDropZone: React.FC<{
                 : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}
             ${className}`}
     >
-        <Upload className="w-[18px] h-[18px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.75} />
+        <Upload className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
         {/* Eine Zeile. Zwei Zeilen machten aus einem Satz zwei, obwohl beide
             dasselbe sagen: wie man Bilder hereinbekommt. */}
-        <span className="text-[13px] leading-tight text-zinc-500 dark:text-zinc-400">{label}</span>
+        <span className="text-[13px] leading-tight font-medium text-zinc-500 dark:text-zinc-400">{label}</span>
     </button>
 );
 
@@ -1313,7 +1332,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     er buendig mit den Kacheln steht.
                                 */}
                                 {!effectiveGroupId && !renderSelectMode && (
-                                    <div className="px-4 sm:px-8 pb-4 sm:pb-6">
+                                    <div className="px-4 sm:px-8 pb-1 sm:pb-2">
                                         <UploadDropZone
                                             row
                                             onClick={triggerUpload}
