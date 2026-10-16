@@ -221,16 +221,22 @@ const FLOATING_BTN_ICON = `${FLOATING_BTN_BASE} h-9 w-9 justify-center`;
  *
  * Ohne Weichzeichner, anders als die uebrigen schwebenden Knoepfe: Diese hier
  * liegen IMMER ueber dem Bild, und ein verwaschener Fleck, der staendig da ist,
- * faellt mehr auf als eine ruhige dunkle Scheibe. Dafuer eine Klickflaeche, die
- * ueber den sichtbaren Kreis hinausgeht — getroffen wird mit der Maus im Lauf,
- * nicht mit dem Zirkel.
+ * faellt mehr auf als eine ruhige dunkle Scheibe.
+ *
+ * Die Scheibe ist dunkler als zuvor (45 statt 25 Prozent), der Zug als Ganzes
+ * dafuer leiser (35 statt 60). Ein kraeftiger Kreis bei geringer Deckkraft
+ * bleibt auf hellen wie dunklen Bildern lesbar, waehrend ein heller Kreis bei
+ * hoher Deckkraft auf einer weissen Wand verschwindet.
+ *
+ * Dazu eine Klickflaeche, die ueber den sichtbaren Kreis hinausgeht —
+ * getroffen wird mit der Maus im Lauf, nicht mit dem Zirkel.
  */
 const FLOATING_ARROW = `text-white rounded-full flex items-center justify-center
     absolute top-1/2 -translate-y-1/2 z-40 h-12 w-12
-    bg-black/25 hover:bg-black/40
+    bg-black/45 hover:bg-black/65
     [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]
     transition-[background-color] duration-150
-    pointer-events-auto disabled:opacity-25 disabled:cursor-default
+    pointer-events-auto
     before:absolute before:-inset-2 before:content-['']`;
 
 export const DetailPage: React.FC<DetailPageProps> = ({
@@ -870,23 +876,30 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             abgeschaltet — eine Taste, die verschwindet, verschiebt die
                             andere und laesst die Maus ins Leere greifen. */}
                         {state.sideSheetMode !== 'brush' && !isMobile && (
-                            <div className={`absolute inset-0 pointer-events-none z-40 transition-opacity duration-200 opacity-60 group-hover:opacity-100`}>
-                                <button
-                                    onClick={() => idx > 0 && handleSelectWithin(images[idx - 1].id)}
-                                    disabled={idx <= 0}
-                                    aria-label={t('previous') || 'Zurück'}
-                                    className={`${FLOATING_ARROW} left-5`}
-                                >
-                                    <ChevronLeft className="w-5 h-5" />
-                                </button>
-                                <button
-                                    onClick={() => idx < images.length - 1 && handleSelectWithin(images[idx + 1].id)}
-                                    disabled={idx >= images.length - 1}
-                                    aria-label={t('next') || 'Weiter'}
-                                    className={`${FLOATING_ARROW} right-5`}
-                                >
-                                    <ChevronRight className="w-5 h-5" />
-                                </button>
+                            <div className={`absolute inset-0 pointer-events-none z-40 transition-opacity duration-200 opacity-35 group-hover:opacity-100`}>
+                                {/* Wo es nicht weitergeht, steht kein Pfeil.
+                                    Ein abgeschalteter Knopf ist ein Angebot, das
+                                    keines ist — und seit die beiden an den Raendern
+                                    kleben statt nebeneinander, verschiebt das
+                                    Weglassen auch nichts mehr. */}
+                                {idx > 0 && (
+                                    <button
+                                        onClick={() => handleSelectWithin(images[idx - 1].id)}
+                                        aria-label={t('previous') || 'Zurück'}
+                                        className={`${FLOATING_ARROW} left-5`}
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                )}
+                                {idx < images.length - 1 && (
+                                    <button
+                                        onClick={() => handleSelectWithin(images[idx + 1].id)}
+                                        aria-label={t('next') || 'Weiter'}
+                                        className={`${FLOATING_ARROW} right-5`}
+                                    >
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                )}
                             </div>
                         )}
 
