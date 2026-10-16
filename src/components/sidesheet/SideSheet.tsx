@@ -1560,12 +1560,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     oben. Keine dritte Form fuer eine zweite
                                     Herkunft. */}
                                 {suggestionTarget && (suggestionsLoading || imageSuggestions.length > 0) && (
-                                    <div className="pt-1 text-zinc-800 dark:text-zinc-200">
-                                        <div className="pt-1 pb-2.5">
-                                            <Eyebrow muted>
-                                                {lang === 'de' ? 'Für dieses Bild' : 'For this photo'}
-                                            </Eyebrow>
-                                        </div>
+                                    /* Ohne Ueberschrift: Die Chips sagen selbst, was sie
+                                       sind, und der Unterschied zu den Vorlagen darunter
+                                       liegt im Abstand und darin, wie sie erscheinen. */
+                                    <div className="pt-1 pb-1 text-zinc-800 dark:text-zinc-200">
                                         {suggestionsLoading ? (
                                             /* Platzhalter in Chipform und Chiphoehe: Wenn die
                                                echten kommen, rutscht nichts nach. Ein Kreisel
@@ -1582,18 +1580,27 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="flex flex-wrap gap-2.5 animate-in fade-in duration-200">
-                                                {imageSuggestions.map(sug => {
+                                            <div className="flex flex-wrap gap-2.5">
+                                                {imageSuggestions.map((sug, i) => {
                                                     const active = isLineInPrompt(sug.line);
                                                     return (
                                                         <Tooltip key={sug.line} text={sug.line} side="top">
                                                             {/* Dieselbe Form und dieselbe Farbe wie eine Vorlage:
                                                                 Beides schreibt eine Zeile in den Prompt. Zwei
                                                                 Formen fuer dieselbe Handlung waren eine zu viel. */}
+                                                            {/*
+                                                                Sie kommen nacheinander herein, nicht alle
+                                                                auf einmal: Das ist der Unterschied zwischen
+                                                                "war schon immer da" und "wurde gerade fuer
+                                                                dieses Bild gefunden". 70 ms Versatz reichen
+                                                                dafuer — mehr waere eine Vorfuehrung.
+                                                            */}
                                                             <button
                                                                 type="button"
                                                                 onClick={e => { e.preventDefault(); toggleSuggestionLine(sug.line); }}
-                                                                className={`${TEMPLATE_CHIP} ${active ? TEMPLATE_CHIP_OPEN : ''}`}
+                                                                style={{ animationDelay: `${i * 70}ms` }}
+                                                                className={`${TEMPLATE_CHIP} ${active ? TEMPLATE_CHIP_OPEN : ''}
+                                                                    animate-in fade-in slide-in-from-bottom-1 duration-300 fill-mode-backwards`}
                                                             >
                                                                 {sug.label}
                                                             </button>

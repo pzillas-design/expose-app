@@ -787,6 +787,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const isRowLayout = !isMobile && detailLayout === 'row' && isSideSheetActuallyVisible;
 
     /**
+     * Die schwebende Insel: nur dort, wo das Blatt seinen eigenen Kopf traegt
+     * (Desktop, Spaltenansicht). Im Zeilenmodus liegt es als Leiste unter dem
+     * Bild — eine Insel ueber die ganze Breite waere keine mehr.
+     */
+    const isIsland = !!headerSlot && !isMobile && !isRowLayout;
+
+    /**
      * Breite des Seitenpanels — fest, nicht mehr ziehbar.
      *
      * Der Ziehgriff ist entfallen: Er war ein Bedienelement, das in jeder
@@ -941,7 +948,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             <div className={`absolute ${showDots ? 'bottom-14' : 'bottom-6'} left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
                                 <div className="relative flex items-center gap-1.5 pointer-events-auto">
                                     <div className="flex items-center gap-1.5">
-                                    {img.generationPrompt && (
+                                    {/* "Mehr" steht oben im Blatt, hinter dem Herunterladen.
+                                        Hier unten waere es dasselbe ein zweites Mal — und
+                                        der Platz ueber dem Bild gehoert dem Bild. */}
+                                    {img.generationPrompt && !headerSlot && (
                                         <Tooltip text={t('generate_more')} shortcut="M">
                                             <button
                                                 onClick={() => actions.handleGenerateMore(img)}
@@ -1240,7 +1250,23 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     // Linie daneben waere eine zweite Aussage ueber dieselbe
                     // Grenze. Der Ziehgriff zum Verbreitern sitzt ohnehin dort
                     // und zeigt sie an, sobald man ihn braucht.
-                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none ${!isSideSheetActuallyVisible && (isMobile || isRowLayout) ? 'hidden' : ''}`}
+                    /*
+                        Als schwebende Insel links.
+
+                        Das Blatt ist keine Wand am Fensterrand mehr, sondern eine
+                        Flaeche, die auf dem dunklen Grund liegt: ringsum Abstand,
+                        runde Ecken, eigener Untergrund. Dadurch gehoert der Rest
+                        des Fensters sichtbar dem Bild — und das Blatt liest sich
+                        als EIN Ding, nicht als die zweite Haelfte einer Teilung.
+
+                        Links, weil der Blick dort anfaengt: erst wer das ist und
+                        was man tun kann, dann das Bild.
+                    */
+                    className={`flex flex-col relative md:overflow-hidden md:shrink-0 md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none
+                        ${isIsland
+                            ? `md:order-first md:m-4 md:rounded-[20px] ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowSm}`
+                            : 'bg-white dark:bg-zinc-950'}
+                        ${!isSideSheetActuallyVisible && (isMobile || isRowLayout || isIsland) ? 'hidden' : ''}`}
                     style={isMobile
                         ? undefined
                         : isRowLayout
