@@ -1415,12 +1415,16 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     Linie im ganzen Blatt — und er sagte nichts, was die
                                     Flaeche nicht sagen kann: Wer schreibt, sieht seinen
                                     Cursor. Was bleibt, ist die Flaeche selbst, die beim
-                                    Ueberfahren und beim Schreiben eine Spur heller wird.
+                                    Ueberfahren und beim Schreiben eine Spur heller wird —
+                                    und beim Schreiben ein sehr schwacher grauer Ring, der
+                                    die Kante haelt, ohne etwas zu behaupten.
                                 */}
                                 <div className={`group/prompt relative ${Theme.Colors.SurfaceSunken} ${Theme.Geometry.RadiusLg} p-6 space-y-6
                                     hover:bg-black/[0.055] dark:hover:bg-white/[0.045]
                                     focus-within:bg-black/[0.055] dark:focus-within:bg-white/[0.045]
-                                    transition-[background-color] duration-200`}>
+                                    ring-1 ring-transparent
+                                    focus-within:ring-black/[0.06] dark:focus-within:ring-white/[0.07]
+                                    transition-[background-color,box-shadow] duration-200`}>
                                     {/* Prompt Textarea */}
                                     <div className={`relative ${draftFadeClass}`}>
                                         {/*
