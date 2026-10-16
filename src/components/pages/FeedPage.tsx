@@ -1058,6 +1058,31 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return () => window.removeEventListener('resize', updateColumns);
     }, [displayImages]);
 
+    /*
+        Mit den Pfeilen ueber den Stapel hinaus.
+
+        Im aufgeklappten Stapel enthielt die Tastaturliste nur dessen eigene
+        Bilder, und am letzten Feld war Schluss. Zum naechsten Stapel kam man
+        nur ueber Escape und erneutes Aufklappen — mit der Maus. Jetzt wechselt
+        der Pfeil am Rand den Stapel und setzt die Auswahl auf dessen erstes
+        bzw. letztes Bild.
+
+        Der Wechsel braucht zwei Durchgaenge: Erst meldet der Aufrufer den neuen
+        Stapel, dann kommt dessen Liste an. Was in der Zwischenzeit gemerkt
+        wird, steht hier — eine Kante, kein Zustand.
+    */
+    const pendingEdgeRef = React.useRef<'first' | 'last' | null>(null);
+
+    const stepStack = React.useCallback((dir: 1 | -1): boolean => {
+        if (!effectiveGroupId) return false;
+        const at = rows.findIndex(r => r.id === effectiveGroupId);
+        const next = rows[at + dir];
+        if (at === -1 || !next) return false;
+        pendingEdgeRef.current = dir === 1 ? 'first' : 'last';
+        onExpandedGroupChange(next.id);
+        return true;
+    }, [effectiveGroupId, rows, onExpandedGroupChange]);
+
     const { activeIndex, setActiveIndex } = useKeyboardGridNavigation({
         itemCount: displayImages.length,
         columns,
@@ -1066,6 +1091,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const img = displayImages[idx];
             return img ? document.querySelector(`[data-image-id="${img.id}"]`) : null;
         }, [displayImages]),
+        onPastEnd: () => stepStack(1),
+        onBeforeStart: () => stepStack(-1),
         onEscape: () => {
             if (effectiveGroupId) { onExpandedGroupChange(null); return; }
             if (isSelectMode) actions?.setIsSelectMode?.(false);
@@ -1098,6 +1125,20 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             }
         }
     });
+
+    /*
+        Der zweite Durchgang des Stapelwechsels: Die Liste des neuen Stapels
+        ist da, jetzt bekommt sie die Auswahl — vorne, wenn man nach rechts
+        hinausging, hinten beim Weg nach links. So laeuft der Fokus durch die
+        Stapel, als waeren sie eine einzige Reihe.
+    */
+    React.useEffect(() => {
+        const edge = pendingEdgeRef.current;
+        if (!edge || displayImages.length === 0) return;
+        pendingEdgeRef.current = null;
+        setActiveIndex(edge === 'first' ? 0 : displayImages.length - 1);
+    }, [displayImages, setActiveIndex]);
+
 
     React.useEffect(() => {
         if (!hasMore || isLoading || isFetchingMore) return;
