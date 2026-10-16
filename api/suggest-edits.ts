@@ -51,14 +51,6 @@ const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const SUGGESTION_SCHEMA = {
     type: 'object',
     properties: {
-        /*
-            Was das Modell im Bild sieht — ein Satz, bevor es vorschlaegt.
-            Niemand liest ihn; er steht hier, damit die Anweisung "sieh zuerst
-            hin" nicht folgenlos bleibt. Ein Feld, das vor den Vorschlaegen
-            erzeugt wird, zwingt die Reihenfolge; ein Satz in der Anweisung
-            allein tut das nicht.
-        */
-        look: { type: 'string' },
         suggestions: {
             type: 'array',
             items: {
@@ -71,7 +63,7 @@ const SUGGESTION_SCHEMA = {
             },
         },
     },
-    required: ['look', 'suggestions'],
+    required: ['suggestions'],
 } as const;
 
 /**
@@ -92,17 +84,10 @@ function buildInstruction(lang: string): string {
         return [
             'You are the picture editor of an estate agency known for its listings.',
             '',
-            'Look at the photo first: what is in it, inside or outside, furnished or empty,',
-            'daylight or artificial light, what stands out as wrong? Put that in "look", one sentence.',
-            'Only then suggest.',
-            '',
-            'Name 4 to 6 edits: edits covering a whole area or the whole scene, plain photographic',
-            'corrections, and one or two bolder ideas.',
+            'Name 4 to 6 edits for this photo: edits covering a whole area or the whole scene,',
+            'plain photographic corrections, and one or two bolder ideas.',
             '',
             'The result must look real.',
-            '',
-            'Defects stay: cracks, damage, damp patches, wear.',
-            'Invent nothing. Furnishing only in visibly empty rooms.',
             '',
             '"label": at most 3 words. "line": one sentence naming the target state.',
             'Nothing fitting? Return an empty list.',
@@ -111,17 +96,10 @@ function buildInstruction(lang: string): string {
     return [
         'Du bist der Bildredakteur einer Immobilienagentur, die fuer ihre Exposés bekannt ist.',
         '',
-        'Sieh das Foto zuerst an: Was ist zu sehen, innen oder aussen, moebliert oder leer,',
-        'Tages- oder Kunstlicht, was faellt zuerst negativ auf? Schreib das in "look", ein Satz.',
-        'Erst danach schlage vor.',
-        '',
-        'Nenne 4 bis 6 Bearbeitungen: grossflaechige Eingriffe, handwerkliche Korrekturen,',
-        'ein bis zwei mutigere Ideen.',
+        'Nenne 4 bis 6 Bearbeitungen fuer dieses Foto: grossflaechige Eingriffe,',
+        'handwerkliche Korrekturen, ein bis zwei mutigere Ideen.',
         '',
         'Das Ergebnis soll realistisch wirken.',
-        '',
-        'Maengel bleiben: Risse, Schaeden, Feuchteflecken, Abnutzung.',
-        'Nichts erfinden. Moeblierung nur in sichtbar leeren Raeumen.',
         '',
         '"label": hoechstens 3 Woerter. "line": ein Satz, der den Zielzustand nennt.',
         'Nichts Passendes? Leere Liste.',
@@ -209,7 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             mit dieser Zahl neue.
         */
         const cached = row.edit_suggestions as { v?: number; lang?: string; items?: unknown } | null;
-        if (cached && cached.v === 5 && cached.lang === lang && Array.isArray(cached.items)) {
+        if (cached && cached.v === 6 && cached.lang === lang && Array.isArray(cached.items)) {
             return res.status(200).json({ suggestions: cached.items, cached: true });
         }
 
@@ -262,7 +240,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
          */
         const { error: writeError } = await supabase
             .from('images')
-            .update({ edit_suggestions: { v: 5, lang, items: suggestions } })
+            .update({ edit_suggestions: { v: 6, lang, items: suggestions } })
             .eq('id', imageId);
 
         if (writeError) {
