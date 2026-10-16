@@ -5,7 +5,7 @@ import {
 } from '@/types';
 import {
     Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Play, Plus, Check,
-    Undo2, Redo2, Layers, MoreHorizontal, Settings2, CornerDownLeft, Bookmark
+    Undo2, Redo2, Layers, MoreHorizontal, Settings2, CornerDownLeft, Bookmark, Sparkle
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
@@ -16,7 +16,7 @@ import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/D
 import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
 import { GenerationSettingsModal } from '@/components/modals/GenerationSettingsModal';
 import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from '@/types';
-import { useEnterGenerates } from '@/utils/uiPrefs';
+
 
 /**
  * Schluessel des einmaligen Hinweises auf das neue Standardmodell.
@@ -131,6 +131,11 @@ import { useItemDialog } from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
 import { DropdownMenu } from '@/components/ui/DropdownMenu';
 import { useImageSuggestions } from '@/hooks/useImageSuggestions';
+import {
+    useEnterGenerates,
+    useHideSuggestions, setHideSuggestions,
+    useHideTemplates, setHideTemplates,
+} from '@/utils/uiPrefs';
 import { PresetEditorModal } from '@/components/modals/PresetEditorModal';
 import { ManagePresetsModal } from '@/components/modals/ManagePresetsModal';
 
@@ -247,6 +252,10 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
      * einen Wert presst und sich damit die Auswertung verdirbt.
      */
     const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
+    const [isChipMenuOpen, setIsChipMenuOpen] = useState(false);
+    const chipMenuRef = React.useRef<HTMLDivElement>(null);
+    const hideSuggestions = useHideSuggestions();
+    const hideTemplates = useHideTemplates();
     const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
     const [isSideZoneActive, setIsSideZoneActive] = useState(false);
     const [isQualityOpen, setIsQualityOpen] = useState(false);
@@ -485,8 +494,21 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         const customsInLang = customs.filter(matchesLang);
         const keepAllCustoms = customs.length > 0 && customsInLang.length === 0;
         const filtered = templates.filter(tpl => (tpl.isCustom && keepAllCustoms) || matchesLang(tpl));
-        return filtered.slice(0, 12);
+        /*
+            Nach Haeufigkeit sortiert, nicht nach Anlage-Datum.
+
+            Im Blatt ist nur fuer drei Platz; welche drei das sind, soll die
+            Nutzung entscheiden und nicht der Zufall. Bei Gleichstand der Name,
+            damit die Reihenfolge nicht bei jedem Laden anders ist.
+        */
+        return [...filtered].sort((a, b) =>
+            (b.usageCount || 0) - (a.usageCount || 0) || a.title.localeCompare(b.title));
     }, [templates, lang]);
+
+    /** Im Blatt sichtbar; der Rest steht im Menue hinter den drei Punkten. */
+    const VISIBLE_TEMPLATES = 3;
+    const shownTemplates = displayTemplates.slice(0, VISIBLE_TEMPLATES);
+    const hiddenTemplates = displayTemplates.slice(VISIBLE_TEMPLATES);
 
 
     // ── Prompt auto-resize ──
@@ -822,6 +844,17 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // immer und greift ueberall auf der Seite; Enter allein laesst sich in den
     // Einstellungen abschalten, und dann steht dort wieder das laengere
     // Kuerzel — sonst verspraeche der Knopf etwas, das nicht mehr gilt.
+    // Klick daneben schliesst das Menue — wie bei den uebrigen Menues der
+    // Anwendung, damit es sich nicht als einziges anders verhaelt.
+    React.useEffect(() => {
+        if (!isChipMenuOpen) return;
+        const onDown = (e: MouseEvent) => {
+            if (chipMenuRef.current && !chipMenuRef.current.contains(e.target as Node)) setIsChipMenuOpen(false);
+        };
+        document.addEventListener('mousedown', onDown);
+        return () => document.removeEventListener('mousedown', onDown);
+    }, [isChipMenuOpen]);
+
     const enterGenerates = useEnterGenerates();
     const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
     // Der Zeilenschalter als Symbol, nicht als Zeichen: ↵ ist ein
@@ -1607,7 +1640,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         aria-hidden={!!expandedTemplate}
                                     >
                                         <div className="overflow-hidden min-h-0">
-                                            {suggestionTarget && imageSuggestions.length > 0 && (
+                                            {!hideSuggestions && suggestionTarget && imageSuggestions.length > 0 && (
                                                 <div className="flex flex-wrap gap-2.5 pb-2.5">
                                                     {imageSuggestions.map((sug, i) => {
                                                         const active = isLineInPrompt(sug.line);
@@ -1625,6 +1658,14 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                     style={{ animation: `chip-in 420ms cubic-bezier(0.16,1,0.3,1) ${i * 60}ms both` }}
                                                                     className={`${TEMPLATE_CHIP} ${active ? TEMPLATE_CHIP_OPEN : ''}`}
                                                                 >
+                                                                    {/* Der Funke sagt, woher der Vorschlag
+                                                                        kommt — dieselbe Rolle wie das
+                                                                        Lesezeichen bei eigenen Vorlagen, nur
+                                                                        fuer die andere Herkunft. In der
+                                                                        Akzentfarbe, weil er zu uns gehoert
+                                                                        und nicht zu einem fremden Dienst. */}
+                                                                    <Sparkle className="w-3 h-3 shrink-0 text-orange-500 dark:text-orange-400"
+                                                                        fill="currentColor" strokeWidth={0} />
                                                                     {sug.label}
                                                                 </button>
                                                             </Tooltip>
@@ -1638,7 +1679,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 Unterschied — es sagt "die hier hast du selbst
                                                 angelegt". */}
                                             <div className="flex flex-wrap gap-2.5">
-                                                {displayTemplates.map((tpl) => (
+                                                {(hideTemplates ? [] : shownTemplates).map((tpl) => (
                                                     <button
                                                         key={tpl.id}
                                                         onClick={() => handleSelectTemplate(tpl)}
@@ -1660,17 +1701,70 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         {t('new_preset') || 'Neue Vorlage'}
                                                     </button>
                                                 ) : (
-                                                    <div className="relative inline-flex shrink-0">
+                                                    <div className="relative inline-flex shrink-0" ref={chipMenuRef}>
+                                                        {/*
+                                                            Die drei Punkte oeffnen jetzt ein Menue, statt
+                                                            sofort die Verwaltung aufzureissen.
+
+                                                            Darin steht, was diese Reihe betrifft: was sie
+                                                            zeigt, und die Vorlagen, fuer die im Blatt kein
+                                                            Platz ist. Sichtbar sind die drei
+                                                            meistgenutzten — welche das sind, entscheidet
+                                                            die Nutzung und nicht die Reihenfolge der
+                                                            Anlage.
+                                                        */}
                                                         <Tooltip text={t('edit_presets')} side="top">
                                                             <button
-                                                                onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
+                                                                onClick={() => setIsChipMenuOpen(o => !o)}
                                                                 data-voice-action="open-presets-manager"
                                                                 aria-label={t('edit_presets')}
-                                                                className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400`}
+                                                                className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400
+                                                                    ${isChipMenuOpen ? '!bg-black/[0.10] dark:!bg-white/[0.14]' : ''}`}
                                                             >
                                                                 <MoreHorizontal className="w-4 h-4" />
                                                             </button>
                                                         </Tooltip>
+                                                        {isChipMenuOpen && (
+                                                            // Nach OBEN: Die Reihe sitzt am unteren Rand des
+                                                            // Blattes, darunter ist kein Platz.
+                                                            <div className="absolute bottom-full mb-2 right-0 z-50">
+                                                                <DropdownMenu
+                                                                    items={[
+                                                                        {
+                                                                            label: hideSuggestions
+                                                                                ? (lang === 'de' ? 'KI-Vorschläge zeigen' : 'Show AI suggestions')
+                                                                                : (lang === 'de' ? 'KI-Vorschläge ausblenden' : 'Hide AI suggestions'),
+                                                                            icon: <Sparkle className="w-4 h-4" fill="currentColor" strokeWidth={0} />,
+                                                                            onClick: () => { setHideSuggestions(!hideSuggestions); setIsChipMenuOpen(false); },
+                                                                        },
+                                                                        {
+                                                                            label: hideTemplates
+                                                                                ? (lang === 'de' ? 'Vorlagen zeigen' : 'Show presets')
+                                                                                : (lang === 'de' ? 'Vorlagen ausblenden' : 'Hide presets'),
+                                                                            icon: <Bookmark className="w-4 h-4" fill="currentColor" strokeWidth={0} />,
+                                                                            onClick: () => { setHideTemplates(!hideTemplates); setIsChipMenuOpen(false); },
+                                                                        },
+                                                                        {
+                                                                            label: t('edit_presets'),
+                                                                            icon: <Settings2 className="w-4 h-4" />,
+                                                                            onClick: () => { setIsChipMenuOpen(false); setEditingTemplate(null); setIsPresetModalOpen(true); },
+                                                                        },
+                                                                        // Die uebrigen Vorlagen, seltener genutzt:
+                                                                        // erreichbar, ohne die Reihe zu fuellen.
+                                                                        ...hiddenTemplates.map((tpl, i) => ({
+                                                                            label: tpl.title,
+                                                                            icon: tpl.emoji
+                                                                                ? <span className="text-sm">{tpl.emoji}</span>
+                                                                                : tpl.isCustom
+                                                                                    ? <Bookmark className="w-4 h-4" fill="currentColor" strokeWidth={0} />
+                                                                                    : undefined,
+                                                                            separator: i === 0,
+                                                                            onClick: () => { setIsChipMenuOpen(false); handleSelectTemplate(tpl); },
+                                                                        })),
+                                                                    ]}
+                                                                />
+                                                            </div>
+                                                        )}
                                                         <ContextTip
                                                             storageKey="expose_tip_presets_manage_v1"
                                                             text={lang === 'de'
