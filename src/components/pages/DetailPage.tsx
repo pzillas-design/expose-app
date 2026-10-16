@@ -211,6 +211,16 @@ const FLOATING_BTN = `${FLOATING_BTN_BASE} h-9 px-4 text-xs font-medium`;
 /** Dasselbe als quadratischer Knopf fuer ein einzelnes Symbol. */
 const FLOATING_BTN_ICON = `${FLOATING_BTN_BASE} h-9 w-9 justify-center`;
 
+/**
+ * Die Pfeile zum Blaettern: links und rechts am Rand, senkrecht in der Mitte.
+ *
+ * Vor und Zurueck sind gegenlaeufige Richtungen. Nebeneinander in einer Reihe
+ * unten waren sie das nicht mehr — und der Weg der Maus war fuer beide gleich
+ * weit nach unten statt zur jeweiligen Seite.
+ */
+const FLOATING_ARROW = `${FLOATING_BTN_BASE} h-11 w-11 justify-center absolute top-1/2 -translate-y-1/2 z-40
+    pointer-events-auto disabled:opacity-25 disabled:cursor-default`;
+
 export const DetailPage: React.FC<DetailPageProps> = ({
     images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
     isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange, isExiting,
@@ -478,6 +488,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         }
     }, [img?.isGenerating, selectedId]);
     const showBlob = img?.isGenerating || waitingForGeneratedLoad === selectedId;
+
+    /**
+     * Punktereihe statt Zaehlung im Kopf.
+     *
+     * Nur bis zwoelf Bilder: Darueber ist eine Punktereihe keine Auskunft mehr,
+     * sondern ein Muster, und die einzelnen Punkte waeren kleiner als der
+     * Unterschied, den sie zeigen sollen.
+     */
+    const showDots = !isMobile && images.length > 1 && images.length <= 12;
 
     const thumbStripInnerRef = useRef<HTMLDivElement>(null);
     // First-mount flag: use instant scroll on entry, smooth on subsequent navigation
@@ -856,43 +875,56 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         style={isRowLayout && rowImageHeight ? { height: `${rowImageHeight}px` } : undefined}
                     >
 
-                        {/* Floating action buttons */}
+                        {/* Blaettern: an den Seiten, senkrecht in der Mitte des Bildes.
+                            Beide Pfeile bleiben stehen und werden am Rand der Liste nur
+                            abgeschaltet — eine Taste, die verschwindet, verschiebt die
+                            andere und laesst die Maus ins Leere greifen. */}
+                        {state.sideSheetMode !== 'brush' && !isMobile && (
+                            <div className={`absolute inset-0 pointer-events-none z-40 transition-opacity duration-200 opacity-60 group-hover:opacity-100`}>
+                                <button
+                                    onClick={() => idx > 0 && handleSelectWithin(images[idx - 1].id)}
+                                    disabled={idx <= 0}
+                                    aria-label={t('previous') || 'Zurück'}
+                                    className={`${FLOATING_ARROW} left-5`}
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={() => idx < images.length - 1 && handleSelectWithin(images[idx + 1].id)}
+                                    disabled={idx >= images.length - 1}
+                                    aria-label={t('next') || 'Weiter'}
+                                    className={`${FLOATING_ARROW} right-5`}
+                                >
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Punkte: wo man im Stapel steht. Nur bei ueberschaubarer
+                            Anzahl — bei fuenfzig Bildern waere eine Punktereihe keine
+                            Auskunft mehr, sondern ein Muster. Und nur beim Darueberfahren:
+                            Beim Ansehen gehoert die Flaeche dem Bild. */}
+                        {state.sideSheetMode !== 'brush' && showDots && (
+                            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-[7px] pointer-events-none z-40
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                {images.map((im, i) => (
+                                    <span
+                                        key={im.id}
+                                        className={`rounded-full transition-all duration-150 ${i === idx
+                                            ? 'w-1.5 h-1.5 bg-white'
+                                            : 'w-[5px] h-[5px] bg-white/30'}`}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Weitere Knoepfe am unteren Bildrand. Sind Punkte da, ruecken
+                            sie eine Reihe hoeher — zwei Dinge auf derselben Linie
+                            uebereinander waeren weder lesbar noch treffbar. */}
                         {state.sideSheetMode !== 'brush' && (
-                            <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
-                                {/*
-                                    Die Pfeile stehen fest in der Mitte, alles andere
-                                    haengt rechts daran.
-
-                                    Vorher war die ganze Gruppe zentriert: Kam "Mehr"
-                                    dazu oder fiel weg, verschob sich alles um dessen
-                                    halbe Breite — und am ersten und letzten Bild fehlte
-                                    zusaetzlich ein Pfeil, was den anderen um eine
-                                    Knopfbreite versetzte. Wer zehnmal weiterblaettert,
-                                    muss die Maus nicht neun Mal nachfuehren.
-
-                                    Deshalb: beide Pfeile immer da, am Rand der Liste
-                                    abgeschaltet statt entfernt, und die uebrigen
-                                    Knoepfe absolut daneben, wo sie die Mitte nicht
-                                    verschieben.
-                                */}
+                            <div className={`absolute ${showDots ? 'bottom-14' : 'bottom-6'} left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
                                 <div className="relative flex items-center gap-1.5 pointer-events-auto">
-                                    <button
-                                        onClick={() => idx > 0 && handleSelectWithin(images[idx - 1].id)}
-                                        disabled={idx <= 0}
-                                        aria-label={t('previous') || 'Zurück'}
-                                        className={`${FLOATING_BTN_ICON} disabled:opacity-30 disabled:cursor-default`}
-                                    >
-                                        <ChevronLeft className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => idx < images.length - 1 && handleSelectWithin(images[idx + 1].id)}
-                                        disabled={idx >= images.length - 1}
-                                        aria-label={t('next') || 'Weiter'}
-                                        className={`${FLOATING_BTN_ICON} disabled:opacity-30 disabled:cursor-default`}
-                                    >
-                                        <ChevronRight className="w-4 h-4" />
-                                    </button>
-                                    <div className="absolute left-full top-0 ml-1.5 flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5">
                                     {img.generationPrompt && (
                                         <Tooltip text={t('generate_more')} shortcut="M">
                                             <button

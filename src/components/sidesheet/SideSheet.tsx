@@ -5,7 +5,7 @@ import {
 } from '@/types';
 import {
     Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Play, Plus, Check,
-    Undo2, Redo2, Layers, MoreHorizontal, Settings2, CornerDownLeft
+    Undo2, Redo2, Layers, MoreHorizontal, Settings2, CornerDownLeft, Bookmark
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
@@ -40,12 +40,22 @@ const MODEL_HINT_KEY = 'expose_tip_seedream_default_v1';
  * Inhalt. Gleiche Form und gleiche Farbe liessen beides als eine lange Reihe
  * lesen — man sah nicht, was wozu gehoert.
  */
-const TEMPLATE_CHIP = `flex items-center gap-2 px-4 py-2 rounded-full text-[13px] font-medium group
-    bg-black/[0.06] dark:bg-white/[0.09] hover:bg-black/[0.10] dark:hover:bg-white/[0.14]
+const TEMPLATE_CHIP = `inline-flex items-center gap-2 px-[18px] py-2.5 rounded-full text-[14px] font-medium group
+    bg-orange-500/[0.12] dark:bg-orange-500/[0.13] text-orange-950/75 dark:text-orange-50/75
+    hover:bg-orange-500/[0.18] dark:hover:bg-orange-500/[0.19] hover:text-orange-950 dark:hover:text-orange-50
     transition-colors duration-150`;
 
-/** Die Werte innerhalb einer Vorlage: eckiger und leiser als die Vorlage selbst. */
-const VALUE_CHIP_BASE = `px-3.5 py-2 rounded-xl text-[13px] font-medium transition-colors duration-150`;
+/**
+ * Die aufgeklappte Vorlage: dieselbe Farbe, nur kraeftiger, dazu ein Ring.
+ *
+ * Offen heisst nicht "voll in Farbe getaucht" — die Flaeche bliebe sonst das
+ * Lauteste im Panel, obwohl sie nur einen Zustand meldet.
+ */
+const TEMPLATE_CHIP_OPEN = `!bg-orange-500/[0.20] dark:!bg-orange-500/[0.21]
+    !text-orange-950 dark:!text-orange-50`;
+
+/** Die Werte innerhalb einer Vorlage: eckiger, kleiner und leiser als die Vorlage selbst. */
+const VALUE_CHIP_BASE = `px-3.5 py-2 rounded-[10px] text-[13px] font-medium transition-colors duration-150`;
 
 /**
  * Zeichen vor einer eingesetzten Zeile.
@@ -1552,27 +1562,28 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                an dieser Stelle waere ein Versprechen, das wir
                                                nicht halten muessen — kommt nichts, verschwindet
                                                die Gruppe einfach wieder. */
-                                            <div className="flex flex-wrap gap-2" aria-hidden>
-                                                {[104, 132, 88].map(w => (
+                                            <div className="flex flex-wrap gap-2.5" aria-hidden>
+                                                {[112, 140, 96].map(w => (
                                                     <div
                                                         key={w}
                                                         style={{ width: w }}
-                                                        className="h-[36px] rounded-xl bg-black/[0.035] dark:bg-white/[0.05] animate-pulse"
+                                                        className="h-[42px] rounded-full bg-orange-500/[0.08] dark:bg-orange-500/[0.09] animate-pulse"
                                                     />
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="flex flex-wrap gap-2 animate-in fade-in duration-200">
+                                            <div className="flex flex-wrap gap-2.5 animate-in fade-in duration-200">
                                                 {imageSuggestions.map(sug => {
                                                     const active = isLineInPrompt(sug.line);
                                                     return (
                                                         <Tooltip key={sug.line} text={sug.line} side="top">
+                                                            {/* Dieselbe Form und dieselbe Farbe wie eine Vorlage:
+                                                                Beides schreibt eine Zeile in den Prompt. Zwei
+                                                                Formen fuer dieselbe Handlung waren eine zu viel. */}
                                                             <button
                                                                 type="button"
                                                                 onClick={e => { e.preventDefault(); toggleSuggestionLine(sug.line); }}
-                                                                className={`${VALUE_CHIP_BASE} ${active
-                                                                    ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
-                                                                    : 'bg-black/[0.035] dark:bg-white/[0.05] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/[0.07] dark:hover:bg-white/[0.09]'}`}
+                                                                className={`${TEMPLATE_CHIP} ${active ? TEMPLATE_CHIP_OPEN : ''}`}
                                                             >
                                                                 {sug.label}
                                                             </button>
@@ -1588,30 +1599,47 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     <div className="pt-1 pb-2.5">
                                         <Eyebrow muted>{t('presets_label')}</Eyebrow>
                                     </div>
-                                    <div className="animate-in fade-in slide-in-from-top-1 duration-150 flex flex-wrap gap-2">
-                                        {displayTemplates.map((tpl) => (
-                                            <button
-                                                key={tpl.id}
-                                                onClick={() => handleSelectTemplate(tpl)}
-                                                // Eigene Farbe fuer die aufgeklappte Vorlage:
-                                                // kraeftiger als eine ruhende, aber nicht
-                                                // umgekehrt wie ein gewaehlter Wert darunter.
-                                                // Beides umgekehrt zu faerben hiesse, zwei
-                                                // verschiedene Dinge gleich auszuzeichnen —
-                                                // "hier bin ich gerade" und "das ist gewaehlt"
-                                                // sagen nicht dasselbe.
-                                                className={`${TEMPLATE_CHIP} ${expandedTemplateId === tpl.id
-                                                    ? '!bg-black/[0.12] dark:!bg-white/[0.16]'
-                                                    : ''}`}
-                                            >
-                                                {tpl.emoji && <span className="text-sm">{tpl.emoji}</span>}
-                                                <span className={expandedTemplateId === tpl.id
-                                                    ? 'text-zinc-900 dark:text-zinc-100'
-                                                    : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100'}>
-                                                    {tpl.title}
-                                                </span>
-                                            </button>
-                                        ))}
+                                    <div className="animate-in fade-in slide-in-from-top-1 duration-150 flex flex-wrap gap-2.5">
+                                        {/*
+                                            Zwei Zustaende, ein Ort.
+
+                                            Zu: alle Vorlagen nebeneinander, gleich gross,
+                                            gleich laut. Offen: nur noch die eine, mit dem Weg
+                                            hinaus an ihr selbst — die anderen treten beiseite,
+                                            damit die Liste darunter eindeutig zu ihr gehoert.
+
+                                            Das Lesezeichen traegt, was der Nutzer selbst
+                                            angelegt hat. Vorher sah eine mitgelieferte
+                                            Vorlage genauso aus wie eine eigene, obwohl sich
+                                            nur die eine loeschen laesst.
+                                        */}
+                                        {displayTemplates
+                                            .filter(tpl => !expandedTemplateId || tpl.id === expandedTemplateId)
+                                            .map((tpl) => {
+                                                const isOpen = expandedTemplateId === tpl.id;
+                                                return (
+                                                    <button
+                                                        key={tpl.id}
+                                                        onClick={() => handleSelectTemplate(tpl)}
+                                                        className={`${TEMPLATE_CHIP} ${isOpen ? `${TEMPLATE_CHIP_OPEN} !pr-2.5` : ''}`}
+                                                    >
+                                                        {tpl.emoji
+                                                            ? <span className="text-sm">{tpl.emoji}</span>
+                                                            : tpl.isCustom && <Bookmark className="w-3 h-3 shrink-0 opacity-60" fill="currentColor" strokeWidth={0} />}
+                                                        <span>{tpl.title}</span>
+                                                        {isOpen && (
+                                                            <span
+                                                                role="button"
+                                                                aria-label={t('close') || 'Schließen'}
+                                                                onClick={e => { e.stopPropagation(); setExpandedTemplateId(null); }}
+                                                                className="w-[22px] h-[22px] -mr-0.5 rounded-full grid place-items-center bg-black/10 dark:bg-black/30 hover:bg-black/20 dark:hover:bg-black/45 transition-colors"
+                                                            >
+                                                                <X className="w-3 h-3" strokeWidth={2.5} />
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
                                         {displayTemplates.length === 0 ? (
                                             <button
                                                 onClick={() => { setEditingTemplate(null); setIsPresetModalOpen(true); }}
@@ -1620,7 +1648,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                 <Plus className="w-3 h-3" />
                                                 {t('new_preset') || 'Neue Vorlage'}
                                             </button>
-                                        ) : (
+                                        ) : expandedTemplateId ? null : (
                                             <div className="relative inline-flex shrink-0">
                                                 {/* Drei Punkte, nicht ein Plus: Dahinter liegt die
                                                     Verwaltung der Vorlagen — anlegen, aendern,
@@ -1665,7 +1693,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         fuer das, was zum Modell geht.
                                     */}
                                     {expandedControls.length > 0 && (
-                                        <div className="mt-6 space-y-7 animate-in fade-in slide-in-from-top-1 duration-200">
+                                        /*
+                                            Eine eigene Flaeche, eine Spur heller als das
+                                            Panel, bis an dessen Kanten (-mx-5) und oben
+                                            kantig: So haengt sie sichtbar an der Vorlage
+                                            darueber und sitzt IM Panel, statt als zweite
+                                            Karte darin zu schwimmen. Getrennt wird ueber
+                                            Helligkeit und eine Lichtkante, nicht ueber eine
+                                            Linie.
+                                        */
+                                        <div className="mt-4 -mx-5 px-5 pt-5 pb-6 space-y-7
+                                            bg-black/[0.025] dark:bg-white/[0.025]
+                                            shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
+                                            animate-in fade-in slide-in-from-top-1 duration-200">
                                             {expandedControls.map(ctrl => {
                                                 const ctrlLabel = labelOverrides[ctrl.id] || ctrl.label;
                                                 const multi = ctrl.type !== 'single';
@@ -1687,7 +1727,11 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                         type="button"
                                                                         onClick={e => { e.preventDefault(); upsertVariableLine(ctrlLabel, opt.value, multi); }}
                                                                         className={`${VALUE_CHIP_BASE} ${active
-                                                                            ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900'
+                                                                            // Gewaehlt heisst nicht umgekehrt: Eine schwarze
+                                                                            // Pille zwischen hellen war das Lauteste im Panel,
+                                                                            // obwohl sie nur einen Zustand meldet. Jetzt dieselbe
+                                                                            // Flaeche, nur kraeftiger, und die Schrift traegt es.
+                                                                            ? 'bg-black/[0.11] dark:bg-white/[0.13] text-zinc-900 dark:text-zinc-50'
                                                                             : 'bg-black/[0.035] dark:bg-white/[0.05] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-black/[0.07] dark:hover:bg-white/[0.09]'}`}
                                                                     >
                                                                         {opt.label}
