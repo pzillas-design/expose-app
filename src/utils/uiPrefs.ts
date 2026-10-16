@@ -89,3 +89,38 @@ export const useHideSuggestions = (): boolean => useFlag(HIDE_SUGGESTIONS_KEY);
 export const getHideTemplates = (): boolean => readFlag(HIDE_TEMPLATES_KEY);
 export const setHideTemplates = (on: boolean): void => writeFlag(HIDE_TEMPLATES_KEY, on);
 export const useHideTemplates = (): boolean => useFlag(HIDE_TEMPLATES_KEY);
+
+/**
+ * Die Breite des Blattes in der Detailansicht, in Pixeln.
+ *
+ * Eine Vorliebe, kein Zustand: Wer sie einmal eingestellt hat, will sie beim
+ * naechsten Bild und am naechsten Tag wiederfinden. 0 bedeutet "nicht
+ * eingestellt" — dann rechnet CSS die Standardbreite aus der Fensterbreite.
+ */
+const SHEET_WIDTH_KEY = 'expose_sheet_width';
+
+export const getSheetWidth = (): number => {
+    try {
+        const raw = Number(window.localStorage.getItem(SHEET_WIDTH_KEY));
+        return Number.isFinite(raw) && raw > 0 ? raw : 0;
+    } catch (_) { return 0; }
+};
+
+export const setSheetWidth = (px: number): void => {
+    try { window.localStorage.setItem(SHEET_WIDTH_KEY, String(Math.round(px))); } catch (_) { /* privater Modus */ }
+    window.dispatchEvent(new CustomEvent(CHANGED_EVENT));
+};
+
+export const useSheetWidth = (): number => {
+    const [value, setValue] = React.useState(getSheetWidth);
+    React.useEffect(() => {
+        const onChange = () => setValue(getSheetWidth());
+        window.addEventListener(CHANGED_EVENT, onChange);
+        window.addEventListener('storage', onChange);
+        return () => {
+            window.removeEventListener(CHANGED_EVENT, onChange);
+            window.removeEventListener('storage', onChange);
+        };
+    }, []);
+    return value;
+};

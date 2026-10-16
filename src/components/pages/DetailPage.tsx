@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef, memo } from 'react';
 import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage, ImageRow } from '@/types';
+import { useSheetWidth, setSheetWidth } from '@/utils/uiPrefs';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
@@ -765,11 +766,71 @@ export const DetailPage: React.FC<DetailPageProps> = ({
      * sich schlechter. CSS rechnet das selbst, es braucht keine Messung und
      * keinen Zustand.
      */
-    const SIDEBAR_WIDTH = 'clamp(360px, 30vw, 480px)';
+    /*
+        Wer die Breite selbst eingestellt hat, bekommt seine; alle anderen die
+        gerechnete. Die Grenzen gelten fuer beide — unter 340 wird die Eingabe
+        eng, ueber 620 liest sich der Text nur breiter, nicht besser.
+    */
+    const storedSheetWidth = useSheetWidth();
+    // Waehrend des Ziehens zaehlt diese, danach wieder die gespeicherte.
+    const [liveSheetWidth, setSheetWidthState] = useState<number | null>(null);
+    const effectiveStoredWidth = liveSheetWidth ?? storedSheetWidth;
+    const SIDEBAR_WIDTH = effectiveStoredWidth > 0
+        ? `${effectiveStoredWidth}px`
+        : 'clamp(360px, 30vw, 480px)';
     /** Nominalwert fuer alles, was eine Zahl braucht (Drop-Zonen, Sprachkontext). */
-    const SIDEBAR_WIDTH_PX = typeof window === 'undefined'
-        ? 380
-        : Math.round(Math.min(Math.max(window.innerWidth * 0.30, 360), 480));
+    const SIDEBAR_WIDTH_PX = effectiveStoredWidth > 0
+        ? effectiveStoredWidth
+        : (typeof window === 'undefined'
+            ? 380
+            : Math.round(Math.min(Math.max(window.innerWidth * 0.30, 360), 480)));
+    const SHEET_MIN = 340;
+    const SHEET_MAX = 620;
+
+    /*
+        Der Griff an der Kante.
+
+        Er zeigt sich erst, wenn jemand dort eine halbe Sekunde verweilt: Die
+        Kante ist der Weg zwischen Blatt und Bild, und ein Griff, der bei jedem
+        Vorbeifahren aufleuchtet, macht aus diesem Weg eine Baustelle. Wer die
+        Breite aendern will, haelt ohnehin an.
+
+        Waehrend des Ziehens wird die Breite direkt gesetzt und erst am Ende
+        gespeichert — ein Schreibvorgang je Pixel waere Unfug.
+    */
+    const [edgeArmed, setEdgeArmed] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const edgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const dragWidthRef = useRef<number>(0);
+
+    const armEdge = () => {
+        if (edgeTimerRef.current) clearTimeout(edgeTimerRef.current);
+        edgeTimerRef.current = setTimeout(() => setEdgeArmed(true), 500);
+    };
+    const disarmEdge = () => {
+        if (edgeTimerRef.current) { clearTimeout(edgeTimerRef.current); edgeTimerRef.current = null; }
+        if (!isResizing) setEdgeArmed(false);
+    };
+    useEffect(() => () => { if (edgeTimerRef.current) clearTimeout(edgeTimerRef.current); }, []);
+
+    const startResize = useCallback((e: React.PointerEvent) => {
+        e.preventDefault();
+        setIsResizing(true);
+        const onMove = (ev: PointerEvent) => {
+            const w = Math.min(SHEET_MAX, Math.max(SHEET_MIN, ev.clientX));
+            dragWidthRef.current = w;
+            setSheetWidthState(w);
+        };
+        const onUp = () => {
+            setIsResizing(false);
+            setEdgeArmed(false);
+            if (dragWidthRef.current > 0) { setSheetWidth(dragWidthRef.current); setSheetWidthState(null); }
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+        };
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+    }, []);
 
 
     const MIN_PANEL_HEIGHT = 200;
@@ -1247,7 +1308,10 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         Links, weil der Blick dort anfaengt: erst wer das ist und
                         was man tun kann, dann das Bild.
                     */
-                    className={`flex flex-col relative md:overflow-hidden md:shrink-0 md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none
+                    // Waehrend des Ziehens KEINE Breitenanimation: Sonst laeuft
+                    // die Kante dem Zeiger hinterher, und das fuehlt sich an wie
+                    // ein Gummiband statt wie ein Griff.
+                    className={`flex flex-col relative md:overflow-hidden md:shrink-0 ${isResizing ? '' : 'md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out'} motion-reduce:md:transition-none
                         ${isSheetColumn
                             // Im hellen Modus eine Haarlinie dazu: Weiss auf Zink-50
                             // ist ein Unterschied von drei Prozent Helligkeit — der
@@ -1273,7 +1337,34 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             paddingTop: headerSlot ? 0 : Math.max(0, imageTopOffset - PANEL_INNER_PT),
                         }}
                 >
-                    {/* Resizer Handle — desktop only */}
+                    {/*
+                        Der Griff an der rechten Kante des Blattes.
+
+                        Eine Flaeche von acht Pixeln, die den Zeiger annimmt; die
+                        sichtbare Linie erscheint erst nach einer halben Sekunde
+                        Verweilen und ist zwei Pixel breit. Beim Ziehen bleibt sie
+                        stehen. Kein Griff mit Punkten, keine dauerhafte Linie —
+                        die Kante gehoert dem Blatt, nicht dem Werkzeug.
+                    */}
+                    {isSheetColumn && isSideSheetActuallyVisible && (
+                        <div
+                            onPointerEnter={armEdge}
+                            onPointerLeave={disarmEdge}
+                            onPointerDown={startResize}
+                            onDoubleClick={() => { setSheetWidth(0); setSheetWidthState(null); }}
+                            className="hidden md:block absolute top-0 right-0 bottom-0 w-2 translate-x-1/2 z-30 cursor-col-resize"
+                            aria-label={t('resize') || 'Breite ändern'}
+                            role="separator"
+                        >
+                            <div
+                                className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] rounded-full
+                                    bg-zinc-400/60 dark:bg-zinc-500/50
+                                    transition-opacity duration-200
+                                    ${edgeArmed || isResizing ? 'opacity-100' : 'opacity-0'}`}
+                            />
+                        </div>
+                    )}
+
 
                     <SideSheet
                         key={state.selectedImage?.id ?? 'no-selection'}
