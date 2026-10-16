@@ -122,6 +122,36 @@ interface TooltipProps {
 export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom', shortcut }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
+    const tipRef = React.useRef<HTMLDivElement>(null);
+
+    /*
+        Erst zeichnen, dann messen, dann geradeziehen.
+
+        Vorher schaetzte der Kasten seine Breite aus der Zeichenzahl (sechs
+        Pixel je Zeichen) und schob sich danach vom Rand weg. Bei einem langen
+        Satz ergab das 670 Pixel, obwohl der Kasten bei 260 umbricht — er
+        wanderte dadurch weit nach rechts und stand schraeg neben seinem Chip
+        statt ueber ihm.
+
+        Eine Schaetzung kann das nicht leisten: Wie breit der Kasten wird,
+        haengt an Schrift, Umbruch und Hoechstbreite. Also wird er mittig
+        gesetzt und anschliessend nur so weit verschoben, wie er tatsaechlich
+        ueber den Rand steht.
+    */
+    React.useLayoutEffect(() => {
+        if (!isVisible) return;
+        const el = tipRef.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const pad = 8;
+        let left = coords.left;
+        let top = coords.top;
+        if (r.left < pad) left += pad - r.left;
+        else if (r.right > window.innerWidth - pad) left -= r.right - (window.innerWidth - pad);
+        if (r.top < pad) top += pad - r.top;
+        else if (r.bottom > window.innerHeight - pad) top -= r.bottom - (window.innerHeight - pad);
+        if (left !== coords.left || top !== coords.top) setCoords({ left, top });
+    }, [isVisible, coords]);
 
     const handleMouseEnter = (e: React.MouseEvent) => {
         // Only show tooltips if using a mouse/precise pointer
@@ -130,23 +160,13 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
 
-        // Dynamic estimate of tooltip width based on text length to allow closer edge alignment
-        const padding = 8;
-        const charWidth = 6; // Average width per character in pixels for text-[10px]
-        const totalLen = text.length + (typeof shortcut === 'string' ? shortcut.length + 2 : shortcut ? 4 : 0);
-        const estimatedHalfWidth = Math.max(20, (totalLen * charWidth) / 2 + 10);
-
-        let left = rect.left + rect.width / 2;
-        const top = side === 'bottom' ? rect.bottom + 8 : rect.top - 8;
-
-        // Boundary check: nudge left if too close to edges
-        if (left < estimatedHalfWidth + padding) {
-            left = estimatedHalfWidth + padding;
-        } else if (left > window.innerWidth - estimatedHalfWidth - padding) {
-            left = window.innerWidth - estimatedHalfWidth - padding;
-        }
-
-        setCoords({ top, left });
+        // Mittig ueber dem Ausloeser. Ob das ans Fenster stoesst, entscheidet
+        // nicht eine Schaetzung, sondern die Messung nach dem Zeichnen — siehe
+        // unten.
+        setCoords({
+            top: side === 'bottom' ? rect.bottom + 8 : rect.top - 8,
+            left: rect.left + rect.width / 2,
+        });
         setIsVisible(true);
         if (children.props.onMouseEnter) children.props.onMouseEnter(e);
     };
@@ -166,6 +186,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
             {childWithRef}
             {isVisible && createPortal(
                 <div
+                    ref={tipRef}
                     // Ohne Rahmen: Der Kasten hebt sich durch Flaeche und
                     // Schatten ab, eine Linie daneben ist eine zweite Aussage
                     // ueber dieselbe Kante — dieselbe Regel wie bei Kopfzeile
