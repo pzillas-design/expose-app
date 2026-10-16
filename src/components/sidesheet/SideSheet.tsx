@@ -6,7 +6,7 @@ import {
 } from '@/types';
 import {
     Pen, Camera, X, ChevronRight, ChevronLeft, ChevronDown, Play, Plus, Check,
-    Undo2, Redo2, Layers, MoreHorizontal, Settings2, CornerDownLeft, Bookmark, Sparkle
+    Undo2, Redo2, Layers, MoreHorizontal, Settings2, CornerDownLeft, Bookmark, Sparkle, Square, SquareCheck, Settings
 } from 'lucide-react';
 import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
@@ -1775,42 +1775,50 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                             >
                                                                 <DropdownMenu
                                                                     items={[
+                                                                        /*
+                                                                            Oben die Vorlagen, fuer die im Blatt
+                                                                            kein Platz ist: Das ist, wonach man hier
+                                                                            greift. Was die Reihe zeigt, ist eine
+                                                                            Einstellung und steht darunter.
+                                                                        */
+                                                                        ...hiddenTemplates.map(tpl => ({
+                                                                            label: tpl.title,
+                                                                            onClick: () => { setIsChipMenuOpen(false); handleSelectTemplate(tpl); },
+                                                                        })),
+                                                                        /*
+                                                                            Zwei Schalter, eine Form: ein Kaestchen,
+                                                                            das den jetzigen Zustand zeigt, und eine
+                                                                            Beschriftung, die sagt, was der Klick tut.
+                                                                            Vorher trug jeder ein eigenes Sinnbild
+                                                                            (Funke, Lesezeichen) — drei Zeichensorten
+                                                                            in einer Spalte, und keine sagte, ob
+                                                                            gerade an oder aus ist.
+                                                                        */
                                                                         {
                                                                             label: hideSuggestions
-                                                                                ? (lang === 'de' ? 'KI-Vorschläge zeigen' : 'Show AI suggestions')
+                                                                                ? (lang === 'de' ? 'KI-Vorschläge einblenden' : 'Show AI suggestions')
                                                                                 : (lang === 'de' ? 'KI-Vorschläge ausblenden' : 'Hide AI suggestions'),
-                                                                            icon: <Sparkle className="w-4 h-4" fill="currentColor" strokeWidth={0} />,
+                                                                            icon: hideSuggestions
+                                                                                ? <Square className="w-4 h-4" />
+                                                                                : <SquareCheck className="w-4 h-4" />,
+                                                                            separator: hiddenTemplates.length > 0,
                                                                             onClick: () => { setHideSuggestions(!hideSuggestions); setIsChipMenuOpen(false); },
                                                                         },
                                                                         {
                                                                             label: hideTemplates
-                                                                                ? (lang === 'de' ? 'Vorlagen zeigen' : 'Show presets')
+                                                                                ? (lang === 'de' ? 'Vorlagen einblenden' : 'Show presets')
                                                                                 : (lang === 'de' ? 'Vorlagen ausblenden' : 'Hide presets'),
-                                                                            icon: <Bookmark className="w-4 h-4" fill="currentColor" strokeWidth={0} />,
+                                                                            icon: hideTemplates
+                                                                                ? <Square className="w-4 h-4" />
+                                                                                : <SquareCheck className="w-4 h-4" />,
                                                                             onClick: () => { setHideTemplates(!hideTemplates); setIsChipMenuOpen(false); },
                                                                         },
                                                                         {
                                                                             label: t('edit_presets'),
-                                                                            icon: <Settings2 className="w-4 h-4" />,
+                                                                            icon: <Settings className="w-4 h-4" />,
                                                                             separator: true,
                                                                             onClick: () => { setIsChipMenuOpen(false); setEditingTemplate(null); setIsPresetModalOpen(true); },
                                                                         },
-                                                                        /*
-                                                                            Die uebrigen Vorlagen — ohne Symbol.
-
-                                                                            Auf den Chips steht das Emoji der Vorlage oder
-                                                                            ein Lesezeichen; hier waere das eine dritte
-                                                                            Zeichensorte in einer Liste, die schon zwei
-                                                                            hat (Funke, Lesezeichen) und in der sie etwas
-                                                                            anderes bedeuten: Dort sagen sie "diese Sorte
-                                                                            Chip", hier hiessen sie "diese eine Vorlage".
-                                                                            Namen allein, abgesetzt durch den Abstand.
-                                                                        */
-                                                                        ...hiddenTemplates.map((tpl, i) => ({
-                                                                            label: tpl.title,
-                                                                            separator: i === 0,
-                                                                            onClick: () => { setIsChipMenuOpen(false); handleSelectTemplate(tpl); },
-                                                                        })),
                                                                     ]}
                                                                 />
                                                             </div>,
