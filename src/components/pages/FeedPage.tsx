@@ -1,7 +1,7 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
 import { NAV_SCROLL_OFFSET } from '@/config/layout';
-import { Loader2, Layers, Layers2, ChevronRight, Upload, Download, X } from 'lucide-react';
+import { Loader2, Layers, Layers2, ChevronRight, Upload, Download, X, Check } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -150,6 +150,58 @@ const UploadDropZone: React.FC<{
             dasselbe sagen: wie man Bilder hereinbekommt. */}
         <span className="text-[13px] leading-tight font-medium text-zinc-500 dark:text-zinc-400">{label}</span>
     </button>
+);
+
+/**
+ * Das Abzeichen oben links: EIN Bedienelement, zwei Faelle.
+ *
+ * Vorher waren es zwei Bauteile an zwei Ecken: ein leerer Kreis links oben am
+ * Einzelbild und eine Zahl rechts oben am Deckbild eines Stapels — andere
+ * Groesse, andere Farbe, andere Seite, obwohl beide dasselbe tun (markieren).
+ *
+ * Jetzt eine Regel: Links oben steht, was man ANKLICKT, rechts oben, was man
+ * nur LIEST (Quellbild, Hochladefortschritt). Leer heisst "dieses Bild",
+ * mit Zahl heisst "dieser Stapel, alle darin".
+ *
+ * Rund, solange der Inhalt rund sein kann; ab zwei Ziffern waechst es zur
+ * Pille, ohne die Hoehe zu aendern. Deshalb min-w statt w und px statt
+ * fester Breite.
+ */
+const TileBadge: React.FC<{
+    selected: boolean;
+    /** Anzahl im Stapel; fehlt sie, ist es ein einzelnes Bild. */
+    count?: number;
+    /** Ein Punkt neben der Zahl: In diesem Stapel entsteht gerade etwas. */
+    pending?: boolean;
+    visible: boolean;
+    onClick: (e: React.MouseEvent) => void;
+    label: string;
+}> = ({ selected, count, pending, visible, onClick, label }) => (
+    <div
+        className={`absolute top-0 left-0 p-2.5 z-20 ${visible ? 'cursor-pointer' : 'pointer-events-none'}`}
+        onClick={onClick}
+    >
+        <div
+            role="button"
+            aria-label={label}
+            className={`h-[26px] min-w-[26px] px-[7px] rounded-full grid place-items-center
+                text-[12px] font-medium tabular-nums leading-none
+                transition-[opacity,transform,background-color] duration-200
+                ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}
+                ${selected
+                    ? 'bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-sm'
+                    : 'bg-white/90 dark:bg-black/60 backdrop-blur-[3px] text-zinc-700 dark:text-zinc-100 hover:bg-white dark:hover:bg-black/75'}`}
+        >
+            <span className="flex items-center gap-1 leading-none">
+                {pending && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
+                {count != null
+                    ? count
+                    : selected
+                        ? <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                        : null}
+            </span>
+        </div>
+    </div>
 );
 
 const TileChip: React.FC<{
@@ -418,37 +470,22 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         <div className={`absolute inset-0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/[0.12]' : 'bg-black/0 group-hover:bg-black/[0.09]'}`} />
                     )}
 
-                    {/* Selection circle — shown on pointer hover (isKeyboardActive) or in select mode.
-                        Outer wrapper provides a generous 44×44px hit target (the visible circle
-                        is only 20px, which previously caused stray taps to bubble to the parent and
-                        open the image instead of toggling selection). */}
-                    {!isGen && !(isGroup && !isMobile && onToggleSelectStack) && (
-                        <div
-                            className={`absolute top-0 left-0 p-3 z-20 cursor-pointer ${isSelectMode || (isKeyboardActive && !isMobile) ? '' : 'pointer-events-none'}`}
+                    {/* Markieren: einzelnes Bild. Ein Deckbild bekommt stattdessen
+                        die Zahl (siehe unten) — zwei Auswahlknoepfe auf derselben
+                        Kachel, von denen einer sechs Bilder nimmt und der andere
+                        eines, waeren nicht zu erraten. */}
+                    {!isGen && !(isGroup && onToggleSelectStack) && (
+                        <TileBadge
+                            selected={isSelectMode && isSelected}
+                            visible={isSelectMode || (isKeyboardActive && !isMobile)}
+                            label={currentLang === 'de' ? 'Bild markieren' : 'Select image'}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
                                 if (!isSelectMode) actions?.setIsSelectMode?.(true);
                                 if (onToggleSelect) onToggleSelect(img.id, e.shiftKey);
                             }}
-                        >
-                            <div
-                                className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200 ${isSelectMode && isSelected
-                                    ? 'opacity-100 scale-100 hover:scale-110 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
-                                    : isSelectMode
-                                        ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-white/90 dark:bg-zinc-800/90'
-                                        : (isKeyboardActive && !isMobile)
-                                            ? 'opacity-80 scale-100 hover:opacity-100 hover:scale-110 bg-white/90 dark:bg-zinc-800/90'
-                                            : 'opacity-0 scale-75'
-                                    }`}
-                            >
-                                {isSelectMode && isSelected && (
-                                    <svg className="w-2.5 h-2.5 text-white dark:text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                )}
-                            </div>
-                        </div>
+                        />
                     )}
 
                     {/* Source image badge — same weight + size as the Euro icon in the navbar. */}
@@ -477,46 +514,33 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         </TileChip>
                     )}
 
-                    {/* Anzahl der Bilder im Stapel.
-                        Oben rechts, derselbe Chip wie Quellbild und Upload — die
-                        Stelle ist frei, weil beide anderen nur in der
-                        Stapelansicht bzw. beim Hochladen auftreten, der Zaehler
-                        dagegen nur auf einem Deckbild in der Galerie.
-                        Der Punkt zeigt an, dass in diesem Stapel gerade etwas
-                        entsteht; dann ist die Zahl noch nicht endgueltig. */}
+                    {/*
+                        Markieren: der ganze Stapel.
+
+                        Die Zahl sagt, wie viele Bilder darin liegen; ein Klick
+                        nimmt genau diese. Das ist die Handlung, die man an einem
+                        Deckbild ueberhaupt will — der Stapel ist die Einheit,
+                        nicht das zufaellig oberste Bild. Deshalb steht sie an
+                        derselben Stelle und in derselben Form wie der leere
+                        Kreis am Einzelbild.
+
+                        Auf Beruehrungsgeraeten bleibt sie sichtbar und ist reine
+                        Auskunft: Dort ist die Mehrfachauswahl abgeschaltet.
+                    */}
                     {isGroup && !isGen && (
-                        /*
-                            Zahl und Auswahlkreis sind dasselbe Bedienelement.
-
-                            Die Zahl sagt, wie viele Bilder im Stapel liegen; ein
-                            Klick nimmt genau diese. Das ist die Handlung, die man
-                            an einem Deckbild ueberhaupt will — der Stapel ist die
-                            Einheit, nicht das zufaellig oberste Bild.
-
-                            Deshalb traegt ein Deckbild auch keinen eigenen
-                            Auswahlkreis mehr: Zwei Auswahlknoepfe auf derselben
-                            Kachel, von denen einer sechs Bilder nimmt und der
-                            andere eines, waeren nicht zu erraten.
-
-                            Sichtbar beim Ueberfahren, im Auswahlmodus und sobald
-                            etwas ausgewaehlt ist — sonst waere der Zustand
-                            unsichtbar. Auf Beruehrungsgeraeten bleibt sie
-                            sichtbar und bleibt reine Auskunft: Dort ist die
-                            Mehrfachauswahl ohnehin abgeschaltet.
-                        */
-                        <TileChip
-                            onClick={isMobile || !onToggleSelectStack ? undefined : (e) => {
+                        <TileBadge
+                            count={groupCount}
+                            pending={hasGenerating}
+                            selected={isSelected}
+                            visible={isMobile || isSelectMode || isSelected || isKeyboardActive}
+                            label={currentLang === 'de' ? 'Stapel markieren' : 'Select stack'}
+                            onClick={(e) => {
+                                if (isMobile || !onToggleSelectStack) return;
                                 e.stopPropagation();
                                 e.preventDefault();
                                 onToggleSelectStack();
                             }}
-                            className={`${isMobile || isSelectMode || isSelected ? '' : 'opacity-0 group-hover:opacity-100'} transition-[opacity,background-color] duration-150 ${
-                                isSelected ? '!bg-gradient-to-br !from-orange-400 !to-red-500 shadow-md' : ''
-                            }`}
-                        >
-                            {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
-                            {groupCount}
-                        </TileChip>
+                        />
                     )}
 
                 </div>
