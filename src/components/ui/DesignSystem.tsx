@@ -306,10 +306,12 @@ export const Button: React.FC<ButtonProps> = ({
                     Lesbares uebrig.
 
                     1em folgt der Beschriftung und waechst mit jeder Knopfgroesse
-                    mit. Mehr Deckkraft dazu: 40 % waren auf dem Farbverlauf des
-                    Generieren-Knopfes kaum zu sehen.
+                    mit. Dazu 90 % Deckkraft statt 70: Auf dem Farbverlauf des
+                    Generieren-Knopfes las sich das Zeichen heller als die
+                    Beschriftung daneben, obwohl beide dieselbe Farbe tragen —
+                    eine halbdurchsichtige dunkle Schrift auf Orange wird grau.
                 */
-                <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[0.95em] leading-none opacity-70 ml-1.5">{shortcut}</kbd>
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[0.95em] leading-none opacity-90 ml-1.5">{shortcut}</kbd>
             )}
         </button>
     );
@@ -364,7 +366,7 @@ interface RoundIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, tooltipShortcut, tooltipSide, variant = 'default', className = '', ...props }) => {
     // Structural classes
-    // 36 Pixel sichtbar, 44 Pixel treffbar.
+    // 40 Pixel sichtbar, 52 Pixel treffbar.
     //
     // Der Kreis bleibt so gross, wie er aussehen soll — eine Leiste aus
     // 44er-Kreisen waere massig. Die Trefferflaeche waechst stattdessen
@@ -373,9 +375,13 @@ export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, 
     // Anwendung, an der dieser Knopf steht, statt an jeder einzeln.
     //
     // `relative` ist noetig, damit das Pseudoelement sich auf den Knopf
-    // bezieht; `-inset-1` sind 4 Pixel je Seite, also 36 + 8 = 44.
-    const base = `relative w-9 h-9 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95
-        before:content-[''] before:absolute before:-inset-1 before:rounded-full`;
+    // bezieht; `-inset-1.5` sind 6 Pixel je Seite, also 40 + 12 = 52.
+    //
+    // Von 36 auf 40 gewachsen: Der Kreis war gegenueber dem Symbol darin (18
+    // Pixel) knapp, und auf einem Foto ist eine knappe Flaeche schwer zu
+    // treffen. 40 ist immer noch kein Klotz, gibt dem Symbol aber Luft.
+    const base = `relative w-10 h-10 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95
+        before:content-[''] before:absolute before:-inset-1.5 before:rounded-full`;
 
     // Aesthetic classes
     const variants = {

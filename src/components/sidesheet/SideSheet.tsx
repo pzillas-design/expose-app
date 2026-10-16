@@ -448,9 +448,25 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
 
     const displayTemplates = React.useMemo(() => {
         if (!templates) return [];
-        // User-created presets are always shown regardless of lang (DB may have saved them as 'en' by default).
-        // System presets are filtered by the current language.
-        const filtered = templates.filter(t => t.isCustom || !t.lang || t.lang === lang);
+        /*
+            Alles nach der eingestellten Sprache, auch die eigenen Vorlagen.
+
+            Vorher waren eigene Vorlagen von der Filterung ausgenommen — die
+            Begruendung war, die Datenbank koenne sie faelschlich als 'en'
+            gespeichert haben. Die Folge war eine Liste, in der deutsche und
+            englische Vorlagen nebeneinanderstehen, und beim Aufklappen dann
+            englische Gruppen unter einem deutschen Namen.
+
+            Damit trotzdem niemand seine Vorlagen verliert: Bleibt nach der
+            Filterung keine einzige eigene uebrig, obwohl es welche gibt,
+            werden sie alle gezeigt. Eine falsch gespeicherte Sprache macht
+            so kein Loch in die Liste.
+        */
+        const matchesLang = (tpl: PromptTemplate) => !tpl.lang || tpl.lang === lang;
+        const customs = templates.filter(tpl => tpl.isCustom);
+        const customsInLang = customs.filter(matchesLang);
+        const keepAllCustoms = customs.length > 0 && customsInLang.length === 0;
+        const filtered = templates.filter(tpl => (tpl.isCustom && keepAllCustoms) || matchesLang(tpl));
         return filtered.slice(0, 12);
     }, [templates, lang]);
 

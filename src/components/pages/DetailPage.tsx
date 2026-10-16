@@ -1280,7 +1280,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     className={`flex flex-col relative md:overflow-hidden md:shrink-0 md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none
                         ${isIsland
                             ? `md:order-first md:m-4 md:rounded-[20px] ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowSm}
-                                md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_both]`
+                                md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
                             : 'bg-white dark:bg-zinc-950'}
                         ${!isSideSheetActuallyVisible && (isMobile || isRowLayout || isIsland) ? 'hidden' : ''}`}
                     style={isMobile

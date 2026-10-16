@@ -247,7 +247,15 @@ html:not(.dark) {
   }
 }
 
-/* Das Blatt kommt von seiner Seite herein, nicht aus dem Nichts. */
+/*
+ * Das Blatt kommt von seiner Seite herein, nicht aus dem Nichts.
+ *
+ * Wird mit fill-mode `backwards` benutzt, nicht `both`: Bei `both` bleibt der
+ * Endzustand als Transformation stehen — auch translateX(0) ist eine —, und
+ * ein Vorfahr mit Transformation macht `position: fixed` relativ zu sich. Alle
+ * Fenster, die im Blatt geoeffnet wurden, sassen dadurch in Panelbreite statt
+ * im Bildschirm.
+ */
 @keyframes sheet-in {
   from {
     opacity: 0;

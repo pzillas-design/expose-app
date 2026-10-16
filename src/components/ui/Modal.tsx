@@ -1,4 +1,5 @@
 import React, { ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Theme, Typo, IconButton } from './DesignSystem';
 import { useModalStack } from './ModalStack';
@@ -69,7 +70,16 @@ export const Modal: React.FC<ModalProps> = ({
 
     if (!isOpen) return null;
 
-    return (
+    /*
+        In den Body gehaengt, nicht dort gerendert, wo der Aufruf steht.
+
+        `position: fixed` bezieht sich auf das Fenster -- ausser ein Vorfahr
+        traegt eine Transformation, dann auf diesen. Das Blatt der
+        Detailansicht tut das waehrend seiner Einblendung, und ein Fenster,
+        das darin aufging, war auf Panelbreite eingequetscht statt mittig im
+        Bildschirm. Ein Portal macht diese Abhaengigkeit ein fuer alle Mal weg.
+    */
+    return createPortal(
         <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
@@ -110,6 +120,7 @@ export const Modal: React.FC<ModalProps> = ({
                 {/* Footer */}
                 {footer && <div>{footer}</div>}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };

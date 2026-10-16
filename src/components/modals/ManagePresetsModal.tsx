@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
 import { Button, Input, Theme, Typo, RoundIconButton, TextArea, ModalHeader, ModalFooter } from '@/components/ui/DesignSystem';
 import { Trash, Plus, Minus, Settings2, Share, Pencil, Link as LinkIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -116,6 +117,15 @@ const LanguageForm = ({
                 {/* Controls */}
                 <div className="flex flex-col gap-3">
                     <label className={fieldLabel}>{t('variables_label')}</label>
+                    {/* Der Knopf steht zwischen Ueberschrift und erster Gruppe.
+                        Am Listenende war er bei einer Vorlage mit sechs Gruppen
+                        weggescrollt — gesucht wird er aber dort, wo die Liste
+                        anfaengt, nicht dort, wo sie aufhoert. */}
+                    {!isAddingControl && !editingControlId && (
+                        <Button variant="secondary" onClick={() => setIsAddingControl(true)} className="w-full gap-2">
+                            <Plus className="w-4 h-4" /> {t('add_variable')}
+                        </Button>
+                    )}
                     <div>
                         {controls.map((ctrl) => (
                             <React.Fragment key={ctrl.id}>
@@ -193,17 +203,7 @@ const LanguageForm = ({
                                     </Button>
                                 </div>
                             </div>
-                        ) : (
-                            !editingControlId && (
-                                // Direkt unter die letzte Variable, nicht acht Einheiten
-                                // darunter: Der Knopf gehoert zur Liste, die er
-                                // verlaengert. Der grosse Abstand liess ihn wie einen
-                                // eigenen Abschnitt am Ende des Fensters wirken.
-                                <Button variant="secondary" onClick={() => setIsAddingControl(true)} className="w-full gap-2 mt-2">
-                                    <Plus className="w-4 h-4" /> {t('add_variable')}
-                                </Button>
-                            )
-                        )}
+                        ) : null}
                     </div>
                 </div>
             </div>
@@ -451,7 +451,10 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
         </div>
     );
 
-    return (
+    // In den Body gehaengt: Ein Vorfahr mit Transformation (das Blatt der
+    // Detailansicht waehrend seiner Einblendung) macht `fixed` sonst relativ
+    // zu sich — das Fenster sass dann in der Panelbreite statt im Bildschirm.
+    return createPortal(
         <div
             className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
@@ -508,6 +511,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                 slug={savedTemplateForShare?.slug || activeTemplate?.slug}
                 t={t}
             />
-        </div>
+        </div>,
+        document.body
     );
 };

@@ -88,11 +88,20 @@ function buildInstruction(lang: string): string {
             '',
             'Order them by what helps this photo most, not by category.',
             '',
-            'Good: "Lush healthy lawn" — lawn evenly green and dense, beds tidy, paths clean.',
-            '"Sky with light clouds" — natural sky with soft clouds, light and shadows to match.',
-            '"All lamps on" — every lamp lit, warm even light, no dark corners.',
-            '"Completely empty" — all furniture and belongings gone, bare floor and walls.',
+            'Every instruction must be definite: WHAT exactly changes, and into WHICH state.',
+            'An image model works better with a clear statement than with a wish.',
+            '',
+            'Good: "Lush healthy lawn" — lawn evenly deep green and dense, bare patches filled,',
+            'beds weeded, paths and edges clean.',
+            '"Sky with clouds" — replace the grey sky with a light blue one with a few white clouds,',
+            'match light and shadows in the scene.',
+            '"All lamps on" — every lamp in the room lit, warm light, dark corners brightened.',
+            '"Completely empty" — remove all furniture, rugs and belongings, show bare floor and walls.',
+            '',
             'Too small: "Tidy the table", "Straighten the cushions", "Switch on one lamp".',
+            'Too vague: "Harmonise the light", "Optimise the image", "Improve the mood".',
+            'Do not use words like harmonise, optimise, improve or enhance on their own —',
+            'they do not say what is different afterwards.',
             '',
             'Standard: a listing by a renowned agency. The result must look like the work of an',
             'architectural photographer, not like bulk retouching: natural colours, soft transitions,',
@@ -123,11 +132,21 @@ function buildInstruction(lang: string): string {
         '',
         'Sortiere nach dem, was diesem Bild am meisten bringt, nicht nach Kategorie.',
         '',
-        'Gut: "Rasen satt und gesund" — Rasen durchgehend gruen und dicht, Beete gepflegt, Wege sauber.',
-        '"Himmel mit Wolken" — natuerlicher Himmel mit leichten Wolken, Licht und Schatten passend dazu.',
-        '"Alle Lampen an" — jede Lampe leuchtet, warmes gleichmaessiges Licht, keine dunklen Ecken.',
-        '"Komplett leerraeumen" — saemtliche Moebel und Gegenstaende weg, nackter Boden und Waende.',
+        'Jeder Auftrag muss bestimmt sein: WAS genau wird veraendert und in WELCHEN Zustand.',
+        'Ein Bildmodell arbeitet mit einer klaren Ansage besser als mit einem Wunsch.',
+        '',
+        'Gut: "Rasen satt und gesund" — Rasen durchgehend sattgruen und dicht, kahle Stellen schliessen,',
+        'Beete von Unkraut befreien, Wege und Kanten sauber.',
+        '"Himmel mit Wolken" — grauen Himmel durch hellblauen mit vereinzelten weissen Wolken ersetzen,',
+        'Licht und Schatten im Bild darauf abstimmen.',
+        '"Alle Lampen an" — jede Lampe im Raum eingeschaltet, warmes Licht, dunkle Ecken aufhellen.',
+        '"Komplett leerraeumen" — saemtliche Moebel, Teppiche und Gegenstaende entfernen, Boden und',
+        'Waende leer und sauber zeigen.',
+        '',
         'Zu kleinteilig: "Tisch aufraeumen", "Kissen gerade ruecken", "eine Lampe einschalten".',
+        'Zu vage: "Licht harmonisieren", "Bild optimieren", "Raumwirkung verbessern", "Stimmung aufwerten".',
+        'Verwende keine Woerter wie harmonisieren, optimieren, verbessern, aufwerten, abstimmen allein —',
+        'sie sagen nicht, was am Ende anders ist.',
         '',
         'Massstab ist das Exposé einer renommierten Immobilienagentur. Das Ergebnis muss aussehen',
         'wie die Arbeit eines Architekturfotografen, nicht wie eine Massenretusche: natuerliche Farben,',
@@ -223,12 +242,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!row) return res.status(404).json({ error: 'Image not found' });
 
         /*
-            Fassung 2: Die erste Fassung fragte nach "konkreten Bearbeitungen" und
-            bekam entsprechend Kleinkram — Tisch aufraeumen, Kissen richten. Wer
-            schon Vorschlaege hat, bekommt mit dieser Zahl neue.
+            Fassung 3. Fassung 1 fragte nach "konkreten Bearbeitungen" und bekam
+            Kleinkram (Tisch aufraeumen); Fassung 2 ueberkorrigierte ins Abstrakte
+            ("Licht harmonisieren"). Jetzt: grosse Eingriffe, aber bestimmt
+            formuliert. Wer schon Vorschlaege hat, bekommt mit dieser Zahl neue.
         */
         const cached = row.edit_suggestions as { v?: number; lang?: string; items?: unknown } | null;
-        if (cached && cached.v === 2 && cached.lang === lang && Array.isArray(cached.items)) {
+        if (cached && cached.v === 3 && cached.lang === lang && Array.isArray(cached.items)) {
             return res.status(200).json({ suggestions: cached.items, cached: true });
         }
 
@@ -281,7 +301,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
          */
         const { error: writeError } = await supabase
             .from('images')
-            .update({ edit_suggestions: { v: 2, lang, items: suggestions } })
+            .update({ edit_suggestions: { v: 3, lang, items: suggestions } })
             .eq('id', imageId);
 
         if (writeError) {
