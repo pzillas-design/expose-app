@@ -87,7 +87,11 @@ export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
                         type="button"
                         onClick={() => setIsMenuOpen(p => !p)}
                         aria-label={t('nav_menu')}
-                        className={`group inline-flex items-center gap-1.5 max-w-full h-10 pl-3.5 pr-2 rounded-full
+                        // Mehr Luft vor den Punkten als zwischen Name und Fassung:
+                        // Name und Fassung sind eine Angabe, das Menue ist etwas
+                        // anderes. Gleiche Abstaende haetten alles drei zu einer
+                        // Reihe verklebt.
+                        className={`group inline-flex items-center gap-3 max-w-full h-10 pl-3.5 pr-2.5 rounded-full
                             transition-colors duration-150
                             ${isMenuOpen ? 'bg-black/[0.07] dark:bg-white/[0.10]' : 'hover:bg-black/[0.05] dark:hover:bg-white/[0.07]'}`}
                     >

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import {
     CanvasImage, PromptTemplate, AnnotationObject, TranslationFunction,
@@ -253,7 +254,28 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
      */
     const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
     const [isChipMenuOpen, setIsChipMenuOpen] = useState(false);
+    /*
+        Die Lage des Menues, in Fensterkoordinaten.
+
+        Es haengt im Body und nicht an seinem Knopf: Die Chip-Reihe steckt in
+        zwei Behaeltern mit Ueberlaufgrenze — dem zusammenklappbaren Raster und
+        dem scrollenden Inhalt des Blattes — und beide schneiden ab, was ueber
+        ihre Kante hinausragt. Das Menue war dadurch halb abgeschnitten.
+    */
+    const [chipMenuPos, setChipMenuPos] = useState<{ right: number; bottom: number } | null>(null);
     const chipMenuRef = React.useRef<HTMLDivElement>(null);
+    const chipMenuBtnRef = React.useRef<HTMLButtonElement>(null);
+
+    const openChipMenu = React.useCallback(() => {
+        const r = chipMenuBtnRef.current?.getBoundingClientRect();
+        if (r) {
+            setChipMenuPos({
+                right: Math.max(8, window.innerWidth - r.right),
+                bottom: Math.max(8, window.innerHeight - r.top + 8),
+            });
+        }
+        setIsChipMenuOpen(o => !o);
+    }, []);
     const hideSuggestions = useHideSuggestions();
     const hideTemplates = useHideTemplates();
     const [controlValues, setControlValues] = useState<Record<string, string[]>>({});
@@ -849,7 +871,11 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     React.useEffect(() => {
         if (!isChipMenuOpen) return;
         const onDown = (e: MouseEvent) => {
-            if (chipMenuRef.current && !chipMenuRef.current.contains(e.target as Node)) setIsChipMenuOpen(false);
+            const target = e.target as Node;
+            // Weder im Menue noch auf seinem Knopf: dann zu.
+            if (chipMenuRef.current?.contains(target)) return;
+            if (chipMenuBtnRef.current?.contains(target)) return;
+            setIsChipMenuOpen(false);
         };
         document.addEventListener('mousedown', onDown);
         return () => document.removeEventListener('mousedown', onDown);
@@ -1701,7 +1727,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         {t('new_preset') || 'Neue Vorlage'}
                                                     </button>
                                                 ) : (
-                                                    <div className="relative inline-flex shrink-0" ref={chipMenuRef}>
+                                                    <div className="relative inline-flex shrink-0">
                                                         {/*
                                                             Die drei Punkte oeffnen jetzt ein Menue, statt
                                                             sofort die Verwaltung aufzureissen.
@@ -1715,7 +1741,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         */}
                                                         <Tooltip text={t('edit_presets')} side="top">
                                                             <button
-                                                                onClick={() => setIsChipMenuOpen(o => !o)}
+                                                                ref={chipMenuBtnRef}
+                                                                onClick={openChipMenu}
                                                                 data-voice-action="open-presets-manager"
                                                                 aria-label={t('edit_presets')}
                                                                 className={`${TEMPLATE_CHIP} text-zinc-500 dark:text-zinc-400
@@ -1724,10 +1751,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 <MoreHorizontal className="w-4 h-4" />
                                                             </button>
                                                         </Tooltip>
-                                                        {isChipMenuOpen && (
-                                                            // Nach OBEN: Die Reihe sitzt am unteren Rand des
-                                                            // Blattes, darunter ist kein Platz.
-                                                            <div className="absolute bottom-full mb-2 right-0 z-50">
+                                                        {isChipMenuOpen && chipMenuPos && createPortal(
+                                                            // Nach OBEN, weil die Reihe am unteren Rand des
+                                                            // Blattes sitzt; und im Body, weil die Reihe in
+                                                            // Behaeltern mit Ueberlaufgrenze steckt.
+                                                            <div
+                                                                ref={chipMenuRef}
+                                                                style={{ position: 'fixed', right: chipMenuPos.right, bottom: chipMenuPos.bottom }}
+                                                                className="z-[1100]"
+                                                            >
                                                                 <DropdownMenu
                                                                     items={[
                                                                         {
@@ -1763,7 +1795,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                         })),
                                                                     ]}
                                                                 />
-                                                            </div>
+                                                            </div>,
+                                                            document.body,
                                                         )}
                                                         <ContextTip
                                                             storageKey="expose_tip_presets_manage_v1"
