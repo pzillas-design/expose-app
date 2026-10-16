@@ -148,7 +148,21 @@ export function App() {
         const stored = loadVoiceLogs();
         return { ...empty, ...stored };
     });
-    const voiceFeatureEnabled = voiceAdminConfig.enabled;
+    /*
+        Der Sprachassistent ist geparkt.
+
+        Er wurde nicht benutzt, kostet aber Platz im Menue, einen Hinweis in
+        der Galerie und eine Anzeige in der Leiste. Ein Schalter hier nimmt
+        ihm all das auf einmal: Menueeintrag, Hinweis, Anzeige und das
+        Tastenkuerzel haengen bereits an diesem Wert.
+
+        Nicht geloescht, sondern abgeschaltet — der Code, die
+        Verwaltungsoberflaeche und der Schluessel bleiben. Wer ihn
+        zurueckholen will, setzt hier false auf true; nichts anderes ist
+        noetig.
+    */
+    const VOICE_ASSISTANT_PARKED = true;
+    const voiceFeatureEnabled = !VOICE_ASSISTANT_PARKED && voiceAdminConfig.enabled;
     const voiceRemoteLoadedRef = React.useRef(false);
 
     useEffect(() => {

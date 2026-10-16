@@ -1840,9 +1840,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                             gerade an oder aus ist.
                                                                         */
                                                                         {
-                                                                            label: hideSuggestions
-                                                                                ? (lang === 'de' ? 'KI-Vorschläge einblenden' : 'Show AI suggestions')
-                                                                                : (lang === 'de' ? 'KI-Vorschläge ausblenden' : 'Hide AI suggestions'),
+                                                                            /*
+                                                                                Die Beschriftung bleibt stehen, nur der
+                                                                                Haken wechselt.
+
+                                                                                Vorher wechselte beides, und der Eintrag
+                                                                                sprang beim Klicken von "ausblenden" auf
+                                                                                "einblenden" — man liest beim Treffen
+                                                                                noch das alte Wort. Jetzt benennt die
+                                                                                Zeile die Sache ("einblenden"), der Haken
+                                                                                sagt, ob sie gilt. So machen es
+                                                                                Ansichtsmenues ueberall.
+                                                                            */
+                                                                            label: lang === 'de' ? 'KI-Vorschläge einblenden' : 'Show AI suggestions',
                                                                             // Nur ein Haken, wenn es an ist — ein leerer
                                                                             // Kasten sagt nichts, was die Beschriftung
                                                                             // nicht schon sagt.
@@ -1851,9 +1861,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                             onClick: () => { setHideSuggestions(!hideSuggestions); setIsChipMenuOpen(false); },
                                                                         },
                                                                         {
-                                                                            label: hideTemplates
-                                                                                ? (lang === 'de' ? 'Vorlagen einblenden' : 'Show presets')
-                                                                                : (lang === 'de' ? 'Vorlagen ausblenden' : 'Hide presets'),
+                                                                            label: lang === 'de' ? 'Vorlagen einblenden' : 'Show presets',
                                                                             icon: hideTemplates ? undefined : <Check className="w-4 h-4" />,
                                                                             onClick: () => { setHideTemplates(!hideTemplates); setIsChipMenuOpen(false); },
                                                                         },
