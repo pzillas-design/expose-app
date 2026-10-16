@@ -51,6 +51,14 @@ const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const SUGGESTION_SCHEMA = {
     type: 'object',
     properties: {
+        /*
+            Was das Modell im Bild sieht — ein Satz, bevor es vorschlaegt.
+            Niemand liest ihn; er steht hier, damit die Anweisung "sieh zuerst
+            hin" nicht folgenlos bleibt. Ein Feld, das vor den Vorschlaegen
+            erzeugt wird, zwingt die Reihenfolge; ein Satz in der Anweisung
+            allein tut das nicht.
+        */
+        look: { type: 'string' },
         suggestions: {
             type: 'array',
             items: {
@@ -63,7 +71,7 @@ const SUGGESTION_SCHEMA = {
             },
         },
     },
-    required: ['suggestions'],
+    required: ['look', 'suggestions'],
 } as const;
 
 /**
@@ -82,45 +90,41 @@ const SUGGESTION_SCHEMA = {
 function buildInstruction(lang: string): string {
     if (lang === 'en') {
         return [
-            'You are looking at a photo to be edited for a property listing.',
-            'Name 4 to 6 edits that suit THIS photo, mixed: edits covering a whole area or the',
-            'whole scene, plain photographic corrections, and one or two bolder ideas.',
-            'Order them by what helps this photo most.',
+            'You are the picture editor of an estate agency known for its listings.',
             '',
-            'Each suggestion names a visible part of this photo and the state it should end in.',
-            'No intentions, no judgements without an object.',
+            'Look at the photo first: what is in it, inside or outside, furnished or empty,',
+            'daylight or artificial light, what stands out as wrong? Put that in "look", one sentence.',
+            'Only then suggest.',
             '',
-            'Standard: architectural photography for a renowned agency — natural colours,',
-            'one believable direction of light, restraint rather than effect.',
+            'Name 4 to 6 edits: edits covering a whole area or the whole scene, plain photographic',
+            'corrections, and one or two bolder ideas.',
             '',
-            'Rules:',
-            '- Only what is visible in this photo.',
-            '- Defects stay: cracks, damage, damp patches, wear.',
-            '- Invent nothing. Furnishing only in visibly empty rooms.',
-            '- No structural changes.',
-            '- "label": at most 3 words. "line": one sentence naming the target state.',
-            '- Nothing fitting? Return an empty list.',
+            'The result must look real.',
+            '',
+            'Defects stay: cracks, damage, damp patches, wear.',
+            'Invent nothing. Furnishing only in visibly empty rooms.',
+            '',
+            '"label": at most 3 words. "line": one sentence naming the target state.',
+            'Nothing fitting? Return an empty list.',
         ].join('\n');
     }
     return [
-        'Du siehst ein Foto, das fuer ein Immobilien-Exposé bearbeitet werden soll.',
-        'Nenne 4 bis 6 Bearbeitungen, die zu DIESEM Foto passen, gemischt: Eingriffe, die eine',
-        'ganze Flaeche oder die ganze Szene betreffen, handwerkliche Korrekturen, und ein bis',
-        'zwei mutigere Ideen. Sortiere nach dem Nutzen fuer dieses Foto.',
+        'Du bist der Bildredakteur einer Immobilienagentur, die fuer ihre Exposés bekannt ist.',
         '',
-        'Jeder Vorschlag benennt einen sichtbaren Teil dieses Fotos und den Zustand, in dem er',
-        'danach sein soll. Keine Absichten, keine Wertungen ohne Gegenstand.',
+        'Sieh das Foto zuerst an: Was ist zu sehen, innen oder aussen, moebliert oder leer,',
+        'Tages- oder Kunstlicht, was faellt zuerst negativ auf? Schreib das in "look", ein Satz.',
+        'Erst danach schlage vor.',
         '',
-        'Massstab: Architekturfotografie fuer eine renommierte Agentur — natuerliche Farben,',
-        'eine glaubwuerdige Lichtrichtung, Zurueckhaltung statt Effekt.',
+        'Nenne 4 bis 6 Bearbeitungen: grossflaechige Eingriffe, handwerkliche Korrekturen,',
+        'ein bis zwei mutigere Ideen.',
         '',
-        'Regeln:',
-        '- Nur was in diesem Foto zu sehen ist.',
-        '- Maengel bleiben: Risse, Schaeden, Feuchteflecken, Abnutzung.',
-        '- Nichts erfinden. Moeblierung nur in sichtbar leeren Raeumen.',
-        '- Keine baulichen Veraenderungen.',
-        '- "label": hoechstens 3 Woerter. "line": ein Satz, der den Zielzustand nennt.',
-        '- Nichts Passendes? Leere Liste.',
+        'Das Ergebnis soll realistisch wirken.',
+        '',
+        'Maengel bleiben: Risse, Schaeden, Feuchteflecken, Abnutzung.',
+        'Nichts erfinden. Moeblierung nur in sichtbar leeren Raeumen.',
+        '',
+        '"label": hoechstens 3 Woerter. "line": ein Satz, der den Zielzustand nennt.',
+        'Nichts Passendes? Leere Liste.',
     ].join('\n');
 }
 
@@ -205,7 +209,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             mit dieser Zahl neue.
         */
         const cached = row.edit_suggestions as { v?: number; lang?: string; items?: unknown } | null;
-        if (cached && cached.v === 4 && cached.lang === lang && Array.isArray(cached.items)) {
+        if (cached && cached.v === 5 && cached.lang === lang && Array.isArray(cached.items)) {
             return res.status(200).json({ suggestions: cached.items, cached: true });
         }
 
@@ -258,7 +262,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
          */
         const { error: writeError } = await supabase
             .from('images')
-            .update({ edit_suggestions: { v: 4, lang, items: suggestions } })
+            .update({ edit_suggestions: { v: 5, lang, items: suggestions } })
             .eq('id', imageId);
 
         if (writeError) {
