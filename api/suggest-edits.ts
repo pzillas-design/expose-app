@@ -67,103 +67,60 @@ const SUGGESTION_SCHEMA = {
 } as const;
 
 /**
- * Die Regeln sind der eigentliche Wert dieser Route.
+ * Die Anweisung — kurz, und ohne ein einziges Beispiel.
  *
- * Zwei davon sind nicht kosmetisch: Maengel bleiben im Bild (ein wegretuschierter
- * Feuchtefleck ist kein Bildfehler, sondern eine Falschangabe), und nichts wird
- * dazugebaut, was es nicht gibt. Ein Makler, der so ein Bild verschickt, haftet
- * dafuer — nicht wir.
+ * Eine fruehere Fassung nannte vier Musterchips ("Rasen satt und gesund",
+ * "Alle Lampen an"). Das Modell hat sie zuverlaessig uebernommen, auch wenn
+ * im Bild weder Rasen noch Lampen vorkamen: Ein Beispiel in einem Prompt ist
+ * keine Erlaeuterung, es ist eine Vorlage zum Abschreiben. Deshalb steht hier
+ * nur noch, WORAN man einen guten Vorschlag erkennt — nicht, wie einer lautet.
+ *
+ * Zwei Regeln sind nicht kosmetisch: Maengel bleiben im Bild (ein
+ * wegretuschierter Feuchtefleck ist kein Bildfehler, sondern eine
+ * Falschangabe), und nichts wird dazuerfunden. Dafuer haftet der Makler.
  */
 function buildInstruction(lang: string): string {
     if (lang === 'en') {
         return [
-            'You are looking at a photo an estate agent wants to retouch for a property listing.',
-            'Name 4 to 6 suggestions that together form a SPECTRUM for THIS photo:',
-            '- 2 to 3 comprehensive scene edits — the backbone. Where aspects belong together,',
-            '  combine them into one: lawn, planting and facade; sky, light and shadows.',
-            '- 1 to 2 practical fixes a photographer would do: converging verticals, white balance,',
-            '  window reflections, distracting objects at the edge of the frame.',
-            '- 1 to 2 creative ideas that give the photo a different character: evening mood,',
-            '  staging in one clear style, a different season.',
+            'You are looking at a photo to be edited for a property listing.',
+            'Name 4 to 6 edits that suit THIS photo, mixed: edits covering a whole area or the',
+            'whole scene, plain photographic corrections, and one or two bolder ideas.',
+            'Order them by what helps this photo most.',
             '',
-            'Order them by what helps this photo most, not by category.',
+            'Each suggestion names a visible part of this photo and the state it should end in.',
+            'No intentions, no judgements without an object.',
             '',
-            'Every instruction must be definite: WHAT exactly changes, and into WHICH state.',
-            'An image model works better with a clear statement than with a wish.',
-            '',
-            'Good: "Lush healthy lawn" — lawn evenly deep green and dense, bare patches filled,',
-            'beds weeded, paths and edges clean.',
-            '"Sky with clouds" — replace the grey sky with a light blue one with a few white clouds,',
-            'match light and shadows in the scene.',
-            '"All lamps on" — every lamp in the room lit, warm light, dark corners brightened.',
-            '"Completely empty" — remove all furniture, rugs and belongings, show bare floor and walls.',
-            '',
-            'Too small: "Tidy the table", "Straighten the cushions", "Switch on one lamp".',
-            'Too vague: "Harmonise the light", "Optimise the image", "Improve the mood".',
-            'Do not use words like harmonise, optimise, improve or enhance on their own —',
-            'they do not say what is different afterwards.',
-            '',
-            'Standard: a listing by a renowned agency. The result must look like the work of an',
-            'architectural photographer, not like bulk retouching: natural colours, soft transitions,',
-            'one believable direction of light, restraint. Explicitly avoid the usual giveaways —',
-            'electric blue sky, neon green lawn, HDR halos, over-sharpening, plastic surfaces,',
-            'glowing edges, oversaturated wood. Tasteful beats impressive.',
+            'Standard: architectural photography for a renowned agency — natural colours,',
+            'one believable direction of light, restraint rather than effect.',
             '',
             'Rules:',
-            '- Only name what is actually visible in the photo. No generic advice.',
-            '- The result must look real, not like a postcard. No oversaturation, no drama.',
-            '- Never remove defects, damage, cracks, damp patches or wear. They belong in the photo.',
-            '- Do not add anything that is not there. Virtual staging only for visibly empty rooms.',
+            '- Only what is visible in this photo.',
+            '- Defects stay: cracks, damage, damp patches, wear.',
+            '- Invent nothing. Furnishing only in visibly empty rooms.',
             '- No structural changes.',
-            '- "label": the chip caption, at most 3 words, imperative.',
-            '- "line": the full instruction for an image model, 10 to 22 words, naming every aspect it covers.',
-            '- If the photo needs nothing, return an empty list. An empty list is a valid answer.',
+            '- "label": at most 3 words. "line": one sentence naming the target state.',
+            '- Nothing fitting? Return an empty list.',
         ].join('\n');
     }
     return [
-        'Du siehst ein Foto, das ein Makler fuer ein Exposé bearbeiten lassen will.',
-        'Nenne 4 bis 6 Vorschlaege, die zusammen ein SPEKTRUM fuer GENAU DIESES Foto ergeben:',
-        '- 2 bis 3 umfassende Eingriffe in die ganze Szene — das Rueckgrat. Was zusammengehoert,',
-        '  gehoert in EINEN Vorschlag: Rasen, Bepflanzung und Fassade; Himmel, Licht und Schatten.',
-        '- 1 bis 2 praktische Retuschen, die ein Fotograf machen wuerde: stuerzende Linien,',
-        '  Weissabgleich, Spiegelungen in den Scheiben, Stoerendes am Bildrand.',
-        '- 1 bis 2 kreative Ideen, die dem Bild einen anderen Charakter geben: Abendstimmung,',
-        '  Einrichtung in einem klaren Stil, eine andere Jahreszeit.',
+        'Du siehst ein Foto, das fuer ein Immobilien-Exposé bearbeitet werden soll.',
+        'Nenne 4 bis 6 Bearbeitungen, die zu DIESEM Foto passen, gemischt: Eingriffe, die eine',
+        'ganze Flaeche oder die ganze Szene betreffen, handwerkliche Korrekturen, und ein bis',
+        'zwei mutigere Ideen. Sortiere nach dem Nutzen fuer dieses Foto.',
         '',
-        'Sortiere nach dem, was diesem Bild am meisten bringt, nicht nach Kategorie.',
+        'Jeder Vorschlag benennt einen sichtbaren Teil dieses Fotos und den Zustand, in dem er',
+        'danach sein soll. Keine Absichten, keine Wertungen ohne Gegenstand.',
         '',
-        'Jeder Auftrag muss bestimmt sein: WAS genau wird veraendert und in WELCHEN Zustand.',
-        'Ein Bildmodell arbeitet mit einer klaren Ansage besser als mit einem Wunsch.',
-        '',
-        'Gut: "Rasen satt und gesund" — Rasen durchgehend sattgruen und dicht, kahle Stellen schliessen,',
-        'Beete von Unkraut befreien, Wege und Kanten sauber.',
-        '"Himmel mit Wolken" — grauen Himmel durch hellblauen mit vereinzelten weissen Wolken ersetzen,',
-        'Licht und Schatten im Bild darauf abstimmen.',
-        '"Alle Lampen an" — jede Lampe im Raum eingeschaltet, warmes Licht, dunkle Ecken aufhellen.',
-        '"Komplett leerraeumen" — saemtliche Moebel, Teppiche und Gegenstaende entfernen, Boden und',
-        'Waende leer und sauber zeigen.',
-        '',
-        'Zu kleinteilig: "Tisch aufraeumen", "Kissen gerade ruecken", "eine Lampe einschalten".',
-        'Zu vage: "Licht harmonisieren", "Bild optimieren", "Raumwirkung verbessern", "Stimmung aufwerten".',
-        'Verwende keine Woerter wie harmonisieren, optimieren, verbessern, aufwerten, abstimmen allein —',
-        'sie sagen nicht, was am Ende anders ist.',
-        '',
-        'Massstab ist das Exposé einer renommierten Immobilienagentur. Das Ergebnis muss aussehen',
-        'wie die Arbeit eines Architekturfotografen, nicht wie eine Massenretusche: natuerliche Farben,',
-        'weiche Uebergaenge, EINE glaubwuerdige Lichtrichtung, Zurueckhaltung. Vermeide ausdruecklich',
-        'die bekannten Merkmale schlechter Bearbeitung — knallblauer Himmel, neongruener Rasen,',
-        'HDR-Saeume, Ueberschaerfung, Plastikoberflaechen, leuchtende Kanten, uebersaettigtes Holz.',
-        'Geschmackvoll schlaegt beeindruckend.',
+        'Massstab: Architekturfotografie fuer eine renommierte Agentur — natuerliche Farben,',
+        'eine glaubwuerdige Lichtrichtung, Zurueckhaltung statt Effekt.',
         '',
         'Regeln:',
-        '- Nur was wirklich im Bild zu sehen ist. Keine allgemeinen Ratschlaege.',
-        '- Das Ergebnis muss echt aussehen, nicht wie eine Postkarte. Keine Uebersaettigung, kein Drama.',
-        '- Niemals Maengel entfernen: keine Risse, Schaeden, Feuchteflecken, Abnutzung. Die gehoeren ins Bild.',
-        '- Nichts hinzufuegen, was es nicht gibt. Moeblierung nur bei sichtbar leeren Raeumen.',
+        '- Nur was in diesem Foto zu sehen ist.',
+        '- Maengel bleiben: Risse, Schaeden, Feuchteflecken, Abnutzung.',
+        '- Nichts erfinden. Moeblierung nur in sichtbar leeren Raeumen.',
         '- Keine baulichen Veraenderungen.',
-        '- "label": die Aufschrift des Chips, hoechstens 3 Woerter, Imperativ.',
-        '- "line": der vollstaendige Auftrag an ein Bildmodell, 10 bis 22 Woerter, der jeden erfassten Aspekt nennt.',
-        '- Gibt das Bild nichts her, gib eine leere Liste zurueck. Eine leere Liste ist eine gueltige Antwort.',
+        '- "label": hoechstens 3 Woerter. "line": ein Satz, der den Zielzustand nennt.',
+        '- Nichts Passendes? Leere Liste.',
     ].join('\n');
 }
 
@@ -242,13 +199,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!row) return res.status(404).json({ error: 'Image not found' });
 
         /*
-            Fassung 3. Fassung 1 fragte nach "konkreten Bearbeitungen" und bekam
-            Kleinkram (Tisch aufraeumen); Fassung 2 ueberkorrigierte ins Abstrakte
-            ("Licht harmonisieren"). Jetzt: grosse Eingriffe, aber bestimmt
-            formuliert. Wer schon Vorschlaege hat, bekommt mit dieser Zahl neue.
+            Fassung 4: ohne Beispiele im Prompt. Die vorigen Fassungen gaben
+            Musterchips vor und bekamen sie zurueck — auch fuer Bilder, in denen
+            es weder Rasen noch Lampen gab. Wer schon Vorschlaege hat, bekommt
+            mit dieser Zahl neue.
         */
         const cached = row.edit_suggestions as { v?: number; lang?: string; items?: unknown } | null;
-        if (cached && cached.v === 3 && cached.lang === lang && Array.isArray(cached.items)) {
+        if (cached && cached.v === 4 && cached.lang === lang && Array.isArray(cached.items)) {
             return res.status(200).json({ suggestions: cached.items, cached: true });
         }
 
@@ -301,7 +258,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
          */
         const { error: writeError } = await supabase
             .from('images')
-            .update({ edit_suggestions: { v: 3, lang, items: suggestions } })
+            .update({ edit_suggestions: { v: 4, lang, items: suggestions } })
             .eq('id', imageId);
 
         if (writeError) {
