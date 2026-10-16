@@ -1,0 +1,146 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, Download, Repeat, AudioLines, MicOff } from 'lucide-react';
+import { RoundIconButton } from '@/components/ui/DesignSystem';
+import { DropdownMenu, type DropdownItem } from '@/components/ui/DropdownMenu';
+import { MenuLines } from '@/components/ui/CustomIcons';
+import { buildDetailMenuItems } from '@/components/layout/detailMenu';
+import type { DetailLayout } from '@/utils/uiPrefs';
+
+/**
+ * Der Kopf der Detailansicht — im Blatt, nicht ueber dem Bild.
+ *
+ * Vorher trug eine Leiste ueber dem ganzen Fenster den Namen des Bildes und
+ * seine Knoepfe, waehrend daneben das Panel stand: zwei Flaechen fuer eine
+ * Sache. Jetzt gibt es eine. Das Bild bekommt dafuer das ganze Fenster, und
+ * alles, was zu ihm gehoert, steht beieinander.
+ *
+ * Die Eintraege des Menues kommen aus detailMenu.tsx — dieselbe Liste, die
+ * die Navigationsleiste auf dem Handy zeigt.
+ */
+export interface DetailSheetHeaderProps {
+    t: (key: string) => string;
+    title: string;
+    version?: string;
+    onBack: () => void;
+    onDownload?: () => void;
+    onRegenerate?: () => void;
+    onInfo?: () => void;
+    onDelete?: () => void;
+    hasPrompt: boolean;
+    isSideSheetVisible: boolean;
+    onToggleSideSheet?: () => void;
+    detailLayout: DetailLayout;
+    setDetailLayout: (l: DetailLayout) => void;
+    /**
+     * Der Sprachassistent. Der Eintrag entsteht hier, nicht beim Aufrufer —
+     * sonst muesste jeder Ort, der diesen Kopf zeigt, dieselben zwei Zeilen
+     * JSX mitbringen.
+     */
+    voice?: { enabled: boolean; active: boolean; lang: string; onStart?: () => void; onStop?: () => void };
+    /** Steht links neben den Knoepfen: laufende Generierungen. */
+    statusSlot?: React.ReactNode;
+}
+
+export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
+    t, title, version, onBack, onDownload, onRegenerate, onInfo, onDelete,
+    hasPrompt, isSideSheetVisible, onToggleSideSheet, detailLayout, setDetailLayout,
+    voice, statusSlot,
+}) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    const voiceItems: DropdownItem[] = voice?.enabled
+        ? [{
+            label: voice.active
+                ? (voice.lang === 'de' ? 'Sprachassistent beenden' : 'Stop assistant')
+                : (voice.lang === 'de' ? 'Sprachassistent' : 'Voice assistant'),
+            icon: voice.active ? <MicOff className="w-4 h-4" /> : <AudioLines className="w-4 h-4" />,
+            onClick: () => { if (voice.active) voice.onStop?.(); else voice.onStart?.(); },
+        }]
+        : [];
+
+    useEffect(() => {
+        if (!isMenuOpen) return;
+        const onDown = (e: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) setIsMenuOpen(false);
+        };
+        document.addEventListener('mousedown', onDown);
+        return () => document.removeEventListener('mousedown', onDown);
+    }, [isMenuOpen]);
+
+    return (
+        <div className="flex items-start gap-1.5 pb-5">
+            <RoundIconButton
+                icon={<ChevronLeft className="w-5 h-5" />}
+                onClick={onBack}
+                variant="soft"
+                tooltip={t('back')}
+            />
+
+            {/* Name und Version: die Version abgedunkelt daneben, nicht als
+                eigener Eintrag — sie beschreibt den Namen, sie ersetzt ihn nicht. */}
+            <div className="flex-1 min-w-0 pt-[7px] px-1">
+                <div className="flex items-baseline gap-1.5">
+                    <span className="text-[15px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
+                        {title}
+                    </span>
+                    {version && (
+                        <span className="text-[15px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                            {version}
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            {statusSlot}
+
+            <RoundIconButton
+                icon={<Download className="w-[18px] h-[18px]" />}
+                onClick={onDownload}
+                variant="ghost"
+                tooltip={t('nav_download')}
+                tooltipShortcut="D"
+            />
+            {hasPrompt && (
+                <RoundIconButton
+                    icon={<Repeat className="w-[18px] h-[18px]" />}
+                    onClick={onRegenerate}
+                    variant="ghost"
+                    tooltip={t('generate_more')}
+                    tooltipShortcut="M"
+                />
+            )}
+
+            <div className="relative" ref={menuRef}>
+                <RoundIconButton
+                    icon={<MenuLines className="w-[18px] h-[18px]" />}
+                    onClick={() => setIsMenuOpen(p => !p)}
+                    variant="ghost"
+                    active={isMenuOpen}
+                    tooltip={t('nav_menu')}
+                />
+                {isMenuOpen && (
+                    <div className="absolute top-full mt-2 right-0 z-50">
+                        <DropdownMenu
+                            items={buildDetailMenuItems({
+                                t,
+                                hasPrompt,
+                                isMobile: false,
+                                isSideSheetVisible,
+                                detailLayout,
+                                setDetailLayout,
+                                onToggleSideSheet,
+                                onRegenerate,
+                                onDownload,
+                                onInfo,
+                                onDelete,
+                                voiceItems,
+                                close: () => setIsMenuOpen(false),
+                            })}
+                        />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};

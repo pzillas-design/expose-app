@@ -128,6 +128,14 @@ interface SideSheetProps {
     onBrushResizeEnd?: () => void;
     onGenerate: (prompt: string, draftPrompt?: string, templateId?: string, vars?: Record<string, string[]>) => void;
     onUpdateAnnotations: (id: string, anns: any[]) => void;
+    /**
+     * Der Kopf der Detailansicht, der im Blatt sitzt (Zurueck, Name, Knoepfe).
+     *
+     * Er kommt von aussen, weil er von Dingen weiss, die das Blatt nichts
+     * angehen — Navigation, Loeschen, laufende Generierungen. Das Blatt gibt
+     * ihm nur seinen Platz: oben, ausserhalb des scrollenden Bereichs.
+     */
+    headerSlot?: React.ReactNode;
     onUpdatePrompt: (id: string, text: string) => void;
     onUpdateVariables: (id: string, templateId: string | undefined, vars: Record<string, string[]>) => void;
     onDeleteImage: (id: string | string[]) => void;
@@ -195,7 +203,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     const {
         selectedImage, selectedImages, sideSheetMode, onModeChange,
         brushSize, onBrushSizeChange, onBrushResizeStart, onBrushResizeEnd,
-        onGenerate, onUpdateAnnotations, onUpdatePrompt, onUpdateVariables,
+        onGenerate, onUpdateAnnotations, onUpdatePrompt, onUpdateVariables, headerSlot,
         onDeleteImage, onDeselectAll,
         onGlobalDragLeave,
         t, lang, fullLibrary, onAddUserCategory, onDeleteUserCategory,
@@ -467,28 +475,24 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // Leiste selbst niedrig — dort waere dieselbe Hoehe der ganze Platz.
     const PROMPT_MIN_H = rowLayout ? 72 : 160;
     /**
-     * In der Spaltenansicht waechst das Feld NICHT.
+     * Das Feld waechst mit seinem Text — und hat keine eigene Bildlaufleiste.
      *
-     * Darunter stehen die Vorlagen und ihre Gruppen. Jede eingesetzte Zeile
-     * machte das Feld hoeher und schob alles darunter nach unten — genau in dem
-     * Moment, in dem man den naechsten Chip treffen will. Ein Eingabefeld, das
-     * sich bewegt, waehrend man daneben klickt, ist schlimmer als eines, in dem
-     * man scrollen muss.
+     * Es gibt im Blatt genau EINE Flaeche, die scrollt: den Inhalt des Blattes.
+     * Ein Kasten darin, der selbst scrollt, versteckt Text hinter einer
+     * zweiten, unsichtbaren Kante: Man sieht nicht, dass noch etwas da ist,
+     * und das Rad tut mal das eine, mal das andere, je nachdem, wo der Zeiger
+     * gerade steht.
      *
-     * Im Zeilenmodus darf es wachsen: Dort steht nichts darunter, und die Leiste
-     * ist ohnehin niedrig.
+     * Dass die Chips darunter beim Tippen nach unten wandern, ist der Preis —
+     * und der richtige: Sie folgen dem Text, zu dem sie gehoeren.
      */
-    const PROMPT_MAX_H = rowLayout ? 240 : PROMPT_MIN_H;
     useLayoutEffect(() => {
         const el = textareaRef.current;
         if (!el) return;
         el.style.height = 'auto';
-        const next = Math.min(Math.max(el.scrollHeight, PROMPT_MIN_H), PROMPT_MAX_H);
-        el.style.height = `${next}px`;
-        // Nur scrollen, wenn die Obergrenze erreicht ist — sonst blitzt beim
-        // Tippen eine Bildlaufleiste auf.
-        el.style.overflowY = el.scrollHeight > PROMPT_MAX_H ? 'auto' : 'hidden';
-    }, [prompt, selectedImage?.id]);
+        el.style.height = `${Math.max(el.scrollHeight, PROMPT_MIN_H)}px`;
+        el.style.overflowY = 'hidden';
+    }, [prompt, selectedImage?.id, PROMPT_MIN_H]);
 
     /**
      * Der Entwurfsbereich blendet beim Bildwechsel ein.
@@ -1225,8 +1229,14 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                     Seiten frei bleibt, bleibt frei — das ist ruhiger als eine
                     Zeile, die bis in beide Ecken reicht.
                 */}
+                {/* Der Kopf scrollt nicht mit: Name und Zurueck sind der feste
+                    Bezugspunkt der Ansicht, nicht ihr erster Inhalt. */}
+                {headerSlot && !isMobileSheet && (
+                    <div className="shrink-0 px-5 pt-4">{headerSlot}</div>
+                )}
+
                 <div
-                    className="flex-1 overflow-y-auto no-scrollbar px-5 pt-6 pb-6">
+                    className={`flex-1 overflow-y-auto no-scrollbar px-5 pb-6 ${headerSlot && !isMobileSheet ? 'pt-1' : 'pt-6'}`}>
                     {/* Eigene Ebene fuer die Anordnung, damit ihre Hoehe messbar
                         ist: Der Behaelter traegt den Innenabstand, der sich
                         aendert — sich selbst zu messen hiesse, das Ergebnis in
@@ -1694,18 +1704,16 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     */}
                                     {expandedControls.length > 0 && (
                                         /*
-                                            Eine eigene Flaeche, eine Spur heller als das
-                                            Panel, bis an dessen Kanten (-mx-5) und oben
-                                            kantig: So haengt sie sichtbar an der Vorlage
-                                            darueber und sitzt IM Panel, statt als zweite
-                                            Karte darin zu schwimmen. Getrennt wird ueber
-                                            Helligkeit und eine Lichtkante, nicht ueber eine
-                                            Linie.
+                                            Eine eigene Karte, wie die Eingabe darueber:
+                                            dieselbe Flaeche, derselbe Radius, dasselbe
+                                            Innenmass. Der Inhalt einer Vorlage ist etwas
+                                            Abgegrenztes, und im Panel gibt es dafuer schon
+                                            eine Form — eine zweite zu erfinden hiesse, zwei
+                                            Sprachen fuer dieselbe Aussage zu fuehren.
                                         */
-                                        <div className="mt-4 -mx-5 px-5 pt-5 pb-6 space-y-7
-                                            bg-black/[0.025] dark:bg-white/[0.025]
-                                            shadow-[inset_0_1px_0_rgba(0,0,0,0.04)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
-                                            animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <div className={`mt-4 p-5 space-y-7
+                                            ${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.RadiusLg}
+                                            animate-in fade-in slide-in-from-top-1 duration-200`}>
                                             {expandedControls.map(ctrl => {
                                                 const ctrlLabel = labelOverrides[ctrl.id] || ctrl.label;
                                                 const multi = ctrl.type !== 'single';

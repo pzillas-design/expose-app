@@ -8,6 +8,10 @@ import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
 import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
 import { imageNameOf } from '@/utils/imageName';
 import { AppNavbar } from '@/components/layout/AppNavbar';
+import { DetailSheetHeader } from '@/components/layout/DetailSheetHeader';
+import { GenerationProgressRing } from '@/components/ui/GenerationProgressRing';
+import { useMobile } from '@/hooks/useMobile';
+import { useDetailLayout, setDetailLayout } from '@/utils/uiPrefs';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
 import { VoiceUploadModal } from '@/components/modals/VoiceUploadModal';
@@ -1103,15 +1107,70 @@ export function App() {
         || location.pathname === '/blog'
         || location.pathname.startsWith('/blog/');
 
+    const isMobileApp = useMobile();
+    const detailLayout = useDetailLayout();
+
+    /**
+     * Die Detailansicht traegt ihren Kopf im Blatt, nicht ueber dem Fenster.
+     *
+     * Vorher gab es zwei Flaechen fuer eine Sache: eine Leiste mit Namen und
+     * Knoepfen ueber dem ganzen Fenster, daneben das Panel mit der Eingabe.
+     * Jetzt gibt es eine — und das Bild bekommt dafuer das ganze Fenster.
+     *
+     * Nur auf dem Desktop: Auf dem Handy ist das Blatt eine Lade, die unten
+     * sitzt und zugeschoben werden kann; dort waere der Weg zurueck mit ihr
+     * verschwunden.
+     */
+    const detailImageId = location.pathname.startsWith('/image/')
+        ? location.pathname.split('/').pop()
+        : undefined;
+    const detailImage = detailImageId ? allImages.find(i => i.id === detailImageId) : undefined;
+    const isDetailSheetLayout = !!detailImage && !isMobileApp;
+
+    const detailHeaderSlot = isDetailSheetLayout && detailImage ? (
+        <DetailSheetHeader
+            t={t}
+            title={imageNameOf(detailImage).base || 'Untitled'}
+            version={imageNameOf(detailImage).version ? `v${imageNameOf(detailImage).version}` : undefined}
+            onBack={handleBackToFeed}
+            onDownload={() => actions.handleDownload(detailImage.id)}
+            onRegenerate={() => actions.handleGenerateMore(detailImage.id)}
+            onInfo={() => setInfoImageId(detailImage.id)}
+            onDelete={() => handleDetailDelete(detailImage.id)}
+            hasPrompt={!!detailImage.generationPrompt}
+            isSideSheetVisible={detailSideSheetVisible}
+            onToggleSideSheet={() => setDetailSideSheetVisible(v => !v)}
+            detailLayout={detailLayout}
+            setDetailLayout={setDetailLayout}
+            voice={{
+                enabled: voiceFeatureEnabled,
+                active: voice.isActive,
+                lang: state.currentLang,
+                onStart: () => { void voice.start(); },
+                onStop: voice.stop,
+            }}
+            statusSlot={
+                <GenerationProgressRing
+                    generatingImages={allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId))}
+                    lang={state.currentLang}
+                    onNavigateToImage={(id) => handleSelectImage(id)}
+                    onGenerateMore={(id) => actions.handleGenerateMore(id)}
+                    t={t}
+                    autoCloseWhenDone
+                />
+            }
+        />
+    ) : null;
+
     const outerContainerClasses = isAppLayout
         ? "h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col overflow-hidden"
         : "min-h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
 
     const mainContainerClasses = isAppLayout
-        ? "flex-1 flex flex-col overflow-hidden pt-[var(--nav-h)]"
+        ? `flex-1 flex flex-col overflow-hidden ${isDetailSheetLayout ? '' : 'pt-[var(--nav-h)]'}`
         : "flex-1 flex flex-col";
 
-    const showGlobalNavbar = !isAdminRoute;
+    const showGlobalNavbar = !isAdminRoute && !isDetailSheetLayout;
 
     return (
         <div className={outerContainerClasses}>
@@ -1533,6 +1592,7 @@ export function App() {
                             }}>
                                 <DetailPage
                                     images={allImages}
+                                    headerSlot={detailHeaderSlot}
                                     selectedId={location.pathname.split('/').pop() || ''}
                                     onBack={handleBackToFeed}
                                     onSelectImage={handleSelectImage}

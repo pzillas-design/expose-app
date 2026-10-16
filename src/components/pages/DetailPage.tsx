@@ -166,6 +166,8 @@ interface DetailPageProps {
     onDelete: (id: string) => void;
     onDownload: (id: string) => void;
     onInfo: (id: string) => void;
+    /** Der Kopf, der im Blatt sitzt — kommt fertig von App (siehe dort). */
+    headerSlot?: React.ReactNode;
     onSidebarWidthChange?: (w: number) => void;
     isSideSheetVisible?: boolean;
     onSideSheetVisibleChange?: (v: boolean) => void;
@@ -222,7 +224,7 @@ const FLOATING_ARROW = `${FLOATING_BTN_BASE} h-11 w-11 justify-center absolute t
     pointer-events-auto disabled:opacity-25 disabled:cursor-default`;
 
 export const DetailPage: React.FC<DetailPageProps> = ({
-    images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
+    images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange, headerSlot,
     isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange, isExiting,
     hasMore, onLoadMore,
     state, actions, t
@@ -875,6 +877,20 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         style={isRowLayout && rowImageHeight ? { height: `${rowImageHeight}px` } : undefined}
                     >
 
+                        {/* Der Weg zurueck, wenn das Blatt zu ist.
+                            Mit dem Kopf im Blatt verschwindet im Vollbild sonst auch
+                            der Zurueck-Knopf — und eine Ansicht, aus der man nur
+                            ueber die Tastatur herauskommt, ist eine Sackgasse. */}
+                        {headerSlot && !isSideSheetActuallyVisible && state.sideSheetMode !== 'brush' && (
+                            <div className="absolute top-5 left-5 z-40 transition-opacity duration-200 opacity-60 group-hover:opacity-100">
+                                <Tooltip text={t('back')} side="right">
+                                    <button onClick={onBack} aria-label={t('back')} className={FLOATING_BTN_ICON}>
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                </Tooltip>
+                            </div>
+                        )}
+
                         {/* Blaettern: an den Seiten, senkrecht in der Mitte des Bildes.
                             Beide Pfeile bleiben stehen und werden am Rand der Liste nur
                             abgeschaltet — eine Taste, die verschwindet, verschiebt die
@@ -1242,7 +1258,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             ? { width: '100%' }
                             : {
                                 width: isSideSheetActuallyVisible ? SIDEBAR_WIDTH : '0px',
-                                paddingTop: Math.max(0, imageTopOffset - PANEL_INNER_PT),
+                                // Mit Kopf im Blatt faengt das Blatt oben an.
+                                // Die frühere Ausrichtung auf die Bildoberkante galt
+                                // der Eingabekarte — ein Kopf, der mittig im Nichts
+                                // schwebt, waere das Gegenteil eines Bezugspunkts.
+                                paddingTop: headerSlot ? 0 : Math.max(0, imageTopOffset - PANEL_INNER_PT),
                             }}
                 >
                     {/* Resizer Handle — desktop only */}
@@ -1266,6 +1286,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         onBrushResizeEnd={() => actions.setIsBrushResizing(false)}
                         onGenerate={actions.handleGenerate}
                         onUpdateAnnotations={actions.handleUpdateAnnotations}
+                        headerSlot={headerSlot}
                         onUpdatePrompt={actions.handleUpdatePrompt}
                         onUpdateVariables={actions.handleUpdateVariables}
                         onDeleteImage={actions.handleDeleteImage}

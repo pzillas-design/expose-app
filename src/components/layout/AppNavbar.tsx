@@ -4,6 +4,7 @@ import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
 import { DropdownMenu } from '../ui/DropdownMenu';
+import { buildDetailMenuItems } from './detailMenu';
 import { GenerationProgressRing } from '../ui/GenerationProgressRing';
 import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
@@ -492,59 +493,24 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 />
                 {isDetailMenuOpen && (
                     <div className="absolute top-full mt-2 right-0 z-50">
+                        {/* Die Eintraege kommen aus detailMenu.tsx — dieselbe Liste,
+                            die das Blatt der Detailansicht auf dem Desktop zeigt. */}
                         <DropdownMenu
-                            items={[
-                                /*
-                                    Drei Gruppen, nach Art der Sache:
-
-                                    1. Was man MIT DIESEM BILD tut — erzeugen,
-                                       sichern, nachsehen.
-                                    2. Wie man ARBEITET — Ansicht und Sprache.
-                                       Das aendert nicht das Bild, sondern die
-                                       Umgebung.
-                                    3. Was sich nicht rueckgaengig machen laesst.
-
-                                    Vorher stand "Mehr generieren" zwischen der
-                                    Ansicht und "Info": eine Handlung am Bild
-                                    mitten zwischen einer Einstellung und einer
-                                    Auskunft. Und "Info" war der einzige Eintrag
-                                    ohne Symbol, wodurch die Spalte rechts eine
-                                    Luecke hatte.
-                                */
-                                ...(detailHasPrompt ? [{
-                                    label: t('generate_more') || 'Mehr generieren',
-                                    icon: <Repeat className="w-4 h-4" />,
-                                    onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); },
-                                }] : []),
-                                { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                                { label: t('nav_info'), icon: <Info className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
-
-                                // Die Eingabe-Anordnung: ein Eintrag, drei Zustaende.
-                                // Das Menue bleibt beim Klick OFFEN — bei einem
-                                // Rundlauf aus drei Ansichten ist Zumachen nach jedem
-                                // Schritt das Gegenteil von hilfreich.
-                                ...(isMobile ? [] : [{
-                                    label: !isSideSheetVisible
-                                        ? (t('view_fullscreen') || 'Ansicht: Vollbild')
-                                        : detailLayout === 'column'
-                                            ? (t('view_columns') || 'Ansicht: Spalten')
-                                            : (t('view_rows') || 'Ansicht: Zeilen'),
-                                    icon: !isSideSheetVisible
-                                        ? <Maximize2 className="w-4 h-4" />
-                                        : detailLayout === 'column'
-                                            ? <PanelRight className="w-4 h-4" />
-                                            : <PanelBottom className="w-4 h-4" />,
-                                    separator: true,
-                                    onClick: () => {
-                                        if (!isSideSheetVisible) { setDetailLayout('column'); onToggleSideSheet?.(); }
-                                        else if (detailLayout === 'column') setDetailLayout('row');
-                                        else onToggleSideSheet?.();
-                                    },
-                                }]),
-                                ...voiceMenuItem.map(v => ({ ...v, onClick: () => { setIsDetailMenuOpen(false); v.onClick(); } })),
-
-                                { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true, separator: true },
-                            ]}
+                            items={buildDetailMenuItems({
+                                t,
+                                hasPrompt: !!detailHasPrompt,
+                                isMobile,
+                                isSideSheetVisible: !!isSideSheetVisible,
+                                detailLayout: detailLayout ?? 'column',
+                                setDetailLayout: setDetailLayout ?? (() => { }),
+                                onToggleSideSheet,
+                                onRegenerate: onDetailRegenerate,
+                                onDownload: onDetailDownload,
+                                onInfo: onDetailInfo,
+                                onDelete: onDetailDelete,
+                                voiceItems: voiceMenuItem,
+                                close: () => setIsDetailMenuOpen(false),
+                            })}
                         />
                     </div>
                 )}

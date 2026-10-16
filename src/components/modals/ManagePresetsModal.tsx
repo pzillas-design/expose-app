@@ -195,7 +195,11 @@ const LanguageForm = ({
                             </div>
                         ) : (
                             !editingControlId && (
-                                <Button variant="secondary" onClick={() => setIsAddingControl(true)} className="w-full gap-2 mt-8">
+                                // Direkt unter die letzte Variable, nicht acht Einheiten
+                                // darunter: Der Knopf gehoert zur Liste, die er
+                                // verlaengert. Der grosse Abstand liess ihn wie einen
+                                // eigenen Abschnitt am Ende des Fensters wirken.
+                                <Button variant="secondary" onClick={() => setIsAddingControl(true)} className="w-full gap-2 mt-2">
                                     <Plus className="w-4 h-4" /> {t('add_variable')}
                                 </Button>
                             )
