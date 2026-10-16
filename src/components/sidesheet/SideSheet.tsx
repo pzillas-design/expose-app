@@ -194,7 +194,6 @@ interface SideSheetProps {
      * Seitenpanel steht auch in der Galerie und auf der Erstellen-Seite, und
      * dort gibt es diese Anordnung nicht.
      */
-    rowLayout?: boolean;
     onRefreshTemplates?: () => void;
     onSaveTemplate?: (template: any) => Promise<any>;
     onEditTemplate?: (template: PromptTemplate) => void;
@@ -229,7 +228,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onAddUserItem, onDeleteUserItem, maskTool, onMaskToolChange,
         activeShape, onActiveShapeChange, onActiveAnnotationChange,
         onInteractionStart: onInteractionStartExt, onInteractionEnd: onInteractionEndExt,
-        qualityMode, onQualityModeChange, templates, rowLayout = false, onSaveTemplate, onEditTemplate,
+        qualityMode, onQualityModeChange, templates, onSaveTemplate, onEditTemplate,
         onDeleteTemplate, onSaveRecentPrompt, onUpdateImageTitle, onDownload,
         onGenerateMore, onNavigateParent, userProfile, width
     } = props;
@@ -508,7 +507,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // Verfuegung; dort wirkt ein flaches Feld gedrueckt, und etwas Luft unter
     // dem Platzhalter laedt eher zum Schreiben ein. Im Zeilenmodus ist die
     // Leiste selbst niedrig — dort waere dieselbe Hoehe der ganze Platz.
-    const PROMPT_MIN_H = rowLayout ? 72 : 160;
+    const PROMPT_MIN_H = 160;
     /**
      * Das Feld waechst mit seinem Text — und hat keine eigene Bildlaufleiste.
      *
@@ -1272,24 +1271,27 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 )}
 
                 <div
-                    className={`flex-1 overflow-y-auto no-scrollbar px-5 pb-6 ${headerSlot && !isMobileSheet ? 'pt-1' : 'pt-6'}`}>
+                    /*
+                        Scrollen tut auf dem Desktop das Blatt, auf schmalen
+                        Geraeten die Seite.
+
+                        Ein Kasten, der innerhalb einer scrollenden Seite selbst
+                        scrollt, ist auf einem Handy kaum zu bedienen: Die Wischgeste
+                        trifft mal den einen, mal den anderen, und man weiss nie, was
+                        sich gleich bewegt. Deshalb dort overflow-visible und eine
+                        Hoehe, die der Inhalt bestimmt.
+                    */
+                    className={`no-scrollbar px-5 pb-6 ${isMobile ? 'overflow-visible' : 'flex-1 overflow-y-auto'} ${headerSlot && !isMobileSheet ? 'pt-1' : 'pt-6'}`}>
                     {/* Eigene Ebene fuer die Anordnung, damit ihre Hoehe messbar
                         ist: Der Behaelter traegt den Innenabstand, der sich
                         aendert — sich selbst zu messen hiesse, das Ergebnis in
                         die Messung einzurechnen. */}
                     <div
-                        className={rowLayout
-                            // Die Textspalte bekommt eine eigene Obergrenze, nicht
-                            // nur das Paar. Eine Eingabe, die ueber 1000 Pixel breit
-                            // laeuft, liest sich schlecht und schiebt ihre Knoepfe an
-                            // die Raender — das Paar zu begrenzen haette das auf
-                            // breiten Schirmen nicht verhindert.
-                            ? 'w-full grid grid-cols-[minmax(0,760px)_minmax(240px,320px)] justify-center gap-x-8 gap-y-5 items-start'
-                            // min-h-full, damit "nach unten andocken" einen Boden hat,
-                            // gegen den es andocken kann: Ohne das ist die Spalte nur
-                            // so hoch wie ihr Inhalt, und mt-auto haette nichts, was es
-                            // auseinanderschieben koennte.
-                            : 'flex flex-col gap-5 min-h-full'}
+                        // min-h-full, damit "nach unten andocken" einen Boden hat,
+                        // gegen den es andocken kann. Auf dem Handy entfaellt das:
+                        // Dort gibt es keine feste Hoehe, gegen die angedockt wird,
+                        // und die Inhalte folgen einfach aufeinander.
+                        className={`flex flex-col gap-5 ${isMobile ? '' : 'min-h-full'}`}
                     >
 
                     <>
@@ -1304,7 +1306,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                       Letzteres lag im Dunkelmodus so dicht an der
                                       Hintergrundfarbe zinc-950, dass die Karte kaum
                                       abgesetzt war. */}
-                                <div className={`${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.RadiusLg} ${rowLayout ? 'p-5 space-y-4' : 'p-6 space-y-6'} transition-all`}>
+                                <div className={`${Theme.Colors.SurfaceSubtle} ${Theme.Geometry.RadiusLg} p-6 space-y-6 transition-all`}>
                                     {/* Prompt Textarea */}
                                     <div className={draftFadeClass}>
                                         <textarea

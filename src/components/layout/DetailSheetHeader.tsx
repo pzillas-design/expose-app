@@ -3,7 +3,6 @@ import { ChevronLeft, Download, Repeat, AudioLines, MicOff, MoreHorizontal } fro
 import { RoundIconButton } from '@/components/ui/DesignSystem';
 import { DropdownMenu, type DropdownItem } from '@/components/ui/DropdownMenu';
 import { buildDetailMenuItems } from '@/components/layout/detailMenu';
-import type { DetailLayout } from '@/utils/uiPrefs';
 
 /**
  * Der Kopf der Detailansicht — im Blatt, nicht ueber dem Bild.
@@ -26,10 +25,6 @@ export interface DetailSheetHeaderProps {
     onInfo?: () => void;
     onDelete?: () => void;
     hasPrompt: boolean;
-    isSideSheetVisible: boolean;
-    onToggleSideSheet?: () => void;
-    detailLayout: DetailLayout;
-    setDetailLayout: (l: DetailLayout) => void;
     /**
      * Der Sprachassistent. Der Eintrag entsteht hier, nicht beim Aufrufer —
      * sonst muesste jeder Ort, der diesen Kopf zeigt, dieselben zwei Zeilen
@@ -42,7 +37,7 @@ export interface DetailSheetHeaderProps {
 
 export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
     t, title, version, onBack, onDownload, onRegenerate, onInfo, onDelete,
-    hasPrompt, isSideSheetVisible, onToggleSideSheet, detailLayout, setDetailLayout,
+    hasPrompt,
     voice, statusSlot,
 }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -107,12 +102,7 @@ export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
                                 items={buildDetailMenuItems({
                                     t,
                                     hasPrompt,
-                                    isMobile: false,
-                                    isSideSheetVisible,
-                                    detailLayout,
-                                    setDetailLayout,
-                                    onToggleSideSheet,
-                                    onRegenerate,
+                                                        onRegenerate,
                                     onDownload,
                                     onInfo,
                                     onDelete,

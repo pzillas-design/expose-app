@@ -9,7 +9,6 @@ import { GenerationProgressRing } from '../ui/GenerationProgressRing';
 import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
 import { MenuLines } from '@/components/ui/CustomIcons';
-import { useDetailLayout, setDetailLayout } from '@/utils/uiPrefs';
 import { NAV_H, NAV_H_EXPANDED_MOBILE, NAV_H_EXPANDED_DESKTOP } from '@/config/layout';
 import { CanvasImage } from '@/types';
 
@@ -155,7 +154,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     // Direkt gelesen statt durchgereicht: Die Vorliebe meldet ihre Aenderung
     // selbst, also brauchen weder App noch DetailPage davon zu wissen. Ein
     // Durchreichen durch zwei Ebenen waere mehr Code fuer dasselbe Ergebnis.
-    const detailLayout = useDetailLayout();
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
     const [isDetailMenuOpen, setIsDetailMenuOpen] = useState(false);
@@ -499,11 +497,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             items={buildDetailMenuItems({
                                 t,
                                 hasPrompt: !!detailHasPrompt,
-                                isMobile,
-                                isSideSheetVisible: !!isSideSheetVisible,
-                                detailLayout: detailLayout ?? 'column',
-                                setDetailLayout: setDetailLayout ?? (() => { }),
-                                onToggleSideSheet,
                                 onRegenerate: onDetailRegenerate,
                                 onDownload: onDetailDownload,
                                 onInfo: onDetailInfo,

@@ -11,7 +11,6 @@ import { AppNavbar } from '@/components/layout/AppNavbar';
 import { DetailSheetHeader } from '@/components/layout/DetailSheetHeader';
 import { GenerationProgressRing } from '@/components/ui/GenerationProgressRing';
 import { useMobile } from '@/hooks/useMobile';
-import { useDetailLayout, setDetailLayout } from '@/utils/uiPrefs';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
 import { VoiceUploadModal } from '@/components/modals/VoiceUploadModal';
@@ -1108,7 +1107,6 @@ export function App() {
         || location.pathname.startsWith('/blog/');
 
     const isMobileApp = useMobile();
-    const detailLayout = useDetailLayout();
 
     /**
      * Die Detailansicht traegt ihren Kopf im Blatt, nicht ueber dem Fenster.
@@ -1140,8 +1138,6 @@ export function App() {
             hasPrompt={!!detailImage.generationPrompt}
             isSideSheetVisible={detailSideSheetVisible}
             onToggleSideSheet={() => setDetailSideSheetVisible(v => !v)}
-            detailLayout={detailLayout}
-            setDetailLayout={setDetailLayout}
             voice={{
                 enabled: voiceFeatureEnabled,
                 active: voice.isActive,

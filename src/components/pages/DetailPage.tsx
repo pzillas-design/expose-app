@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef, memo } from 'react';
 import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
 import { CanvasImage } from '@/types';
-import { useDetailLayout } from '@/utils/uiPrefs';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
@@ -748,13 +747,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     e.preventDefault();
                     navigate(1);
                     break;
-                case 'e':
-                case 'E':
-                    if (!e.metaKey && !e.ctrlKey && !e.altKey) {
-                        e.preventDefault();
-                        setIsSideSheetVisible(!isSideSheetVisible);
-                    }
-                    break;
                 case 'a':
                 case 'A':
                     if (!e.metaKey && !e.ctrlKey && !e.altKey && isSideSheetVisible) {
@@ -789,20 +781,23 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [navigate, confirm, onDelete, onDownload, selectedId, onBack, actions, isSideSheetVisible, setIsSideSheetVisible, state.sideSheetMode]);
 
-    // Anordnung: nebeneinander, untereinander oder Vollbild. Auf schmalen
-    // Geraeten gilt immer untereinander.
-    const detailLayout = useDetailLayout();
-    // Die Zeilenanordnung gilt nur, SOLANGE die Eingabe sichtbar ist. Im
-    // Vollbild gibt es nichts zu teilen: Dort soll das Bild die ganze Flaeche
-    // bekommen und mittig darin stehen.
-    const isRowLayout = !isMobile && detailLayout === 'row' && isSideSheetActuallyVisible;
+    /*
+        Eine Ansicht, kein Umschalter.
+
+        Es gab drei: Spalten, Zeilen, Vollbild. Drei Anordnungen fuer eine
+        Seite heisst, dass zwei davon schlechter sind als die dritte — und dass
+        jede Aenderung an der Detailansicht dreimal gedacht und dreimal
+        getestet werden muss. Auf dem Desktop steht das Blatt links, das Bild
+        daneben, fertig. Auf schmalen Geraeten untereinander, weil nebeneinander
+        dort nicht geht.
+    */
 
     /**
      * Die schwebende Insel: nur dort, wo das Blatt seinen eigenen Kopf traegt
      * (Desktop, Spaltenansicht). Im Zeilenmodus liegt es als Leiste unter dem
      * Bild — eine Insel ueber die ganze Breite waere keine mehr.
      */
-    const isIsland = !!headerSlot && !isMobile && !isRowLayout;
+    const isIsland = !!headerSlot && !isMobile;
 
     /**
      * Breite des Seitenpanels — fest, nicht mehr ziehbar.
@@ -825,34 +820,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         ? 380
         : Math.round(Math.min(Math.max(window.innerWidth * 0.30, 360), 480));
 
-    /**
-     * Hoehe des Bildbereichs im Zeilenmodus.
-     *
-     * Das Bild sitzt buendig unter der Leiste und nimmt die volle Breite; seine
-     * Hoehe folgt daraus. Die Eingabe rueckt direkt darunter — es bleibt kein
-     * Streifen dazwischen, und bei einem 4:3-Bild ist der Bereich genau so hoch
-     * wie das Bild.
-     *
-     * Zweite Grenze fuer Hochformate: Sonst fuellte ein 3:4-Bild bei voller
-     * Breite den ganzen Bildschirm und die Eingabe waere nicht mehr zu sehen.
-     */
-    const [rowImageHeight, setRowImageHeight] = useState<number | undefined>(undefined);
-    useEffect(() => {
-        if (!isRowLayout) { setRowImageHeight(undefined); return; }
-        const compute = () => {
-            const el = mainRef.current;
-            if (!el || !imgNaturalDims.width || !imgNaturalDims.height) return;
-            const byWidth = el.clientWidth * imgNaturalDims.height / imgNaturalDims.width;
-            const maxH = Math.max(220, el.clientHeight - MIN_PANEL_HEIGHT);
-            setRowImageHeight(Math.round(Math.min(byWidth, maxH)));
-        };
-        compute();
-        const el = mainRef.current;
-        const obs = el ? new ResizeObserver(compute) : null;
-        if (el && obs) obs.observe(el);
-        window.addEventListener('resize', compute);
-        return () => { obs?.disconnect(); window.removeEventListener('resize', compute); };
-    }, [isRowLayout, imgNaturalDims.width, imgNaturalDims.height]);
 
     const MIN_PANEL_HEIGHT = 200;
 
@@ -876,7 +843,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-[#121214]">
             {/* Removed internal header - handled by AppNavbar */}
 
-            <main ref={mainRef} className={`flex-1 flex flex-col ${isRowLayout ? '' : 'md:flex-row'} md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+            {/* Auf schmalen Geraeten scrollt die SEITE, nicht ein Kasten darin:
+                Bild oben, Blatt darunter, ein Scrollbereich fuer alles. Auf dem
+                Desktop stehen beide nebeneinander und nichts scrollt ausser dem
+                Blatt selbst. */}
+            <main ref={mainRef} className={`flex-1 flex flex-col md:flex-row md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
                 {/* Canvas Area — mobile brush: flex-1 (fills screen); mobile normal: fixed aspect-ratio height; desktop: flex-1 */}
                 <div
                     className={`flex flex-col bg-zinc-100 dark:bg-[#121214] relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
@@ -891,23 +862,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                 >
                     {/* Image Container */}
                     <div
-                        className={`relative overflow-hidden min-h-0 ${isRowLayout ? 'shrink-0' : 'flex-1'}`}
-                        style={isRowLayout && rowImageHeight ? { height: `${rowImageHeight}px` } : undefined}
+                        className="relative overflow-hidden min-h-0 flex-1"
                     >
-
-                        {/* Der Weg zurueck, wenn das Blatt zu ist.
-                            Mit dem Kopf im Blatt verschwindet im Vollbild sonst auch
-                            der Zurueck-Knopf — und eine Ansicht, aus der man nur
-                            ueber die Tastatur herauskommt, ist eine Sackgasse. */}
-                        {headerSlot && !isSideSheetActuallyVisible && state.sideSheetMode !== 'brush' && (
-                            <div className="absolute top-5 left-5 z-40 transition-opacity duration-200 opacity-60 group-hover:opacity-100">
-                                <Tooltip text={t('back')} side="right">
-                                    <button onClick={onBack} aria-label={t('back')} className={FLOATING_BTN_ICON}>
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </button>
-                                </Tooltip>
-                            </div>
-                        )}
 
                         {/* Blaettern: an den Seiten, senkrecht in der Mitte des Bildes.
                             Beide Pfeile bleiben stehen und werden am Rand der Liste nur
@@ -970,13 +926,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             >
                                                 <Repeat className="w-3.5 h-3.5" />
                                                 {t('nav_more')}
-                                            </button>
-                                        </Tooltip>
-                                    )}
-                                    {!isSideSheetVisible && !showBlob && (
-                                        <Tooltip text={t('open_editing_panel')} shortcut="E">
-                                            <button onClick={() => setIsSideSheetVisible(true)} className={FLOATING_BTN}>
-                                                {t('nav_edit')}
                                             </button>
                                         </Tooltip>
                                     )}
@@ -1289,38 +1238,25 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             ? `md:order-first md:m-4 md:rounded-[20px] ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowSm}
                                 ring-1 ring-black/[0.035] dark:ring-white/[0.03]
                                 md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
-                            : 'bg-white dark:bg-zinc-950'}
-                        ${!isSideSheetActuallyVisible && (isMobile || isRowLayout || isIsland) ? 'hidden' : ''}`}
+                            // Schmale Geraete: keine eigene Flaeche. Das Blatt ist dort
+                            // kein Blatt, sondern die Fortsetzung der Seite unter dem
+                            // Bild — ein eigener Untergrund waere eine Kante, die nichts
+                            // trennt.
+                            : 'bg-transparent'}
+                        ${!isSideSheetActuallyVisible && isIsland ? 'hidden' : ''}`}
                     style={isMobile
                         ? undefined
-                        : isRowLayout
-                            // Keine gesetzte Hoehe: Die Leiste nimmt, was das Bild
-                            // uebrig laesst. Damit rueckt sie unmittelbar an das
-                            // Bild heran, und es gibt nichts mehr zu ziehen.
-                            //
-                            // Ausgeblendet wird sie ueber `hidden` in der
-                            // Klassenliste, nicht ueber eine Hoehe von 0: Im
-                            // Seitenmodus schrumpft eine Breite sichtbar zusammen,
-                            // hier gibt es nichts zu schrumpfen — die Leiste
-                            // bekommt ihre Hoehe vom uebrigen Platz, und 0 waere
-                            // wirkungslos geblieben. Genau daran lag es, dass
-                            // Ausblenden im Zeilenmodus nichts tat.
-                            ? { width: '100%' }
-                            : {
-                                width: isSideSheetActuallyVisible ? SIDEBAR_WIDTH : '0px',
-                                // Mit Kopf im Blatt faengt das Blatt oben an.
-                                // Die frühere Ausrichtung auf die Bildoberkante galt
-                                // der Eingabekarte — ein Kopf, der mittig im Nichts
-                                // schwebt, waere das Gegenteil eines Bezugspunkts.
-                                paddingTop: headerSlot ? 0 : Math.max(0, imageTopOffset - PANEL_INNER_PT),
-                            }}
+                        : {
+                            width: isSideSheetActuallyVisible ? SIDEBAR_WIDTH : '0px',
+                            // Mit Kopf im Blatt faengt das Blatt oben an.
+                            paddingTop: headerSlot ? 0 : Math.max(0, imageTopOffset - PANEL_INNER_PT),
+                        }}
                 >
                     {/* Resizer Handle — desktop only */}
 
                     <SideSheet
                         key={state.selectedImage?.id ?? 'no-selection'}
-                        width={isMobile || isRowLayout ? '100%' : `${SIDEBAR_WIDTH_PX}px`}
-                        rowLayout={isRowLayout}
+                        width={isMobile ? '100%' : `${SIDEBAR_WIDTH_PX}px`}
                         disableMobileSheet={isMobile}
                         selectedImage={state.selectedImage}
                         selectedImages={state.selectedImages}
