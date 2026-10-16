@@ -78,29 +78,51 @@ function buildInstruction(lang: string): string {
     if (lang === 'en') {
         return [
             'You are looking at a photo an estate agent wants to retouch for a property listing.',
-            'Name 3 to 5 concrete edits that would improve THIS photo.',
+            'Name 3 to 4 edits that would lift THIS photo as a whole.',
+            '',
+            'Each suggestion is a comprehensive change to the whole scene, not a touch-up.',
+            'Where several aspects belong together, combine them into one suggestion:',
+            'lawn, planting and facade; sky, light and shadows; lighting, white balance and mood.',
+            '',
+            'Good: "Lush healthy lawn" — lawn evenly green and dense, beds tidy, paths clean.',
+            '"Sky with light clouds" — natural sky with soft clouds, light and shadows to match.',
+            '"All lamps on" — every lamp lit, warm even light, no dark corners.',
+            '"Completely empty" — all furniture and belongings gone, bare floor and walls.',
+            'Too small: "Tidy the table", "Straighten the cushions", "Switch on one lamp".',
             '',
             'Rules:',
             '- Only name what is actually visible in the photo. No generic advice.',
+            '- The result must look real, not like a postcard. No oversaturation, no drama.',
             '- Never remove defects, damage, cracks, damp patches or wear. They belong in the photo.',
             '- Do not add anything that is not there. Virtual staging only for visibly empty rooms.',
             '- No structural changes.',
             '- "label": the chip caption, at most 3 words, imperative.',
-            '- "line": one short, complete instruction for an image model, at most 14 words, no preamble.',
+            '- "line": the full instruction for an image model, 10 to 22 words, naming every aspect it covers.',
             '- If the photo needs nothing, return an empty list. An empty list is a valid answer.',
         ].join('\n');
     }
     return [
         'Du siehst ein Foto, das ein Makler fuer ein Exposé bearbeiten lassen will.',
-        'Nenne 3 bis 5 konkrete Bearbeitungen, die GENAU DIESES Foto besser machen.',
+        'Nenne 3 bis 4 Bearbeitungen, die GENAU DIESES Foto als Ganzes auf ein hoeheres Niveau heben.',
+        '',
+        'Jeder Vorschlag ist ein umfassender Eingriff in die ganze Szene, keine Retusche.',
+        'Was zusammengehoert, gehoert in EINEN Vorschlag:',
+        'Rasen, Bepflanzung und Fassade; Himmel, Licht und Schatten; Beleuchtung, Weissabgleich und Stimmung.',
+        '',
+        'Gut: "Rasen satt und gesund" — Rasen durchgehend gruen und dicht, Beete gepflegt, Wege sauber.',
+        '"Himmel mit Wolken" — natuerlicher Himmel mit leichten Wolken, Licht und Schatten passend dazu.',
+        '"Alle Lampen an" — jede Lampe leuchtet, warmes gleichmaessiges Licht, keine dunklen Ecken.',
+        '"Komplett leerraeumen" — saemtliche Moebel und Gegenstaende weg, nackter Boden und Waende.',
+        'Zu kleinteilig: "Tisch aufraeumen", "Kissen gerade ruecken", "eine Lampe einschalten".',
         '',
         'Regeln:',
         '- Nur was wirklich im Bild zu sehen ist. Keine allgemeinen Ratschlaege.',
+        '- Das Ergebnis muss echt aussehen, nicht wie eine Postkarte. Keine Uebersaettigung, kein Drama.',
         '- Niemals Maengel entfernen: keine Risse, Schaeden, Feuchteflecken, Abnutzung. Die gehoeren ins Bild.',
         '- Nichts hinzufuegen, was es nicht gibt. Moeblierung nur bei sichtbar leeren Raeumen.',
         '- Keine baulichen Veraenderungen.',
         '- "label": die Aufschrift des Chips, hoechstens 3 Woerter, Imperativ.',
-        '- "line": ein kurzer, vollstaendiger Auftrag an ein Bildmodell, hoechstens 14 Woerter, ohne Einleitung.',
+        '- "line": der vollstaendige Auftrag an ein Bildmodell, 10 bis 22 Woerter, der jeden erfassten Aspekt nennt.',
         '- Gibt das Bild nichts her, gib eine leere Liste zurueck. Eine leere Liste ist eine gueltige Antwort.',
     ].join('\n');
 }
@@ -113,10 +135,10 @@ function sanitize(raw: unknown): Suggestion[] {
     const out: Suggestion[] = [];
     for (const item of raw) {
         const label = typeof item?.label === 'string' ? item.label.trim().slice(0, 40) : '';
-        const line = typeof item?.line === 'string' ? item.line.trim().replace(/\s+/g, ' ').slice(0, 160) : '';
+        const line = typeof item?.line === 'string' ? item.line.trim().replace(/\s+/g, ' ').slice(0, 220) : '';
         if (!label || !line) continue;
         out.push({ label, line });
-        if (out.length >= 5) break;
+        if (out.length >= 4) break;
     }
     return out;
 }
@@ -179,8 +201,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Kein Treffer heisst: fremdes oder geloeschtes Bild. RLS hat entschieden.
         if (!row) return res.status(404).json({ error: 'Image not found' });
 
+        /*
+            Fassung 2: Die erste Fassung fragte nach "konkreten Bearbeitungen" und
+            bekam entsprechend Kleinkram — Tisch aufraeumen, Kissen richten. Wer
+            schon Vorschlaege hat, bekommt mit dieser Zahl neue.
+        */
         const cached = row.edit_suggestions as { v?: number; lang?: string; items?: unknown } | null;
-        if (cached && cached.v === 1 && cached.lang === lang && Array.isArray(cached.items)) {
+        if (cached && cached.v === 2 && cached.lang === lang && Array.isArray(cached.items)) {
             return res.status(200).json({ suggestions: cached.items, cached: true });
         }
 
@@ -233,7 +260,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
          */
         const { error: writeError } = await supabase
             .from('images')
-            .update({ edit_suggestions: { v: 1, lang, items: suggestions } })
+            .update({ edit_suggestions: { v: 2, lang, items: suggestions } })
             .eq('id', imageId);
 
         if (writeError) {
