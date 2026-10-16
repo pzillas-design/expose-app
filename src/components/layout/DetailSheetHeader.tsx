@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, Download, Repeat, AudioLines, MicOff } from 'lucide-react';
+import { ChevronLeft, Download, Repeat, AudioLines, MicOff, MoreHorizontal } from 'lucide-react';
 import { RoundIconButton } from '@/components/ui/DesignSystem';
 import { DropdownMenu, type DropdownItem } from '@/components/ui/DropdownMenu';
-import { MenuLines } from '@/components/ui/CustomIcons';
 import { buildDetailMenuItems } from '@/components/layout/detailMenu';
 import type { DetailLayout } from '@/utils/uiPrefs';
 
@@ -79,8 +78,8 @@ export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
 
             {/* Name und Version: die Version abgedunkelt daneben, nicht als
                 eigener Eintrag — sie beschreibt den Namen, sie ersetzt ihn nicht. */}
-            <div className="flex-1 min-w-0 pt-[7px] px-1">
-                <div className="flex items-baseline gap-1.5">
+            <div className="flex-1 min-w-0 flex items-center gap-0.5 pl-1">
+                <div className="min-w-0 flex items-baseline gap-1.5">
                     <span className="text-[15px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                         {title}
                     </span>
@@ -88,6 +87,40 @@ export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
                         <span className="text-[15px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
                             {version}
                         </span>
+                    )}
+                </div>
+                {/* Drei Punkte, nicht zwei Striche, und direkt hinter dem Namen:
+                    Das Menue gilt DIESEM Bild. Zwei Striche sind in dieser
+                    Anwendung das Zeichen fuer das Globale — am rechten Rand und
+                    mit dem Hamburger haette es nach Anwendungsmenue ausgesehen. */}
+                <div className="relative" ref={menuRef}>
+                    <RoundIconButton
+                        icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
+                        onClick={() => setIsMenuOpen(p => !p)}
+                        variant="ghost"
+                        active={isMenuOpen}
+                        tooltip={t('nav_menu')}
+                    />
+                    {isMenuOpen && (
+                        <div className="absolute top-full mt-2 left-0 z-50">
+                            <DropdownMenu
+                                items={buildDetailMenuItems({
+                                    t,
+                                    hasPrompt,
+                                    isMobile: false,
+                                    isSideSheetVisible,
+                                    detailLayout,
+                                    setDetailLayout,
+                                    onToggleSideSheet,
+                                    onRegenerate,
+                                    onDownload,
+                                    onInfo,
+                                    onDelete,
+                                    voiceItems,
+                                    close: () => setIsMenuOpen(false),
+                                })}
+                            />
+                        </div>
                     )}
                 </div>
             </div>
@@ -111,36 +144,6 @@ export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
                 />
             )}
 
-            <div className="relative" ref={menuRef}>
-                <RoundIconButton
-                    icon={<MenuLines className="w-[18px] h-[18px]" />}
-                    onClick={() => setIsMenuOpen(p => !p)}
-                    variant="ghost"
-                    active={isMenuOpen}
-                    tooltip={t('nav_menu')}
-                />
-                {isMenuOpen && (
-                    <div className="absolute top-full mt-2 right-0 z-50">
-                        <DropdownMenu
-                            items={buildDetailMenuItems({
-                                t,
-                                hasPrompt,
-                                isMobile: false,
-                                isSideSheetVisible,
-                                detailLayout,
-                                setDetailLayout,
-                                onToggleSideSheet,
-                                onRegenerate,
-                                onDownload,
-                                onInfo,
-                                onDelete,
-                                voiceItems,
-                                close: () => setIsMenuOpen(false),
-                            })}
-                        />
-                    </div>
-                )}
-            </div>
         </div>
     );
 };
