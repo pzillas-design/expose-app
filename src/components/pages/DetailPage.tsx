@@ -1040,7 +1040,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                                         ? { animation: `detail-img-swipe-${transition} 260ms cubic-bezier(0.25,1,0.5,1) both` }
                                                         : suppressEntryAnimRef.current
                                                             ? {}
-                                                            : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }
+                                                                                            // Der Eintritt in die Ansicht: deutlicher und
+                                                            // weicher auslaufend als frueher (0.96 in 220 ms
+                                                            // sah man kaum). Das Bild kommt aus einer Kachel,
+                                                            // es soll sichtbar ankommen.
+                                                            : { animation: 'detail-enter 380ms cubic-bezier(0.16,1,0.3,1) both' }
                                                 }
                                                 alt=""
                                             />
@@ -1275,7 +1279,8 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     */
                     className={`flex flex-col relative md:overflow-hidden md:shrink-0 md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none
                         ${isIsland
-                            ? `md:order-first md:m-4 md:rounded-[20px] ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowSm}`
+                            ? `md:order-first md:m-4 md:rounded-[20px] ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowSm}
+                                md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_both]`
                             : 'bg-white dark:bg-zinc-950'}
                         ${!isSideSheetActuallyVisible && (isMobile || isRowLayout || isIsland) ? 'hidden' : ''}`}
                     style={isMobile

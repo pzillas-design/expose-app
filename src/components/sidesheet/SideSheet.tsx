@@ -1249,7 +1249,11 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                             // die Raender — das Paar zu begrenzen haette das auf
                             // breiten Schirmen nicht verhindert.
                             ? 'w-full grid grid-cols-[minmax(0,760px)_minmax(240px,320px)] justify-center gap-x-8 gap-y-5 items-start'
-                            : 'flex flex-col gap-5'}
+                            // min-h-full, damit "nach unten andocken" einen Boden hat,
+                            // gegen den es andocken kann: Ohne das ist die Spalte nur
+                            // so hoch wie ihr Inhalt, und mt-auto haette nichts, was es
+                            // auseinanderschieben koennte.
+                            : 'flex flex-col gap-5 min-h-full'}
                     >
 
                     <>
@@ -1592,15 +1596,19 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                 Sie kommen nacheinander herein, nicht alle
                                                                 auf einmal: Das ist der Unterschied zwischen
                                                                 "war schon immer da" und "wurde gerade fuer
-                                                                dieses Bild gefunden". 70 ms Versatz reichen
-                                                                dafuer — mehr waere eine Vorfuehrung.
+                                                                dieses Bild gefunden".
+
+                                                                60 ms Versatz, 420 ms Dauer, und eine Kurve,
+                                                                die schnell anfaengt und weich auslaeuft. Die
+                                                                vorige Fassung lief kurz und gleichfoermig —
+                                                                das wirkte stockend, weil jeder Chip fuer sich
+                                                                anhielt, statt dass die Reihe durchlaeuft.
                                                             */}
                                                             <button
                                                                 type="button"
                                                                 onClick={e => { e.preventDefault(); toggleSuggestionLine(sug.line); }}
-                                                                style={{ animationDelay: `${i * 70}ms` }}
-                                                                className={`${TEMPLATE_CHIP} ${active ? TEMPLATE_CHIP_OPEN : ''}
-                                                                    animate-in fade-in slide-in-from-bottom-1 duration-300 fill-mode-backwards`}
+                                                                style={{ animation: `chip-in 420ms cubic-bezier(0.16,1,0.3,1) ${i * 60}ms both` }}
+                                                                className={`${TEMPLATE_CHIP} ${active ? TEMPLATE_CHIP_OPEN : ''}`}
                                                             >
                                                                 {sug.label}
                                                             </button>
@@ -1612,7 +1620,20 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                     </div>
                                 )}
 
-                                <div className="pt-1 text-zinc-800 dark:text-zinc-200">
+                                {/*
+                                    Die Vorlagen sitzen unten am Rand des Blattes.
+
+                                    Sie sind das, wonach man greift, nicht das, was man
+                                    liest — und griffbereit heisst am Rand, nicht in der
+                                    Mitte einer Spalte. Der freie Platz sammelt sich
+                                    darueber, zwischen dem, was man schreibt, und dem,
+                                    womit man es tut.
+
+                                    Reicht der Inhalt nicht bis unten, schiebt mt-auto
+                                    ihn dorthin; reicht er darueber hinaus, scrollt das
+                                    Blatt wie zuvor.
+                                */}
+                                <div className="pt-1 mt-auto text-zinc-800 dark:text-zinc-200">
                                     <div className="pt-1 pb-2.5">
                                         <Eyebrow muted>{t('presets_label')}</Eyebrow>
                                     </div>

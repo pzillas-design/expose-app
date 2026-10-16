@@ -227,6 +227,75 @@ html:not(.dark) {
   }
 }
 
+/*
+ * Die Vorschlaege der KI kommen herein.
+ *
+ * Eine Kurve, die schnell anfaengt und weich auslaeuft (0.16,1,0.3,1): Das
+ * liest sich als "ist angekommen", waehrend eine gleichfoermige Bewegung
+ * stockend wirkt. Dazu ein Hauch Massstab — ohne ihn sieht ein reines
+ * Hochschieben nach Liste aus, nicht nach Einsetzen.
+ */
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Das Blatt kommt von seiner Seite herein, nicht aus dem Nichts. */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/*
+ * Der Eintritt in die Detailansicht.
+ *
+ * Deutlicher als das frueher benutzte detail-img-in (0.96 in 220 ms, was man
+ * kaum sah) und langsamer auslaufend: Das Bild kommt aus der Kachel, es soll
+ * sichtbar ankommen.
+ */
+@keyframes detail-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.93);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes chip-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes sheet-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes detail-enter {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
 @keyframes detail-img-in {
   from {
     opacity: 0;
