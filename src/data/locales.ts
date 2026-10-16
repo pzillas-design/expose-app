@@ -430,7 +430,7 @@ export const translations = {
 
     // SideSheet annotation chips
     annotations_label: "Annotations",
-    brush_label: "Brush marks",
+    brush_label: "Marks",
     shape_rect: "Rect",
     shape_circle: "Circle",
     shape_line: "Line",
@@ -1004,7 +1004,7 @@ export const translations = {
 
     // SideSheet annotation chips
     annotations_label: "Anmerkungen",
-    brush_label: "Pinselstriche",
+    brush_label: "Markierungen",
     shape_rect: "Rechteck",
     shape_circle: "Kreis",
     shape_line: "Linie",
