@@ -873,13 +873,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     if (!img) return null;
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
+        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-100 dark:bg-[#121214]">
             {/* Removed internal header - handled by AppNavbar */}
 
             <main ref={mainRef} className={`flex-1 flex flex-col ${isRowLayout ? '' : 'md:flex-row'} md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
                 {/* Canvas Area — mobile brush: flex-1 (fills screen); mobile normal: fixed aspect-ratio height; desktop: flex-1 */}
                 <div
-                    className={`flex flex-col bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
+                    className={`flex flex-col bg-zinc-100 dark:bg-[#121214] relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
                     style={isMobile && state.sideSheetMode !== 'brush'
                         ? {
                             height: (imgNaturalDims.width ?? 0) > 0 && (imgNaturalDims.height ?? 0) > 0
@@ -999,7 +999,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // oben aus, damit es mit der Eingabe daneben auf einer
                             // Linie beginnt. Das war die falsche Haelfte: Buendig
                             // werden soll die Box, nicht das Bild.
-                            className="absolute inset-0 flex justify-center items-center"
+                            // Mit Insel: linksbuendig, damit das Bild unmittelbar an
+                            // das Blatt heranrueckt. Mittig blieb zwischen beiden ein
+                            // Streifen leeren Grundes stehen, der nach Luecke aussah
+                            // und nicht nach Rand. Ohne Insel wie bisher mittig.
+                            className={`absolute inset-0 flex items-center ${isIsland ? 'justify-start' : 'justify-center'}`}
                             style={state.sideSheetMode === 'brush' ? { paddingBottom: BRUSH_BOTTOM_RESERVE } : undefined}
                         >
                             {displayBox.width > 0 && displayBox.height > 0 && (
@@ -1283,7 +1287,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // ist ein Unterschied von drei Prozent Helligkeit — der
                             // Schatten allein traegt die Kante dort nicht.
                             ? `md:order-first md:m-4 md:rounded-[20px] ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowSm}
-                                ring-1 ring-black/[0.06] dark:ring-white/[0.05]
+                                ring-1 ring-black/[0.035] dark:ring-white/[0.03]
                                 md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
                             : 'bg-white dark:bg-zinc-950'}
                         ${!isSideSheetActuallyVisible && (isMobile || isRowLayout || isIsland) ? 'hidden' : ''}`}
