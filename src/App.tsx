@@ -6,7 +6,7 @@ import { useModalStack } from '@/components/ui/ModalStack';
 import { useNanoController } from '@/hooks/useNanoController';
 import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
 import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
-import { imageNameOf, imageSuffixOf } from '@/utils/imageName';
+import { imageNameOf } from '@/utils/imageName';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { DetailSheetHeader } from '@/components/layout/DetailSheetHeader';
 import { GenerationProgressRing } from '@/components/ui/GenerationProgressRing';
@@ -1129,7 +1129,7 @@ export function App() {
         <DetailSheetHeader
             t={t}
             title={imageNameOf(detailImage).base || 'Untitled'}
-            version={imageSuffixOf(detailImage) || undefined}
+            version={imageNameOf(detailImage).version ? `v${imageNameOf(detailImage).version}` : undefined}
             onBack={handleBackToFeed}
             onDownload={() => actions.handleDownload(detailImage.id)}
             onRegenerate={() => actions.handleGenerateMore(detailImage.id)}
@@ -1252,8 +1252,8 @@ export function App() {
                         if (!location.pathname.startsWith('/image/')) return undefined;
                         const id = location.pathname.split('/').pop();
                         const img = allImages.find(i => i.id === id);
-                        // Fassung und Endung aus derselben Stelle wie im Blatt.
-                        return (img ? imageSuffixOf(img) : '') || undefined;
+                        const v = img ? imageNameOf(img).version : null;
+                        return v ? `v${v}` : undefined;
                     })()}
                     groupInfo={(() => {
                         if (expandedGroupId) {

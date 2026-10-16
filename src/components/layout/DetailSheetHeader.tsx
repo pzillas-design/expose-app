@@ -71,38 +71,48 @@ export const DetailSheetHeader: React.FC<DetailSheetHeaderProps> = ({
                 tooltip={t('back')}
             />
 
-            {/* Name und Version: die Version abgedunkelt daneben, nicht als
-                eigener Eintrag — sie beschreibt den Namen, sie ersetzt ihn nicht. */}
-            <div className="flex-1 min-w-0 flex items-center gap-0.5 pl-1">
-                <div className="min-w-0 flex items-baseline gap-1.5">
-                    <span className="text-[15px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
-                        {title}
-                    </span>
-                    {version && (
-                        <span className="text-[15px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
-                            {version}
-                        </span>
-                    )}
-                </div>
-                {/* Drei Punkte, nicht zwei Striche, und direkt hinter dem Namen:
-                    Das Menue gilt DIESEM Bild. Zwei Striche sind in dieser
-                    Anwendung das Zeichen fuer das Globale — am rechten Rand und
-                    mit dem Hamburger haette es nach Anwendungsmenue ausgesehen. */}
-                <div className="relative" ref={menuRef}>
-                    <RoundIconButton
-                        icon={<MoreHorizontal className="w-[18px] h-[18px]" />}
+            {/*
+                Name, Fassung und die drei Punkte sind EIN Knopf.
+
+                Vorher standen sie nebeneinander, und nur die Punkte waren
+                anzutippen — ein Ziel von 40 Pixeln neben einem Namen, der
+                aussah, als gehoerte er dazu, aber nichts tat. Jetzt ist der
+                ganze Zug der Knopf; beim Darueberfahren faerbt er sich ein und
+                zeigt das. Die Fassung steht dicht am Namen, ohne Luecke:
+                "5 v6" ist eine Angabe, nicht zwei.
+            */}
+            <div className="flex-1 min-w-0 flex items-center pl-2.5" ref={menuRef}>
+                <div className="relative min-w-0">
+                    <button
+                        type="button"
                         onClick={() => setIsMenuOpen(p => !p)}
-                        variant="ghost"
-                        active={isMenuOpen}
-                        tooltip={t('nav_menu')}
-                    />
+                        aria-label={t('nav_menu')}
+                        className={`group inline-flex items-center gap-1.5 max-w-full h-10 pl-3.5 pr-2 rounded-full
+                            transition-colors duration-150
+                            ${isMenuOpen ? 'bg-black/[0.07] dark:bg-white/[0.10]' : 'hover:bg-black/[0.05] dark:hover:bg-white/[0.07]'}`}
+                    >
+                        <span className="min-w-0 flex items-baseline gap-1">
+                            <span className="text-[15px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
+                                {title}
+                            </span>
+                            {version && (
+                                <span className="text-[15px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                                    {version}
+                                </span>
+                            )}
+                        </span>
+                        <MoreHorizontal className={`w-[18px] h-[18px] shrink-0 transition-colors
+                            ${isMenuOpen
+                                ? 'text-zinc-900 dark:text-zinc-100'
+                                : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'}`} />
+                    </button>
                     {isMenuOpen && (
                         <div className="absolute top-full mt-2 left-0 z-50">
                             <DropdownMenu
                                 items={buildDetailMenuItems({
                                     t,
                                     hasPrompt,
-                                                        onRegenerate,
+                                    onRegenerate,
                                     onDownload,
                                     onInfo,
                                     onDelete,

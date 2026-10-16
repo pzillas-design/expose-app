@@ -73,33 +73,3 @@ export const parseUploadName = (fileName: string): { base: string; version: numb
     if (!base) return { base: withoutExt, version: 1 };
     return { base, version: version >= 1 ? version : 1 };
 };
-
-/**
- * Die Dateiendung, aus dem Ablagepfad gelesen.
- *
- * Nicht aus dem Titel: Der traegt bei uns nie eine Endung, der Pfad immer
- * ("…/variante4_aacc7d47.jpg"). Kleingeschrieben, damit nicht mal .JPG und
- * mal .jpg dasteht, und auf vier Zeichen begrenzt — was laenger ist, ist
- * keine Endung, sondern ein Punkt im Dateinamen.
- */
-export const imageExtOf = (
-    img: Pick<CanvasImage, 'storage_path' | 'title'> | null | undefined,
-): string => {
-    const path = img?.storage_path || img?.title || '';
-    const m = /\.([A-Za-z0-9]{2,4})$/.exec(path);
-    return m ? `.${m[1].toLowerCase()}` : '';
-};
-
-/**
- * Was abgedunkelt hinter dem Namen steht: Fassung und Endung.
- *
- * Beides sagt etwas ueber die Datei, nicht ueber ihren Inhalt — deshalb
- * stehen sie zusammen, in einem Ton, und deshalb gibt es diese eine Stelle,
- * die sie zusammensetzt, statt zweier Anzeigen, die es jede anders machen.
- */
-export const imageSuffixOf = (
-    img: Pick<CanvasImage, 'title' | 'baseName' | 'version' | 'storage_path'> | null | undefined,
-): string => {
-    const { version } = imageNameOf(img);
-    return [version ? `v${version}` : '', imageExtOf(img)].filter(Boolean).join(' ');
-};
