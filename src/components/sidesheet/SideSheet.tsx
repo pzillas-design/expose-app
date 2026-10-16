@@ -98,6 +98,25 @@ const PANEL_PAD_Y = 24;
  * sitzt der Chip auf hellem wie dunklem Grund gleich, und er passt zu den
  * Ablageflaechen und dem Kachel-Abzeichen.
  */
+/**
+ * Die runden Knoepfe in der Eingabezeile (Referenz, Markieren, Einstellungen).
+ *
+ * Vorher trug jeder seine eigene Kette mit eigenen Deckkraeften — 5 % hier,
+ * 10 % dort — und keine davon entsprach den runden Knoepfen im Kopf des
+ * Blattes. Jetzt eine Angabe, mit denselben Werten wie die uebrigen Flaechen
+ * dieses Panels, und einer Trefferflaeche, die sechs Pixel ueber den
+ * sichtbaren Kreis hinausgeht.
+ */
+const PROMPT_ICON_BTN = `relative w-10 h-10 flex items-center justify-center rounded-full shrink-0
+    transition-colors duration-150 disabled:opacity-40
+    before:content-[''] before:absolute before:-inset-1.5 before:rounded-full`;
+
+const PROMPT_ICON_BTN_IDLE = `bg-black/[0.06] dark:bg-white/[0.08] text-zinc-600 dark:text-zinc-300
+    hover:bg-black/[0.10] dark:hover:bg-white/[0.12] hover:text-zinc-900 dark:hover:text-zinc-100`;
+
+/** Eingeschaltet: dieselbe Flaeche, nur kraeftiger — wie bei den Chips. */
+const PROMPT_ICON_BTN_ON = `bg-black/[0.14] dark:bg-white/[0.18] text-zinc-900 dark:text-white`;
+
 const ANNOTATION_CHIP = `inline-flex items-center gap-2 pl-[18px] pr-2.5 py-2.5 rounded-full text-[14px] font-medium
     bg-black/[0.06] dark:bg-white/[0.08] text-zinc-600 dark:text-zinc-300
     hover:bg-black/[0.10] dark:hover:bg-white/[0.12] hover:text-zinc-900 dark:hover:text-zinc-100
@@ -1430,7 +1449,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         onClick={() => { setViewingRefAnn(null); setInspirationInitialSrc(null); setIsInspirationOpen(true); }}
                                                         disabled={selectedImage?.isGenerating}
                                                         data-voice-action="open-reference-image-picker"
-                                                        className="relative w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-colors disabled:opacity-40"
+                                                        className={`${PROMPT_ICON_BTN} ${PROMPT_ICON_BTN_IDLE}`}
                                                     >
                                                         <Camera className="w-4 h-4" />
                                                         {/* 16 Pixel waren fuer eine Ziffer mit Fettschrift zu eng,
@@ -1461,7 +1480,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                         onClick={() => onModeChange(sideSheetMode === 'brush' ? 'prompt' : 'brush')}
                                                         disabled={selectedImage?.isGenerating || isMulti}
                                                         data-voice-action="toggle-annotation-mode"
-                                                        className={`relative w-10 h-10 flex items-center justify-center rounded-full transition-colors disabled:opacity-40 ${sideSheetMode === 'brush' ? 'bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white' : 'bg-black/5 dark:bg-white/5 text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
+                                                        className={`${PROMPT_ICON_BTN} ${sideSheetMode === 'brush' ? PROMPT_ICON_BTN_ON : PROMPT_ICON_BTN_IDLE}`}
                                                     >
                                                         <Pen className="w-4 h-4" />
                                                     </button>
@@ -1508,7 +1527,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                     <button
                                                         onClick={() => { dismissModelHint(); setIsSettingsModalOpen(true); }}
                                                         aria-label={lang === 'de' ? 'Bild-Einstellungen' : 'Image settings'}
-                                                        className="h-10 w-10 flex items-center justify-center rounded-full text-zinc-700 dark:text-zinc-300 hover:bg-black/10 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-zinc-100 bg-black/5 dark:bg-white/5 transition-colors"
+                                                        className={`${PROMPT_ICON_BTN} ${PROMPT_ICON_BTN_IDLE}`}
                                                     >
                                                         <Settings2 className="w-4 h-4" />
                                                     </button>

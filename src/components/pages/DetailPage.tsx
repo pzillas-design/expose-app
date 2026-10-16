@@ -1279,7 +1279,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     */
                     className={`flex flex-col relative md:overflow-hidden md:shrink-0 md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none
                         ${isIsland
+                            // Im hellen Modus eine Haarlinie dazu: Weiss auf Zink-50
+                            // ist ein Unterschied von drei Prozent Helligkeit — der
+                            // Schatten allein traegt die Kante dort nicht.
                             ? `md:order-first md:m-4 md:rounded-[20px] ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowSm}
+                                ring-1 ring-black/[0.06] dark:ring-white/[0.05]
                                 md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
                             : 'bg-white dark:bg-zinc-950'}
                         ${!isSideSheetActuallyVisible && (isMobile || isRowLayout || isIsland) ? 'hidden' : ''}`}

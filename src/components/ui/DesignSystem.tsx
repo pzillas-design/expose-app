@@ -280,7 +280,19 @@ export const Button: React.FC<ButtonProps> = ({
         // hier `text-white dark:text-zinc-950`: Dieselbe Flaeche trug je nach
         // Thema zwei verschiedene Schriftfarben, obwohl sie sich gar nicht
         // aendert — das war der eigentliche Fehler, nicht die Farbe selbst.
-        generate: `bg-gradient-to-r from-orange-500 to-red-600 text-zinc-900 shadow-sm hover:brightness-110`
+        /*
+            Heller Modus: weisse Schrift auf einem tieferen Verlauf.
+
+            Weiss auf orange-500 liegt bei 2,9:1 und faellt damit unter jede
+            Lesbarkeitsschwelle. Deshalb geht der Verlauf im hellen Modus eine
+            Stufe tiefer (orange-600 → red-700); dort traegt Weiss. Im dunklen
+            Modus bleibt es bei der dunklen Schrift auf dem helleren Verlauf —
+            die hat dort den besseren Kontrast, und der Knopf soll in beiden
+            Modi gleich stark aus der Flaeche treten, nicht gleich aussehen.
+        */
+        generate: `bg-gradient-to-r from-orange-600 to-red-700 text-white
+            dark:from-orange-500 dark:to-red-600 dark:text-zinc-900
+            shadow-sm hover:brightness-110`
     };
 
     const btn = (
