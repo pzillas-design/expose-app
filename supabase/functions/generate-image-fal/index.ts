@@ -423,6 +423,39 @@ Deno.serve(async (req) => {
             }
         }
 
+        /*
+            Die Haltung des Hauses — ein Satz, ganz am Ende.
+
+            Die Modelle kennen den Massstab nicht, nach dem ein Exposé beurteilt
+            wird. Ohne Hinweis liefern sie, was in ihren Daten als "bearbeitetes
+            Immobilienfoto" ueberwiegt: knallblauer Himmel, neongruener Rasen,
+            HDR-Saeume, uebersaettigtes Holz. Genau das, was man einem Bild
+            ansieht -- und was eine renommierte Agentur nicht verschickt.
+
+            Drei Entscheidungen, die diesen Zusatz ungefaehrlich halten sollen:
+
+            1. Er steht HINTEN. Was der Nutzer will, kommt zuerst; das hier ist
+               die Art der Ausfuehrung, nicht der Auftrag.
+            2. Er ist kurz und nennt Fehler statt Ideale. "Keine HDR-Saeume"
+               wirkt zuverlaessiger als "natuerlich und hochwertig", und ein
+               langer Stiltext verwaessert die eigentliche Anweisung.
+            3. Er gilt nur fuer Bearbeitungen mit Quellbild. Bei einer freien
+               Erzeugung ist der Stil Teil dessen, was der Nutzer beschreibt --
+               dort hineinzureden hiesse, ihm ins Wort zu fallen.
+
+            HOUSE_STYLE=off schaltet ihn ab, ohne Code zu aendern: Wenn er sich
+            als schaedlich erweist, soll er in einer Minute weg sein und nicht
+            erst nach einem Deploy.
+        */
+        const houseStyleEnabled = (Deno.env.get('HOUSE_STYLE') ?? 'on').toLowerCase() !== 'off';
+        const hasSourceForStyle = !!(sourceStoragePath || payloadOriginalImage || sourceImage?.src);
+        if (houseStyleEnabled && hasSourceForStyle && prompt.trim()) {
+            const HOUSE_STYLE = 'Keep it photoreal and restrained, as an architectural photographer would: '
+                + 'natural colours, one believable direction of light, clean edges. '
+                + 'No HDR halos, no oversaturation, no over-sharpening, no electric blue sky or neon lawn.';
+            prompt = `${prompt.trim()}\n\n${HOUSE_STYLE}`;
+        }
+
         // fal nano-banana-2/edit rejects empty prompts with HTTP 422 (string_too_short).
         // When the user triggers a generation with only an image (no base prompt, no
         // template variables), fall back to a generic edit instruction so fal accepts it.
