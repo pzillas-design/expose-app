@@ -262,15 +262,28 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         dem scrollenden Inhalt des Blattes — und beide schneiden ab, was ueber
         ihre Kante hinausragt. Das Menue war dadurch halb abgeschnitten.
     */
-    const [chipMenuPos, setChipMenuPos] = useState<{ right: number; bottom: number } | null>(null);
+    const [chipMenuPos, setChipMenuPos] = useState<{ left?: number; right?: number; bottom: number } | null>(null);
     const chipMenuRef = React.useRef<HTMLDivElement>(null);
     const chipMenuBtnRef = React.useRef<HTMLButtonElement>(null);
 
     const openChipMenu = React.useCallback(() => {
         const r = chipMenuBtnRef.current?.getBoundingClientRect();
         if (r) {
+            /*
+                Das Menue ist breiter als sein Knopf. Rechtsbuendig zu ihm
+                ausgerichtet ragt es nach links hinaus — und weil das Blatt
+                links sitzt, ueber den Fensterrand hinaus: Die Beschriftungen
+                waren abgeschnitten.
+
+                Deshalb: Steht der Knopf in der linken Haelfte, oeffnet das
+                Menue nach rechts, sonst nach links. Es wandert damit immer ins
+                Fenster hinein, nicht hinaus.
+            */
+            const openRight = r.left < window.innerWidth / 2;
             setChipMenuPos({
-                right: Math.max(8, window.innerWidth - r.right),
+                ...(openRight
+                    ? { left: Math.max(8, r.left) }
+                    : { right: Math.max(8, window.innerWidth - r.right) }),
                 bottom: Math.max(8, window.innerHeight - r.top + 8),
             });
         }
@@ -1757,7 +1770,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                             // Behaeltern mit Ueberlaufgrenze steckt.
                                                             <div
                                                                 ref={chipMenuRef}
-                                                                style={{ position: 'fixed', right: chipMenuPos.right, bottom: chipMenuPos.bottom }}
+                                                                style={{ position: 'fixed', left: chipMenuPos.left, right: chipMenuPos.right, bottom: chipMenuPos.bottom }}
                                                                 className="z-[1100]"
                                                             >
                                                                 <DropdownMenu
@@ -1779,17 +1792,22 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                         {
                                                                             label: t('edit_presets'),
                                                                             icon: <Settings2 className="w-4 h-4" />,
+                                                                            separator: true,
                                                                             onClick: () => { setIsChipMenuOpen(false); setEditingTemplate(null); setIsPresetModalOpen(true); },
                                                                         },
-                                                                        // Die uebrigen Vorlagen, seltener genutzt:
-                                                                        // erreichbar, ohne die Reihe zu fuellen.
+                                                                        /*
+                                                                            Die uebrigen Vorlagen — ohne Symbol.
+
+                                                                            Auf den Chips steht das Emoji der Vorlage oder
+                                                                            ein Lesezeichen; hier waere das eine dritte
+                                                                            Zeichensorte in einer Liste, die schon zwei
+                                                                            hat (Funke, Lesezeichen) und in der sie etwas
+                                                                            anderes bedeuten: Dort sagen sie "diese Sorte
+                                                                            Chip", hier hiessen sie "diese eine Vorlage".
+                                                                            Namen allein, abgesetzt durch den Abstand.
+                                                                        */
                                                                         ...hiddenTemplates.map((tpl, i) => ({
                                                                             label: tpl.title,
-                                                                            icon: tpl.emoji
-                                                                                ? <span className="text-sm">{tpl.emoji}</span>
-                                                                                : tpl.isCustom
-                                                                                    ? <Bookmark className="w-4 h-4" fill="currentColor" strokeWidth={0} />
-                                                                                    : undefined,
                                                                             separator: i === 0,
                                                                             onClick: () => { setIsChipMenuOpen(false); handleSelectTemplate(tpl); },
                                                                         })),
