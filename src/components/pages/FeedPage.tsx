@@ -255,8 +255,16 @@ interface FeedGridItemProps {
     hasGenerating?: boolean;
     /** Die Reihe hinter dieser Kachel — wird an onOpenGroup durchgereicht. */
     group?: ImageRow | null;
-    /** Waehlt alle Bilder dieses Stapels aus bzw. ab. Fehlt bei Einzelbildern. */
-    onToggleSelectStack?: () => void;
+    /**
+     * Waehlt alle Bilder dieses Stapels aus bzw. ab. Fehlt bei Einzelbildern.
+     *
+     * Nimmt die Reihe als Argument, aus demselben Grund wie onOpenGroup
+     * darueber: Eine je Kachel erzeugte Pfeilfunktion macht das memo() dieser
+     * Kachel wirkungslos — und dann rendert bei jedem Mauszeiger-Wechsel und
+     * bei jedem Scroll-Frame JEDE Stapelkachel der Galerie neu. Genau das war
+     * das Zappeln beim Scrollen.
+     */
+    onToggleSelectStack?: (row: ImageRow) => void;
     /**
      * Oeffnet den Stapel. Nimmt die Reihe als Argument, statt sie einzuschliessen:
      * Eine je Kachel neu erzeugte Pfeilfunktion macht memo() wirkungslos, und dann
@@ -289,6 +297,16 @@ interface FeedGridItemProps {
  * Zoom war zu sehen.
  */
 const ZOOM_RETURN_MS = 480;
+/**
+ * Der Startmassstab des Rueckkehr-Zooms. MUSS mit dem Keyframe
+ * feed-zoom-return uebereinstimmen.
+ *
+ * Stand hier fest als 1.28, waehrend der Keyframe laengst auf 1.16 gesenkt
+ * war: Die Kachel wurde einen Frame lang auf 1,28 gezeichnet und sprang dann
+ * auf 1,16, wo die Animation anfing. Genau dieser Sprung war beim Zurueck aus
+ * der Detailansicht zu sehen.
+ */
+const ZOOM_RETURN_FROM = 1.16;
 const ZOOM_RETURN_CLEAR_MS = ZOOM_RETURN_MS + 140;
 
 const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, group, onToggleSelectStack, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en', isSource = false }) => {
@@ -353,7 +371,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     // that occurs before the CSS animation engine kicks in.
                     // MUSS mit dem Keyframe feed-zoom-return übereinstimmen —
                     // sonst blitzt vor dem Start der Animation ein Zwischenwert auf.
-                    transform: 'scale(1.28)',
+                    transform: `scale(${ZOOM_RETURN_FROM})`,
                     opacity: 0.5,
                     animation: `feed-zoom-return ${ZOOM_RETURN_MS}ms cubic-bezier(0.25,1,0.5,1) both`,
                 }
@@ -535,10 +553,10 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                             visible={isMobile || isSelectMode || isSelected || isKeyboardActive}
                             label={currentLang === 'de' ? 'Stapel markieren' : 'Select stack'}
                             onClick={(e) => {
-                                if (isMobile || !onToggleSelectStack) return;
+                                if (isMobile || !onToggleSelectStack || !group) return;
                                 e.stopPropagation();
                                 e.preventDefault();
-                                onToggleSelectStack();
+                                onToggleSelectStack(group);
                             }}
                         />
                     )}
@@ -632,6 +650,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // state clears and scrollRef finally gets attached to the DOM.
     const [gradientOp, setGradientOp] = React.useState(1);
     const [scrollP, setScrollP] = React.useState(0);
+    /** Zuletzt gemeldete Stufe — darunter wird nicht neu gerendert. */
+    const lastPRef = React.useRef(-1);
     const hasImages = images.length > 0;
     React.useEffect(() => {
         if (!onScrollProgress) return;
@@ -639,14 +659,32 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (!el) return;
         const HERO_SCROLL_DISTANCE = 120; // must match TOP_PAD(20) + BOT_EXTRA(100) in AppNavbar hero mode
         // Reset to 0 whenever we (re-)attach so the header snaps to expanded state
-        const p0 = Math.min(el.scrollTop / HERO_SCROLL_DISTANCE, 1);
+        const p0 = Math.round(Math.min(el.scrollTop / HERO_SCROLL_DISTANCE, 1) * 50) / 50;
+        lastPRef.current = p0;
         onScrollProgress(p0);
         setScrollP(p0);
         setGradientOp(Math.max(1 - p0 * 1.3, 0));
+        /*
+            In Stufen, nicht in jedem Frame.
+
+            Jeder dieser drei Aufrufe ist eine Zustandsaenderung, und jede
+            laesst die Galerie neu rendern — bei jedem Scroll-Frame. Ueber
+            120 Pixel Weg ist das ein gutes Dutzend Durchlaeufe ueber alle
+            Kacheln, und genau das ruckelt.
+
+            Zwei Prozent Schrittweite sind auf 120 Pixel rund zwei Pixel
+            Kopfhoehe: nicht zu sehen, aber ein Fuenftel der Durchlaeufe. Und
+            weil React bei gleichem Wert gar nicht erst rendert, ist nach dem
+            Einklappen (p = 1) voellig Ruhe — also waehrend des allermeisten
+            Scrollens.
+        */
         const fn = () => {
             cancelAnimationFrame(scrollRafRef.current);
             scrollRafRef.current = requestAnimationFrame(() => {
-                const p = Math.min(el.scrollTop / HERO_SCROLL_DISTANCE, 1);
+                const raw = Math.min(el.scrollTop / HERO_SCROLL_DISTANCE, 1);
+                const p = Math.round(raw * 50) / 50;
+                if (p === lastPRef.current) return;
+                lastPRef.current = p;
                 onScrollProgress(p);
                 setScrollP(p);
                 setGradientOp(Math.max(1 - p * 1.3, 0));
@@ -843,6 +881,12 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // jedem Rendern eine neue Pfeilfunktion — damit war das memo() an
     // FeedGridItem wirkungslos, und ein Mauszeiger-Wechsel (der nur
     // activeIndex setzt) liess das gesamte Raster neu rendern.
+    // Eine Funktion fuer alle Stapelkacheln, nicht eine je Kachel: Sonst
+    // bekommt jede bei jedem Rendern eine neue und rendert selbst mit.
+    const handleToggleSelectStack = React.useCallback((row: ImageRow) => {
+        onToggleSelectStack?.(row.items.map(i => i.id));
+    }, [onToggleSelectStack]);
+
     const handleOpenGroup = React.useCallback((row: ImageRow) => {
         // Kein Loeschen der Punkte beim Aufklappen: Ein Tipp auf den Stapel
         // raeumte bisher ALLE Varianten darin ab, gesehen oder nicht. Jede
@@ -1297,9 +1341,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 hasGenerating={hasGen}
                 group={row}
                 onOpenGroup={gc > 1 && row ? handleOpenGroup : undefined}
-                onToggleSelectStack={gc > 1 && row && onToggleSelectStack
-                    ? () => onToggleSelectStack(row.items.map(i => i.id))
-                    : undefined}
+                onToggleSelectStack={gc > 1 && row ? handleToggleSelectStack : undefined}
                 staggerDelay={
                     renderSelectMode
                         // In select mode the tile the user just checked leads, the rest
