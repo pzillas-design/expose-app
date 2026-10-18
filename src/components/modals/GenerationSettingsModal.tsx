@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/DesignSystem';
+import { Button, MenuSurface, Theme } from '@/components/ui/DesignSystem';
 import { ChevronDown, Check } from 'lucide-react';
 import {
     GenerationSettings,
@@ -154,14 +154,19 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
 
     return (
         <div className="relative">
+            {/* Eine Auswahl ist eine Eingabe, also eine Vertiefung — dieselbe
+                Flaeche wie die Textfelder, keine Linie. */}
             <button
                 ref={triggerRef}
                 type="button"
                 onClick={() => setOpen(o => !o)}
-                className="w-full flex items-center justify-between gap-2 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+                className={`w-full h-11 flex items-center justify-between gap-2 rounded-xl px-3.5
+                    ${Theme.Colors.SurfaceSunken} text-[14px] text-zinc-900 dark:text-zinc-100
+                    ring-1 ring-transparent transition-[box-shadow] duration-150
+                    ${open ? '!ring-black/[0.07] dark:!ring-white/[0.09]' : ''}`}
             >
                 <span className="truncate">{current?.label}</span>
-                <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-zinc-400 dark:text-zinc-500 transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`} />
             </button>
             {open && panelPos && createPortal(
                 <div
@@ -175,7 +180,8 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
                         maxHeight: 'min(60vh, 360px)',
                         zIndex: 9999,
                     }}
-                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xl overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-100"
+                    className={`${MenuSurface} overflow-y-auto no-scrollbar
+                        animate-[panel-grow_200ms_cubic-bezier(0.16,1,0.3,1)_backwards]`}
                 >
                     {options.map(opt => {
                         const active = opt.value === value;
@@ -184,10 +190,10 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
                                 key={opt.value}
                                 type="button"
                                 onClick={() => { onChange(opt.value); setOpen(false); }}
-                                className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 text-sm text-left transition-colors ${
+                                className={`w-full flex items-center justify-between gap-2 px-3 h-10 rounded-xl text-[14px] text-left transition-colors ${
                                     active
-                                        ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white font-medium'
-                                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
+                                        ? 'bg-black/[0.05] dark:bg-white/[0.08] text-zinc-900 dark:text-white font-medium'
+                                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-black/[0.03] dark:hover:bg-white/[0.05]'
                                 }`}
                             >
                                 <span className="truncate">{opt.label}</span>
@@ -208,6 +214,15 @@ function Dropdown<V extends string>({ value, options, onChange }: DropdownProps<
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────
+
+/*
+    Die Beschriftung eines Feldes ist eine Beschriftung, keine Ueberschrift.
+
+    Vorher fett und in voller Textfarbe — damit stand sie genauso laut da wie
+    der gewaehlte Wert darunter, obwohl sie nur sagt, worum es geht. Jetzt
+    leiser als das, was sie beschriftet.
+*/
+const LABEL = 'text-[13px] font-medium text-zinc-500 dark:text-zinc-400';
 
 export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = ({
     isOpen,
@@ -251,11 +266,11 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={isDe ? 'Bild-Einstellungen' : 'Image settings'} maxWidth="lg">
-            <div className="px-6 pb-6 pt-2 flex flex-col gap-5">
+            <div className="px-6 pb-6 pt-1 flex flex-col gap-5">
 
                 {/* Mode (model + quality combined) */}
                 <div className="flex flex-col gap-2">
-                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    <span className={LABEL}>
                         {isDe ? 'KI-Modell' : 'AI model'}
                     </span>
                     <Dropdown
@@ -267,7 +282,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
 
                 {/* Resolution — separate */}
                 <div className="flex flex-col gap-2">
-                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    <span className={LABEL}>
                         {isDe ? 'Auflösung' : 'Resolution'}
                     </span>
                     <Dropdown
@@ -279,7 +294,7 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
 
                 {/* Aspect ratio */}
                 <div className="flex flex-col gap-2">
-                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    <span className={LABEL}>
                         {isDe ? 'Seitenverhältnis' : 'Aspect ratio'}
                     </span>
                     <Dropdown
@@ -289,12 +304,14 @@ export const GenerationSettingsModal: React.FC<GenerationSettingsModalProps> = (
                     />
                 </div>
 
-                {/* Cost per image */}
-                <div className="flex flex-col gap-1">
-                    <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+                {/* Was es kostet, steht in EINER Zeile neben seiner
+                    Beschriftung: Es ist keine Einstellung, sondern deren
+                    Ergebnis — und ein Ergebnis braucht keinen eigenen Block. */}
+                <div className="flex items-center justify-between gap-3 pt-1">
+                    <span className={LABEL}>
                         {isDe ? 'Kosten pro Bild' : 'Cost per image'}
                     </span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+                    <span className="text-[14px] font-medium tabular-nums text-zinc-900 dark:text-zinc-100">
                         {priceFormatted}
                     </span>
                 </div>

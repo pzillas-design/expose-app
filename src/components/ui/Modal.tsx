@@ -1,7 +1,7 @@
 import React, { ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { Theme, Typo, IconButton } from './DesignSystem';
+import { Theme, Typo, RoundIconButton } from './DesignSystem';
 import { useModalStack } from './ModalStack';
 
 interface ModalProps {
@@ -84,17 +84,22 @@ export const Modal: React.FC<ModalProps> = ({
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60" />
+            {/*
+                Der Grund tritt zurueck, statt nur dunkler zu werden: etwas
+                Weichzeichner dazu, wie unter der Navigationsleiste. Das
+                Fenster liegt dann sichtbar OBEN, und was darunter steht,
+                bleibt als Zusammenhang erkennbar, ohne zu konkurrieren.
+            */}
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-[3px]" />
 
             {/* Modal Container */}
             <div
                 className={`
             relative w-full ${maxWidthClasses[maxWidth]}
-            ${Theme.Colors.ModalBg}
-            border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl}
+            ${Theme.Colors.PanelBg}
+            ${Theme.Geometry.RadiusXl}
             flex flex-col max-h-[90vh] overflow-hidden
-            animate-in zoom-in-95 duration-200
+            animate-[view-in_240ms_cubic-bezier(0.16,1,0.3,1)_backwards]
             ${Theme.Effects.ShadowLg}
             ${className}
         `}
@@ -104,13 +109,21 @@ export const Modal: React.FC<ModalProps> = ({
             >
                 {/* Header */}
                 {showHeader && (
-                    <div className="flex items-center justify-between px-6 pt-6 pb-2">
+                    <div className="flex items-center justify-between gap-3 px-6 pt-5 pb-3">
                         {headerContent || (
                             <h2 className={`${Typo.H2} text-xl ${Theme.Colors.TextHighlight}`}>
                                 {title}
                             </h2>
                         )}
-                        <IconButton icon={<X className="w-5 h-5" />} onClick={onClose} />
+                        {/* Derselbe Knopf wie ueberall sonst: 40 Pixel sichtbar,
+                            52 treffbar. Vorher ein kleinerer Sonderfall nur
+                            fuer Fenster. */}
+                        <RoundIconButton
+                            icon={<X className="w-[18px] h-[18px]" />}
+                            onClick={onClose}
+                            variant="ghost"
+                            className="-mr-2"
+                        />
                     </div>
                 )}
 

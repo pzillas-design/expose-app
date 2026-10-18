@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { PromptTemplate, PresetControl, TranslationFunction } from '@/types';
 import { Button, Input, Theme, Typo, RoundIconButton, TextArea, ModalHeader, ModalFooter } from '@/components/ui/DesignSystem';
-import { Trash, Plus, Minus, Settings2, Share, Pencil, Link as LinkIcon, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash, Plus, Share, X, ChevronLeft } from 'lucide-react';
 import { ShareTemplateModal } from './ShareTemplateModal';
 import { useToast } from '@/components/ui/Toast';
 import { generateId } from '@/utils/ids';
@@ -105,13 +105,13 @@ const LanguageForm = ({
                 {/* Title */}
                 <div className="flex flex-col gap-2">
                     <label className={fieldLabel}>{t('title_label')}</label>
-                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="text-sm bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-400/30 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('title_placeholder')} className="text-sm" />
                 </div>
 
                 {/* Prompt */}
                 <div className="flex flex-col gap-2">
                     <label className={fieldLabel}>{t('prompt_label_editor')}</label>
-                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className={`${Typo.Prompt} min-h-[120px] scrollbar-hide bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-zinc-700/50 rounded-lg p-3 focus:outline-none focus:ring-1 focus:ring-zinc-400/30 resize-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600`} />
+                    <TextArea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder={t('prompt_placeholder')} className={`${Typo.Prompt} min-h-[120px] no-scrollbar`} />
                 </div>
 
                 {/* Controls */}
@@ -132,15 +132,15 @@ const LanguageForm = ({
                                 {editingControlId === ctrl.id ? (
                                     <div
                                         ref={editFormRef}
-                                        className="my-3 p-5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-xl space-y-4 relative overflow-hidden"
+                                        className="my-3 p-5 bg-black/[0.04] dark:bg-white/[0.05] rounded-2xl space-y-4 relative overflow-hidden"
                                     >
                                         <div className="flex flex-col gap-1.5">
                                             <label className={fieldLabel}>{t('title_label')}</label>
-                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="text-sm !bg-zinc-50 dark:!bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600" autoFocus />
+                                            <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="text-sm !bg-white dark:!bg-black/25" autoFocus />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <label className={fieldLabel}>{t('options')}</label>
-                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="text-sm !bg-zinc-50 dark:!bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+                                            <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="text-sm !bg-white dark:!bg-black/25" />
                                         </div>
                                         <div className="flex items-center gap-2 pt-2">
                                             <button
@@ -165,18 +165,17 @@ const LanguageForm = ({
                                         className="flex flex-col py-3 cursor-pointer group transition-all active:scale-[0.98]"
                                     >
                                         <div className="text-xs font-normal text-zinc-400 dark:text-zinc-500 mb-2 truncate">{ctrl.label}</div>
+                                        {/* Kein Stift mehr daneben: Die ganze Zeile
+                                            oeffnet die Gruppe schon, und ein Symbol,
+                                            das dasselbe tut wie die Flaeche, auf der
+                                            es liegt, ist nur ein zweiter Weg zum
+                                            gleichen Ziel. */}
                                         <div className="flex flex-wrap gap-1.5 items-center">
                                             {ctrl.options.map(o => (
-                                                <span key={o.id} className="text-[12px] px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200">
+                                                <span key={o.id} className="text-[12px] px-3 py-1 rounded-lg bg-black/[0.04] dark:bg-white/[0.07] text-zinc-700 dark:text-zinc-200">
                                                     {o.label}
                                                 </span>
                                             ))}
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); startEditing(ctrl); }}
-                                                className="flex items-center justify-center w-6 h-6 text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors shrink-0"
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                            </button>
                                         </div>
                                     </div>
                                 )}
@@ -184,14 +183,14 @@ const LanguageForm = ({
                         ))}
 
                         {isAddingControl && !editingControlId ? (
-                            <div className="p-5 bg-zinc-200/50 dark:bg-zinc-800/50 rounded-xl space-y-4 relative overflow-hidden">
+                            <div className="p-5 bg-black/[0.04] dark:bg-white/[0.05] rounded-2xl space-y-4 relative overflow-hidden">
                                 <div className="flex flex-col gap-1.5">
                                     <label className={fieldLabel}>{t('title_label')}</label>
-                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="text-sm !bg-zinc-50 dark:!bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600" autoFocus />
+                                    <Input value={newControlLabel} onChange={e => setNewControlLabel(e.target.value)} placeholder={t('var_name_placeholder')} className="text-sm !bg-white dark:!bg-black/25" autoFocus />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                     <label className={fieldLabel}>{t('options')}</label>
-                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="text-sm !bg-zinc-50 dark:!bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600" />
+                                    <Input value={newControlOptions} onChange={e => setNewControlOptions(e.target.value)} placeholder={t('var_options_placeholder')} className="text-sm !bg-white dark:!bg-black/25" />
                                 </div>
                                 <div className="flex items-center gap-2 pt-2">
                                     <div className="flex-1" />
@@ -360,8 +359,8 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
     if (!isOpen) return null;
 
     const renderEditor = () => (
-        <div className="flex flex-col h-full bg-white dark:bg-zinc-900/95 max-h-[90vh]">
-            <div className={`p-6 flex items-center justify-between shrink-0 border-b border-zinc-200/50 dark:border-zinc-800/50`}>
+        <div className={`flex flex-col h-full ${Theme.Colors.PanelBg} max-h-[90vh]`}>
+            <div className={`px-6 pt-5 pb-3 flex items-center justify-between shrink-0`}>
                 <div className="flex items-center gap-3">
                     {isMobile && (
                         <button onClick={() => setMobileView('list')} className="p-1 -ml-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 transition-colors">
@@ -386,11 +385,17 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                             />
                         </>
                     )}
-                    <RoundIconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip={t('close')} variant="ghost" />
+                    {/* Auf dem Handy schliesst der Editor selbst; am Schreibtisch
+                        sitzt das Kreuz einmal oben rechts am Fenster, egal welche
+                        Spalte gerade etwas zeigt. Vorher gab es gar keines,
+                        solange keine Vorlage gewaehlt war. */}
+                    {isMobile && (
+                        <RoundIconButton icon={<X className="w-[18px] h-[18px]" />} onClick={onClose} tooltip={t('close')} variant="ghost" />
+                    )}
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 pt-4 scrollbar-hide bg-white dark:bg-zinc-900">
+            <div className={`flex-1 overflow-y-auto min-h-0 pt-2 no-scrollbar ${Theme.Colors.PanelBg}`}>
                 <LanguageForm
                     lang={currentLang as 'de' | 'en'}
                     title={currentLang === 'de' ? titleDe : titleEn}
@@ -414,9 +419,11 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
 
     const renderList = () => (
         <div className="flex flex-col h-full overflow-hidden max-h-[90vh]">
-            <div className={`p-6 flex items-center justify-between shrink-0 border-b border-zinc-200/50 dark:border-zinc-800/50`}>
+            <div className={`px-6 pt-5 pb-3 flex items-center justify-between shrink-0`}>
                 <span className={Typo.H1}>{t('presets_header')}</span>
-                <RoundIconButton icon={<X className="w-5 h-5" />} onClick={onClose} tooltip={t('close')} variant="ghost" className={isMobile ? '' : 'opacity-0 pointer-events-none'} />
+                {isMobile && (
+                    <RoundIconButton icon={<X className="w-[18px] h-[18px]" />} onClick={onClose} tooltip={t('close')} variant="ghost" />
+                )}
             </div>
             <div className="flex flex-col h-full overflow-hidden">
                 <div className="flex-1 overflow-y-auto p-3 space-y-1">
@@ -427,18 +434,24 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                                 setSelectedId(tmpl.id);
                                 if (isMobile) setMobileView('editor');
                             }}
-                            className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors duration-150 flex items-center justify-between group ${selectedId === tmpl.id ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-transparent' : 'bg-transparent border border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300'}`}
+                            className={`w-full text-left px-3 h-11 rounded-xl transition-colors duration-150 flex items-center gap-2.5 ${selectedId === tmpl.id ? 'bg-black/[0.05] dark:bg-white/[0.08] text-zinc-900 dark:text-zinc-100' : 'hover:bg-black/[0.03] dark:hover:bg-white/[0.05] text-zinc-700 dark:text-zinc-300'}`}
                         >
-                            <span className="text-[13px] font-medium truncate pr-2">{tmpl.title}</span>
-                            <ChevronRight className={`w-4 h-4 text-zinc-400 transition-opacity ${selectedId !== tmpl.id ? 'opacity-0 group-hover:opacity-100' : 'opacity-100'}`} />
+                            {/* Das Zeichen der Vorlage steht wieder davor.
+                                Im Blatt traegt jede Vorlage ihres; hier fehlte
+                                es, und dieselbe Liste sah an zwei Stellen
+                                verschieden aus. Eine Vorlage ohne Zeichen
+                                bekommt denselben Platz, damit die Titel in
+                                einer Flucht stehen. */}
+                            <span className="w-5 shrink-0 text-center text-sm leading-none">{tmpl.emoji || ''}</span>
+                            <span className="text-[13px] font-medium truncate">{tmpl.title}</span>
                         </button>
                     ))}
                     {selectedId === 'new' && (
                         <button
-                            className="w-full text-left px-3 py-2.5 rounded-xl transition-colors duration-150 flex items-center justify-between bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-transparent"
+                            className="w-full text-left px-3 h-11 rounded-xl flex items-center gap-2.5 bg-black/[0.05] dark:bg-white/[0.08]"
                         >
-                            <span className="text-[13px] font-medium truncate pr-2 text-zinc-400 dark:text-zinc-500">{t('create_preset')}</span>
-                            <ChevronRight className="w-4 h-4 text-zinc-400 opacity-100" />
+                            <span className="w-5 shrink-0" />
+                            <span className="text-[13px] font-medium truncate text-zinc-400 dark:text-zinc-500">{t('create_preset')}</span>
                         </button>
                     )}
                 </div>
@@ -456,28 +469,37 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
     // zu sich — das Fenster sass dann in der Panelbreite statt im Bildschirm.
     return createPortal(
         <div
-            className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-[3px] flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
                 className={`
-                    w-full ${isMobile ? 'max-w-md' : 'max-w-4xl h-[70vh] min-h-[500px]'}
-                    bg-white dark:bg-zinc-900 backdrop-blur-2xl ${Theme.Geometry.RadiusXl}
+                    relative w-full ${isMobile ? 'max-w-md' : 'max-w-4xl h-[70vh] min-h-[500px]'}
+                    ${Theme.Colors.PanelBg} ${Theme.Geometry.RadiusXl}
                     flex overflow-hidden ${Theme.Effects.ShadowLg}
-                    animate-in zoom-in-95 duration-200
+                    animate-[view-in_240ms_cubic-bezier(0.16,1,0.3,1)_backwards]
                 `}
                 onClick={(e) => e.stopPropagation()}
             >
+                {!isMobile && (
+                    <div className="absolute top-4 right-4 z-20">
+                        <RoundIconButton icon={<X className="w-[18px] h-[18px]" />} onClick={onClose} tooltip={t('close')} variant="ghost" />
+                    </div>
+                )}
                 {isMobile ? (
                     <div className="flex-1 w-full min-h-0">
                         {mobileView === 'list' ? renderList() : renderEditor()}
                     </div>
                 ) : (
                     <>
-                        <div className="w-[300px] border-r border-zinc-200/50 dark:border-zinc-800/50 shrink-0 bg-white dark:bg-zinc-900">
+                        {/* Die Liste liegt tiefer als der Editor daneben.
+                            Das trennt die beiden Spalten, ohne eine Linie zu
+                            ziehen — dieselbe Regel wie zwischen Grund, Blatt
+                            und Eingabe. */}
+                        <div className={`w-[300px] shrink-0 ${Theme.Colors.SurfaceSunken}`}>
                             {renderList()}
                         </div>
-                        <div className="flex-1 min-w-0 bg-white dark:bg-zinc-900">
+                        <div className={`flex-1 min-w-0 ${Theme.Colors.PanelBg}`}>
                             {selectedId ? renderEditor() : (
                                 <div className="h-full flex flex-col items-center justify-center text-zinc-400">
                                     <span className="text-sm">{t('preset_select_placeholder')}</span>

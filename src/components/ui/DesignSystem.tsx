@@ -489,10 +489,28 @@ export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, 
 };
 
 // -- Inputs --
+/*
+    Eingaben sinken.
+ *
+ *  Vorher eine HELLE Flaeche mit Rand auf einem hellen Blatt: zwei Mittel
+ *  (Farbe und Linie) fuer eine Sache, und beide sagten das Falsche — man
+ *  schreibt hinein, also gehoert sie nach unten, nicht nach oben. Jetzt
+ *  dieselbe vertiefte Flaeche wie die Prompt-Box im Blatt, ohne Linie.
+ *
+ *  Beim Schreiben ein sehr schwacher grauer Ring. Nicht Orange: Die Farbe
+ *  gehoert dem Erzeugen-Knopf, und ein Feld, in dem man gerade tippt, muss
+ *  nicht leuchten — man weiss, wo man ist.
+ */
+const FIELD_BASE = `w-full ${Theme.Colors.SurfaceSunken} rounded-xl text-zinc-900 dark:text-zinc-100
+    border-0 outline-none focus:outline-none
+    ring-1 ring-transparent focus:ring-black/[0.07] dark:focus:ring-white/[0.09]
+    transition-[box-shadow,background-color] duration-150
+    placeholder:text-zinc-400 dark:placeholder:text-zinc-500`;
+
 export const Input = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className = '', ...props }, ref) => (
     <input
         ref={ref}
-        className={`w-full bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 border ${Theme.Geometry.Radius} px-3 py-2.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500/10 focus:border-zinc-300 dark:focus:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ${Typo.Body} ${className}`}
+        className={`${FIELD_BASE} px-3.5 py-2.5 ${Typo.Body} ${className}`}
         {...props}
     />
 ));
@@ -509,10 +527,23 @@ export const TableInput = React.forwardRef<HTMLInputElement, InputHTMLAttributes
 export const TextArea = React.forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(({ className = '', ...props }, ref) => (
     <textarea
         ref={ref}
-        className={`w-full bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 border ${Theme.Geometry.Radius} p-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500/10 focus:border-zinc-300 dark:focus:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 resize-none ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ${Typo.Body} ${className}`}
+        className={`${FIELD_BASE} p-3.5 resize-none ${Typo.Body} ${className}`}
         {...props}
     />
 ));
+
+/*
+    Die schwebende Flaeche: Menue, Auswahlliste, Aufklappbares.
+
+    Ueberall dieselbe: Blattfarbe, 16 Pixel Rundung, ein Rand Luft innen,
+    ein weicher Schatten — und eine Haarlinie bei fuenf Prozent. Die ist die
+    einzige Linie, die das System noch kennt, und sie hat einen Grund: Eine
+    weisse Flaeche, die ueber einer weissen Flaeche schwebt, hat sonst keine
+    Kante. Wo Flaechen aneinanderstossen (Blatt, Grund, Eingabe) traegt
+    weiterhin der Farbwechsel.
+*/
+export const MenuSurface = `${Theme.Colors.PanelBg} rounded-2xl p-1.5 shadow-lg
+    ring-1 ring-black/[0.05] dark:ring-white/[0.07]`;
 
 // -- Card/Box --
 export const Card: React.FC<{ children: React.ReactNode, className?: string, onClick?: () => void }> = ({ children, className = '', onClick }) => (
