@@ -7,6 +7,7 @@ import { useNanoController } from '@/hooks/useNanoController';
 import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
 import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
 import { imageNameOf } from '@/utils/imageName';
+import { VOICE_ASSISTANT_PARKED } from '@/config/features';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { DetailSheetHeader } from '@/components/layout/DetailSheetHeader';
 import { GenerationNotice } from '@/components/ui/GenerationNotice';
@@ -148,20 +149,8 @@ export function App() {
         const stored = loadVoiceLogs();
         return { ...empty, ...stored };
     });
-    /*
-        Der Sprachassistent ist geparkt.
-
-        Er wurde nicht benutzt, kostet aber Platz im Menue, einen Hinweis in
-        der Galerie und eine Anzeige in der Leiste. Ein Schalter hier nimmt
-        ihm all das auf einmal: Menueeintrag, Hinweis, Anzeige und das
-        Tastenkuerzel haengen bereits an diesem Wert.
-
-        Nicht geloescht, sondern abgeschaltet — der Code, die
-        Verwaltungsoberflaeche und der Schluessel bleiben. Wer ihn
-        zurueckholen will, setzt hier false auf true; nichts anderes ist
-        noetig.
-    */
-    const VOICE_ASSISTANT_PARKED = true;
+    // Der Schalter steht in config/features.ts — dieselbe Stelle, an der auch
+    // die Startseite nachsieht, ob sie den Assistenten noch bewerben darf.
     const voiceFeatureEnabled = !VOICE_ASSISTANT_PARKED && voiceAdminConfig.enabled;
     const voiceRemoteLoadedRef = React.useRef(false);
 
