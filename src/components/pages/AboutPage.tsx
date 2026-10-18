@@ -256,6 +256,17 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
 };
 
 // ── Testimonials ──────────────────────────────────────────
+/*
+    Eine Stimme, und die ist echt.
+
+    Hier standen vier: Ariane Keudel und drei erfundene Personen mit
+    erfundenen Rollen und Zitaten. Eine Wand aus Lob, von der drei Viertel
+    niemand gesagt hat, ist keine Referenz, sondern ein Risiko — und sie
+    entwertet die eine Aussage, die wirklich von einer Kundin kommt.
+
+    Darum nur noch diese eine, dafuer gross. Kommen weitere echte dazu,
+    passen sie in dieselbe Liste.
+*/
 const TESTIMONIALS = [
     {
         en: 'it really works!',
@@ -265,27 +276,6 @@ const TESTIMONIALS = [
         color: '#f97316',
         large: true,
         avatar: '/home/v2/ariane-keudel.jpg',
-    },
-    {
-        en: 'I direct the AI exactly where I want it.',
-        de: 'Ich dirigiere die KI genau dorthin, wo ich sie haben will.',
-        author: 'Sarah Chen',
-        role: 'Interior Photographer',
-        color: '#64748b',
-    },
-    {
-        en: 'We set our style up once — and then it\'s just tap, tap, tap. Every image flows out like a production line.',
-        de: 'Wir richten unseren Stil einmal ein — und dann ist es nur noch Tap, Tap, Tap. Jedes Bild kommt raus wie am Fließband.',
-        author: 'Marc Dubois',
-        role: 'Creative Director',
-        color: '#71717a',
-    },
-    {
-        en: 'A huge advantage is that physical home staging is often no longer necessary. Effects like natural sunlight — midday sun through the windows — are convincingly realistic.',
-        de: 'Ein großer Vorteil ist, dass ein physisches Homestaging oft gar nicht mehr notwendig ist. Effekte wie natürliches Sonnenlicht (z. B. Mittagssonne durch die Fenster) funktionieren sehr überzeugend und realistisch.',
-        author: 'Lena Strauss',
-        role: 'Real Estate Agency',
-        color: '#78716c',
     },
 ];
 
@@ -305,10 +295,19 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
             <p className="font-kumbh font-bold tracking-tighter text-zinc-900 dark:text-white lowercase leading-[0.88] text-4xl sm:text-5xl">
                 {de ? 'das sagen andere.' : 'what people say.'}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/*
+                Eine Stimme ist ein Satz, keine Karte.
+
+                Als Karte war sie eine breite, fast leere Flaeche mit einem
+                kleinen Zitat darin — die Form war fuer vier gemacht. Allein
+                steht das Zitat besser ohne Kasten und gross: Dann ist es eine
+                Aussage und kein uebrig gebliebenes Feld. Kommen weitere echte
+                Stimmen dazu, greift wieder das Raster.
+            */}
+            <div className={`grid gap-4 ${TESTIMONIALS.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                 {TESTIMONIALS.map((item, i) => (
-                    <div key={i} className="flex flex-col gap-5 p-8 sm:p-10 rounded-2xl bg-zinc-50 dark:bg-zinc-900">
-                        <p className={`font-kumbh font-medium text-zinc-900 dark:text-white leading-snug ${'large' in item && item.large ? 'text-3xl sm:text-4xl font-bold tracking-tight' : 'text-base sm:text-lg'}`}>
+                    <div key={i} className={`flex flex-col gap-5 ${TESTIMONIALS.length > 1 ? 'p-8 sm:p-10 rounded-2xl bg-zinc-50 dark:bg-zinc-900' : 'max-w-3xl'}`}>
+                        <p className={`font-kumbh font-medium text-zinc-900 dark:text-white leading-snug ${'large' in item && item.large ? 'text-4xl sm:text-5xl font-bold tracking-tight' : 'text-base sm:text-lg'}`}>
                             "{de ? item.de : item.en}"
                         </p>
                         <div className="flex items-center gap-3 mt-auto">
@@ -326,9 +325,19 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
             </div>
             {/* Stats — plain, no card styling */}
             <div className="flex flex-row divide-x divide-zinc-200 dark:divide-zinc-800 mt-2">
+                {/*
+                    Gezaehlt, nicht geschaetzt.
+
+                    Hier standen 16.430 Bilder und 1.040 Kreative — tatsaechlich
+                    sind es (Stand 18.10.2026, aus generation_jobs + job_archive)
+                    6.217 fertige Erzeugungen von 193 Menschen, bei 302
+                    Registrierungen. Abgerundet angegeben, damit die Angabe mit
+                    der Zeit richtiger wird statt falscher; wer sie aktualisiert,
+                    zaehlt `status = 'completed'` in beiden Tabellen.
+                */}
                 {[
-                    { value: '16,430', label: de ? 'Bilder generiert' : 'images generated' },
-                    { value: '1,040',  label: de ? 'Kreative' : 'creatives' },
+                    { value: de ? '6.000+' : '6,000+', label: de ? 'Bilder erzeugt' : 'images created' },
+                    { value: '190+',  label: de ? 'Kreative' : 'creatives' },
                     { value: '4 K',    label: de ? 'Max. Auflösung' : 'max resolution' },
                 ].map((s, i) => (
                     <div key={i} className="flex flex-col gap-0.5 px-4 sm:px-8 first:pl-0">
@@ -869,22 +878,28 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
                 <div className="absolute top-1/2 -translate-y-1/2 -right-20 w-64 h-64 bg-orange-400/15 dark:bg-orange-400/20 rounded-full blur-[90px] pointer-events-none" />
                 <div className="relative z-10 max-w-6xl mx-auto flex flex-col items-center text-center gap-16">
                     <div className="flex flex-col gap-5 font-kumbh font-semibold tracking-tighter lowercase" style={{ fontSize: 'clamp(1.8rem, 4.5vw, 5rem)', lineHeight: 1.05 }}>
+                        {/*
+                            Weniger Pathos, mehr Sache.
+
+                            Vorher: "die kraft der form, farbe und ästhetik, einst
+                            ein privileg, gehört nun uns allen" — drei grosse Worte
+                            und keine Aussage. Wer ein Exposé zu bebildern hat, kennt
+                            den Unterschied zwischen vorher und heute ganz genau;
+                            man muss ihn nur nennen.
+                        */}
                         {de ? (<>
                             <p className="text-zinc-900 dark:text-white">
-                                die kraft der form, farbe und ästhetik, einst ein privileg, gehört nun uns allen.
+                                ein gutes exposé brauchte ein shooting, einen termin und zwei wochen.
                             </p>
                             <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-                                alles was du brauchst, liegt in deiner hand. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
+                                jetzt braucht es ein foto und einen satz. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
                             </p>
                         </>) : (<>
                             <p className="text-zinc-900 dark:text-white">
-                                ai masters looks, physics, and composition at a level once reserved for elite studios.
+                                a good listing used to need a shoot, an appointment and two weeks.
                             </p>
                             <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-                                this power is now yours.
-                            </p>
-                            <p className="text-zinc-900 dark:text-white">
-                                surpass the professional standard. everything you need is at your fingertips. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
+                                now it needs a photo and a sentence. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
                             </p>
                         </>)}
                     </div>
