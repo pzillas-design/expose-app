@@ -1327,7 +1327,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // und genau der lag auch zwischen Blatt und Bild — jetzt
                             // stossen sie aneinander, und die Kante entsteht aus dem
                             // Wechsel der Flaeche.
-                            ? `md:order-first ${Theme.Colors.PanelBg}
+                            ? `md:order-first ${Theme.Colors.SheetBg}
                                 md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
                             // Schmale Geraete: alles unter dem Bild ist EIN Blatt,
                             // und es reicht bis zur Unterkante. Vorher war es
@@ -1335,7 +1335,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // kam der Grund wieder zum Vorschein, als waere die
                             // Seite nicht fertig geworden. `flex-1` fuellt den Rest,
                             // auch wenn wenig darin steht.
-                            : `flex-1 ${Theme.Colors.PanelBg}`}
+                            : `flex-1 ${Theme.Colors.SheetBg}`}
                         ${!isSideSheetActuallyVisible && isSheetColumn ? 'hidden' : ''}`}
                     style={isMobile
                         ? undefined

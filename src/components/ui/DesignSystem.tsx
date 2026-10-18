@@ -32,6 +32,18 @@ export const Theme = {
         CanvasBg: "bg-[#EDEDF0] dark:bg-[#08080A]",
         PanelBg: "bg-white dark:bg-[#1B1B20]",
         ModalBg: "bg-white dark:bg-[#1B1B20]",
+        /*
+            Das Blatt der Detailansicht — fast schwarz, auf Wunsch.
+
+            Es ist bewusst NICHT PanelBg: Im dunklen Thema soll das Blatt mit
+            dem Grund verschmelzen statt sich als hellere Flaeche abzuheben.
+            Damit liegt es am unteren Ende der Skala, und die Eingabe darin
+            kann nur heller werden statt dunkler — unter #09090B bleibt nur
+            reines Schwarz, ein Unterschied von vier Stufen, den kein Schirm
+            zeigt. Eine leicht angehobene Eingabe ist in dunklen Oberflaechen
+            ohnehin die gelaeufige Loesung.
+        */
+        SheetBg: "bg-white dark:bg-zinc-950",
 
         // Interactive Surfaces (New Standard)
         Surface: "bg-white dark:bg-zinc-900",

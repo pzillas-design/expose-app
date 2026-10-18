@@ -2000,7 +2000,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 <div className="lg:hidden fixed inset-0 z-[100] pointer-events-none">
                     <div
                         ref={sheetRef}
-                        className={`absolute bottom-0 left-0 right-0 ${Theme.Colors.PanelBg} rounded-t-[28px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto ${Theme.Effects.ShadowLg} ${isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-10vh)]'}`}
+                        className={`absolute bottom-0 left-0 right-0 ${Theme.Colors.SheetBg} rounded-t-[28px] transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] pointer-events-auto ${Theme.Effects.ShadowLg} ${isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-10vh)]'}`}
                         style={{ maxHeight: '90vh', overflow: 'hidden', paddingBottom: 'env(safe-area-inset-bottom)' }}
                         onDragOver={e => e.preventDefault()}
                         onDrop={handleDrop}
@@ -2026,17 +2026,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     return (
         <>
             <div
-                /*
-                    Das Blatt traegt die Blattfarbe, nicht die des Grundes.
-
-                    Im dunklen Thema war es zinc-950 — praktisch dasselbe
-                    Schwarz wie der Grund dahinter, waehrend die Prompt-Box
-                    darin HELLER war als das Blatt. Damit stand die Ordnung auf
-                    dem Kopf: Die Eingabe, in die man hineinschreibt, lag oben,
-                    und das Blatt verschwand im Grund. Jetzt Grund dunkel,
-                    Blatt heller, Eingabe wieder dunkler.
-                */
-                className={`relative flex flex-col ${Theme.Colors.PanelBg} ${props.disableMobileSheet ? '' : 'h-full overflow-hidden'}`}
+                className={`relative flex flex-col ${Theme.Colors.SheetBg} ${props.disableMobileSheet ? '' : 'h-full overflow-hidden'}`}
                 style={{ width }}
                 onDragOver={e => e.preventDefault()}
                 onDrop={handleDrop}
