@@ -1017,7 +1017,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // das Blatt heranrueckt. Mittig blieb zwischen beiden ein
                             // Streifen leeren Grundes stehen, der nach Luecke aussah
                             // und nicht nach Rand. Ohne Insel wie bisher mittig.
-                            className={`absolute inset-0 flex items-center ${isSheetColumn ? 'justify-start' : 'justify-center'}`}
+                            //
+                            // Linksbuendig nur, solange links auch WIRKLICH ein
+                            // Blatt steht. Beim Markieren faehrt es ein, seine
+                            // Spalte bleibt aber als Null-Breite stehen — das Bild
+                            // klebte dadurch an der linken Fensterkante statt mittig
+                            // zu stehen. Kein Blatt, keine Buendigkeit.
+                            className={`absolute inset-0 flex items-center ${isSheetColumn && isSideSheetActuallyVisible ? 'justify-start' : 'justify-center'}`}
                             style={state.sideSheetMode === 'brush' ? { paddingBottom: BRUSH_BOTTOM_RESERVE } : undefined}
                         >
                             {displayBox.width > 0 && displayBox.height > 0 && (
@@ -1179,7 +1185,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 )}
 
                                 {subMenu === 'shapes' && (
-                                    <div className={`bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full px-2 py-1.5 pointer-events-auto flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200`}>
+                                    <div className={`bg-white/95 dark:bg-[#1B1B20]/95 backdrop-blur-xl ${Theme.Effects.Shadow} rounded-full px-2 py-1.5 pointer-events-auto flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200`}>
                                         <button
                                             onClick={() => {
                                                 actions.setMaskTool('select');
@@ -1213,7 +1219,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 )}
 
                                 {subMenu === 'brush' && (
-                                    <div className={`bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full px-5 py-2 pointer-events-auto flex items-center gap-4 w-64 animate-in slide-in-from-bottom-2 fade-in duration-200`}>
+                                    <div className={`bg-white/95 dark:bg-[#1B1B20]/95 backdrop-blur-xl ${Theme.Effects.Shadow} rounded-full px-5 py-2 pointer-events-auto flex items-center gap-4 w-64 animate-in slide-in-from-bottom-2 fade-in duration-200`}>
                                         <span className="text-[11px] font-medium text-zinc-500 w-8">{state.brushSize}px</span>
                                         <input
                                             type="range"
@@ -1237,7 +1243,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             </div>
 
                             {/* Primary Row: 3 Tools + Done */}
-                            <div className={`flex items-center gap-1.5 p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full pointer-events-auto overflow-hidden`}>
+                            <div className={`flex items-center gap-1.5 p-3 bg-white/95 dark:bg-[#1B1B20]/95 backdrop-blur-xl ${Theme.Effects.Shadow} rounded-full pointer-events-auto overflow-hidden`}>
                                 <Tooltip text={t('tooltip_tool_text') || 'Text platzieren'} side="top">
                                     <button
                                         onClick={() => {
