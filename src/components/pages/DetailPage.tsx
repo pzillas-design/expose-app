@@ -457,6 +457,11 @@ export const DetailPage: React.FC<DetailPageProps> = ({
             // Richtung eine Spur heller: Der naechste Schritt fuehrt hinaus.
             atStart: selectedId === members[0].id,
             atEnd: selectedId === members[members.length - 1].id,
+            // Einzelbild: Die Reihe besteht aus einem Balken und zwei
+            // Stummeln — vorher und nachher sieht sie GLEICH aus. Deshalb
+            // kann sie beim Wechsel nicht von selbst etwas zeigen; dort
+            // muss die Bewegung her (siehe unten).
+            isSingle: members.length === 1,
         };
     }, [state.rows, images, selectedId]);
 
@@ -938,44 +943,67 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         {/* Balken: wo man im Stapel steht, und dass es daneben
                             weitergeht. Nur beim Darueberfahren — beim Ansehen
                             gehoert die Flaeche dem Bild. */}
+                        {/* Weitere Knoepfe am unteren Bildrand. Sind Punkte da, ruecken
+                            sie eine Reihe hoeher — zwei Dinge auf derselben Linie
+                            uebereinander waeren weder lesbar noch treffbar. */}
+                        {/*
+                            Die Balkenreihe: wo man steht, und dass es weitergeht.
+
+                            Zwei Faelle, zwei Arten von Bewegung:
+
+                            Im STAPEL aendert sich die Reihe von selbst — der
+                            breite Balken sitzt an einer anderen Stelle, und die
+                            Breiten laufen dorthin. Da genuegt der Uebergang.
+
+                            Bei EINZELBILDERN sieht die Reihe vorher und nachher
+                            gleich aus (Stummel, Balken, Stummel). Dort kann
+                            nichts "sich aendern", also muss der Schritt selbst
+                            gezeigt werden: Die Reihe rueckt um eine Stelle in die
+                            gegangene Richtung, und der Balken waechst aus der
+                            Breite eines Stummels heran — so, als waere der
+                            Stummel von dort gerade der aktuelle geworden.
+
+                            Farbe nach Thema: Die Reihe steht am unteren Rand des
+                            BEREICHS, nicht auf dem Bild. Weiss war dort im hellen
+                            Thema auf hellgrauem Grund unsichtbar.
+                        */}
                         {state.sideSheetMode !== 'brush' && showDots && stackBars && (
                             <div
-                                // Eigene Identitaet je Stapel: Beim Wechsel wird die
-                                // Reihe neu aufgebaut und kommt aus der Richtung herein,
-                                // in die man gegangen ist. Innerhalb eines Stapels bleibt
-                                // sie stehen, dort wandert nur der helle Balken.
-                                key={stackBars.members[0]?.id ?? 'bars'}
+                                key={stackBars.isSingle
+                                    ? `bars-single-${selectedId}`
+                                    : (stackBars.members[0]?.id ?? 'bars')}
                                 style={transition !== 'none'
-                                    ? { animation: `bars-in-${transition} 320ms cubic-bezier(0.16,1,0.3,1) both` }
+                                    ? { animation: `bars-step-${transition} 340ms cubic-bezier(0.16,1,0.3,1) both` }
                                     : undefined}
                                 className="absolute bottom-5 left-0 right-0 flex justify-center items-center gap-1.5 pointer-events-none z-40
                                     opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                             >
-                                {/* Der Stummel links: nur eine Andeutung, dass dort ein
-                                    weiterer Stapel liegt. Am Anfang des Stapels wird er
-                                    heller — dann fuehrt der naechste Schritt dorthin. */}
                                 {stackBars.hasPrevStack && (
                                     <span className={`h-[3px] w-2 rounded-full mr-1 transition-all duration-200
-                                        ${stackBars.atStart ? 'bg-white/45' : 'bg-white/15'}`} />
+                                        ${stackBars.atStart
+                                            ? 'bg-zinc-900/45 dark:bg-white/45'
+                                            : 'bg-zinc-900/15 dark:bg-white/15'}`} />
                                 )}
                                 {stackBars.members.map((m, i) => (
                                     <span
                                         key={m.id}
+                                        style={stackBars.isSingle && transition !== 'none'
+                                            ? { animation: `bar-activate-${transition} 340ms cubic-bezier(0.16,1,0.3,1) both` }
+                                            : undefined}
                                         className={`h-[3px] rounded-full transition-all duration-200 ${i === stackBars.current
-                                            ? 'w-7 bg-white/90'
-                                            : 'w-4 bg-white/30'}`}
+                                            ? 'w-7 bg-zinc-900/80 dark:bg-white/90'
+                                            : 'w-4 bg-zinc-900/25 dark:bg-white/30'}`}
                                     />
                                 ))}
                                 {stackBars.hasNextStack && (
                                     <span className={`h-[3px] w-2 rounded-full ml-1 transition-all duration-200
-                                        ${stackBars.atEnd ? 'bg-white/45' : 'bg-white/15'}`} />
+                                        ${stackBars.atEnd
+                                            ? 'bg-zinc-900/45 dark:bg-white/45'
+                                            : 'bg-zinc-900/15 dark:bg-white/15'}`} />
                                 )}
                             </div>
                         )}
 
-                        {/* Weitere Knoepfe am unteren Bildrand. Sind Punkte da, ruecken
-                            sie eine Reihe hoeher — zwei Dinge auf derselben Linie
-                            uebereinander waeren weder lesbar noch treffbar. */}
                         {state.sideSheetMode !== 'brush' && (
                             <div className={`absolute ${showDots ? 'bottom-12' : 'bottom-6'} left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
                                 <div className="relative flex items-center gap-1.5 pointer-events-auto">

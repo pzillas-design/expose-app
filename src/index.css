@@ -334,20 +334,42 @@ html:not(.dark) {
 }
 
 /*
- * Die Balken unter dem Bild kommen aus der Richtung, in die man gegangen ist.
+ * Die Balkenreihe rueckt eine Stelle weiter.
  *
- * Dieselbe Richtung und dieselbe Kurve wie das Bild darueber
- * (detail-img-swipe-*), nur kuerzer im Weg: Die Reihe ist ein Hinweis am
- * Rand, kein Hauptdarsteller.
+ * Bewusst OHNE Deckkraft: Die Reihe zeigt sich nur beim Darueberfahren, und
+ * eine Animation mit `fill: both` haelt den Endwert fest — sie waere nach dem
+ * ersten Wechsel dauerhaft sichtbar geblieben, auch wenn der Zeiger laengst
+ * woanders ist. Bewegt wird deshalb nur die Lage.
+ *
+ * Der Weg ist kurz (14 Pixel): Die Reihe ist ein Hinweis am Rand, kein
+ * Hauptdarsteller. Richtung und Kurve wie beim Bild darueber.
  */
-@keyframes bars-in-next {
-  from { opacity: 0; transform: translateX(18px); }
-  to   { opacity: 1; transform: translateX(0); }
+@keyframes bars-step-next {
+  from { transform: translateX(14px); }
+  to   { transform: translateX(0); }
 }
 
-@keyframes bars-in-prev {
-  from { opacity: 0; transform: translateX(-18px); }
-  to   { opacity: 1; transform: translateX(0); }
+@keyframes bars-step-prev {
+  from { transform: translateX(-14px); }
+  to   { transform: translateX(0); }
+}
+
+/*
+ * Bei Einzelbildern waechst der Balken aus einem Stummel heran.
+ *
+ * Vorher und nachher sieht die Reihe gleich aus — ohne das hier passierte
+ * beim Weiterblaettern sichtbar nichts. Der Balken startet auf Stummelbreite
+ * und an der Stelle, an der der Stummel stand, aus dem man kommt; damit liest
+ * sich der Wechsel als "der von dort ist jetzt der hier".
+ */
+@keyframes bar-activate-next {
+  from { width: 8px; transform: translateX(18px); }
+  to   { width: 28px; transform: translateX(0); }
+}
+
+@keyframes bar-activate-prev {
+  from { width: 8px; transform: translateX(-18px); }
+  to   { width: 28px; transform: translateX(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -355,11 +377,17 @@ html:not(.dark) {
     from { opacity: 0; }
     to   { opacity: 1; }
   }
-  @keyframes bars-in-next {
-    from { opacity: 0; } to { opacity: 1; }
+  @keyframes bars-step-next {
+    from { transform: none; } to { transform: none; }
   }
-  @keyframes bars-in-prev {
-    from { opacity: 0; } to { opacity: 1; }
+  @keyframes bars-step-prev {
+    from { transform: none; } to { transform: none; }
+  }
+  @keyframes bar-activate-next {
+    from { width: 28px; transform: none; } to { width: 28px; transform: none; }
+  }
+  @keyframes bar-activate-prev {
+    from { width: 28px; transform: none; } to { width: 28px; transform: none; }
   }
 }
 
