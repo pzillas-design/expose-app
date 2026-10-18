@@ -84,13 +84,9 @@ export const Modal: React.FC<ModalProps> = ({
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
-            {/*
-                Der Grund tritt zurueck, statt nur dunkler zu werden: etwas
-                Weichzeichner dazu, wie unter der Navigationsleiste. Das
-                Fenster liegt dann sichtbar OBEN, und was darunter steht,
-                bleibt als Zusammenhang erkennbar, ohne zu konkurrieren.
-            */}
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-[3px]" />
+            {/* Nur abdunkeln, nicht weichzeichnen. Ein unscharfer Grund wirkt
+                wie ein Effekt; das Fenster liegt auch ohne ihn klar obenauf. */}
+            <div className="absolute inset-0 bg-black/50" />
 
             {/* Modal Container */}
             <div

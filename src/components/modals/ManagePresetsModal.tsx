@@ -368,7 +368,10 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
                         </button>
                     )}
                 </div>
-                <div className="flex items-center gap-2">
+                {/* Am Schreibtisch endet diese Gruppe eine Knopfbreite vor dem
+                    rechten Rand: Dort sitzt das Kreuz des Fensters, und Teilen
+                    und Loeschen lagen sonst darunter. */}
+                <div className={`flex items-center gap-2 ${isMobile ? '' : 'pr-12'}`}>
                     {selectedId !== 'new' && selectedId && (
                         <>
                             <RoundIconButton
@@ -469,7 +472,7 @@ export const ManagePresetsModal: React.FC<ManagePresetsModalProps> = ({
     // zu sich — das Fenster sass dann in der Panelbreite statt im Bildschirm.
     return createPortal(
         <div
-            className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-[3px] flex items-center justify-center p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
