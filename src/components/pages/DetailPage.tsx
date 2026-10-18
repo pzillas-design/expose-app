@@ -1323,11 +1323,13 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // Wechsel der Flaeche.
                             ? `md:order-first ${Theme.Colors.PanelBg}
                                 md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
-                            // Schmale Geraete: keine eigene Flaeche. Das Blatt ist dort
-                            // kein Blatt, sondern die Fortsetzung der Seite unter dem
-                            // Bild — ein eigener Untergrund waere eine Kante, die nichts
-                            // trennt.
-                            : 'bg-transparent'}
+                            // Schmale Geraete: alles unter dem Bild ist EIN Blatt,
+                            // und es reicht bis zur Unterkante. Vorher war es
+                            // durchsichtig und endete mit seinem Inhalt — darunter
+                            // kam der Grund wieder zum Vorschein, als waere die
+                            // Seite nicht fertig geworden. `flex-1` fuellt den Rest,
+                            // auch wenn wenig darin steht.
+                            : `flex-1 ${Theme.Colors.PanelBg}`}
                         ${!isSideSheetActuallyVisible && isSheetColumn ? 'hidden' : ''}`}
                     style={isMobile
                         ? undefined
