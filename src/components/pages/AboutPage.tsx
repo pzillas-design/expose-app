@@ -914,27 +914,28 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
                 <div className="relative z-10 max-w-6xl mx-auto flex flex-col items-center text-center gap-16">
                     <div className="flex flex-col gap-5 font-kumbh font-semibold tracking-tighter lowercase" style={{ fontSize: 'clamp(1.8rem, 4.5vw, 5rem)', lineHeight: 1.05 }}>
                         {/*
-                            Derselbe Gedanke, leisere Worte.
+                            Derselbe Satz wie immer, zwei Handgriffe leiser.
 
-                            Das Bild bleibt: Was lange wenigen vorbehalten war,
-                            steht jetzt allen offen. Nur ohne "die kraft der",
-                            ohne "privileg" und ohne "gehört nun uns allen" —
-                            drei Formeln, die die Aussage nicht groesser machen,
-                            sondern nur lauter.
+                            "einst" wird "lange" — das eine klingt nach Maerchen,
+                            das andere nach Erfahrung. Und aus "gehört nun uns
+                            allen" wird "gehört sie dir": Eine Behauptung ueber
+                            die Menschheit traegt schwerer als eine ueber den,
+                            der sie gerade liest. Das Bild von der Hand bleibt,
+                            es ist der Grund, warum der Satz wirkt.
                         */}
                         {de ? (<>
                             <p className="text-zinc-900 dark:text-white">
-                                form, farbe und ästhetik waren lange eine frage von budget und ausrüstung.
+                                die kraft von form, farbe und ästhetik war lange ein privileg.
                             </p>
                             <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-                                heute genügen ein foto und eine idee. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
+                                jetzt gehört sie dir. alles, was du brauchst, liegt in deiner hand. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
                             </p>
                         </>) : (<>
                             <p className="text-zinc-900 dark:text-white">
-                                look, light and composition used to be a question of budget and gear.
+                                the power of form, colour and composition was long a privilege.
                             </p>
                             <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-                                today a photo and an idea are enough. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
+                                now it’s yours. everything you need is already in your hands. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
                             </p>
                         </>)}
                     </div>
