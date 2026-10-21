@@ -889,14 +889,24 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         Es kostet nichts: Das Vorschaubild ist ohnehin geladen.
                         Im hellen Modus schwaecher als im dunklen — auf Weiss
                         faellt Farbe staerker auf als auf Schwarz.
+
+                        Der dunkle Rahmen ringsum war keine Absicht: Ein
+                        Weichzeichner mischt am Rand das ein, was AUSSERHALB des
+                        Bildes liegt, und das ist nichts. Je staerker gestreut
+                        wird, desto breiter dieser Saum — bei 90 Pixeln sah es
+                        aus wie eine Vignette. Die Ebene ist deshalb deutlich
+                        groesser gezogen als ihr Feld (die Streubreite muss auf
+                        jeder Seite hineinpassen), und `overflow-hidden`
+                        beschneidet erst danach. Damit bleibt nur die Mitte des
+                        Scheins stehen, und die hat keine Raender.
                     */}
                     {!isMobile && img.thumbSrc && !showBlob && (
                         <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
                             <img
                                 key={img.id}
                                 src={img.thumbSrc}
-                                className="w-full h-full object-cover scale-[1.35] blur-[90px]
-                                    opacity-[0.10] dark:opacity-[0.16]
+                                className="w-full h-full object-cover scale-[2.2] blur-[180px]
+                                    opacity-[0.07] dark:opacity-[0.11]
                                     animate-[view-in_700ms_cubic-bezier(0.16,1,0.3,1)_both]"
                                 alt=""
                             />
