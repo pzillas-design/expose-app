@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 interface UseKeyboardGridNavigationProps {
     itemCount: number;
@@ -36,12 +36,31 @@ export function useKeyboardGridNavigation({
 }: UseKeyboardGridNavigationProps) {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-    // Auto-scroll active item into view when navigating with keyboard
+    /*
+        Ins Bild geholt wird nur, was die TASTATUR ausgewaehlt hat.
+
+        Derselbe Zeiger-Index wird auch vom Mauszeiger gesetzt (Ueberfahren
+        setzt die aktive Kachel), und die Abhaengigkeit `getElementAtIndex`
+        aendert ihre Identitaet, sobald sich die Bildliste neu bildet. Beides
+        loeste bisher ein `scrollIntoView` aus: Wer im Auswahlmodus eine
+        halb sichtbare Kachel anklickte, bekam die Seite um ein Stueck
+        verschoben — bei jeder Markierung erneut.
+
+        Deshalb eine ausdrueckliche Absicht: Die Tastenbehandlung setzt diese
+        Fahne, der Effekt holt dann ins Bild und loescht sie wieder. Alles
+        andere aendert den Index, ohne zu scrollen. Die Element-Funktion liegt
+        in einem Ref, damit ihre Identitaet nichts mehr ausloest.
+    */
+    const wantsScrollRef = useRef(false);
+    const getElementRef = useRef(getElementAtIndex);
+    getElementRef.current = getElementAtIndex;
+
     useEffect(() => {
-        if (activeIndex === null || !getElementAtIndex) return;
-        const el = getElementAtIndex(activeIndex);
+        if (activeIndex === null || !wantsScrollRef.current) return;
+        wantsScrollRef.current = false;
+        const el = getElementRef.current?.(activeIndex);
         el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-    }, [activeIndex, getElementAtIndex]);
+    }, [activeIndex]);
 
     // Reset focus when not active or items change drastically
     useEffect(() => {
@@ -53,6 +72,8 @@ export function useKeyboardGridNavigation({
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
             if (!isActive || itemCount === 0) return;
+            // Ab hier bewegt die Tastatur die Auswahl — nur dann wird gescrollt.
+            wantsScrollRef.current = true;
 
             // Die Pfeile rechnen mit dem aktuellen Stand, nicht im
             // Zustands-Aktualisierer: Am Rand wird eine fremde Funktion

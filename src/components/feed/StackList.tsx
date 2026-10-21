@@ -66,6 +66,17 @@ const StackRow: React.FC<{
     const { version } = imageNameOf(img);
     const isOriginal = !img.parentId;
     /*
+        Die Fassung, die gerade entsteht.
+
+        Sie steht schon in der Liste, bevor es sie gibt — als Platzhalter an
+        ihrem Platz, damit man sieht, WO sie erscheinen wird. Gezeigt wird
+        dasselbe Bild, aus dem sie hervorgeht, stark weichgezeichnet und
+        gedimmt; darueber ein Schimmer, der laeuft. Ein leeres Rechteck waere
+        die ehrlichere, aber die kaeltere Antwort: Man wartet besser, wenn man
+        sieht, woran gearbeitet wird.
+    */
+    const isPending = !!img.isGenerating;
+    /*
         Nur der Auftrag, der dieses Bild erzeugt hat.
 
         Vorher wich der Code auf den ENTWURF aus (userDraftPrompt), wenn kein
@@ -98,7 +109,8 @@ const StackRow: React.FC<{
                 flex flex-col md:flex-row md:items-start gap-4 md:gap-8"
         >
             <button
-                onClick={() => onSelect(img.id)}
+                onClick={() => { if (!isPending) onSelect(img.id); }}
+                disabled={isPending}
                 style={{ aspectRatio: `${img.width} / ${img.height}` }}
                 className={`relative w-full md:w-[72%] shrink-0 overflow-hidden bg-zinc-200 dark:bg-zinc-800
                     ring-1 transition-[box-shadow] duration-200
@@ -112,10 +124,25 @@ const StackRow: React.FC<{
                         loading="lazy"
                         decoding="async"
                         onLoad={e => { (e.currentTarget as HTMLImageElement).style.opacity = '1'; }}
-                        className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500"
+                        className={`absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500
+                            ${isPending ? 'blur-2xl scale-110 brightness-105 dark:brightness-50' : ''}`}
                     />
                 )}
-                <span className="absolute inset-0 bg-black/0 group-hover/row:bg-black/[0.05] transition-colors duration-200" />
+                {isPending && (
+                    <>
+                        {/* Der Schimmer laeuft einmal quer, immer wieder: das
+                            Zeichen fuer "es arbeitet", das die Anwendung auch
+                            auf den Kacheln benutzt. */}
+                        <span className="absolute inset-0 bg-white/30 dark:bg-black/30" />
+                        <span className="absolute inset-0 animate-[shimmer_1.8s_linear_infinite]
+                            bg-[linear-gradient(100deg,transparent_20%,rgba(255,255,255,0.45)_50%,transparent_80%)]
+                            dark:bg-[linear-gradient(100deg,transparent_20%,rgba(255,255,255,0.10)_50%,transparent_80%)]
+                            bg-[length:200%_100%]" />
+                    </>
+                )}
+                {!isPending && (
+                    <span className="absolute inset-0 bg-black/0 group-hover/row:bg-black/[0.05] transition-colors duration-200" />
+                )}
             </button>
 
             {/* Die Spalte rechts: wer es ist, was verlangt wurde, was man tun
@@ -125,10 +152,14 @@ const StackRow: React.FC<{
             <div className="flex-1 min-w-0 md:pt-0.5 flex flex-col gap-3">
                 <div className="flex items-baseline gap-2.5">
                     <span className="text-[14px] font-medium text-zinc-700 dark:text-zinc-200 tabular-nums">
-                        {isOriginal ? 'Original' : `v${version}`}
+                        {isPending
+                            ? (lang === 'de' ? 'Neue Fassung' : 'New version')
+                            : isOriginal ? 'Original' : `v${version}`}
                     </span>
                     <span className="text-[13px] text-zinc-400 dark:text-zinc-500">
-                        {img.createdAt ? formatRelativeTime(img.createdAt, lang) : ''}
+                        {isPending
+                            ? (lang === 'de' ? 'wird erzeugt …' : 'generating …')
+                            : img.createdAt ? formatRelativeTime(img.createdAt, lang) : ''}
                     </span>
                 </div>
 
@@ -139,8 +170,8 @@ const StackRow: React.FC<{
                     </p>
                 )}
 
-                <div className="flex flex-wrap items-center gap-0.5 -ml-3.5
-                    opacity-100 md:opacity-0 md:group-hover/row:opacity-100 transition-opacity duration-200">
+                <div className={`flex flex-wrap items-center gap-0.5 -ml-3.5 transition-opacity duration-200
+                    ${isPending ? 'hidden' : 'opacity-100 md:opacity-0 md:group-hover/row:opacity-100'}`}>
                     <RowAction onClick={() => onSelect(img.id)} icon={<Pencil className="w-3.5 h-3.5" />}>
                         {lang === 'de' ? 'Bearbeiten' : 'Edit'}
                     </RowAction>

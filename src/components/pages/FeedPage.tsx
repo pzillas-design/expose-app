@@ -920,18 +920,34 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             return;
         }
 
+        /*
+            Nachhalten, nicht einmal ausgleichen.
+
+            Beim Eintritt in den Auswahlmodus bewegt sich das Raster zweimal:
+            Die Stapel loesen sich in Einzelbilder auf, UND das Blatt faehrt
+            von links herein, wodurch die Kacheln schmaler werden. Ein
+            einzelner Ausgleich rechnet gegen einen Stand, der danach noch
+            weiterlaeuft — die angetippte Kachel sass dann wieder woanders,
+            und die Seite sprang ein zweites Mal.
+
+            Deshalb wird so lange korrigiert, bis die Kachel drei Bilder lang
+            ruhig auf ihrer Hoehe steht, hoechstens aber eine halbe Sekunde.
+        */
         const start = Date.now();
+        let stable = 0;
         const hold = () => {
             const el = gridRef.current?.querySelector(`[data-image-id="${id}"]`) as HTMLElement | null;
             const sc = scrollRef.current;
             if (el && sc) {
                 const delta = el.getBoundingClientRect().top - viewportTop;
                 if (Math.abs(delta) > 1) {
+                    stable = 0;
                     sc.scrollTo({ top: Math.max(0, sc.scrollTop + delta), behavior: 'instant' as ScrollBehavior });
+                } else {
+                    stable++;
                 }
-            } else if (Date.now() - start < 600) {
-                requestAnimationFrame(hold);
             }
+            if (stable < 3 && Date.now() - start < 500) requestAnimationFrame(hold);
         };
         requestAnimationFrame(hold);
     }, [renderSelectMode, scrollGridToTile]);
@@ -1194,46 +1210,47 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
     const imageIdMap = useMemo(() => new Map(images.map(i => [i.id, i])), [images]);
 
-    // Drag & drop file upload
-    const [isDropActive, setIsDropActive] = React.useState(false);
-    const dragCounter = React.useRef(0);
+    /*
+        Erkennung per Zeitgeber, nicht per Zaehler.
 
-    const handleDragEnter = React.useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter.current++;
-        if (e.dataTransfer.types.includes('Files')) {
-            setIsDropActive(true);
-            actions?.setIsDragOver?.(true);
-        }
+        Vorher zaehlte die Seite `dragenter` hoch und `dragleave` herunter.
+        Das klingt richtig, bricht aber, sobald unter dem Zeiger etwas
+        anderes liegt: Jeder Wechsel von einem Element zum naechsten feuert
+        erst `enter` auf dem neuen und dann `leave` auf dem alten — und sobald
+        die Ablageflaeche selbst Ereignisse annahm, geriet der Zaehler in
+        Schwingung. Die Flaeche ging auf, verschwand, ging auf: das Flackern.
+        Und wer im falschen Moment losliess, legte auf nichts ab.
+
+        Jetzt gilt: Jedes `dragover` mit Dateien sagt "noch da" und setzt eine
+        Frist von 250 ms neu. Bleibt sie unerneuert, war die Datei weg.
+        `dragover` feuert waehrend eines Zugs ununterbrochen, also ist das
+        verlaesslich — und es kann nicht schwingen, weil nichts gezaehlt wird.
+    */
+    const [isDropActive, setIsDropActive] = React.useState(false);
+    const dropIdleTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const endDrag = React.useCallback(() => {
+        if (dropIdleTimer.current) { clearTimeout(dropIdleTimer.current); dropIdleTimer.current = null; }
+        setIsDropActive(false);
+        actions?.setIsDragOver?.(false);
     }, [actions]);
 
-    const handleDragLeave = React.useCallback((e: React.DragEvent) => {
+    const keepDragAlive = React.useCallback((e: React.DragEvent) => {
+        if (!e.dataTransfer?.types?.includes('Files')) return;
         e.preventDefault();
         e.stopPropagation();
-        dragCounter.current--;
-        if (dragCounter.current <= 0) {
-            dragCounter.current = 0;
+        e.dataTransfer.dropEffect = 'copy';
+        setIsDropActive(true);
+        actions?.setIsDragOver?.(true);
+        if (dropIdleTimer.current) clearTimeout(dropIdleTimer.current);
+        dropIdleTimer.current = setTimeout(() => {
             setIsDropActive(false);
             actions?.setIsDragOver?.(false);
-        }
+        }, 250);
     }, [actions]);
 
-    const handleDragOver = React.useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-    }, []);
+    React.useEffect(() => () => { if (dropIdleTimer.current) clearTimeout(dropIdleTimer.current); }, []);
 
-    /*
-        Abgelegt wird nur auf einer Flaeche, die sich dazu meldet.
-
-        Die Seite als Ganzes nimmt zwar zur Kenntnis, dass eine Datei in der
-        Luft ist (dafuer die Zaehler oben), aber sie nimmt nichts mehr an: Eine
-        Datei, die irgendwo zwischen den Kacheln faellt, landete frueher
-        wortlos im Hochladen — man sah nur ein neues Bild und wusste nicht,
-        wieso. Angenommen wird auf der Flaeche in der Mitte und auf der Zeile
-        im Seitenkopf; beide sagen von sich, dass sie gemeint sind.
-    */
     /*
         Ein- und Ausfahren des Auswahl-Blattes.
 
@@ -1259,33 +1276,21 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     /** Der Stapel liegt als Fenster ueber der Galerie. */
     const stackOpen = !!effectiveGroupId && !renderSelectMode;
 
-    const [isOverZone, setIsOverZone] = React.useState(false);
-    const handleDragCancel = React.useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        dragCounter.current = 0;
-        setIsDropActive(false);
-        setIsOverZone(false);
-        actions?.setIsDragOver?.(false);
-    }, [actions]);
-    const handleZoneEnter = React.useCallback((e: React.DragEvent) => {
-        e.preventDefault(); e.stopPropagation(); setIsOverZone(true);
-    }, []);
-    const handleZoneOver = React.useCallback((e: React.DragEvent) => {
-        e.preventDefault(); e.stopPropagation();
-        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-        setIsOverZone(true);
-    }, []);
-    const handleZoneLeave = React.useCallback((e: React.DragEvent) => {
-        e.preventDefault(); e.stopPropagation(); setIsOverZone(false);
-    }, []);
+    /*
+        Abgelegt wird auf der Seite, gezeigt wird es in der Mitte.
 
+        Kurz nahm nur die Flaeche in der Mitte Dateien an — damit nichts mehr
+        unbemerkt irgendwo zwischen den Kacheln landet. Das war in der Theorie
+        richtig und in der Hand falsch: Die Flaeche musste dafuer Ereignisse
+        annehmen, und genau das brachte die Erkennung ins Schwingen. Jetzt ist
+        die ganze Seite das Ziel, und die Flaeche in der Mitte sagt, dass
+        losgelassen werden darf. Sie nimmt selbst nichts an (`pointer-events`
+        aus), also kann sie auch nichts stoeren.
+    */
     const handleDrop = React.useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        dragCounter.current = 0;
-        setIsDropActive(false);
-        setIsOverZone(false);
-        actions?.setIsDragOver?.(false);
+        endDrag();
 
         const files = e.dataTransfer.files;
         if (files?.length && onUpload) {
@@ -1293,7 +1298,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             // statt für jedes einen neuen Stapel anzulegen.
             onUpload(files, effectiveGroupId || undefined);
         }
-    }, [onUpload, actions, effectiveGroupId]);
+    }, [onUpload, endDrag, effectiveGroupId]);
 
     // Dynamically calculate columns based on actual DOM layout
     const [columns, setColumns] = React.useState(2);
@@ -1350,7 +1355,15 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
     const { activeIndex, setActiveIndex } = useKeyboardGridNavigation({
         itemCount: displayImages.length,
-        columns,
+        /*
+            Im Stapel ist es eine Liste, also eine Spalte.
+
+            Die Spaltenzahl wird sonst am Raster gemessen; im Stapel gibt es
+            keines mehr, und der letzte Messwert der Galerie blieb stehen —
+            Hoch und Runter sprangen dann um vier oder fuenf Fassungen statt um
+            eine, und Links/Rechts tat gar nichts.
+        */
+        columns: stackOpen ? 1 : columns,
         isActive: true,
         getElementAtIndex: useCallback((idx: number) => {
             const img = displayImages[idx];
@@ -1505,9 +1518,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return (
             <div
                 className="flex-1 flex items-center justify-center bg-white dark:bg-zinc-950"
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
+                onDragEnter={keepDragAlive}
+                onDragOver={keepDragAlive}
                 onDrop={handleDrop}
             >
                 <Loader2 className="w-8 h-8 animate-spin text-zinc-400 dark:text-zinc-800" />
@@ -1520,12 +1532,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     return (
         <div
             className="flex-1 flex overflow-hidden relative"
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            // Faellt die Datei nicht auf einer Ablageflaeche, passiert nichts
-            // ausser Aufraeumen. Siehe die Begruendung bei handleZoneEnter.
-            onDrop={handleDragCancel}
+            onDragEnter={keepDragAlive}
+            onDragOver={keepDragAlive}
+            onDrop={handleDrop}
         >
             {/* Shared hidden file input for all upload triggers */}
             <input
@@ -1544,18 +1553,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 {isDropActive && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
                         <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-200" />
-                        {/* Nur hier wird abgelegt. Der Rest der Seite nimmt
-                            nichts an — eine Datei, die daneben faellt,
-                            verschwindet nicht in irgendeinem Stapel. */}
-                        <div
-                            className="relative pointer-events-auto"
-                            onDragEnter={handleZoneEnter}
-                            onDragOver={handleZoneOver}
-                            onDragLeave={handleZoneLeave}
-                            onDrop={handleDrop}
-                        >
-                            <DropPanel hot={isOverZone} label={t?.('drop_files_here') || 'Drop files here'} />
-                        </div>
+                        {/* Zeigt nur an; angenommen wird auf der Seite. */}
+                        <DropPanel hot label={t?.('drop_files_here') || 'Drop files here'} />
                     </div>
                 )}
                 {/* Fixed spacer so content starts below the expanded hero header */}
@@ -1772,8 +1771,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     onClick={triggerUpload}
                                     active={isDropActive}
                                     label={t?.('welcome_drop_cta') || 'Upload and edit'}
-                                    onDragEnter={handleZoneOver}
-                                    onDragOver={handleZoneOver}
+                                    onDragEnter={keepDragAlive}
+                                    onDragOver={keepDragAlive}
                                     onDrop={handleDrop}
                                 />
 
