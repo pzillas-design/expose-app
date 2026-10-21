@@ -698,8 +698,19 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     der ganzen Anwendung. */}
                 <div
                     aria-hidden
+                    /*
+                        Die Kante laeuft in der Farbe der Leiste aus, nicht in
+                        Schwarz.
+
+                        Im hellen Thema ist die Leiste selbst grau — ein
+                        dunkler Schatten darunter sah aus, als haette jemand
+                        eine zweite, falsche Kante gezeichnet. Jetzt setzt sich
+                        die Flaeche der Leiste nach unten fort und verliert
+                        sich; im dunklen Thema bleibt es beim Schatten, weil
+                        dort Dunkel das ist, was ausklingt.
+                    */
                     className="absolute left-0 right-0 top-full h-5 -z-10
-                        bg-gradient-to-b from-black/[0.045] to-transparent
+                        bg-gradient-to-b from-[#EDEDF0]/85 to-transparent
                         dark:from-black/40 dark:to-transparent"
                     style={{ opacity: surfaceOpacity }}
                 />
@@ -1017,8 +1028,10 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             />
             <div
                 aria-hidden
+                /* Siehe Galerie-Kopfzeile: im hellen Thema die Farbe der
+                   Leiste, nicht Schwarz. */
                 className="absolute left-0 right-0 top-full h-5 -z-10
-                    bg-gradient-to-b from-black/[0.045] to-transparent
+                    bg-gradient-to-b from-[#EDEDF0]/85 to-transparent
                     dark:from-black/40 dark:to-transparent"
             />
                 {/* LEFT: Back button */}
