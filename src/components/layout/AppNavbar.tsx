@@ -1045,13 +1045,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     )}
                     {/*
                         Direkt neben dem Namen, denn es betrifft genau diesen
-                        Stapel: aus mehreren Fassungen eine machen.
-
-                        Es hiess "Ebenen kombinieren" und stand als Kachel
-                        mitten im Raster beziehungsweise am Ende der Liste.
-                        "Ebene" ist ein Wort aus Bildbearbeitungsprogrammen —
-                        in dieser Anwendung heissen die Dinger Fassungen, und
-                        gemischt wird aus ihnen eine neue.
+                        Stapel. Vorher stand es als Kachel mitten im Raster —
+                        zwischen den Bildern, als waere es selbst eines.
 
                         Die Mittelgruppe nimmt keine Klicks an (sie liegt ueber
                         allem), dieser Knopf schon.
