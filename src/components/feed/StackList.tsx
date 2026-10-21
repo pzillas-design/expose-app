@@ -65,7 +65,16 @@ const StackRow: React.FC<{
 }> = ({ img, idx, isActive, lang, onSelect, onGenerateMore, onDownload, onHoverIndex, t }) => {
     const { version } = imageNameOf(img);
     const isOriginal = !img.parentId;
-    const prompt = (img.generationPrompt || img.userDraftPrompt || '').trim();
+    /*
+        Nur der Auftrag, der dieses Bild erzeugt hat.
+
+        Vorher wich der Code auf den ENTWURF aus (userDraftPrompt), wenn kein
+        Auftrag da war. Beim Original ist das der Text, den jemand gerade ins
+        Feld geschrieben hat — er hat das Bild nicht gemacht, er steht nur
+        daneben. Unter dem Original stand damit ein Satz, der eine Herkunft
+        behauptete, die es nicht gibt.
+    */
+    const prompt = (img.generationPrompt || '').trim();
     // Volle Aufloesung; das Vorschaubild dient nur als Platzhalter, bis sie da ist.
     const full = img.src || img.thumbSrc;
 
@@ -135,7 +144,9 @@ const StackRow: React.FC<{
                     <RowAction onClick={() => onSelect(img.id)} icon={<Pencil className="w-3.5 h-3.5" />}>
                         {lang === 'de' ? 'Bearbeiten' : 'Edit'}
                     </RowAction>
-                    {onGenerateMore && (img.generationPrompt || isOriginal) && (
+                    {/* "Mehr" wiederholt einen Auftrag. Beim Original gibt es
+                        keinen, also auch nichts zu wiederholen. */}
+                    {onGenerateMore && !!img.generationPrompt && (
                         <RowAction onClick={() => onGenerateMore(img)} icon={<Repeat className="w-3.5 h-3.5" />}>
                             {t?.('nav_more') || (lang === 'de' ? 'Mehr' : 'More')}
                         </RowAction>

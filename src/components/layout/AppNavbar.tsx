@@ -1023,11 +1023,17 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             />
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
+                    {/* Mit Beschriftung, wie auf den anderen Seiten auch: Ein
+                        freistehender Pfeil sagt "zurueck", aber nicht wohin —
+                        und aus einem Stapel geht es in die Galerie. */}
                     <button
-                        className="relative flex items-center justify-center rounded-full transition-all duration-300 group h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        className="relative flex items-center justify-center rounded-full transition-all duration-300 group h-9 px-2.5 gap-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         onClick={onCloseGroup}
                     >
                         <ChevronLeft className="shrink-0 w-[18px] h-[18px] text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100" />
+                        <span className="hidden md:inline whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+                            {t('nav_gallery') || 'Galerie'}
+                        </span>
                     </button>
                     {progressRing}
                 </div>
