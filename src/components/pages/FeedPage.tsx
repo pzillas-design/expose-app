@@ -423,48 +423,82 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                 }}
             >
 
-                {/* Stack cards — bottom center, spread on hover */}
-                {isGroup && (
-                    <>
-                        {groupCount > 2 && (
-                            <div
-                                // Das hinterste Blatt. Dunkler als das vordere, damit
-                                // es auf schwarzem Grund zuruecktritt statt als heller
-                                // Balken aufzuliegen — vorher war es mit zinc-700
-                                // heller als das Blatt davor, also genau verkehrt
-                                // herum: Das Entfernteste stach am meisten hervor.
-                                className="absolute h-full -z-20 bg-zinc-200 dark:bg-zinc-800"
+                {/*
+                    Was unter dem Deckbild hervorschaut, sind die Bilder selbst.
+
+                    Vorher zwei graue Balken. Die sagten "da ist noch mehr", aber
+                    nicht WAS — und bei einem Stapel aus Fassungen desselben
+                    Fotos ist genau das die Auskunft, die man sucht.
+
+                    Gezeigt wird dabei das DECKBILD selbst, nicht die
+                    Geschwister. Das kostet genau nichts: Dieselbe URL liegt
+                    bereits geladen und dekodiert im Zwischenspeicher, es
+                    kommt keine einzige Anfrage dazu. Die Geschwister zu laden
+                    waere ehrlicher, brachte aber zwei zusaetzliche Vorschauen
+                    je Stapel — fuer elf sichtbare Pixel, abgedunkelt, an denen
+                    niemand einen Unterschied erkennt. Die Fassungen eines
+                    Stapels sind ohnehin Varianten desselben Fotos.
+
+                    Nur den sichtbaren Streifen zu laden ginge nicht ohne
+                    serverseitigen Zuschnitt je Bild — eine eigene Verarbeitung
+                    pro Kachel, teurer als die Vorschau, die ohnehin da ist.
+                    Stattdessen sitzt die Vorschau mit `object-bottom` so, dass
+                    genau die Unterkante hervorsieht.
+                */}
+                {isGroup && (() => {
+                    const sheetSrc = img.thumbSrc || img.src;
+                    const Sheet: React.FC<{ src?: string; className: string; style: React.CSSProperties }> = ({ src, className, style }) => (
+                        <div className={className} style={style}>
+                            {src && (
+                                <img
+                                    src={src}
+                                    alt=""
+                                    aria-hidden
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="w-full h-full object-cover object-bottom brightness-[0.97] dark:brightness-[0.75]"
+                                />
+                            )}
+                        </div>
+                    );
+                    return (
+                        <>
+                            {groupCount > 2 && (
+                                <Sheet
+                                    src={sheetSrc}
+                                    // Graue Flaeche bleibt als Unterlage: Solange das
+                                    // Bild nicht geladen ist, steht dort dasselbe wie
+                                    // frueher, statt eines Lochs.
+                                    className="absolute h-full -z-20 overflow-hidden bg-zinc-200 dark:bg-zinc-800"
+                                    style={{
+                                        left: '10px', right: '10px',
+                                        bottom: 0,
+                                        // translateY statt bottom: bottom ist eine
+                                        // Layout-Eigenschaft und zwingt den Browser bei
+                                        // jedem Frame zu einem neuen Umbruch. transform
+                                        // erledigt die Grafikkarte allein.
+                                        transform: `translateY(${isKeyboardActive ? 28 : 20}px) scaleX(0.93)`,
+                                        transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
+                                        willChange: 'transform',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.10)',
+                                    }}
+                                />
+                            )}
+                            <Sheet
+                                src={sheetSrc}
+                                className="absolute h-full -z-10 overflow-hidden bg-zinc-300 dark:bg-zinc-700"
                                 style={{
-                                    left: '10px', right: '10px',
+                                    left: '5px', right: '5px',
                                     bottom: 0,
-                                    // translateY statt bottom: bottom ist eine
-                                    // Layout-Eigenschaft und zwingt den Browser bei
-                                    // jedem Frame zu einem neuen Umbruch. transform
-                                    // erledigt die Grafikkarte allein.
-                                    transform: `translateY(${isKeyboardActive ? 28 : 20}px) scaleX(0.93)`,
+                                    transform: `translateY(${isKeyboardActive ? 16 : 11}px) scaleX(0.96)`,
                                     transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
                                     willChange: 'transform',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.10)',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                                 }}
                             />
-                        )}
-                        <div
-                            // Das vordere Blatt bleibt das hellste: Naeher heisst
-                            // mehr Kontrast zum Hintergrund. Zusammen mit dem
-                            // dunkleren hinteren ergibt das eine Staffelung statt
-                            // zweier gleich lauter Balken.
-                            className="absolute h-full -z-10 bg-zinc-300 dark:bg-zinc-700"
-                            style={{
-                                left: '5px', right: '5px',
-                                bottom: 0,
-                                transform: `translateY(${isKeyboardActive ? 16 : 11}px) scaleX(0.96)`,
-                                transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
-                                willChange: 'transform',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                            }}
-                        />
-                    </>
-                )}
+                        </>
+                    );
+                })()}
 
                 {/* Main card */}
                 <div className={`absolute inset-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-white dark:bg-black group-hover:bg-zinc-50 dark:group-hover:bg-black transition-colors'}`}>
