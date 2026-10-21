@@ -1,5 +1,6 @@
 import React from 'react';
 import { Repeat, Download, Pencil } from 'lucide-react';
+import { GeneratingRing } from '@/components/ui/GeneratingRing';
 import type { CanvasImage } from '@/types';
 import { imageNameOf } from '@/utils/imageName';
 import { formatRelativeTime } from '@/utils/timeUtils';
@@ -130,14 +131,21 @@ const StackRow: React.FC<{
                 )}
                 {isPending && (
                     <>
-                        {/* Der Schimmer laeuft einmal quer, immer wieder: das
-                            Zeichen fuer "es arbeitet", das die Anwendung auch
-                            auf den Kacheln benutzt. */}
+                        {/* Schimmer plus Ring: Der eine sagt "es arbeitet", der
+                            andere, wie weit es ist. Denselben Ring tragen auch
+                            die Kacheln in der Galerie. */}
                         <span className="absolute inset-0 bg-white/30 dark:bg-black/30" />
                         <span className="absolute inset-0 animate-[shimmer_1.8s_linear_infinite]
                             bg-[linear-gradient(100deg,transparent_20%,rgba(255,255,255,0.45)_50%,transparent_80%)]
                             dark:bg-[linear-gradient(100deg,transparent_20%,rgba(255,255,255,0.10)_50%,transparent_80%)]
                             bg-[length:200%_100%]" />
+                        <span className="absolute inset-0 grid place-items-center">
+                            <GeneratingRing
+                                generationStartTime={img.generationStartTime}
+                                estimatedDuration={img.estimatedDuration}
+                                size={44}
+                            />
+                        </span>
                     </>
                 )}
                 {!isPending && (
@@ -151,16 +159,27 @@ const StackRow: React.FC<{
                 sie sich beziehen. */}
             <div className="flex-1 min-w-0 md:pt-0.5 flex flex-col gap-3">
                 <div className="flex items-baseline gap-2.5">
+                    {/* Der Platzhalter traegt schon den Namen, den er behalten
+                        wird: Die Fassungsnummer steht beim Anlegen fest, also
+                        gibt es keinen Grund, ihn "Neue Fassung" zu nennen und
+                        den Namen spaeter auszutauschen. */}
                     <span className="text-[14px] font-medium text-zinc-700 dark:text-zinc-200 tabular-nums">
-                        {isPending
-                            ? (lang === 'de' ? 'Neue Fassung' : 'New version')
-                            : isOriginal ? 'Original' : `v${version}`}
+                        {isOriginal ? 'Original' : `v${version}`}
                     </span>
-                    <span className="text-[13px] text-zinc-400 dark:text-zinc-500">
-                        {isPending
-                            ? (lang === 'de' ? 'wird erzeugt …' : 'generating …')
-                            : img.createdAt ? formatRelativeTime(img.createdAt, lang) : ''}
-                    </span>
+                    {isPending ? (
+                        {/* Nur das Wort: Der Ring liegt auf dem Bild, wo man
+                            ohnehin hinsieht. Er ist fuer Fotos gezeichnet
+                            (helle Linie) und waere hier auf heller Flaeche
+                            unsichtbar — zwei Ringe fuer dieselbe Auskunft
+                            braucht es ohnehin nicht. */}
+                        <span className="text-[13px] text-zinc-400 dark:text-zinc-500">
+                            {lang === 'de' ? 'wird erzeugt' : 'generating'}
+                        </span>
+                    ) : (
+                        <span className="text-[13px] text-zinc-400 dark:text-zinc-500">
+                            {img.createdAt ? formatRelativeTime(img.createdAt, lang) : ''}
+                        </span>
+                    )}
                 </div>
 
                 {prompt && (
