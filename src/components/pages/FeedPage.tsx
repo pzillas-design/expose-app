@@ -198,7 +198,16 @@ const TileBadge: React.FC<{
      * wo sonst der Pfeil steht — dieselbe Marke, zwei Plaetze.
      */
     wrapperClassName?: string;
-}> = ({ selected, count, pending, visible, onClick, label, wrapperClassName = 'absolute top-0 left-0 p-2.5 z-20' }) => (
+    /**
+     * Zusatz fuer die Marke selbst.
+     *
+     * Auf einer Kachel liegt sie ueber einem Foto, da traegt die weisse
+     * Flaeche. In der Tageszeile liegt sie auf hellem Grund und war dort kaum
+     * zu sehen — ein weisser Kreis auf fast weissem Grund. Dort ersetzt ein
+     * Ring die Flaeche.
+     */
+    badgeClassName?: string;
+}> = ({ selected, count, pending, visible, onClick, label, wrapperClassName = 'absolute top-0 left-0 p-2.5 z-20', badgeClassName = '' }) => (
     <div
         className={`${wrapperClassName} ${visible ? 'cursor-pointer' : 'pointer-events-none'}`}
         onClick={onClick}
@@ -212,7 +221,8 @@ const TileBadge: React.FC<{
                 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}
                 ${selected
                     ? 'bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-sm'
-                    : 'bg-white/90 dark:bg-black/60 backdrop-blur-[3px] text-zinc-700 dark:text-zinc-100 hover:bg-white dark:hover:bg-black/75'}`}
+                    : 'bg-white/90 dark:bg-black/60 backdrop-blur-[3px] text-zinc-700 dark:text-zinc-100 hover:bg-white dark:hover:bg-black/75'}
+                ${badgeClassName}`}
         >
             <span className="flex items-center gap-1 leading-none">
                 {pending && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
@@ -1191,6 +1201,28 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         wieso. Angenommen wird auf der Flaeche in der Mitte und auf der Zeile
         im Seitenkopf; beide sagen von sich, dass sie gemeint sind.
     */
+    /*
+        Ein- und Ausfahren des Auswahl-Blattes.
+
+        Zwei Werte, weil beides noetig ist: `mounted` haelt die Spalte noch im
+        Baum, waehrend sie zusammenlaeuft (sonst waere sie schlagartig weg),
+        und `in` wird erst im naechsten Frame wahr — eine Breite animiert nur,
+        wenn der Startwert vorher einmal gezeichnet wurde.
+    */
+    const selSheetWanted = !!isSelectMode && !isMobile && !!isSelectionSideSheetOpen;
+    const [selSheetMounted, setSelSheetMounted] = React.useState(selSheetWanted);
+    const [selSheetIn, setSelSheetIn] = React.useState(selSheetWanted);
+    React.useEffect(() => {
+        if (selSheetWanted) {
+            setSelSheetMounted(true);
+            const raf = requestAnimationFrame(() => setSelSheetIn(true));
+            return () => cancelAnimationFrame(raf);
+        }
+        setSelSheetIn(false);
+        const t = setTimeout(() => setSelSheetMounted(false), 280);
+        return () => clearTimeout(t);
+    }, [selSheetWanted]);
+
     const [isOverZone, setIsOverZone] = React.useState(false);
     const handleDragCancel = React.useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -1599,6 +1631,10 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                                 visible
                                                                 wrapperClassName={`absolute inset-0 grid place-items-center transition-opacity duration-200
                                                                     ${dayPicked ? 'opacity-100' : 'opacity-0 group-hover/day:opacity-100'}`}
+                                                                // Auf hellem Grund traegt ein Ring, keine Flaeche.
+                                                                badgeClassName={dayPicked
+                                                                    ? ''
+                                                                    : '!bg-transparent !backdrop-blur-none ring-[1.5px] ring-zinc-400/80 dark:ring-zinc-500 hover:!bg-black/[0.04] dark:hover:!bg-white/[0.08]'}
                                                                 label={state?.currentLang === 'de' ? 'Tag markieren' : 'Select day'}
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -1775,9 +1811,24 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 </div>
             )}
 
-            {/* Selection SideSheet */}
-            {isSelectMode && !isMobile && isSelectionSideSheetOpen && (
-                <div className={`w-[380px] shrink-0 ${Theme.Colors.CanvasBg} flex flex-col z-10 relative`}>
+            {/*
+                Das Blatt der Auswahl — links, und es faehrt herein.
+
+                Es sass rechts und erschien schlagartig: Das Raster sprang in
+                dem Moment auf die schmalere Breite, und der Blick musste die
+                Seite wechseln. Jetzt steht es dort, wo das Blatt in der
+                Detailansicht auch steht, seine Spalte waechst von null auf ihre
+                Breite, und der Inhalt kommt von links herein. Das Raster rueckt
+                dadurch nicht, es staucht sich: Die Spaltenzahl bleibt, nur die
+                Kacheln werden schmaler.
+            */}
+            {selSheetMounted && !isMobile && (
+                <div
+                    style={{ width: selSheetIn ? 380 : 0 }}
+                    className={`order-first shrink-0 overflow-hidden ${Theme.Colors.SheetBg} flex flex-col z-10 relative
+                        transition-[width] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none`}
+                >
+                  <div className="w-[380px] h-full flex flex-col animate-[sheet-in_260ms_cubic-bezier(0.16,1,0.3,1)_backwards]">
                     {selectedIds.length > 0 ? (() => {
                         const selectedImages = images.filter(img => selectedIds.includes(img.id));
                         const selectedImage = selectedImages.length > 0 ? selectedImages[selectedImages.length - 1] : null;
@@ -1838,6 +1889,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                             </p>
                         </div>
                     )}
+                  </div>
                 </div>
             )}
 

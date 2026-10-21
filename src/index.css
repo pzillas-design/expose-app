@@ -287,7 +287,12 @@ html:not(.dark) {
 }
 
 /*
- * Das Blatt kommt von seiner Seite herein, nicht aus dem Nichts.
+ * Das Blatt kommt von LINKS herein — ueberall, wo eines aufgeht.
+ *
+ * Vierzig Pixel in 260 ms: weit genug, dass man die Richtung sieht, kurz
+ * genug, dass niemand darauf wartet. Vorher waren es vierzehn Pixel, was eher
+ * nach Zittern aussah als nach Hereinkommen, und in der Galerie erschien das
+ * Blatt ueberhaupt ohne Bewegung — und rechts.
  *
  * Wird mit fill-mode `backwards` benutzt, nicht `both`: Bei `both` bleibt der
  * Endzustand als Transformation stehen — auch translateX(0) ist eine —, und
@@ -298,12 +303,19 @@ html:not(.dark) {
 @keyframes sheet-in {
   from {
     opacity: 0;
-    transform: translateX(-14px);
+    transform: translateX(-40px);
   }
 
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes sheet-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
 }
 

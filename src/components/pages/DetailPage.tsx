@@ -1345,7 +1345,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     // Waehrend des Ziehens KEINE Breitenanimation: Sonst laeuft
                     // die Kante dem Zeiger hinterher, und das fuehlt sich an wie
                     // ein Gummiband statt wie ein Griff.
-                    className={`flex flex-col relative md:overflow-hidden md:shrink-0 ${isResizing ? '' : 'md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out'} motion-reduce:md:transition-none
+                    className={`flex flex-col relative md:overflow-hidden md:shrink-0 ${isResizing ? '' : 'md:transition-[width,height,padding-top] md:duration-[260ms] md:ease-[cubic-bezier(0.16,1,0.3,1)]'} motion-reduce:md:transition-none
                         ${isSheetColumn
                             // Im hellen Modus eine Haarlinie dazu: Weiss auf Zink-50
                             // ist ein Unterschied von drei Prozent Helligkeit — der
@@ -1356,7 +1356,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // stossen sie aneinander, und die Kante entsteht aus dem
                             // Wechsel der Flaeche.
                             ? `md:order-first ${Theme.Colors.SheetBg}
-                                md:animate-[sheet-in_340ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
+                                md:animate-[sheet-in_260ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
                             // Schmale Geraete: alles unter dem Bild ist EIN Blatt,
                             // und es reicht bis zur Unterkante. Vorher war es
                             // durchsichtig und endete mit seinem Inhalt — darunter
