@@ -86,12 +86,13 @@ const StackRow: React.FC<{
                 ['--fan-from' as any]: `${-Math.min(16 + idx * 12, 72)}px`,
                 animationDelay: `${Math.min(idx * 50, 350)}ms`,
             }}
-            className="group/row animate-[stack-fan_460ms_cubic-bezier(0.16,1,0.3,1)_backwards] flex flex-col"
+            className="group/row animate-[stack-fan_460ms_cubic-bezier(0.16,1,0.3,1)_backwards]
+                flex flex-col md:flex-row md:items-start gap-4 md:gap-8"
         >
             <button
                 onClick={() => onSelect(img.id)}
                 style={{ aspectRatio: `${img.width} / ${img.height}` }}
-                className={`relative w-full overflow-hidden bg-zinc-200 dark:bg-zinc-800
+                className={`relative w-full md:w-[72%] shrink-0 overflow-hidden bg-zinc-200 dark:bg-zinc-800
                     ring-1 transition-[box-shadow] duration-200
                     ${isActive ? 'ring-black/20 dark:ring-white/25' : 'ring-black/5 dark:ring-white/10'}`}
             >
@@ -109,30 +110,28 @@ const StackRow: React.FC<{
                 <span className="absolute inset-0 bg-black/0 group-hover/row:bg-black/[0.05] transition-colors duration-200" />
             </button>
 
-            {/* Die Zeile unter dem Bild: links, wer es ist; rechts, was man tun
-                kann. Die Handlungen erscheinen beim Ueberfahren — auf dem Handy
-                stehen sie fest, dort gibt es kein Ueberfahren. */}
-            <div className="flex items-center gap-3 pt-3 min-h-[44px]">
-                <span className="text-[14px] font-medium text-zinc-700 dark:text-zinc-200 tabular-nums shrink-0">
-                    {isOriginal ? 'Original' : `v${version}`}
-                </span>
-                <span className="text-[13px] text-zinc-400 dark:text-zinc-500 shrink-0">
-                    {img.createdAt ? formatRelativeTime(img.createdAt, lang) : ''}
-                </span>
+            {/* Die Spalte rechts: wer es ist, was verlangt wurde, was man tun
+                kann — untereinander. In einer Zeile unter dem Bild lagen die
+                drei Handlungen an der fernen Kante, weit weg von dem, worauf
+                sie sich beziehen. */}
+            <div className="flex-1 min-w-0 md:pt-0.5 flex flex-col gap-3">
+                <div className="flex items-baseline gap-2.5">
+                    <span className="text-[14px] font-medium text-zinc-700 dark:text-zinc-200 tabular-nums">
+                        {isOriginal ? 'Original' : `v${version}`}
+                    </span>
+                    <span className="text-[13px] text-zinc-400 dark:text-zinc-500">
+                        {img.createdAt ? formatRelativeTime(img.createdAt, lang) : ''}
+                    </span>
+                </div>
 
                 {prompt && (
-                    <span className="hidden lg:block min-w-0 max-w-[48%] truncate text-[13px] text-zinc-400 dark:text-zinc-500
-                        opacity-0 group-hover/row:opacity-100 transition-opacity duration-200">
+                    <p className="text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400 line-clamp-5
+                        opacity-100 md:opacity-0 md:group-hover/row:opacity-100 transition-opacity duration-200">
                         {prompt}
-                    </span>
+                    </p>
                 )}
 
-                {/* Der Abstandhalter schiebt die Handlungen immer an das rechte
-                    Ende der Bildkante — auch bei einem Bild ohne Auftrag, wo
-                    sie sonst mitten in der Zeile haengen blieben. */}
-                <div className="flex-1" />
-
-                <div className="flex items-center gap-0.5 shrink-0
+                <div className="flex flex-wrap items-center gap-0.5 -ml-3.5
                     opacity-100 md:opacity-0 md:group-hover/row:opacity-100 transition-opacity duration-200">
                     <RowAction onClick={() => onSelect(img.id)} icon={<Pencil className="w-3.5 h-3.5" />}>
                         {lang === 'de' ? 'Bearbeiten' : 'Edit'}
@@ -157,15 +156,15 @@ export const StackList: React.FC<StackListProps> = ({
     images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onCombineLayers, onHoverIndex, t,
 }) => (
     /*
-        Mittig und breit: 72 Prozent des Fensters, hoechstens 1400 Pixel.
+        Mittig: der Block nimmt 86 Prozent des Fensters, das BILD darin 72
+        Prozent des Blocks — also rund 62 Prozent der Fensterbreite. Rechts
+        daneben bleibt die Spalte mit Fassung, Auftrag und Handlungen.
 
-        Auf einem grossen Schirm war die vorige Breite zu knapp — man vergleicht
-        Fassungen, und was man nicht sieht, kann man nicht vergleichen. Die
-        Obergrenze verhindert, dass ein Bild auf einem sehr breiten Schirm zur
-        Plakatwand wird.
+        Die Obergrenze verhindert, dass ein Bild auf einem sehr breiten Schirm
+        zur Plakatwand wird.
     */
     <div className="w-full flex justify-center px-4 sm:px-8 pt-8 sm:pt-12 pb-32">
-        <div className="w-full md:w-[72%] max-w-[1400px] flex flex-col gap-14 sm:gap-20">
+        <div className="w-full md:w-[86%] max-w-[1600px] flex flex-col gap-14 sm:gap-20">
             {images.map((img, idx) => (
                 <StackRow
                     key={img.id}
