@@ -448,20 +448,22 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     gar nichts: Gerechnet wird einmal je Bild und Sitzung auf
                     einer 1x1-Leinwand, danach ist es eine Hintergrundfarbe.
 
-                    Je weiter hinten, desto dunkler — zwei Blaetter in
-                    derselben Farbe waeren ein Block, und Tiefe entsteht aus
-                    dem Unterschied. Ohne Farbe (CORS verweigert das Auslesen)
+                    Je weiter hinten, desto weiter weg vom Vordergrund: im
+                    hellen Thema heller, im dunklen dunkler. Tiefe entsteht
+                    daraus, dass die Flaeche sich dem Grund annaehert — und der
+                    ist hier hell und dort dunkel. Zwei Blaetter in derselben
+                    Farbe waeren ein Block. Ohne Farbe (CORS verweigert das Auslesen)
                     bleibt es beim Grau von frueher.
                 */}
                 {isGroup && (
                     <>
                         {groupCount > 2 && (
                             <div
-                                className={`absolute h-full -z-20 ${stackColor ? '' : 'bg-zinc-200 dark:bg-zinc-800'}`}
+                                className={`absolute h-full -z-20 ${stackColor ? 'brightness-[1.18] dark:brightness-[0.78]' : 'bg-zinc-200 dark:bg-zinc-800'}`}
                                 style={{
                                     left: '10px', right: '10px',
                                     bottom: 0,
-                                    ...(stackColor ? { backgroundColor: stackColor, filter: 'brightness(0.82)' } : {}),
+                                    ...(stackColor ? { backgroundColor: stackColor } : {}),
                                     // translateY statt bottom: bottom ist eine
                                     // Layout-Eigenschaft und zwingt den Browser bei
                                     // jedem Frame zu einem neuen Umbruch. transform
@@ -474,11 +476,11 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                             />
                         )}
                         <div
-                            className={`absolute h-full -z-10 ${stackColor ? '' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                            className={`absolute h-full -z-10 ${stackColor ? 'brightness-[1.09] dark:brightness-[0.89]' : 'bg-zinc-300 dark:bg-zinc-700'}`}
                             style={{
                                 left: '5px', right: '5px',
                                 bottom: 0,
-                                ...(stackColor ? { backgroundColor: stackColor, filter: 'brightness(0.91)' } : {}),
+                                ...(stackColor ? { backgroundColor: stackColor } : {}),
                                 transform: `translateY(${isKeyboardActive ? 16 : 11}px) scaleX(0.96)`,
                                 transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
                                 willChange: 'transform',
@@ -1219,6 +1221,18 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     const handledLastViewedRef = React.useRef<string | null>(null);
     React.useLayoutEffect(() => {
         if (!lastViewedRowCoverId) return;
+        /*
+            Im Auswahlmodus nicht.
+
+            Dieser Zoom samt Scroll ist die Rueckkehr aus der Detailansicht:
+            "Hier kommst du her." Beim Markieren setzt die Anwendung aber
+            ebenfalls ein zuletzt angesehenes Bild — und damit sprang die
+            Seite nach JEDEM Haken an die Kachel, die man gerade angetippt
+            hatte. Beim Markieren wird nicht navigiert, also wird auch nicht
+            gescrollt; die eine Ausrichtung beim Eintritt in den Modus
+            besorgt die Hoehen-Nachhaltung weiter oben.
+        */
+        if (isSelectMode || renderSelectMode) return;
         if (handledLastViewedRef.current === lastViewedRowCoverId) return;
         // Steht die Kachel noch nicht in den Reihen, übernimmt der nächste Durchlauf.
         if (!rows.some(r => r.items.some(i => i.id === lastViewedRowCoverId))) return;
@@ -1226,7 +1240,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         setReturnCoverId(lastViewedRowCoverId);
         setTimeout(() => setReturnCoverId(null), ZOOM_RETURN_CLEAR_MS);
         scrollTileToTop(lastViewedRowCoverId);
-    }, [lastViewedRowCoverId, rows, scrollTileToTop]);
+    }, [lastViewedRowCoverId, rows, scrollTileToTop, isSelectMode, renderSelectMode]);
 
     // O(1) lookups instead of O(n) per item
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -1297,6 +1311,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
 
     /** Der Stapel liegt als Fenster ueber der Galerie. */
     const stackOpen = !!effectiveGroupId && !renderSelectMode;
+
+    /** Welche Tageszeile gerade unter dem Zeiger liegt — fuer ihre Marke. */
+    const [isDayHovered, setIsDayHovered] = React.useState<string | null>(null);
 
     /*
         Abgelegt wird auf der Seite, gezeigt wird es in der Mitte.
@@ -1691,48 +1708,35 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                     // Dieselbe Rundung und dieselbe Flaechenfarbe
                                                     // wie dort — und mehr Hoehe, damit die Flaeche
                                                     // beim Ueberfahren traegt statt nur anzudeuten.
-                                                    className="col-span-full flex items-center gap-2 px-4 py-3.5 -my-5 sm:-my-8 rounded-2xl text-left
-                                                        hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors duration-150 group/day"
+                                                    // Buendig mit den Kacheln: keine eigene
+                                                    // Seiteneinrueckung. Der Pfeil beginnt genau
+                                                    // dort, wo darunter die erste Kachel beginnt.
+                                                    onMouseEnter={() => setIsDayHovered(sec.key)}
+                                                    onMouseLeave={() => setIsDayHovered(null)}
+                                                    className="col-span-full flex items-center gap-2 px-0 py-3.5 -my-5 sm:-my-8 rounded-2xl text-left
+                                                        transition-colors duration-150 group/day"
                                                 >
                                                     {/*
-                                                        Ein Platz, zwei Zeichen.
+                                                        Pfeil und Marke stehen nebeneinander, nicht
+                                                        uebereinander.
 
-                                                        Im Ruhezustand der Pfeil — er sagt, ob der Tag
-                                                        offen ist. Beim Ueberfahren (und solange etwas
-                                                        aus diesem Tag markiert ist) steht an derselben
-                                                        Stelle die Marke aus dem Raster: ein Klick, und
-                                                        der ganze Tag ist markiert. Zwei Zeichen
-                                                        nebeneinander waeren eine Zeile aus Symbolen
-                                                        gewesen, und der Pfeil haette daneben nichts
-                                                        mehr zu sagen gehabt.
+                                                        Kurz teilten sie sich einen Platz: Beim
+                                                        Ueberfahren verschwand der Pfeil und die Marke
+                                                        trat an seine Stelle. Das verdeckte die eine
+                                                        Auskunft, um die andere zu zeigen — und der
+                                                        Pfeil ist die wichtigere, er sagt, ob der Tag
+                                                        offen ist.
+
+                                                        Der Pfeil steht deshalb fest an der Kante der
+                                                        Kacheln, danach die Beschriftung, und die Marke
+                                                        kommt dahinter dazu. Sie ist dieselbe
+                                                        Komponente wie im Raster, mitsamt ihrem
+                                                        Groessensprung beim Erscheinen.
                                                     */}
-                                                    <span className="relative w-[26px] h-[26px] shrink-0 grid place-items-center">
-                                                        <ChevronRight
-                                                            className={`w-4 h-4 text-zinc-400 transition-[transform,opacity] duration-200
-                                                                ${closed ? '' : 'rotate-90'}
-                                                                ${dayPicked || !onToggleSelectStack ? '' : 'group-hover/day:opacity-0'}
-                                                                ${dayPicked ? 'opacity-0' : 'opacity-100'}`}
-                                                            strokeWidth={2}
-                                                        />
-                                                        {onToggleSelectStack && (
-                                                            <TileBadge
-                                                                selected={dayPicked}
-                                                                visible
-                                                                wrapperClassName={`absolute inset-0 grid place-items-center transition-opacity duration-200
-                                                                    ${dayPicked ? 'opacity-100' : 'opacity-0 group-hover/day:opacity-100'}`}
-                                                                // Auf hellem Grund traegt ein Ring, keine Flaeche.
-                                                                badgeClassName={dayPicked
-                                                                    ? ''
-                                                                    : '!bg-transparent !backdrop-blur-none ring-[1.5px] ring-zinc-400/80 dark:ring-zinc-500 hover:!bg-black/[0.04] dark:hover:!bg-white/[0.08]'}
-                                                                label={state?.currentLang === 'de' ? 'Tag markieren' : 'Select day'}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    e.preventDefault();
-                                                                    onToggleSelectStack(sec.ids);
-                                                                }}
-                                                            />
-                                                        )}
-                                                    </span>
+                                                    <ChevronRight
+                                                        className={`w-4 h-4 shrink-0 text-zinc-400 transition-transform duration-200 ${closed ? '' : 'rotate-90'}`}
+                                                        strokeWidth={2}
+                                                    />
                                                     {/* Dezenter: Die Kopfzeile ordnet, sie ist nicht
                                                         der Inhalt. Typo.H4 ist halbfett und in
                                                         Textfarbe — damit stand das Datum lauter da
@@ -1740,6 +1744,19 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                     <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-400 group-hover/day:text-zinc-800 dark:group-hover/day:text-zinc-200 transition-colors">
                                                         {sec.label}
                                                     </span>
+                                                    {onToggleSelectStack && (
+                                                        <TileBadge
+                                                            selected={dayPicked}
+                                                            visible={dayPicked || isDayHovered === sec.key}
+                                                            wrapperClassName="relative ml-0.5 shrink-0"
+                                                            label={state?.currentLang === 'de' ? 'Tag markieren' : 'Select day'}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                e.preventDefault();
+                                                                onToggleSelectStack(sec.ids);
+                                                            }}
+                                                        />
+                                                    )}
                                                     {sec.daysLeft != null && sec.daysLeft <= WARNING_DAYS && (
                                                         // Dezent, aber nicht zu uebersehen: Steht der Tag zu,
                                                         // sind die gelben Punkte an den Kacheln verdeckt, und

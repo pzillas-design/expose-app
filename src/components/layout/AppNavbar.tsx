@@ -683,7 +683,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 <div
                     aria-hidden
                     className="absolute inset-0 -z-10 backdrop-blur-[64px] backdrop-saturate-[1.4]
-                        bg-[#EDEDF0]/45 dark:bg-[#0C0C11]/50"
+                        bg-[#F6F6F8]/55 dark:bg-[#0C0C11]/50"
                     style={{
                         opacity: surfaceOpacity,
                     }}
@@ -1008,7 +1008,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <div
                 aria-hidden
                 className="absolute inset-0 -z-10 backdrop-blur-[64px] backdrop-saturate-[1.4]
-                    bg-[#EDEDF0]/45 dark:bg-[#0C0C11]/50"
+                    bg-[#F6F6F8]/55 dark:bg-[#0C0C11]/50"
             />
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
@@ -1097,7 +1097,7 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             <div
                 aria-hidden
                 className="absolute inset-0 -z-10 backdrop-blur-[64px] backdrop-saturate-[1.4]
-                    bg-[#EDEDF0]/45 dark:bg-[#0C0C11]/50"
+                    bg-[#F6F6F8]/55 dark:bg-[#0C0C11]/50"
             />
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
