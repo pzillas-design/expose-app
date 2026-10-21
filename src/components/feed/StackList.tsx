@@ -1,5 +1,5 @@
 import React from 'react';
-import { Repeat, Download, Layers2, Pencil } from 'lucide-react';
+import { Repeat, Download, Pencil } from 'lucide-react';
 import type { CanvasImage } from '@/types';
 import { imageNameOf } from '@/utils/imageName';
 import { formatRelativeTime } from '@/utils/timeUtils';
@@ -29,7 +29,6 @@ interface StackListProps {
     onSelect: (id: string) => void;
     onGenerateMore?: (img: CanvasImage) => void;
     onDownload?: (id: string) => void;
-    onCombineLayers?: () => void;
     onHoverIndex?: (idx: number | null) => void;
     t?: (key: any) => string;
 }
@@ -153,7 +152,7 @@ const StackRow: React.FC<{
 };
 
 export const StackList: React.FC<StackListProps> = ({
-    images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onCombineLayers, onHoverIndex, t,
+    images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onHoverIndex, t,
 }) => (
     /*
         Mittig: der Block nimmt 86 Prozent des Fensters, das BILD darin 72
@@ -180,21 +179,6 @@ export const StackList: React.FC<StackListProps> = ({
                 />
             ))}
 
-            {/* Ebenen kombinieren steht am Ende der Liste, nicht in einer
-                eigenen Leiste: Es ist etwas, das man mit dem GANZEN Stapel tut,
-                also gehoert es unter ihn. */}
-            {onCombineLayers && images.length >= 2 && (
-                <button
-                    onClick={onCombineLayers}
-                    className="self-center h-11 px-5 rounded-full inline-flex items-center gap-2.5 text-[14px] font-medium
-                        bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.07] dark:hover:bg-white/[0.10]
-                        text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white
-                        transition-colors duration-150"
-                >
-                    <Layers2 className="w-4 h-4" strokeWidth={1.5} />
-                    {currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
-                </button>
-            )}
         </div>
     </div>
 );

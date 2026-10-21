@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, PanelBottom, Maximize2, Minus, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
+import { Layers2, ChevronLeft, MoreHorizontal, PanelBottom, Maximize2, Minus, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
@@ -1043,10 +1043,35 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             {groupVersionLabel}
                         </span>
                     )}
+                    {/*
+                        Direkt neben dem Namen, denn es betrifft genau diesen
+                        Stapel: aus mehreren Fassungen eine machen.
+
+                        Es hiess "Ebenen kombinieren" und stand als Kachel
+                        mitten im Raster beziehungsweise am Ende der Liste.
+                        "Ebene" ist ein Wort aus Bildbearbeitungsprogrammen —
+                        in dieser Anwendung heissen die Dinger Fassungen, und
+                        gemischt wird aus ihnen eine neue.
+
+                        Die Mittelgruppe nimmt keine Klicks an (sie liegt ueber
+                        allem), dieser Knopf schon.
+                    */}
+                    {canOpenLayerComposer && onOpenLayerComposer && (
+                        <button
+                            onClick={onOpenLayerComposer}
+                            className="pointer-events-auto ml-2 h-8 px-3 rounded-full shrink-0 inline-flex items-center gap-1.5
+                                text-[13px] font-medium
+                                bg-black/[0.05] dark:bg-white/[0.08] hover:bg-black/[0.09] dark:hover:bg-white/[0.14]
+                                text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white
+                                transition-colors duration-150"
+                        >
+                            <Layers2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                            {t('combine_versions')}
+                        </button>
+                    )}
                 </div>
 
-                {/* RIGHT: balance + menu — the layer composer is now entered via the
-                    "Ebenen kombinieren" tile in the grid, so no navbar button here. */}
+                {/* RIGHT: balance + menu */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-end relative z-10 pointer-events-auto">
                     {rightContent}
                 </div>

@@ -1630,7 +1630,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         onSelect={(id) => onSelectImage?.(id)}
                                         onGenerateMore={actions?.handleGenerateMore}
                                         onDownload={actions?.handleDownload}
-                                        onCombineLayers={!isSelectMode ? openComposer : undefined}
                                         onHoverIndex={setActiveIndex}
                                         t={t}
                                     />
