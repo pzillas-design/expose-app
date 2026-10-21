@@ -131,14 +131,11 @@ const StackRow: React.FC<{
                 )}
                 {isPending && (
                     <>
-                        {/* Schimmer plus Ring: Der eine sagt "es arbeitet", der
-                            andere, wie weit es ist. Denselben Ring tragen auch
-                            die Kacheln in der Galerie. */}
-                        <span className="absolute inset-0 bg-white/30 dark:bg-black/30" />
-                        <span className="absolute inset-0 animate-[shimmer_1.8s_linear_infinite]
-                            bg-[linear-gradient(100deg,transparent_20%,rgba(255,255,255,0.45)_50%,transparent_80%)]
-                            dark:bg-[linear-gradient(100deg,transparent_20%,rgba(255,255,255,0.10)_50%,transparent_80%)]
-                            bg-[length:200%_100%]" />
+                        {/* Nur ruhig abgedeckt, kein wandernder Glanz: Der
+                            Ring sagt bereits, dass gearbeitet wird, und er sagt
+                            es genauer. Zwei Bewegungen nebeneinander machen aus
+                            dem Warten ein Flimmern. */}
+                        <span className="absolute inset-0 bg-white/40 dark:bg-black/40" />
                         <span className="absolute inset-0 grid place-items-center">
                             <GeneratingRing
                                 generationStartTime={img.generationStartTime}
