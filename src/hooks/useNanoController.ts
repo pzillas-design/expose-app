@@ -285,24 +285,17 @@ export const useNanoController = () => {
             }
 
             /*
-                Nachladen hat Vorrang zu geben.
+                Nachladen ist das, worauf gewartet wird.
 
-                Eine Seite bringt bis zu fuenfzig Reihen auf einmal. Als
-                gewoehnliche Zustandsaenderung muss React sie in EINEM Zug
-                einbauen — und solange das laeuft, bewegt sich nichts, auch
-                nicht das Scrollen. Genau das ist der Ruck beim Nachladen.
-
-                Als Uebergang (`startTransition`) darf React die Arbeit
-                unterbrechen, wenn etwas Dringenderes dazwischenkommt, und
-                danach weitermachen. Die Bilder erscheinen dadurch
-                unmerklich spaeter, aber das Scrollen bleibt fluessig. Nur
-                beim ERSTEN Laden nicht: Da wartet der Nutzer ohnehin, und
-                dort soll nichts verzoegert werden.
+                Kurz lief das hier als Uebergang (`startTransition`), damit das
+                Scrollen waehrend des Einbauens fluessig bleibt. Der Preis war
+                falsch herum: React darf einen Uebergang zurueckstellen, solange
+                Dringenderes kommt — und beim Scrollen kommt staendig etwas.
+                Die neuen Zeilen erschienen dadurch spuerbar spaeter. Wer bis
+                ans Ende gescrollt hat, wartet auf genau diese Zeilen; sie sind
+                das Dringende.
             */
-            const applyRows = (updater: Parameters<typeof setRows>[0]) =>
-                isInitial ? setRows(updater) : React.startTransition(() => setRows(updater));
-
-            applyRows(prev => {
+            setRows(prev => {
                 if (isInitial) return loadedRows;
                 // Merge load-more rows into existing rows, deduplicating by image ID.
                 // Pagination offset can shift (new images inserted between pages) causing

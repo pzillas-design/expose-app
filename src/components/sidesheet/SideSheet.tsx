@@ -1855,12 +1855,13 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                                                         })) : []),
                                                                         ...(hideTemplates ? displayTemplates : hiddenTemplates).map((tpl, i) => ({
                                                                             label: tpl.title,
-                                                                            // Das Emoji der Vorlage steht auch hier davor:
-                                                                            // Es gehoert zu ihr, nicht zur Chip-Reihe.
-                                                                            icon: tpl.emoji
-                                                                                ? <span className="text-sm leading-none">{tpl.emoji}</span>
+                                                                            // Das Zeichen der Vorlage steht VOR ihrem Namen,
+                                                                            // wie im Chip und in der Verwaltung auch. Rechts
+                                                                            // ist die Spalte der Haken, also des Zustands.
+                                                                            leading: tpl.emoji
+                                                                                ? <span>{tpl.emoji}</span>
                                                                                 : tpl.isCustom
-                                                                                    ? <Bookmark className="w-4 h-4 opacity-60" fill="currentColor" strokeWidth={0} />
+                                                                                    ? <Bookmark className="w-3.5 h-3.5 opacity-60 mx-auto" fill="currentColor" strokeWidth={0} />
                                                                                     : undefined,
                                                                             separator: i === 0 && hideSuggestions && imageSuggestions.length > 0,
                                                                             onClick: () => { setIsChipMenuOpen(false); handleSelectTemplate(tpl); },

@@ -3,6 +3,15 @@ import { MenuSurface, Typo } from '@/components/ui/DesignSystem';
 
 export interface DropdownItem {
     label: string;
+    /**
+     * Zeichen VOR der Beschriftung.
+     *
+     * Rechts steht, was ueber den Zustand des Eintrags spricht (Haken,
+     * Lesezeichen); links steht, was zu der Sache selbst gehoert — bei einer
+     * Vorlage ihr Emoji. Vorher landete auch das Emoji rechts im Zustandsfeld,
+     * weit weg von seinem Namen und in einer Spalte mit den Haken.
+     */
+    leading?: React.ReactNode;
     icon?: React.ReactNode;
     onClick: () => void;
     danger?: boolean;
@@ -48,7 +57,12 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({ items, className = '
                         onClick={item.onClick}
                         className={item.danger ? dangerClass : itemClass}
                     >
-                        <span className={item.danger ? dangerTextClass : textClass}>{item.label}</span>
+                        <span className="flex items-center gap-2.5 min-w-0">
+                            {item.leading && (
+                                <span className="w-5 shrink-0 text-center text-sm leading-none">{item.leading}</span>
+                            )}
+                            <span className={`${item.danger ? dangerTextClass : textClass} truncate`}>{item.label}</span>
+                        </span>
                         {item.icon && (
                             <span className={item.danger ? dangerIconClass : iconClass}>
                                 {item.icon}

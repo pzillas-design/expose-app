@@ -443,6 +443,34 @@ html:not(.dark) {
   }
 }
 
+/*
+ * Der Stapel faechert auseinander.
+ *
+ * Auf der Kachel liegen zwei graue Blaetter hinter dem Deckbild. Geht der
+ * Stapel auf, kommt jede Zeile aus der Lage der vorigen heran — weiter unten
+ * heisst weiter her (`--fan-from`) — und wird dabei aus einer grauen Flaeche
+ * zu ihrem Bild. Das Bild selbst blendet ueber dem Grau ein, nicht aus dem
+ * Nichts: So liest sich die Bewegung als "die Blaetter werden zu den Bildern".
+ */
+@keyframes stack-fan {
+  from {
+    opacity: 0;
+    transform: translateY(var(--fan-from, -24px)) scaleX(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes stack-fan {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
 @keyframes credits-step-in {
   from {
     opacity: 0;

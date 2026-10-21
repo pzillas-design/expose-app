@@ -1,17 +1,18 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
 import { NAV_SCROLL_OFFSET } from '@/config/layout';
-import { Loader2, Layers, Layers2, ChevronRight, Upload, Download, X, Check } from 'lucide-react';
+import { Loader2, Layers, Layers2, ChevronLeft, ChevronRight, Upload, Download, X, Check } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
 import { useKeyboardGridNavigation } from '@/hooks/useKeyboardGridNavigation';
 import { useItemDialog } from '@/components/ui/Dialog';
-import { Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
+import { RoundIconButton, Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { FeedHeroSection } from '../layout/FeedHeroSection';
 import { LayerComposer } from '@/components/composer/LayerComposer';
 import { DropPanel } from '@/components/ui/DropPanel';
+import { StackList } from '@/components/feed/StackList';
 import { GeneratingRing } from '@/components/ui/GeneratingRing';
 
 /* ── TTL helpers ── */
@@ -736,16 +737,35 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (!el || effectiveGroupId) return; // only the main feed paginates
         const onScroll = () => {
             if (!hasMore || isFetchingMore || isLoading) return;
-            // Sind alle Tage zugeklappt, steht nichts im Weg: Der Fussbereich
-            // liegt dann staendig im Blick, und jeder Lauf wuerde die naechste
-            // Seite holen — die wieder nur eine zugeklappte Zeile beitraegt.
-            // Dann wird nicht von selbst geladen; dafuer gibt es den Knopf.
-            if (visibleCountRef.current === 0) return;
             if (el.scrollTop + el.clientHeight >= el.scrollHeight - 600) onLoadMore?.();
         };
         el.addEventListener('scroll', onScroll, { passive: true });
         return () => el.removeEventListener('scroll', onScroll);
     }, [effectiveGroupId, hasMore, isFetchingMore, isLoading, onLoadMore, hasImages]);
+
+    /*
+        Solange die Seite den Schirm nicht fuellt, wird weitergeladen.
+
+        Zugeklappte Tage sind eine Textzeile von 48 Pixeln. Eine Seite davon
+        fuellt den Schirm nicht einmal halb, und weil frueher ausserdem gar
+        nicht von selbst nachgeladen wurde, wenn nichts Sichtbares dazukam,
+        tropften die Tage einzeln herein, sobald man scrollte — jedes Mal ein
+        Sprung, und jedes Mal nur Text.
+
+        Jetzt holt die Seite so lange nach, bis sie anderthalb Schirme hoch ist.
+        Das sind bei zugeklappten Tagen ein paar Durchlaeufe hintereinander, die
+        niemand einzeln sieht; danach greift wieder das gewohnte Nachladen beim
+        Scrollen.
+    */
+    React.useEffect(() => {
+        if (effectiveGroupId || !hasMore || isFetchingMore || isLoading) return;
+        const el = scrollRef.current;
+        if (!el) return;
+        if (el.scrollHeight < el.clientHeight * 1.5) {
+            const id = requestAnimationFrame(() => onLoadMore?.());
+            return () => cancelAnimationFrame(id);
+        }
+    }, [effectiveGroupId, hasMore, isFetchingMore, isLoading, rows.length, onLoadMore]);
 
     const prevSelectModeRef = React.useRef(false);
     const prevSelectedCountRef = React.useRef(0);
@@ -870,6 +890,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // IN (with the just-checked tile leading, see staggerDelay below).
     const [renderSelectMode, setRenderSelectMode] = React.useState(!!isSelectMode);
     const [isGridFading, setIsGridFading] = React.useState(false);
+    /*
+        Beim Oeffnen eines Stapels bleibt die Galerie stehen.
+
+        Sie wird nur zurueckgenommen (Deckkraft) und stillgestellt, waehrend
+        das Fenster darueber aufgeht — kurz blendete sie hier ganz aus, was
+        zusammen mit dem Fenster zwei Bewegungen fuer eine Sache waren.
+    */
     React.useEffect(() => {
         if (!!isSelectMode === renderSelectMode) return;
         setIsGridFading(true);
@@ -941,7 +968,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         // einzeln statt nur die Deckbilder — eine Bibliothek ohne Gliederung
         // ist genau dann am unuebersichtlichsten, wenn man darin etwas
         // heraussuchen soll.
-        if (effectiveGroupId) return null;
+        /*
+            Auch bei offenem Stapel berechnet.
+
+            Der Stapel liegt seit dem Umbau als Fenster UEBER der Galerie, und
+            darunter soll die Galerie stehen bleiben — nicht verschwinden. Also
+            braucht sie ihre Tage auch dann, wenn gerade ein Stapel offen ist.
+        */
         const byDay = new Map<string, CanvasImage[]>();
         for (const row of rows) {
             const cover = row.items[0];
@@ -1222,6 +1255,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         const t = setTimeout(() => setSelSheetMounted(false), 280);
         return () => clearTimeout(t);
     }, [selSheetWanted]);
+
+    /** Der Stapel liegt als Fenster ueber der Galerie. */
+    const stackOpen = !!effectiveGroupId && !renderSelectMode;
 
     const [isOverZone, setIsOverZone] = React.useState(false);
     const handleDragCancel = React.useCallback((e: React.DragEvent) => {
@@ -1566,10 +1602,25 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     jetzt nur noch aus den Tagen. Zum Ziehen gibt es
                                     die Flaeche, die in der Mitte aufgeht.
                                 */}
+                                {/*
+                                    Im Stapel eine Liste, in der Galerie ein Raster.
+
+                                    Ein Stapel ist dieselbe Aufnahme, mehrfach
+                                    versucht. Nebeneinander gestellte Kacheln sind
+                                    die Form fuer viele VERSCHIEDENE Bilder; zum
+                                    Vergleichen von Fassungen braucht es eine Achse,
+                                    und die ist senkrecht. Siehe StackList.
+                                */}
                                 <div
-                                    key={`${effectiveGroupId ?? 'root'}-${renderSelectMode ? 'select' : 'normal'}`}
+                                    // Die Galerie bleibt dieselbe, ob ein Stapel offen ist
+                                    // oder nicht — sie wird nur stillgestellt und tritt zurueck.
+                                    // Darum steht der Stapel nicht mehr im Schluessel: Sonst
+                                    // wuerde das Raster beim Oeffnen neu aufgebaut, und
+                                    // darunter waere fuer einen Moment nichts.
+                                    key={renderSelectMode ? 'select' : 'normal'}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-end gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-95' : ''} duration-[280ms] ease-out transition-opacity ${isGridFading ? 'opacity-0' : 'opacity-100'} ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    aria-hidden={stackOpen || undefined}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-end gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in duration-[280ms] ease-out transition-opacity pt-2 sm:pt-4 ${isGridFading ? 'opacity-0' : stackOpen ? 'opacity-40 pointer-events-none' : 'opacity-100'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 style={columnsOverride ? { gridTemplateColumns: `repeat(${columnsOverride}, minmax(0, 1fr))` } : undefined}
                                 >
                                     {daySections ? (() => {
@@ -1808,6 +1859,81 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     >
                         <X className="w-4 h-4" />
                     </button>
+                </div>
+            )}
+
+            {/*
+                Der Stapel als Fenster ueber der Galerie.
+
+                Vorher ersetzte er die Galerie: Man klickte eine Kachel an, und
+                die ganze Seite war eine andere — zurueck ging nur ueber einen
+                Pfeil, und wo man vorher stand, musste man sich merken. Als
+                Fenster bleibt die Galerie sichtbar darunter stehen, nur
+                zurueckgetreten und stillgestellt. Zu geht es wie bei jedem
+                Fenster: Klick daneben, Zurueck-Pfeil oder Esc.
+
+                Auf schmalen Geraeten fuellt es den Schirm — dort ist ein
+                schwebendes Fenster mit Rand nur verschenkte Flaeche.
+            */}
+            {stackOpen && (
+                <div
+                    className={`fixed inset-0 z-[80] flex items-center justify-center ${isMobile ? '' : 'p-6 lg:p-10'}`}
+                    onClick={() => onExpandedGroupChange(null)}
+                >
+                    <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-200" />
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        className={`relative flex flex-col overflow-hidden ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowLg}
+                            animate-[view-in_260ms_cubic-bezier(0.16,1,0.3,1)_backwards]
+                            ${isMobile
+                                ? 'w-full h-full'
+                                : `w-[min(1120px,94vw)] h-[min(900px,90vh)] ${Theme.Geometry.RadiusXl}`}`}
+                    >
+                        {/* Kopfzeile: zurueck, Name, Anzahl. Mehr steht hier nicht —
+                            was man mit einer einzelnen Fassung tun kann, steht bei
+                            ihr. */}
+                        <div className="shrink-0 flex items-center gap-3 px-5 sm:px-7 pt-5 pb-3">
+                            <RoundIconButton
+                                icon={<ChevronLeft className="w-[18px] h-[18px]" />}
+                                onClick={() => onExpandedGroupChange(null)}
+                                variant="ghost"
+                                tooltip={t?.('back') || 'Zurück'}
+                                className="-ml-2"
+                            />
+                            <span className="text-[15px] font-medium text-zinc-800 dark:text-zinc-100 truncate">
+                                {rows.find(r => r.id === effectiveGroupId)?.title || ''}
+                            </span>
+                            <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
+                                {displayImages.length}
+                            </span>
+                            <div className="flex-1" />
+                            {displayImages.length >= 2 && !isSelectMode && (
+                                <button
+                                    onClick={openComposer}
+                                    className="h-9 px-3.5 rounded-full inline-flex items-center gap-2 text-[13px] font-medium
+                                        bg-black/[0.05] dark:bg-white/[0.08] hover:bg-black/[0.09] dark:hover:bg-white/[0.14]
+                                        text-zinc-700 dark:text-zinc-200 transition-colors"
+                                >
+                                    <Layers2 className="w-4 h-4" />
+                                    {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+                            <StackList
+                                key={effectiveGroupId}
+                                images={displayImages}
+                                activeId={activeIndex != null ? displayImages[activeIndex]?.id : null}
+                                currentLang={state?.currentLang === 'de' ? 'de' : 'en'}
+                                onSelect={(id) => onSelectImage?.(id)}
+                                onGenerateMore={actions?.handleGenerateMore}
+                                onDownload={actions?.handleDownload}
+                                onHoverIndex={setActiveIndex}
+                                t={t}
+                            />
+                        </div>
+                    </div>
                 </div>
             )}
 
