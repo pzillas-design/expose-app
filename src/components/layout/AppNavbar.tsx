@@ -1038,9 +1038,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     {progressRing}
                 </div>
 
-                {/* CENTER: Group title — same font as the detail view; a folder icon
-                    to the left of the title is the minimal "this is a stack" signal. */}
-                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-10 max-w-[60%]">
+                {/*
+                    CENTER: Name des Stapels — und seit Neuestem ein Knopf daneben.
+
+                    z-20 statt z-10: Die rechte Gruppe ist ein Flex-Kind mit
+                    `grow`, ihr Kasten reicht also bis zur Mitte, auch wenn ihr
+                    Inhalt rechts aussen klebt. Bei gleicher Ebene gewinnt sie,
+                    weil sie spaeter im Dokument steht — und schluckte die Klicks
+                    auf den Knopf hier. Genau deshalb liess er sich nicht treffen.
+                */}
+                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-20 max-w-[60%]">
                     <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                         {groupInfo}
                     </span>
