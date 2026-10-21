@@ -1,7 +1,7 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
 import { NAV_SCROLL_OFFSET } from '@/config/layout';
-import { Loader2, Layers, Layers2, ChevronLeft, ChevronRight, Upload, Download, X, Check } from 'lucide-react';
+import { Loader2, Layers, Layers2, ChevronLeft, ChevronRight, Upload, Download, Plus, X, Check } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
@@ -1798,11 +1798,27 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     onDrop={handleDrop}
                                 />
 
+                                {/*
+                                    Derselbe Knopf wie in der Leiste: gleiches
+                                    Wort, gleiches Zeichen.
+
+                                    Hier stand "Erstellen" als blosser Text unter
+                                    einer grossen Flaeche — ohne Rand, ohne
+                                    Zeichen, ohne Verwandtschaft zu irgendetwas.
+                                    In der Leiste heisst dieselbe Handlung "Neu"
+                                    und traegt ein Plus; wer den einen kennt,
+                                    erkennt den anderen wieder.
+                                */}
                                 <button
                                     onClick={onGenerate ?? onCreateNew}
-                                    className="text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
+                                    className="h-10 px-5 rounded-full inline-flex items-center gap-2 text-sm font-medium
+                                        bg-black/[0.04] dark:bg-white/[0.06]
+                                        hover:bg-black/[0.08] dark:hover:bg-white/[0.12]
+                                        text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white
+                                        transition-colors duration-150"
                                 >
-                                    {t?.('action_generate') || 'Generate image'}
+                                    <Plus className="w-4 h-4" />
+                                    {t?.('nav_create') || 'Neu'}
                                 </button>
                             </div>
                         )}

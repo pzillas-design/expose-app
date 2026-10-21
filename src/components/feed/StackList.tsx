@@ -34,19 +34,36 @@ interface StackListProps {
     t?: (key: any) => string;
 }
 
-/** Eine Handlung unter dem Bild: leise, gleiche Hoehe, gleiche Flaeche. */
+/**
+ * Zurueckgenommen, bis der Zeiger in der Zeile steht.
+ *
+ * Auf dem Handy immer voll: Dort gibt es kein Ueberfahren, und was man nicht
+ * sehen kann, kann man nicht benutzen.
+ */
+const ROW_DIM = 'opacity-100 md:opacity-45 md:group-hover/row:opacity-100';
+
+/**
+ * Eine Handlung in der Zeile: leise, gleiche Hoehe, gleiche Flaeche.
+ *
+ * `primary` heisst: Dieser Knopf tut dasselbe wie ein Klick auf die Zeile.
+ * Er nimmt deshalb schon das Hover-Aussehen an, wenn irgendwo in der Zeile
+ * der Zeiger steht — sonst sieht man beim Ueberfahren der Zeile nicht, was
+ * ein Klick ausloesen wuerde.
+ */
 const RowAction: React.FC<{
     onClick: () => void;
     icon: React.ReactNode;
     children: React.ReactNode;
-}> = ({ onClick, icon, children }) => (
+    primary?: boolean;
+}> = ({ onClick, icon, children, primary = false }) => (
     <button
-        onClick={onClick}
-        className="h-9 px-3.5 rounded-full inline-flex items-center gap-2 text-[13px] font-medium
+        onClick={e => { e.stopPropagation(); onClick(); }}
+        className={`h-9 px-3.5 rounded-full inline-flex items-center gap-2 text-[13px] font-medium
             text-zinc-600 dark:text-zinc-300
             hover:bg-black/[0.05] dark:hover:bg-white/[0.08]
             hover:text-zinc-900 dark:hover:text-white
-            transition-colors duration-150"
+            transition-colors duration-150
+            ${primary ? 'group-hover/row:bg-black/[0.05] dark:group-hover/row:bg-white/[0.08] group-hover/row:text-zinc-900 dark:group-hover/row:text-white' : ''}`}
     >
         {icon}
         {children}
@@ -119,12 +136,24 @@ const StackRow: React.FC<{
                 ['--fan-from' as any]: `${-Math.min(16 + idx * 12, 72)}px`,
                 animationDelay: `${Math.min(idx * 50, 350)}ms`,
             }}
-            className="group/row animate-[stack-fan_460ms_cubic-bezier(0.16,1,0.3,1)_backwards]
-                flex flex-col md:flex-row md:items-start gap-4 md:gap-8"
+            /*
+                Die ganze Zeile ist der Weg hinein — Bild, Text und der
+                Weissraum daneben. Vorher war nur das Bild anklickbar, und wer
+                neben den Text traf, bekam nichts. Die Knoepfe darin halten
+                ihren Klick bei sich (stopPropagation in RowAction).
+            */
+            role="button"
+            tabIndex={isPending ? -1 : 0}
+            onClick={() => { if (!isPending) onSelect(img.id); }}
+            onKeyDown={e => {
+                if (isPending) return;
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(img.id); }
+            }}
+            className={`group/row animate-[stack-fan_460ms_cubic-bezier(0.16,1,0.3,1)_backwards]
+                flex flex-col md:flex-row md:items-start gap-4 md:gap-8 outline-none
+                ${isPending ? '' : 'cursor-pointer'}`}
         >
-            <button
-                onClick={() => { if (!isPending) onSelect(img.id); }}
-                disabled={isPending}
+            <div
                 style={{ aspectRatio: `${img.width} / ${img.height}` }}
                 className={`relative w-full md:w-[72%] shrink-0 overflow-hidden bg-zinc-200 dark:bg-zinc-800
                     ring-1 transition-[box-shadow] duration-200
@@ -161,7 +190,7 @@ const StackRow: React.FC<{
                 {!isPending && (
                     <span className="absolute inset-0 bg-black/0 group-hover/row:bg-black/[0.05] transition-colors duration-200" />
                 )}
-            </button>
+            </div>
 
             {/* Die Spalte rechts: wer es ist, was verlangt wurde, was man tun
                 kann — untereinander. In einer Zeile unter dem Bild lagen die
@@ -196,16 +225,26 @@ const StackRow: React.FC<{
                     )}
                 </div>
 
+                {/*
+                    Auftrag und Handlungen stehen immer da, nur zurueckgenommen
+                    — beim Ueberfahren der Zeile kommen sie auf volle Staerke.
+
+                    Vorher waren sie ganz unsichtbar und blendeten ein; dabei
+                    liefen sie auseinander (die Knoepfe blieben laenger stehen
+                    als der Text), weil sie zwar dieselbe Dauer, aber nicht
+                    dieselbe Bedingung hatten. Jetzt genau eine Regel, und
+                    beide haengen an ihr.
+                */}
                 {prompt && (
-                    <p className="text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400 line-clamp-5
-                        opacity-100 md:opacity-0 md:group-hover/row:opacity-100 transition-opacity duration-200">
+                    <p className={`text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400 line-clamp-5
+                        transition-opacity duration-200 ${ROW_DIM}`}>
                         {prompt}
                     </p>
                 )}
 
                 <div className={`flex flex-wrap items-center gap-0.5 -ml-3.5 transition-opacity duration-200
-                    ${isPending ? 'hidden' : 'opacity-100 md:opacity-0 md:group-hover/row:opacity-100'}`}>
-                    <RowAction onClick={() => onSelect(img.id)} icon={<Pencil className="w-3.5 h-3.5" />}>
+                    ${isPending ? 'hidden' : ROW_DIM}`}>
+                    <RowAction primary onClick={() => onSelect(img.id)} icon={<Pencil className="w-3.5 h-3.5" />}>
                         {lang === 'de' ? 'Bearbeiten' : 'Edit'}
                     </RowAction>
                     {/* "Mehr" wiederholt einen Auftrag. Beim Original gibt es
