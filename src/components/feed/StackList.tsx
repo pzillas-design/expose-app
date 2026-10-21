@@ -1,9 +1,8 @@
 import React from 'react';
-import { Repeat, Download, ChevronRight } from 'lucide-react';
+import { Repeat, Download, Layers2, Pencil } from 'lucide-react';
 import type { CanvasImage } from '@/types';
 import { imageNameOf } from '@/utils/imageName';
 import { formatRelativeTime } from '@/utils/timeUtils';
-import { Tooltip } from '@/components/ui/DesignSystem';
 
 /**
  * Der Stapel von innen: eine Liste, kein Raster.
@@ -12,18 +11,16 @@ import { Tooltip } from '@/components/ui/DesignSystem';
  * sie als gleich grosse Kacheln nebeneinander — das ist die Form fuer "viele
  * verschiedene Bilder", nicht fuer "dasselbe Bild, sechsmal anders". Zum
  * Vergleichen braucht man eine Achse, und die ist hier senkrecht: ein Bild
- * unter dem anderen, deutlich groesser als im Raster, immer gleich breit.
+ * unter dem anderen, gross, immer gleich breit, mittig auf der Seite.
  *
- * Im Ruhezustand steht fast nichts dabei: Fassung und Alter, mehr nicht. Was
- * tatsaechlich verlangt wurde, erscheint erst beim Ueberfahren — zusammen mit
- * den beiden Handlungen, die man an dieser Stelle braucht (noch eine Fassung,
- * herunterladen). So bleibt die Liste ruhig und sagt trotzdem mehr als das
- * Raster je konnte.
+ * Unter jedem Bild eine Zeile: links Fassung und Alter, rechts die
+ * Handlungen. Was verlangt wurde, erscheint beim Ueberfahren — stuende es
+ * immer da, laese man bei sechs Fassungen sechsmal fast denselben Satz, und
+ * aus der Bildstrecke wuerde eine Textwand.
  *
- * Der Eintritt ist die Umkehrung der Kachel: Dort liegen zwei graue Blaetter
- * hinter dem Deckbild. Hier faechern sie auseinander — jede Zeile kommt aus
- * der Lage der vorigen heran und wird dabei aus einer grauen Flaeche zu ihrem
- * Bild.
+ * Die Bilder kommen in voller Aufloesung, nicht als Vorschau: Hier wird
+ * verglichen, und ein Unterschied, den man nur in den Details sieht, ist in
+ * einer 512er Vorschau keiner. Geladen wird erst beim Herankommen.
  */
 interface StackListProps {
     images: CanvasImage[];
@@ -32,10 +29,29 @@ interface StackListProps {
     onSelect: (id: string) => void;
     onGenerateMore?: (img: CanvasImage) => void;
     onDownload?: (id: string) => void;
-    /** Zeigt die Kachel-Nummer in der Tastaturnavigation an. */
+    onCombineLayers?: () => void;
     onHoverIndex?: (idx: number | null) => void;
     t?: (key: any) => string;
 }
+
+/** Eine Handlung unter dem Bild: leise, gleiche Hoehe, gleiche Flaeche. */
+const RowAction: React.FC<{
+    onClick: () => void;
+    icon: React.ReactNode;
+    children: React.ReactNode;
+}> = ({ onClick, icon, children }) => (
+    <button
+        onClick={onClick}
+        className="h-9 px-3.5 rounded-full inline-flex items-center gap-2 text-[13px] font-medium
+            text-zinc-600 dark:text-zinc-300
+            hover:bg-black/[0.05] dark:hover:bg-white/[0.08]
+            hover:text-zinc-900 dark:hover:text-white
+            transition-colors duration-150"
+    >
+        {icon}
+        {children}
+    </button>
+);
 
 const StackRow: React.FC<{
     img: CanvasImage;
@@ -51,11 +67,9 @@ const StackRow: React.FC<{
     const { version } = imageNameOf(img);
     const isOriginal = !img.parentId;
     const prompt = (img.generationPrompt || img.userDraftPrompt || '').trim();
-    const src = img.thumbSrc || img.src;
+    // Volle Aufloesung; das Vorschaubild dient nur als Platzhalter, bis sie da ist.
+    const full = img.src || img.thumbSrc;
 
-    // Das Bild blendet ueber seine graue Flaeche ein. Ein ref-Callback statt
-    // eines Zustands: Was im Zwischenspeicher liegt, ist damit schon im ersten
-    // gezeichneten Frame da und blitzt nicht grau auf.
     const imgRef = React.useCallback((node: HTMLImageElement | null) => {
         if (node?.complete) node.style.opacity = '1';
     }, []);
@@ -66,30 +80,25 @@ const StackRow: React.FC<{
             onMouseEnter={() => onHoverIndex?.(idx)}
             onMouseLeave={() => onHoverIndex?.(null)}
             style={{
-                // Jede Zeile kommt aus der Lage der vorigen — weiter unten
+                // Jede Zeile kommt aus der Lage der vorigen heran — weiter unten
                 // heisst weiter her. Gedeckelt, damit die zehnte Fassung nicht
                 // aus dem Bildschirm heranfliegt.
-                ['--fan-from' as any]: `${-Math.min(14 + idx * 10, 64)}px`,
-                animationDelay: `${Math.min(idx * 45, 320)}ms`,
+                ['--fan-from' as any]: `${-Math.min(16 + idx * 12, 72)}px`,
+                animationDelay: `${Math.min(idx * 50, 350)}ms`,
             }}
-            className="group/row animate-[stack-fan_420ms_cubic-bezier(0.16,1,0.3,1)_backwards]
-                flex flex-col md:flex-row md:items-start gap-4 md:gap-8"
+            className="group/row animate-[stack-fan_460ms_cubic-bezier(0.16,1,0.3,1)_backwards] flex flex-col"
         >
-            {/* Das Bild. Linksbuendig und immer gleich breit: Zwei Fassungen
-                untereinander sind nur vergleichbar, wenn ihre Kanten
-                uebereinander liegen. */}
             <button
                 onClick={() => onSelect(img.id)}
                 style={{ aspectRatio: `${img.width} / ${img.height}` }}
-                className={`relative w-full md:w-[66%] md:max-w-[780px] shrink-0 overflow-hidden
-                    bg-zinc-300 dark:bg-zinc-700
-                    ring-1 transition-[box-shadow,ring-color] duration-200
-                    ${isActive ? 'ring-black/25 dark:ring-white/30' : 'ring-black/5 dark:ring-white/10'}`}
+                className={`relative w-full overflow-hidden bg-zinc-200 dark:bg-zinc-800
+                    ring-1 transition-[box-shadow] duration-200
+                    ${isActive ? 'ring-black/20 dark:ring-white/25' : 'ring-black/5 dark:ring-white/10'}`}
             >
-                {src && (
+                {full && (
                     <img
                         ref={imgRef}
-                        src={src}
+                        src={full}
                         alt=""
                         loading="lazy"
                         decoding="async"
@@ -97,70 +106,47 @@ const StackRow: React.FC<{
                         className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500"
                     />
                 )}
-
-                {/* Beim Ueberfahren ein Hauch dunkler — dieselbe Antwort wie im
-                    Raster, damit die Flaeche anfassbar wirkt. */}
-                <span className="absolute inset-0 bg-black/0 group-hover/row:bg-black/[0.06] transition-colors duration-200" />
+                <span className="absolute inset-0 bg-black/0 group-hover/row:bg-black/[0.05] transition-colors duration-200" />
             </button>
 
-            {/* Die Spalte daneben: im Ruhezustand zwei Zeilen, beim Ueberfahren
-                der Auftrag und die Handlungen. */}
-            <div className="flex-1 min-w-0 md:max-w-[300px] md:pt-1 flex flex-col gap-3">
-                <div className="flex items-baseline gap-2.5">
-                    <span className="text-[15px] font-medium text-zinc-800 dark:text-zinc-100 tabular-nums">
-                        {isOriginal
-                            ? (lang === 'de' ? 'Original' : 'Original')
-                            : `v${version}`}
-                    </span>
-                    <span className="text-[13px] text-zinc-400 dark:text-zinc-500">
-                        {img.createdAt ? formatRelativeTime(img.createdAt, lang) : ''}
-                    </span>
-                </div>
+            {/* Die Zeile unter dem Bild: links, wer es ist; rechts, was man tun
+                kann. Die Handlungen erscheinen beim Ueberfahren — auf dem Handy
+                stehen sie fest, dort gibt es kein Ueberfahren. */}
+            <div className="flex items-center gap-3 pt-3 min-h-[44px]">
+                <span className="text-[14px] font-medium text-zinc-700 dark:text-zinc-200 tabular-nums shrink-0">
+                    {isOriginal ? 'Original' : `v${version}`}
+                </span>
+                <span className="text-[13px] text-zinc-400 dark:text-zinc-500 shrink-0">
+                    {img.createdAt ? formatRelativeTime(img.createdAt, lang) : ''}
+                </span>
 
-                {/* Was verlangt wurde. Erst beim Ueberfahren, und auf dem Handy
-                    immer — dort gibt es kein Ueberfahren. */}
                 {prompt && (
-                    <p className="text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400 line-clamp-4
-                        opacity-100 md:opacity-0 md:group-hover/row:opacity-100 transition-opacity duration-200">
+                    <span className="hidden lg:block min-w-0 max-w-[48%] truncate text-[13px] text-zinc-400 dark:text-zinc-500
+                        opacity-0 group-hover/row:opacity-100 transition-opacity duration-200">
                         {prompt}
-                    </p>
+                    </span>
                 )}
 
-                <div className="flex items-center gap-1.5 opacity-100 md:opacity-0 md:group-hover/row:opacity-100 transition-opacity duration-200">
+                {/* Der Abstandhalter schiebt die Handlungen immer an das rechte
+                    Ende der Bildkante — auch bei einem Bild ohne Auftrag, wo
+                    sie sonst mitten in der Zeile haengen blieben. */}
+                <div className="flex-1" />
+
+                <div className="flex items-center gap-0.5 shrink-0
+                    opacity-100 md:opacity-0 md:group-hover/row:opacity-100 transition-opacity duration-200">
+                    <RowAction onClick={() => onSelect(img.id)} icon={<Pencil className="w-3.5 h-3.5" />}>
+                        {lang === 'de' ? 'Bearbeiten' : 'Edit'}
+                    </RowAction>
                     {onGenerateMore && (img.generationPrompt || isOriginal) && (
-                        <Tooltip text={t?.('generate_more') || 'Mehr'} side="bottom">
-                            <button
-                                onClick={() => onGenerateMore(img)}
-                                className="h-9 px-3.5 rounded-full inline-flex items-center gap-2 text-[13px] font-medium
-                                    bg-black/[0.05] dark:bg-white/[0.08] hover:bg-black/[0.09] dark:hover:bg-white/[0.14]
-                                    text-zinc-700 dark:text-zinc-200 transition-colors"
-                            >
-                                <Repeat className="w-3.5 h-3.5" />
-                                {t?.('nav_more') || 'Mehr'}
-                            </button>
-                        </Tooltip>
+                        <RowAction onClick={() => onGenerateMore(img)} icon={<Repeat className="w-3.5 h-3.5" />}>
+                            {t?.('nav_more') || (lang === 'de' ? 'Mehr' : 'More')}
+                        </RowAction>
                     )}
                     {onDownload && (
-                        <Tooltip text={t?.('download') || 'Herunterladen'} side="bottom">
-                            <button
-                                onClick={() => onDownload(img.id)}
-                                className="w-9 h-9 rounded-full inline-flex items-center justify-center
-                                    hover:bg-black/[0.05] dark:hover:bg-white/[0.08]
-                                    text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 transition-colors"
-                            >
-                                <Download className="w-4 h-4" />
-                            </button>
-                        </Tooltip>
+                        <RowAction onClick={() => onDownload(img.id)} icon={<Download className="w-3.5 h-3.5" />}>
+                            {lang === 'de' ? 'Sichern' : 'Save'}
+                        </RowAction>
                     )}
-                    <button
-                        onClick={() => onSelect(img.id)}
-                        className="h-9 px-3 rounded-full inline-flex items-center gap-1 text-[13px] font-medium
-                            text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white
-                            hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors"
-                    >
-                        {lang === 'de' ? 'Öffnen' : 'Open'}
-                        <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
                 </div>
             </div>
         </div>
@@ -168,22 +154,48 @@ const StackRow: React.FC<{
 };
 
 export const StackList: React.FC<StackListProps> = ({
-    images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onHoverIndex, t,
+    images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onCombineLayers, onHoverIndex, t,
 }) => (
-    <div className="flex flex-col gap-10 md:gap-14 px-4 sm:px-8 pt-12 sm:pt-16 pb-24">
-        {images.map((img, idx) => (
-            <StackRow
-                key={img.id}
-                img={img}
-                idx={idx}
-                isActive={activeId === img.id}
-                lang={currentLang}
-                onSelect={onSelect}
-                onGenerateMore={onGenerateMore}
-                onDownload={onDownload}
-                onHoverIndex={onHoverIndex}
-                t={t}
-            />
-        ))}
+    /*
+        Mittig und breit: 72 Prozent des Fensters, hoechstens 1400 Pixel.
+
+        Auf einem grossen Schirm war die vorige Breite zu knapp — man vergleicht
+        Fassungen, und was man nicht sieht, kann man nicht vergleichen. Die
+        Obergrenze verhindert, dass ein Bild auf einem sehr breiten Schirm zur
+        Plakatwand wird.
+    */
+    <div className="w-full flex justify-center px-4 sm:px-8 pt-8 sm:pt-12 pb-32">
+        <div className="w-full md:w-[72%] max-w-[1400px] flex flex-col gap-14 sm:gap-20">
+            {images.map((img, idx) => (
+                <StackRow
+                    key={img.id}
+                    img={img}
+                    idx={idx}
+                    isActive={activeId === img.id}
+                    lang={currentLang}
+                    onSelect={onSelect}
+                    onGenerateMore={onGenerateMore}
+                    onDownload={onDownload}
+                    onHoverIndex={onHoverIndex}
+                    t={t}
+                />
+            ))}
+
+            {/* Ebenen kombinieren steht am Ende der Liste, nicht in einer
+                eigenen Leiste: Es ist etwas, das man mit dem GANZEN Stapel tut,
+                also gehoert es unter ihn. */}
+            {onCombineLayers && images.length >= 2 && (
+                <button
+                    onClick={onCombineLayers}
+                    className="self-center h-11 px-5 rounded-full inline-flex items-center gap-2.5 text-[14px] font-medium
+                        bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.07] dark:hover:bg-white/[0.10]
+                        text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white
+                        transition-colors duration-150"
+                >
+                    <Layers2 className="w-4 h-4" strokeWidth={1.5} />
+                    {currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
+                </button>
+            )}
+        </div>
     </div>
 );

@@ -1611,16 +1611,34 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     Vergleichen von Fassungen braucht es eine Achse,
                                     und die ist senkrecht. Siehe StackList.
                                 */}
+                                {stackOpen ? (
+                                    /*
+                                        Im Stapel steht die Liste — und sonst nichts.
+
+                                        Kurz lag sie als Fenster ueber der Galerie; dann
+                                        war beides gleichzeitig da, die Galerie veraenderte
+                                        sich im Hintergrund, und oben gab es eine zweite
+                                        Kopfzeile. Eine Ansicht, eine Kopfzeile: Zurueck
+                                        und Name stehen in der Leiste der Anwendung, wie
+                                        bei jeder anderen Ansicht auch.
+                                    */
+                                    <StackList
+                                        key={effectiveGroupId}
+                                        images={displayImages}
+                                        activeId={activeIndex != null ? displayImages[activeIndex]?.id : null}
+                                        currentLang={state?.currentLang === 'de' ? 'de' : 'en'}
+                                        onSelect={(id) => onSelectImage?.(id)}
+                                        onGenerateMore={actions?.handleGenerateMore}
+                                        onDownload={actions?.handleDownload}
+                                        onCombineLayers={!isSelectMode ? openComposer : undefined}
+                                        onHoverIndex={setActiveIndex}
+                                        t={t}
+                                    />
+                                ) : (
                                 <div
-                                    // Die Galerie bleibt dieselbe, ob ein Stapel offen ist
-                                    // oder nicht — sie wird nur stillgestellt und tritt zurueck.
-                                    // Darum steht der Stapel nicht mehr im Schluessel: Sonst
-                                    // wuerde das Raster beim Oeffnen neu aufgebaut, und
-                                    // darunter waere fuer einen Moment nichts.
                                     key={renderSelectMode ? 'select' : 'normal'}
                                     ref={gridRef}
-                                    aria-hidden={stackOpen || undefined}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-end gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in duration-[280ms] ease-out transition-opacity pt-2 sm:pt-4 ${isGridFading ? 'opacity-0' : stackOpen ? 'opacity-40 pointer-events-none' : 'opacity-100'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-end gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in duration-[280ms] ease-out transition-opacity pt-2 sm:pt-4 ${isGridFading ? 'opacity-0' : 'opacity-100'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 style={columnsOverride ? { gridTemplateColumns: `repeat(${columnsOverride}, minmax(0, 1fr))` } : undefined}
                                 >
                                     {daySections ? (() => {
@@ -1721,36 +1739,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         });
                                     })() : displayImages.map((img, idx) => renderTile(img, idx))}
 
-                                    {/* Layer Composer entry — only inside an expanded stack with 2+ variants.
-                                        Matches the parent image's aspect ratio (letterboxed in the square cell)
-                                        so it lines up uniformly with the other tiles. */}
-                                    {effectiveGroupId && !isSelectMode && displayImages.length >= 2 && (
-                                        <button
-                                            onClick={openComposer}
-                                            style={{ aspectRatio: `${displayImages[0].width} / ${displayImages[0].height}`, width: '100%', height: 'auto' }}
-                                            // Dieselbe Flaechensprache wie die Ablagestreifen,
-                                            // aber die Ecken der Bildkacheln: Die sind eckig,
-                                            // und ein gerundeter Kasten mittendrin bricht die
-                                            // Reihe. Rundung ist hier kein Stil, sondern eine
-                                            // Aussage ueber Zugehoerigkeit.
-                                            className="relative flex flex-col items-center justify-center gap-2.5
-                                                bg-black/[0.03] dark:bg-white/[0.04]
-                                                hover:bg-black/[0.05] dark:hover:bg-white/[0.06]
-                                                text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300
-                                                transition-colors duration-200"
-                                        >
-                                            {/* Layers2 statt SquaresSubtract: zwei ruhige
-                                                Flaechen uebereinander. Das alte Symbol trug
-                                                eine gestrichelte Kontur und einen Ausschnitt
-                                                und war damit das unruhigste Element im
-                                                ganzen Raster. */}
-                                            <Layers2 className="w-6 h-6" strokeWidth={1.5} />
-                                            <span className="text-xs font-medium px-2 text-center leading-tight">
-                                                {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
-                                            </span>
-                                        </button>
-                                    )}
                                 </div>
+                                )}
                             </>
                         ) : !isLoading && (
                             /*
@@ -1859,81 +1849,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     >
                         <X className="w-4 h-4" />
                     </button>
-                </div>
-            )}
-
-            {/*
-                Der Stapel als Fenster ueber der Galerie.
-
-                Vorher ersetzte er die Galerie: Man klickte eine Kachel an, und
-                die ganze Seite war eine andere — zurueck ging nur ueber einen
-                Pfeil, und wo man vorher stand, musste man sich merken. Als
-                Fenster bleibt die Galerie sichtbar darunter stehen, nur
-                zurueckgetreten und stillgestellt. Zu geht es wie bei jedem
-                Fenster: Klick daneben, Zurueck-Pfeil oder Esc.
-
-                Auf schmalen Geraeten fuellt es den Schirm — dort ist ein
-                schwebendes Fenster mit Rand nur verschenkte Flaeche.
-            */}
-            {stackOpen && (
-                <div
-                    className={`fixed inset-0 z-[80] flex items-center justify-center ${isMobile ? '' : 'p-6 lg:p-10'}`}
-                    onClick={() => onExpandedGroupChange(null)}
-                >
-                    <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-200" />
-                    <div
-                        onClick={e => e.stopPropagation()}
-                        className={`relative flex flex-col overflow-hidden ${Theme.Colors.PanelBg} ${Theme.Effects.ShadowLg}
-                            animate-[view-in_260ms_cubic-bezier(0.16,1,0.3,1)_backwards]
-                            ${isMobile
-                                ? 'w-full h-full'
-                                : `w-[min(1120px,94vw)] h-[min(900px,90vh)] ${Theme.Geometry.RadiusXl}`}`}
-                    >
-                        {/* Kopfzeile: zurueck, Name, Anzahl. Mehr steht hier nicht —
-                            was man mit einer einzelnen Fassung tun kann, steht bei
-                            ihr. */}
-                        <div className="shrink-0 flex items-center gap-3 px-5 sm:px-7 pt-5 pb-3">
-                            <RoundIconButton
-                                icon={<ChevronLeft className="w-[18px] h-[18px]" />}
-                                onClick={() => onExpandedGroupChange(null)}
-                                variant="ghost"
-                                tooltip={t?.('back') || 'Zurück'}
-                                className="-ml-2"
-                            />
-                            <span className="text-[15px] font-medium text-zinc-800 dark:text-zinc-100 truncate">
-                                {rows.find(r => r.id === effectiveGroupId)?.title || ''}
-                            </span>
-                            <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
-                                {displayImages.length}
-                            </span>
-                            <div className="flex-1" />
-                            {displayImages.length >= 2 && !isSelectMode && (
-                                <button
-                                    onClick={openComposer}
-                                    className="h-9 px-3.5 rounded-full inline-flex items-center gap-2 text-[13px] font-medium
-                                        bg-black/[0.05] dark:bg-white/[0.08] hover:bg-black/[0.09] dark:hover:bg-white/[0.14]
-                                        text-zinc-700 dark:text-zinc-200 transition-colors"
-                                >
-                                    <Layers2 className="w-4 h-4" />
-                                    {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
-                                </button>
-                            )}
-                        </div>
-
-                        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
-                            <StackList
-                                key={effectiveGroupId}
-                                images={displayImages}
-                                activeId={activeIndex != null ? displayImages[activeIndex]?.id : null}
-                                currentLang={state?.currentLang === 'de' ? 'de' : 'en'}
-                                onSelect={(id) => onSelectImage?.(id)}
-                                onGenerateMore={actions?.handleGenerateMore}
-                                onDownload={actions?.handleDownload}
-                                onHoverIndex={setActiveIndex}
-                                t={t}
-                            />
-                        </div>
-                    </div>
                 </div>
             )}
 
