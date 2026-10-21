@@ -398,15 +398,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             )}
         </div>
     ) : isGroupDrillDown && groupInfo ? (
+        // Ohne Fassungsspanne: siehe die Stapel-Kopfzeile weiter unten.
         <div className="flex items-center gap-1.5">
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
                 {groupInfo}
             </span>
-            {groupVersionLabel && (
-                <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
-                    {groupVersionLabel}
-                </span>
-            )}
         </div>
     ) : (
         <button
@@ -686,8 +682,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 */}
                 <div
                     aria-hidden
-                    className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
-                        bg-[#EDEDF0]/85 dark:bg-[#0C0C11]/80"
+                    className="absolute inset-0 -z-10 backdrop-blur-[64px] backdrop-saturate-[1.4]
+                        bg-[#EDEDF0]/45 dark:bg-[#0C0C11]/50"
                     style={{
                         opacity: surfaceOpacity,
                     }}
@@ -1011,8 +1007,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             */}
             <div
                 aria-hidden
-                className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
-                    bg-[#EDEDF0]/85 dark:bg-[#0C0C11]/80"
+                className="absolute inset-0 -z-10 backdrop-blur-[64px] backdrop-saturate-[1.4]
+                    bg-[#EDEDF0]/45 dark:bg-[#0C0C11]/50"
             />
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
@@ -1044,11 +1040,9 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                         {groupInfo}
                     </span>
-                    {groupVersionLabel && (
-                        <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
-                            {groupVersionLabel}
-                        </span>
-                    )}
+                    {/* Die Spanne "v1–v15" stand hier und sagte nichts, was man
+                        braucht: Wie viele Fassungen es sind, sieht man in der
+                        Liste darunter, und welche man ansieht, steht an ihr. */}
                     {/*
                         Direkt neben dem Namen, denn es betrifft genau diesen
                         Stapel. Vorher stand es als Kachel mitten im Raster —
@@ -1102,7 +1096,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             */}
             <div
                 aria-hidden
-                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
+                className="absolute inset-0 -z-10 backdrop-blur-[64px] backdrop-saturate-[1.4]
+                    bg-[#EDEDF0]/45 dark:bg-[#0C0C11]/50"
             />
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
