@@ -1056,12 +1056,16 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // Streifen leeren Grundes stehen, der nach Luecke aussah
                             // und nicht nach Rand. Ohne Insel wie bisher mittig.
                             //
-                            // Linksbuendig nur, solange links auch WIRKLICH ein
-                            // Blatt steht. Beim Markieren faehrt es ein, seine
-                            // Spalte bleibt aber als Null-Breite stehen — das Bild
-                            // klebte dadurch an der linken Fensterkante statt mittig
-                            // zu stehen. Kein Blatt, keine Buendigkeit.
-                            className={`absolute inset-0 flex items-center ${isSheetColumn && isSideSheetActuallyVisible ? 'justify-start' : 'justify-center'}`}
+                            // Immer mittig in der Flaeche, die ihm bleibt.
+                            //
+                            // Eine Zeit lang stand es linksbuendig am Blatt, damit
+                            // zwischen beiden kein Streifen leeren Grundes blieb.
+                            // Der Streifen ist aber kein Loch: Dort liegt der
+                            // Schein des Bildes, und wenn das Bild an der Kante
+                            // klebt, sieht man ihn nur rechts — die Seite wirkt
+                            // dann nach einer Seite gekippt. Mittig liegt er
+                            // links und rechts gleich.
+                            className="absolute inset-0 flex items-center justify-center"
                             style={state.sideSheetMode === 'brush' ? { paddingBottom: BRUSH_BOTTOM_RESERVE } : undefined}
                         >
                             {displayBox.width > 0 && displayBox.height > 0 && (
