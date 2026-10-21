@@ -63,6 +63,23 @@ const compareWithinRow = (
         if (ta !== tb) return tb - ta;
         return ra < rb ? -1 : ra > rb ? 1 : 0;
     }
+    /*
+        Innerhalb einer Abstammung entscheidet die FASSUNGSNUMMER, nicht die Uhr.
+
+        Vorher stand hier der Zeitstempel, und der laeuft nicht immer parallel
+        zur Nummer: Mehrere Auftraege laufen gleichzeitig, und wessen Bild
+        zuerst fertig ist, haengt an der Warteschlange des Anbieters, nicht an
+        der Reihenfolge des Druckens. In der Liste stand dann v6, v5, v7.
+
+        Die Nummer ist die Ordnung, die der Nutzer meint: unten das Original,
+        darueber aufsteigend, oben die neueste. Fehlt sie (Altbestand,
+        Platzhalter), entscheidet weiterhin die Uhr, und zuletzt die ID — denn
+        jeder Zweig muss bis zum Schluss durchentscheiden (siehe oben).
+    */
+    const va = typeof a.version === 'number' && a.version > 0 ? a.version : null;
+    const vb = typeof b.version === 'number' && b.version > 0 ? b.version : null;
+    if (va !== null && vb !== null && va !== vb) return vb - va;
+
     const t = (b.createdAt || 0) - (a.createdAt || 0);
     if (t !== 0) return t;
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;

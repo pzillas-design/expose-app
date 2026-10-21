@@ -56,6 +56,8 @@ const RowAction: React.FC<{
 const StackRow: React.FC<{
     img: CanvasImage;
     idx: number;
+    /** Nummer, die diese Fassung bekommen wird — fuer Platzhalter ohne eigene. */
+    fallbackVersion?: number | null;
     isActive: boolean;
     lang: 'de' | 'en';
     onSelect: (id: string) => void;
@@ -63,9 +65,20 @@ const StackRow: React.FC<{
     onDownload?: (id: string) => void;
     onHoverIndex?: (idx: number | null) => void;
     t?: (key: any) => string;
-}> = ({ img, idx, isActive, lang, onSelect, onGenerateMore, onDownload, onHoverIndex, t }) => {
+}> = ({ img, idx, fallbackVersion, isActive, lang, onSelect, onGenerateMore, onDownload, onHoverIndex, t }) => {
     const { version } = imageNameOf(img);
     const isOriginal = !img.parentId;
+    /*
+        Welche Nummer draufsteht.
+
+        `imageNameOf` liefert null, wenn die Spalte fehlt oder 1 ist — und
+        genau das ist beim Platzhalter der Fall: Ein aus der Datenbank
+        rekonstruierter Auftrag traegt version 0 ("wird beim Fertigwerden
+        gesetzt"). Daraus wurde woertlich "vnull". Fehlt die Nummer, nimmt die
+        Liste die naechste freie ihres Stapels; weiss auch die nichts, bleibt
+        die Zeile ohne Nummer statt mit einer falschen.
+    */
+    const shownVersion = version ?? fallbackVersion ?? null;
     /*
         Die Fassung, die gerade entsteht.
 
@@ -161,7 +174,11 @@ const StackRow: React.FC<{
                         gibt es keinen Grund, ihn "Neue Fassung" zu nennen und
                         den Namen spaeter auszutauschen. */}
                     <span className="text-[14px] font-medium text-zinc-700 dark:text-zinc-200 tabular-nums">
-                        {isOriginal ? 'Original' : `v${version}`}
+                        {isOriginal
+                            ? 'Original'
+                            : shownVersion != null
+                                ? `v${shownVersion}`
+                                : (lang === 'de' ? 'Fassung' : 'Version')}
                     </span>
                     {/* Beim Platzhalter nur das Wort: Der Ring liegt auf dem
                         Bild, wo man ohnehin hinsieht. Er ist fuer Fotos
@@ -211,7 +228,24 @@ const StackRow: React.FC<{
 
 export const StackList: React.FC<StackListProps> = ({
     images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onHoverIndex, t,
-}) => (
+}) => {
+    /*
+        Die naechste freie Fassungsnummer dieses Stapels.
+
+        Ein Platzhalter weiss seine eigene oft nicht (siehe StackRow). Die
+        Liste weiss es: Sie kennt alle Geschwister. Ist die hoechste bekannte
+        Nummer v4, wird die entstehende v5 — dieselbe Rechnung, die der Server
+        beim Anlegen anstellt.
+    */
+    const nextVersion = React.useMemo(() => {
+        const known = images
+            .map(i => imageNameOf(i).version ?? (typeof i.version === 'number' ? i.version : 0))
+            .filter(v => typeof v === 'number' && v > 0) as number[];
+        const max = known.length ? Math.max(...known) : 1;
+        return max + 1;
+    }, [images]);
+
+    return (
     /*
         Mittig: der Block nimmt 86 Prozent des Fensters, das BILD darin 72
         Prozent des Blocks — also rund 62 Prozent der Fensterbreite. Rechts
@@ -227,6 +261,7 @@ export const StackList: React.FC<StackListProps> = ({
                     key={img.id}
                     img={img}
                     idx={idx}
+                    fallbackVersion={img.isGenerating ? nextVersion : null}
                     isActive={activeId === img.id}
                     lang={currentLang}
                     onSelect={onSelect}
@@ -240,3 +275,4 @@ export const StackList: React.FC<StackListProps> = ({
         </div>
     </div>
 );
+};
