@@ -424,19 +424,32 @@ export const useNanoController = () => {
     });
 
     // Poll until blob: URL is replaced with a real signed URL, then fire generation
+    /*
+        Nachgereichte Generierung, wenn das Bild beim Druck auf "Erzeugen"
+        noch hochlud.
+
+        `totalCount` und `shouldSnap` werden durchgereicht, nicht erfunden:
+        Vorher stand hier fest "1, true" — jedes Bild eines Stapelauftrags
+        galt damit als Einzelauftrag, sprang beim Start in den Blick und
+        holte den Nutzer beim Fertigwerden erneut zurueck. Wer zehn frisch
+        hochgeladene Bilder auf einmal bearbeitet, wird so zehnmal an den
+        Anfang gerissen — genau das Scrollen, das nicht mehr ging.
+    */
     const autoStartAfterUpload = React.useCallback((
         imgId: string,
         prompt: string,
         draftPrompt?: string,
         activeTemplateId?: string,
-        variableValues?: Record<string, string[]>
+        variableValues?: Record<string, string[]>,
+        totalCount: number = 1,
+        shouldSnap: boolean = true
     ) => {
         const maxWait = 30_000;
         const started = Date.now();
         const poll = () => {
             const img = rowsRef.current.flatMap(r => r.items).find(i => i.id === imgId);
             if (img && img.src && !img.src.startsWith('blob:')) {
-                performGeneration(img, prompt, 1, true, draftPrompt, activeTemplateId, variableValues);
+                performGeneration(img, prompt, totalCount, shouldSnap, draftPrompt, activeTemplateId, variableValues);
             } else if (Date.now() - started < maxWait) {
                 setTimeout(poll, 400);
             } else {
@@ -714,14 +727,14 @@ export const useNanoController = () => {
             let snapIndex = 0;
             selectedImages.forEach((img, batchIdx) => {
                 // If image is still uploading, auto-start generation once the signed URL is ready
+                const isFirst = snapIndex === 0;
+                snapIndex++;
                 if (!img.src || img.src.startsWith('blob:')) {
                     const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
-                    autoStartAfterUpload(img.id, finalPrompt, draftPrompt, activeTemplateId, variableValues);
+                    autoStartAfterUpload(img.id, finalPrompt, draftPrompt, activeTemplateId, variableValues, selectedImages.length, isFirst);
                     return;
                 }
                 const finalPrompt = typeof prompt === 'string' ? prompt : (img.userDraftPrompt || '');
-                const isFirst = snapIndex === 0;
-                snapIndex++;
                 setTimeout(() => {
                     performGeneration(img, finalPrompt, selectedImages.length, isFirst, draftPrompt, activeTemplateId, variableValues);
                 }, batchIdx * 200);
