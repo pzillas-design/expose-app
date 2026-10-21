@@ -11,6 +11,7 @@ import { Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { FeedHeroSection } from '../layout/FeedHeroSection';
 import { LayerComposer } from '@/components/composer/LayerComposer';
+import { DropPanel } from '@/components/ui/DropPanel';
 import { GeneratingRing } from '@/components/ui/GeneratingRing';
 
 /* ── TTL helpers ── */
@@ -110,9 +111,18 @@ const UploadDropZone: React.FC<{
     active?: boolean;
     row?: boolean;
     className?: string;
-}> = ({ onClick, label, active = false, row = false, className = '' }) => (
+    /** Die Zeile nimmt Dateien an, nicht nur den Klick. */
+    onDragEnter?: (e: React.DragEvent) => void;
+    onDragOver?: (e: React.DragEvent) => void;
+    onDragLeave?: (e: React.DragEvent) => void;
+    onDrop?: (e: React.DragEvent) => void;
+}> = ({ onClick, label, active = false, row = false, className = '', onDragEnter, onDragOver, onDragLeave, onDrop }) => (
     <button
         onClick={onClick}
+        onDragEnter={onDragEnter}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
         // Symbol immer ueber der Schrift, in beiden Faellen. Nebeneinander
         // zerfiel die Einheit in zwei Dinge, die zufaellig nebeneinander
         // stehen; uebereinander liest es sich als eine Sache. `row` regelt
@@ -134,14 +144,21 @@ const UploadDropZone: React.FC<{
             Beim Ziehen wird daraus wieder eine Flaeche (siehe `active`): Dann
             braucht das Ziel Groesse, und der Rest der Seite tritt zurueck.
         */
-        className={`w-full rounded-2xl flex transition-[background-color,padding] duration-200
+        /*
+            Beim Ziehen bleibt die Zeile, wie sie ist, und faerbt sich nur.
+
+            Sie wuchs frueher auf Blockhoehe auf — und weil gleichzeitig mitten
+            im Bild eine Ablageflaeche aufging, sagten zwei Dinge dasselbe, und
+            der Seitenkopf sprang dabei. Die Groesse und die Bewegung tragen
+            jetzt allein die Flaeche in der Mitte; hier genuegt der Hinweis
+            "du bist gemeint".
+        */
+        className={`w-full rounded-2xl flex transition-colors duration-200
             ${row
-                ? `flex-row items-center gap-3 px-4 ${active ? 'py-10 justify-center' : 'py-3.5'}`
+                ? 'flex-row items-center gap-3 px-4 py-3.5'
                 : 'flex-col items-center justify-center gap-4 px-6 py-14'}
             ${active
-                // Beim Ziehen etwas deutlicher, aber in derselben Tonlage —
-                // kein Farbwechsel, nur mehr davon.
-                ? 'bg-black/[0.06] dark:bg-white/[0.08]'
+                ? 'bg-black/[0.07] dark:bg-white/[0.10]'
                 : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}
             ${className}`}
     >
@@ -1148,11 +1165,42 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         e.stopPropagation();
     }, []);
 
+    /*
+        Abgelegt wird nur auf einer Flaeche, die sich dazu meldet.
+
+        Die Seite als Ganzes nimmt zwar zur Kenntnis, dass eine Datei in der
+        Luft ist (dafuer die Zaehler oben), aber sie nimmt nichts mehr an: Eine
+        Datei, die irgendwo zwischen den Kacheln faellt, landete frueher
+        wortlos im Hochladen — man sah nur ein neues Bild und wusste nicht,
+        wieso. Angenommen wird auf der Flaeche in der Mitte und auf der Zeile
+        im Seitenkopf; beide sagen von sich, dass sie gemeint sind.
+    */
+    const [isOverZone, setIsOverZone] = React.useState(false);
+    const handleDragCancel = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        dragCounter.current = 0;
+        setIsDropActive(false);
+        setIsOverZone(false);
+        actions?.setIsDragOver?.(false);
+    }, [actions]);
+    const handleZoneEnter = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault(); e.stopPropagation(); setIsOverZone(true);
+    }, []);
+    const handleZoneOver = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault(); e.stopPropagation();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        setIsOverZone(true);
+    }, []);
+    const handleZoneLeave = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault(); e.stopPropagation(); setIsOverZone(false);
+    }, []);
+
     const handleDrop = React.useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         dragCounter.current = 0;
         setIsDropActive(false);
+        setIsOverZone(false);
         actions?.setIsDragOver?.(false);
 
         const files = e.dataTransfer.files;
@@ -1391,7 +1439,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
-            onDrop={handleDrop}
+            // Faellt die Datei nicht auf einer Ablageflaeche, passiert nichts
+            // ausser Aufraeumen. Siehe die Begruendung bei handleZoneEnter.
+            onDrop={handleDragCancel}
         >
             {/* Shared hidden file input for all upload triggers */}
             <input
@@ -1409,12 +1459,18 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 {/* Drag & drop overlay */}
                 {isDropActive && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
-                        <div className="absolute inset-0 bg-black/60" />
-                        <div className={`relative flex flex-col items-center gap-3 px-10 py-8 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg}`}>
-                            <Upload className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
-                            <p className={`${Typo.Body} text-sm text-zinc-600 dark:text-zinc-400`}>
-                                {t?.('drop_files_here') || 'Drop files here'}
-                            </p>
+                        <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-200" />
+                        {/* Nur hier wird abgelegt. Der Rest der Seite nimmt
+                            nichts an — eine Datei, die daneben faellt,
+                            verschwindet nicht in irgendeinem Stapel. */}
+                        <div
+                            className="relative pointer-events-auto"
+                            onDragEnter={handleZoneEnter}
+                            onDragOver={handleZoneOver}
+                            onDragLeave={handleZoneLeave}
+                            onDrop={handleDrop}
+                        >
+                            <DropPanel hot={isOverZone} label={t?.('drop_files_here') || 'Drop files here'} />
                         </div>
                     </div>
                 )}
@@ -1454,16 +1510,14 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     Gleiche Seitenabstaende wie das Raster, damit
                                     er buendig mit den Kacheln steht.
                                 */}
-                                {!effectiveGroupId && !renderSelectMode && (
-                                    <div className="px-4 sm:px-8 pb-1 sm:pb-2">
-                                        <UploadDropZone
-                                            row
-                                            onClick={triggerUpload}
-                                            active={isDropActive}
-                                            label={t?.('welcome_drop_cta') || 'Upload and edit'}
-                                        />
-                                    </div>
-                                )}
+                                {/*
+                                    Die Zeile "Fotos hochladen" stand hier, zwischen
+                                    Leiste und erster Tageszeile. Sie ist in die
+                                    Leiste gewandert, vor "Neu" — dort sucht man den
+                                    haeufigsten Knopf, und der Seitenkopf besteht
+                                    jetzt nur noch aus den Tagen. Zum Ziehen gibt es
+                                    die Flaeche, die in der Mitte aufgeht.
+                                */}
                                 <div
                                     key={`${effectiveGroupId ?? 'root'}-${renderSelectMode ? 'select' : 'normal'}`}
                                     ref={gridRef}
@@ -1593,6 +1647,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     onClick={triggerUpload}
                                     active={isDropActive}
                                     label={t?.('welcome_drop_cta') || 'Upload and edit'}
+                                    onDragEnter={handleZoneOver}
+                                    onDragOver={handleZoneOver}
+                                    onDrop={handleDrop}
                                 />
 
                                 <button

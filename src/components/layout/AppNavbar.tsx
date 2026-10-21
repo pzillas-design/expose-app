@@ -767,6 +767,38 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     ) : (
                         user && (
                             <>
+                                {/*
+                                    Hochladen steht vorn, und als einziger Knopf der
+                                    Leiste auf einer Flaeche.
+
+                                    Es ist die haeufigste Handlung der Anwendung —
+                                    vorher lag sie als lange Zeile im Seitenkopf und
+                                    damit unterhalb der Leiste, in der man sie sucht.
+                                    Die graue Flaeche ist eine bewusste Ausnahme von
+                                    der Regel "Knoepfe der Leiste sind durchsichtig":
+                                    Hier soll einer herausstechen, und es ist dieser.
+                                */}
+                                {isGallery && onHeroUploadClick && (
+                                    <Tooltip text={t('nav_upload')} side="bottom">
+                                        <button
+                                            className={`relative flex items-center justify-center rounded-full transition-all duration-300 group
+                                                bg-black/[0.06] dark:bg-white/[0.10] hover:bg-black/[0.10] dark:hover:bg-white/[0.16] ${isScrolled
+                                                    ? 'h-9 w-9 gap-0'
+                                                    : isMobile
+                                                        ? 'h-10 w-10 gap-0'
+                                                        : 'h-10 px-5 gap-2'
+                                                }`}
+                                            onClick={onHeroUploadClick}
+                                        >
+                                            <Upload className={`shrink-0 transition-all duration-300 text-zinc-700 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                            <div className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
+                                                <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-700 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white hidden md:inline">
+                                                    {t('nav_upload')}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    </Tooltip>
+                                )}
                                 {/* One entry point only — upload vs. generate is chosen
                                     inside the create canvas. Users kept pressing
                                     "Neu erstellen" when they meant to upload. */}

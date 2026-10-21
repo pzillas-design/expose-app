@@ -11,6 +11,7 @@ import { VOICE_ASSISTANT_PARKED } from '@/config/features';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { DetailSheetHeader } from '@/components/layout/DetailSheetHeader';
 import { GenerationNotice } from '@/components/ui/GenerationNotice';
+import { DropPanel } from '@/components/ui/DropPanel';
 import { useMobile } from '@/hooks/useMobile';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
@@ -97,6 +98,9 @@ export function App() {
     const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
     const [infoImageId, setInfoImageId] = React.useState<string | null>(null);
     const [detailSidebarWidth, setDetailSidebarWidth] = React.useState(380);
+    // Fuer die Zonenerkennung beim Ziehen, die ausserhalb des Renderns laeuft.
+    const sidebarWidthRef = React.useRef(detailSidebarWidth);
+    React.useEffect(() => { sidebarWidthRef.current = detailSidebarWidth; }, [detailSidebarWidth]);
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
     // Auswahl-Panel der Galerie: wie das Detail-Panel standardmaessig offen.
     // Sichtbar wird es ohnehin nur im Auswahlmodus, und ohne Auswahl zeigt es
@@ -417,10 +421,19 @@ export function App() {
             // Auto-reset if dragover stops firing (e.g. user drops outside app window)
             if (dragResetTimer.current) clearTimeout(dragResetTimer.current);
             dragResetTimer.current = setTimeout(resetDrag, 400);
-            // Track which zone cursor is over (only in detail view)
+            /*
+                Welches Ziel gemeint ist, entscheidet die Seite — und das Blatt
+                steht LINKS.
+
+                Hier stand die Grenze noch rechts im Fenster, aus der Zeit, als
+                das Blatt dort sass: Wer eine Referenz ueber das Blatt zog,
+                bekam "hochladen" angeboten, und das Angebot "Referenz" lag auf
+                der leeren Seite rechts neben dem Bild. Die Breite kommt
+                ausserdem aus derselben Quelle wie die Spalte selbst, statt als
+                abgeschriebene 380 danebenzustehen.
+            */
             if (locationRef2.current.startsWith('/image/')) {
-                const sidesheetW = 380;
-                setDragZone(e.clientX > window.innerWidth - sidesheetW ? 'sidesheet' : 'image');
+                setDragZone(e.clientX < sidebarWidthRef.current ? 'sidesheet' : 'image');
             }
         };
         const onDrop = async (e: DragEvent) => {
@@ -1406,11 +1419,11 @@ export function App() {
                     const sidesheetW = detailSidebarWidth;
                     return (
                         <div className="fixed inset-0 z-[100] pointer-events-none">
-                            <div className="absolute inset-0 bg-black/30" />
-                            {/* Left zone: Upload */}
+                            <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-200" />
+                            {/* Links das Blatt: dort wird eine Referenz abgelegt. */}
                             <div
                                 className="absolute inset-y-0 left-0 flex items-center justify-center"
-                                style={{ right: sidesheetW }}
+                                style={{ width: sidesheetW }}
                             >
                                 {/* Ohne Rahmen. Welches Ziel gemeint ist, sagt die
                                     Flaeche selbst: Das angepeilte wird heller und
@@ -1419,28 +1432,26 @@ export function App() {
                                     Signal fuer dieselbe Aussage — und das lauteste
                                     Element in einem Moment, in dem der Nutzer auf
                                     sein Bild schaut. */}
-                                <div className={`flex flex-col items-center gap-3 px-8 py-6 rounded-2xl backdrop-blur-xl transition-all duration-150 ${dragZone === 'image'
-                                    ? 'scale-[1.04] bg-white/95 dark:bg-zinc-900/95 shadow-xl shadow-black/20'
-                                    : 'bg-white/70 dark:bg-zinc-900/70 shadow-lg shadow-black/10'}`}>
-                                    <Upload className={`w-6 h-6 transition-colors duration-150 ${dragZone === 'image' ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}`} />
-                                    <p className={`${Typo.Body} text-sm ${dragZone === 'image' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'}`}>
-                                        {lang === 'de' ? 'Hier ablegen zum Hochladen' : 'Drop here to upload'}
-                                    </p>
-                                </div>
+                                <DropPanel
+                                    hot={dragZone === 'sidesheet'}
+                                    icon={<ImageIcon className="w-8 h-8" strokeWidth={1.5} />}
+                                    label={lang === 'de' ? 'Als Referenz hinzufügen' : 'Add as reference'}
+                                    className="!px-8"
+                                />
                             </div>
-                            {/* Right zone: Reference image */}
+                            {/* Rechts das Bild: dort wird hochgeladen. */}
                             <div
                                 className="absolute inset-y-0 right-0 flex items-center justify-center"
-                                style={{ width: sidesheetW }}
+                                style={{ left: sidesheetW }}
                             >
-                                <div className={`flex flex-col items-center gap-3 px-8 py-6 rounded-2xl backdrop-blur-xl transition-all duration-150 ${dragZone === 'sidesheet'
-                                    ? 'scale-[1.04] bg-white/95 dark:bg-zinc-900/95 shadow-xl shadow-black/20'
-                                    : 'bg-white/70 dark:bg-zinc-900/70 shadow-lg shadow-black/10'}`}>
-                                    <ImageIcon className={`w-6 h-6 transition-colors duration-150 ${dragZone === 'sidesheet' ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}`} />
-                                    <p className={`${Typo.Body} text-sm text-center ${dragZone === 'sidesheet' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'}`}>
-                                        {lang === 'de' ? 'Als Referenz hinzufügen' : 'Add as reference'}
-                                    </p>
-                                </div>
+                                {/* Dieselbe Flaeche wie links, nur mit dem
+                                    Bildzeichen: zwei Ziele, eine Sprache — und
+                                    dieselbe wie in der Galerie. Schmaler, weil
+                                    das Blatt schmaler ist. */}
+                                <DropPanel
+                                    hot={dragZone === 'image'}
+                                    label={lang === 'de' ? 'Hier ablegen zum Hochladen' : 'Drop here to upload'}
+                                />
                             </div>
                         </div>
                     );

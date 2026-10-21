@@ -391,6 +391,46 @@ html:not(.dark) {
   }
 }
 
+/*
+ * Die Ablageflaeche kommt heran, wenn eine Datei in der Luft ist.
+ *
+ * Derselbe Massstab wie bei jedem anderen Eintritt (0.94), nur kuerzer: Es ist
+ * ein Angebot, kein Ansichtswechsel.
+ */
+@keyframes drop-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/*
+ * Der Pfeil atmet, solange die Datei in der Luft ist.
+ *
+ * Vier Pixel, anderthalb Sekunden, weiches Ein und Aus: gerade genug, dass das
+ * Auge "hier hinein" versteht, und wenig genug, dass es neben einem Foto nicht
+ * zappelt.
+ */
+@keyframes drop-arrow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes drop-panel-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes drop-arrow {
+    0%, 100% { transform: none; }
+  }
+}
+
 @keyframes credits-step-in {
   from {
     opacity: 0;
