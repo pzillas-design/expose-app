@@ -244,7 +244,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
                     style={{
                         cursor: comp.activeId ? 'none' : 'default',
                         // Reveal like the detail view once the composite is ready.
-                        animation: comp.ready ? 'detail-img-in 260ms cubic-bezier(0.25,1,0.5,1) both' : undefined,
+                        animation: comp.ready ? 'view-in 280ms cubic-bezier(0.16,1,0.3,1) both' : undefined,
                     }}
                 />
                 <BrushCursor canvasRef={canvasRef} brushSize={comp.brushSize} refW={comp.refDims.w} soft={soft} enabled={!!comp.activeId} hidden={isAdjusting} mode={comp.mode} />
@@ -258,7 +258,7 @@ export const LayerComposer: React.FC<LayerComposerProps> = ({ stack, initialBase
 
                 {/* Bottom toolbar — styled like the annotation toolbar */}
                 {comp.ready && (
-                    <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full pointer-events-auto`}>
+                    <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 p-3 bg-white/95 dark:bg-[#1B1B20]/95 backdrop-blur-xl ${Theme.Effects.Shadow} rounded-full pointer-events-auto`}>
                         {/* Add / Remove — no container bg, only the active icon is filled
                             (mirrors the annotation toolbar) */}
                         <div className="flex items-center gap-1">

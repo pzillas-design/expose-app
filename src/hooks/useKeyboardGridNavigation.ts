@@ -8,6 +8,19 @@ interface UseKeyboardGridNavigationProps {
     onDelete?: (index: number) => void;
     onEscape?: () => void;
     getElementAtIndex?: (index: number) => Element | null;
+    /**
+     * Was geschieht, wenn der Pfeil ueber das letzte bzw. vor das erste Feld
+     * hinausfuehrt.
+     *
+     * Gibt die Funktion `true` zurueck, uebernimmt der Aufrufer: Er tauscht
+     * die Liste aus (etwa auf den naechsten Stapel) und setzt die Auswahl
+     * selbst. Gibt sie nichts zurueck, bleibt es beim Anschlag wie bisher.
+     *
+     * So weiss dieser Haken nichts von Stapeln — er kennt nur seinen eigenen
+     * Rand und fragt, ob jemand dahinter etwas hat.
+     */
+    onPastEnd?: () => boolean;
+    onBeforeStart?: () => boolean;
 }
 
 export function useKeyboardGridNavigation({
@@ -18,6 +31,8 @@ export function useKeyboardGridNavigation({
     onDelete,
     onEscape,
     getElementAtIndex,
+    onPastEnd,
+    onBeforeStart,
 }: UseKeyboardGridNavigationProps) {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -39,30 +54,35 @@ export function useKeyboardGridNavigation({
         (e: KeyboardEvent) => {
             if (!isActive || itemCount === 0) return;
 
+            // Die Pfeile rechnen mit dem aktuellen Stand, nicht im
+            // Zustands-Aktualisierer: Am Rand wird eine fremde Funktion
+            // gerufen, und ein Seiteneffekt gehoert nicht in einen Reducer.
+            const cur = activeIndex;
+
             switch (e.key) {
                 case 'ArrowRight':
                     e.preventDefault();
-                    setActiveIndex((prev) => (prev === null ? 0 : Math.min(prev + 1, itemCount - 1)));
+                    if (cur === null) { setActiveIndex(0); break; }
+                    if (cur >= itemCount - 1) { onPastEnd?.(); break; }
+                    setActiveIndex(cur + 1);
                     break;
                 case 'ArrowLeft':
                     e.preventDefault();
-                    setActiveIndex((prev) => (prev === null ? 0 : Math.max(prev - 1, 0)));
+                    if (cur === null) { setActiveIndex(0); break; }
+                    if (cur <= 0) { onBeforeStart?.(); break; }
+                    setActiveIndex(cur - 1);
                     break;
                 case 'ArrowDown':
                     e.preventDefault();
-                    setActiveIndex((prev) => {
-                        if (prev === null) return 0;
-                        const next = prev + columns;
-                        return next < itemCount ? next : prev;
-                    });
+                    if (cur === null) { setActiveIndex(0); break; }
+                    if (cur + columns >= itemCount) { onPastEnd?.(); break; }
+                    setActiveIndex(cur + columns);
                     break;
                 case 'ArrowUp':
                     e.preventDefault();
-                    setActiveIndex((prev) => {
-                        if (prev === null) return 0;
-                        const next = prev - columns;
-                        return next >= 0 ? next : prev;
-                    });
+                    if (cur === null) { setActiveIndex(0); break; }
+                    if (cur - columns < 0) { onBeforeStart?.(); break; }
+                    setActiveIndex(cur - columns);
                     break;
                 case 'Enter':
                     if (activeIndex !== null && onEnter) {
@@ -86,7 +106,7 @@ export function useKeyboardGridNavigation({
                     break;
             }
         },
-        [isActive, itemCount, columns, activeIndex, onEnter, onDelete, onEscape]
+        [isActive, itemCount, columns, activeIndex, onEnter, onDelete, onEscape, onPastEnd, onBeforeStart]
     );
 
     useEffect(() => {

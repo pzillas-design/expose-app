@@ -1,14 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronLeft, MoreHorizontal, PanelBottom, Maximize2, Minus, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
+import { Layers2, ChevronLeft, MoreHorizontal, PanelBottom, Maximize2, Minus, Upload, Wand2, Trash2, Repeat, Settings2, CircleCheck, LogOut, SquarePen, RotateCw, Download, Info, Pencil, PanelRight, Plus, LayoutGrid, Euro, AudioLines, MicOff } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { Theme, Typo, RoundIconButton, Button, Tooltip } from '../ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '../ui/ContextTip';
 import { DropdownMenu } from '../ui/DropdownMenu';
-import { GenerationProgressRing } from '../ui/GenerationProgressRing';
+import { buildDetailMenuItems } from './detailMenu';
 import { VoiceModeIndicator, type VoiceUiState } from '../voice/VoiceModeIndicator';
 import { useMobile } from '@/hooks/useMobile';
 import { MenuLines } from '@/components/ui/CustomIcons';
-import { useDetailLayout, setDetailLayout } from '@/utils/uiPrefs';
 import { NAV_H, NAV_H_EXPANDED_MOBILE, NAV_H_EXPANDED_DESKTOP } from '@/config/layout';
 import { CanvasImage } from '@/types';
 
@@ -51,9 +50,6 @@ interface AppNavbarProps {
     onToggleSideSheet?: () => void;
     onToggleFeedSideSheet?: () => void;
     rightInset?: number;
-    generatingImages?: CanvasImage[];
-    onNavigateToImage?: (id: string) => void;
-    onGenerateMoreById?: (id: string) => void;
     isGroupDrillDown?: boolean;
     /** Spanne der Fassungen im Stapel, z. B. "v1–v12". */
     groupVersionLabel?: string;
@@ -125,9 +121,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     onToggleSideSheet,
     onToggleFeedSideSheet,
     rightInset = 0,
-    generatingImages = [],
-    onNavigateToImage,
-    onGenerateMoreById,
     isGroupDrillDown = false,
     groupVersionLabel,
     detailVersion,
@@ -154,7 +147,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
     // Direkt gelesen statt durchgereicht: Die Vorliebe meldet ihre Aenderung
     // selbst, also brauchen weder App noch DetailPage davon zu wissen. Ein
     // Durchreichen durch zwei Ebenen waere mehr Code fuer dasselbe Ergebnis.
-    const detailLayout = useDetailLayout();
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
     const [isDetailMenuOpen, setIsDetailMenuOpen] = useState(false);
@@ -308,16 +300,15 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         </Tooltip>
     );
 
-    const progressRing = (
-        <GenerationProgressRing
-            generatingImages={generatingImages}
-            lang={lang}
-            onNavigateToImage={onNavigateToImage}
-            onGenerateMore={onGenerateMoreById}
-            t={t}
-            autoCloseWhenDone={mode === 'detail'}
-        />
-    );
+    /*
+        Der Ladekreis in der Leiste ist weg.
+
+        Er war immer da, immer gleich gross, und sagte nur "es laeuft etwas" —
+        wer wissen wollte was, musste ihn anklicken. An seiner Stelle meldet
+        sich jetzt die Benachrichtigung oben rechts von selbst und
+        verschwindet wieder (GenerationNotice).
+    */
+    const progressRing = null;
 
     const voiceMenuItem = voiceFeatureEnabled
         ? [{
@@ -492,45 +483,19 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 />
                 {isDetailMenuOpen && (
                     <div className="absolute top-full mt-2 right-0 z-50">
+                        {/* Die Eintraege kommen aus detailMenu.tsx — dieselbe Liste,
+                            die das Blatt der Detailansicht auf dem Desktop zeigt. */}
                         <DropdownMenu
-                            items={[
-                                ...voiceMenuItem.map(v => ({ ...v, onClick: () => { setIsDetailMenuOpen(false); v.onClick(); } })),
-                                { label: t('nav_download'), icon: <Download className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDownload?.(); } },
-                                // Die Eingabe-Anordnung: ein Eintrag, drei Zustaende.
-                                //
-                                // Das Menue bleibt beim Klick OFFEN. Man sieht dann
-                                // unmittelbar, was passiert ist, und kann
-                                // weiterschalten, ohne es dreimal zu oeffnen — bei
-                                // einem Rundlauf aus drei Zustaenden ist Zumachen
-                                // nach jedem Schritt das Gegenteil von hilfreich.
-                                //
-                                // Die Beschriftung nennt den Zustand, nicht die
-                                // Handlung, und das Symbol zeigt ihn mit: "Eingabe
-                                // rechts" mit dem Symbol fuer rechts. Sonst muesste
-                                // man raten, ob der Text beschreibt, wo man ist,
-                                // oder wohin es geht.
-                                ...(isMobile ? [] : [{
-                                    label: !isSideSheetVisible
-                                        ? (t('view_fullscreen') || 'Ansicht: Vollbild')
-                                        : detailLayout === 'column'
-                                            ? (t('view_columns') || 'Ansicht: Spalten')
-                                            : (t('view_rows') || 'Ansicht: Zeilen'),
-                                    icon: !isSideSheetVisible
-                                        ? <Maximize2 className="w-4 h-4" />
-                                        : detailLayout === 'column'
-                                            ? <PanelRight className="w-4 h-4" />
-                                            : <PanelBottom className="w-4 h-4" />,
-                                    separator: true,
-                                    onClick: () => {
-                                        if (!isSideSheetVisible) { setDetailLayout('column'); onToggleSideSheet?.(); }
-                                        else if (detailLayout === 'column') setDetailLayout('row');
-                                        else onToggleSideSheet?.();
-                                    },
-                                }]),
-                                ...(detailHasPrompt ? [{ label: t('generate_more'), icon: <Repeat className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailRegenerate?.(); } }] : []),
-                                { label: t('nav_info'), onClick: () => { setIsDetailMenuOpen(false); onDetailInfo?.(); } },
-                                { label: t('nav_delete'), icon: <Trash2 className="w-4 h-4" />, onClick: () => { setIsDetailMenuOpen(false); onDetailDelete?.(); }, danger: true, separator: true },
-                            ]}
+                            items={buildDetailMenuItems({
+                                t,
+                                hasPrompt: !!detailHasPrompt,
+                                onRegenerate: onDetailRegenerate,
+                                onDownload: onDetailDownload,
+                                onInfo: onDetailInfo,
+                                onDelete: onDetailDelete,
+                                voiceItems: voiceMenuItem,
+                                close: () => setIsDetailMenuOpen(false),
+                            })}
                         />
                     </div>
                 )}
@@ -673,7 +638,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
         // Der Untergrund kommt frueher und ist bei zwei Dritteln des Weges
         // voll da — so steht etwas hinter dem Inhalt, bevor er die Leiste
         // erreicht, statt erst kurz vor Schluss aufzutauchen.
-        const surfaceOpacity = Math.min(1, Math.max(0, (hp - 0.1) / 0.55));
+        // Sanfter als zuvor: Der Untergrund kommt ueber die ganze Strecke
+        // herauf statt in der ersten Haelfte fertig zu sein. Beim Scrollen
+        // soll man ihn nicht auftauchen sehen, sondern irgendwann bemerken,
+        // dass er da ist.
+        const surfaceOpacity = Math.min(1, Math.max(0, (hp - 0.04) / 0.85));
 
         return (
             <header
@@ -717,10 +686,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 */}
                 <div
                     aria-hidden
-                    className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
+                    className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
+                        bg-[#EDEDF0]/85 dark:bg-[#0C0C11]/80"
                     style={{
                         opacity: surfaceOpacity,
                     }}
+                />
+                {/* Die Unterkante als Flaeche, nicht als Linie: 20 Pixel, die
+                    nach unten auslaufen. Sie trennt, ohne etwas zu behaupten —
+                    eine gezogene Linie waere an dieser Stelle die einzige in
+                    der ganzen Anwendung. */}
+                <div
+                    aria-hidden
+                    className="absolute left-0 right-0 top-full h-5 -z-10
+                        bg-gradient-to-b from-black/[0.045] to-transparent
+                        dark:from-black/40 dark:to-transparent"
+                    style={{ opacity: surfaceOpacity }}
                 />
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
@@ -786,6 +767,38 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     ) : (
                         user && (
                             <>
+                                {/*
+                                    Hochladen steht vorn, und als einziger Knopf der
+                                    Leiste auf einer Flaeche.
+
+                                    Es ist die haeufigste Handlung der Anwendung —
+                                    vorher lag sie als lange Zeile im Seitenkopf und
+                                    damit unterhalb der Leiste, in der man sie sucht.
+                                    Die graue Flaeche ist eine bewusste Ausnahme von
+                                    der Regel "Knoepfe der Leiste sind durchsichtig":
+                                    Hier soll einer herausstechen, und es ist dieser.
+                                */}
+                                {isGallery && onHeroUploadClick && (
+                                    <Tooltip text={t('nav_upload')} side="bottom">
+                                        <button
+                                            className={`relative flex items-center justify-center rounded-full transition-all duration-300 group
+                                                bg-black/[0.06] dark:bg-white/[0.10] hover:bg-black/[0.10] dark:hover:bg-white/[0.16] ${isScrolled
+                                                    ? 'h-9 w-9 gap-0'
+                                                    : isMobile
+                                                        ? 'h-10 w-10 gap-0'
+                                                        : 'h-10 px-5 gap-2'
+                                                }`}
+                                            onClick={onHeroUploadClick}
+                                        >
+                                            <Upload className={`shrink-0 transition-all duration-300 text-zinc-700 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white ${isScrolled ? 'w-[18px] h-[18px]' : 'w-4 h-4'}`} />
+                                            <div className={`overflow-hidden transition-all duration-300 ease-in-out flex items-center justify-center ${isScrolled || isMobile ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
+                                                <span className="whitespace-nowrap text-sm font-medium leading-snug text-zinc-700 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white hidden md:inline">
+                                                    {t('nav_upload')}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    </Tooltip>
+                                )}
                                 {/* One entry point only — upload vs. generate is chosen
                                     inside the create canvas. Users kept pressing
                                     "Neu erstellen" when they meant to upload. */}
@@ -999,15 +1012,28 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             */}
             <div
                 aria-hidden
-                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
+                className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
+                    bg-[#EDEDF0]/85 dark:bg-[#0C0C11]/80"
+            />
+            <div
+                aria-hidden
+                className="absolute left-0 right-0 top-full h-5 -z-10
+                    bg-gradient-to-b from-black/[0.045] to-transparent
+                    dark:from-black/40 dark:to-transparent"
             />
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
+                    {/* Mit Beschriftung, wie auf den anderen Seiten auch: Ein
+                        freistehender Pfeil sagt "zurueck", aber nicht wohin —
+                        und aus einem Stapel geht es in die Galerie. */}
                     <button
-                        className="relative flex items-center justify-center rounded-full transition-all duration-300 group h-9 w-9 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        className="relative flex items-center justify-center rounded-full transition-all duration-300 group h-9 px-2.5 gap-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
                         onClick={onCloseGroup}
                     >
                         <ChevronLeft className="shrink-0 w-[18px] h-[18px] text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100" />
+                        <span className="hidden md:inline whitespace-nowrap text-sm font-medium leading-snug text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100">
+                            {t('nav_gallery') || 'Galerie'}
+                        </span>
                     </button>
                     {progressRing}
                 </div>
@@ -1023,10 +1049,30 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             {groupVersionLabel}
                         </span>
                     )}
+                    {/*
+                        Direkt neben dem Namen, denn es betrifft genau diesen
+                        Stapel. Vorher stand es als Kachel mitten im Raster —
+                        zwischen den Bildern, als waere es selbst eines.
+
+                        Die Mittelgruppe nimmt keine Klicks an (sie liegt ueber
+                        allem), dieser Knopf schon.
+                    */}
+                    {canOpenLayerComposer && onOpenLayerComposer && (
+                        <button
+                            onClick={onOpenLayerComposer}
+                            className="pointer-events-auto ml-2 h-8 px-3 rounded-full shrink-0 inline-flex items-center gap-1.5
+                                text-[13px] font-medium
+                                bg-black/[0.05] dark:bg-white/[0.08] hover:bg-black/[0.09] dark:hover:bg-white/[0.14]
+                                text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white
+                                transition-colors duration-150"
+                        >
+                            <Layers2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                            {t('combine_versions')}
+                        </button>
+                    )}
                 </div>
 
-                {/* RIGHT: balance + menu — the layer composer is now entered via the
-                    "Ebenen kombinieren" tile in the grid, so no navbar button here. */}
+                {/* RIGHT: balance + menu */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-end relative z-10 pointer-events-auto">
                     {rightContent}
                 </div>

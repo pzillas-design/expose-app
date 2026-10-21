@@ -6,6 +6,7 @@ import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { BarWaveform } from './BarWaveform';
 import { Logo } from '@/components/ui/Logo';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { VOICE_ASSISTANT_PARKED } from '@/config/features';
 
 interface AboutV2PageProps {
     user: any;
@@ -19,62 +20,70 @@ interface AboutV2PageProps {
 
 // ── Card definitions ──────────────────────────────────────
 type CardDef =
-    | { type: 'usp';   accent: 'dark'|'orange'|'glass'|'placeholder'; icon?: React.ReactNode; img?: string; photos?: string[]; en: string; de: string; sub_en?: string; sub_de?: string; }
-    | { type: 'quote'; accent: 'dark'|'orange'|'glass'; en: string; de: string; author: string; role: string; };
+    | { type: 'usp';   id: string; accent: 'dark'|'orange'|'glass'|'placeholder'; icon?: React.ReactNode; img?: string; photos?: string[]; en: string; de: string; sub_en?: string; sub_de?: string; }
+    | { type: 'quote'; id: string; accent: 'dark'|'orange'|'glass'; en: string; de: string; author: string; role: string; };
 
+/*
+    Das Band wirbt nur mit dem, was die Anwendung kann.
+
+    Zwei Karten taten das nicht: "Einfach sagen" zeigte auf den
+    Sprachassistenten, der abgeschaltet ist — wer darauf klickte, suchte in
+    der App vergeblich. Und "Zauberstab" gab es ueberhaupt nur hier: kein
+    Knopf, kein Menueeintrag, keine Funktion dieses Namens im ganzen Code.
+
+    Die Sprach-Karte ist nicht geloescht, sondern haengt am selben Schalter
+    wie die Funktion. Kommt der Assistent zurueck, kommt sie mit.
+*/
 const CARDS: CardDef[] = [
     {
-        type: 'usp', accent: 'placeholder',
+        type: 'usp', id: 'draw', accent: 'placeholder',
         photos: ['/home/v2/p-draw-1.jpg', '/home/v2/p-draw-2.jpg'],
         en: 'Draw on it', de: 'Direkt drauf',
     },
     {
-        type: 'usp', accent: 'dark',
+        type: 'usp', id: 'set', accent: 'dark',
         img: '/home/v2/v2-a.webp',
-        en: 'Run 12 at once', de: '12 auf einmal',
+        // Keine Zahl: Es gibt keine Grenze bei zwoelf — man waehlt aus, was
+        // man ausgewaehlt hat. Eine konkrete Zahl liest sich wie ein Limit.
+        en: 'A whole set at once', de: 'Die ganze Serie',
     },
-    {
-        type: 'usp', accent: 'dark',
+    ...(VOICE_ASSISTANT_PARKED ? [] : [{
+        type: 'usp' as const, id: 'voice', accent: 'dark' as const,
         icon: <AudioWaveform className="w-8 h-8 text-zinc-400" strokeWidth={1.5} />,
         en: 'Just say it', de: 'Einfach sagen',
-    },
+    }]),
     {
-        type: 'usp', accent: 'dark',
+        type: 'usp', id: 'once', accent: 'dark',
         icon: <SlidersHorizontal className="w-8 h-8 text-zinc-400" strokeWidth={1.5} />,
         en: 'Set once', de: 'Einmal. Fertig',
     },
     {
-        type: 'usp', accent: 'orange',
+        type: 'usp', id: 'price', accent: 'orange',
         icon: <Euro className="w-8 h-8 text-white/80" strokeWidth={1.5} />,
         en: `From ${getLowestPublicPrice('en')}`, de: `Ab ${getLowestPublicPrice('de')}`,
     },
     {
-        type: 'usp', accent: 'dark',
+        type: 'usp', id: 'batch', accent: 'dark',
         icon: <SquareStack className="w-8 h-8 text-zinc-400" strokeWidth={1.5} />,
         en: 'Batch Edit', de: 'Batch Edit',
     },
     {
-        type: 'usp', accent: 'glass',
+        type: 'usp', id: 'res4k', accent: 'glass',
         img: '/home/v2/p-eye.jpg',
         en: '4K Auflösung', de: '4K Auflösung',
     },
     {
-        type: 'usp', accent: 'glass',
+        type: 'usp', id: 'model', accent: 'glass',
         icon: <Banana className="w-8 h-8 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />,
         en: 'Nano Banana 2', de: 'Nano Banana 2',
     },
     {
-        type: 'usp', accent: 'glass',
-        icon: <Mic className="w-8 h-8 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />,
-        en: 'Magic Wand', de: 'Zauberstab',
-    },
-    {
-        type: 'usp', accent: 'dark',
+        type: 'usp', id: 'presets', accent: 'dark',
         icon: <Palette className="w-8 h-8 text-zinc-400" strokeWidth={1.5} />,
         en: 'Faster with presets', de: 'Schneller mit Presets',
     },
     {
-        type: 'usp', accent: 'glass',
+        type: 'usp', id: 'type', accent: 'glass',
         en: 'Type on it', de: 'Text drauf',
     },
 ];
@@ -203,8 +212,21 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
         return () => clearTimeout(t);
     }, [visible]);
 
-    const ROW1 = [CARDS[0], CARDS[6], CARDS[3], CARDS[4], CARDS[10]];
-    const ROW2 = [CARDS[2], CARDS[7], CARDS[5], CARDS[9]];
+    /*
+        Ueber Kennungen, nicht ueber Platznummern.
+
+        Vorher standen hier CARDS[0], CARDS[6], CARDS[3] … — faellt eine Karte
+        weg oder kommt eine dazu, zeigt jede Reihe danach etwas anderes als
+        gemeint, und die letzte zeigt gar nichts mehr. Mit Namen kann das nicht
+        passieren; eine fehlende Karte (z. B. die geparkte Sprach-Karte) faellt
+        einfach aus der Reihe.
+    */
+    const pick = (...ids: string[]) => ids.map(id => CARDS.find(c => c.id === id)).filter(Boolean) as CardDef[];
+    const ROW1 = pick('draw', 'res4k', 'once', 'price', 'type');
+    // 'set' rueckt nach, damit die Reihe auch ohne die Sprach-Karte breit
+    // genug bleibt: Das Band laeuft als zwei Kopien hintereinander und zeigt
+    // eine Luecke, sobald eine Kopie schmaler ist als das Fenster.
+    const ROW2 = pick('voice', 'model', 'batch', 'presets', 'set');
 
     return (
         <section className="bg-white dark:bg-zinc-950 py-24 sm:py-32 overflow-hidden">
@@ -256,6 +278,17 @@ const FeatureMarquee: React.FC<{ de: boolean }> = ({ de }) => {
 };
 
 // ── Testimonials ──────────────────────────────────────────
+/*
+    Eine Stimme, und die ist echt.
+
+    Hier standen vier: Ariane Keudel und drei erfundene Personen mit
+    erfundenen Rollen und Zitaten. Eine Wand aus Lob, von der drei Viertel
+    niemand gesagt hat, ist keine Referenz, sondern ein Risiko — und sie
+    entwertet die eine Aussage, die wirklich von einer Kundin kommt.
+
+    Darum nur noch diese eine, dafuer gross. Kommen weitere echte dazu,
+    passen sie in dieselbe Liste.
+*/
 const TESTIMONIALS = [
     {
         en: 'it really works!',
@@ -265,27 +298,6 @@ const TESTIMONIALS = [
         color: '#f97316',
         large: true,
         avatar: '/home/v2/ariane-keudel.jpg',
-    },
-    {
-        en: 'I direct the AI exactly where I want it.',
-        de: 'Ich dirigiere die KI genau dorthin, wo ich sie haben will.',
-        author: 'Sarah Chen',
-        role: 'Interior Photographer',
-        color: '#64748b',
-    },
-    {
-        en: 'We set our style up once — and then it\'s just tap, tap, tap. Every image flows out like a production line.',
-        de: 'Wir richten unseren Stil einmal ein — und dann ist es nur noch Tap, Tap, Tap. Jedes Bild kommt raus wie am Fließband.',
-        author: 'Marc Dubois',
-        role: 'Creative Director',
-        color: '#71717a',
-    },
-    {
-        en: 'A huge advantage is that physical home staging is often no longer necessary. Effects like natural sunlight — midday sun through the windows — are convincingly realistic.',
-        de: 'Ein großer Vorteil ist, dass ein physisches Homestaging oft gar nicht mehr notwendig ist. Effekte wie natürliches Sonnenlicht (z. B. Mittagssonne durch die Fenster) funktionieren sehr überzeugend und realistisch.',
-        author: 'Lena Strauss',
-        role: 'Real Estate Agency',
-        color: '#78716c',
     },
 ];
 
@@ -305,10 +317,19 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
             <p className="font-kumbh font-bold tracking-tighter text-zinc-900 dark:text-white lowercase leading-[0.88] text-4xl sm:text-5xl">
                 {de ? 'das sagen andere.' : 'what people say.'}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/*
+                Eine Stimme ist ein Satz, keine Karte.
+
+                Als Karte war sie eine breite, fast leere Flaeche mit einem
+                kleinen Zitat darin — die Form war fuer vier gemacht. Allein
+                steht das Zitat besser ohne Kasten und gross: Dann ist es eine
+                Aussage und kein uebrig gebliebenes Feld. Kommen weitere echte
+                Stimmen dazu, greift wieder das Raster.
+            */}
+            <div className={`grid gap-4 ${TESTIMONIALS.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                 {TESTIMONIALS.map((item, i) => (
-                    <div key={i} className="flex flex-col gap-5 p-8 sm:p-10 rounded-2xl bg-zinc-50 dark:bg-zinc-900">
-                        <p className={`font-kumbh font-medium text-zinc-900 dark:text-white leading-snug ${'large' in item && item.large ? 'text-3xl sm:text-4xl font-bold tracking-tight' : 'text-base sm:text-lg'}`}>
+                    <div key={i} className={`flex flex-col gap-5 ${TESTIMONIALS.length > 1 ? 'p-8 sm:p-10 rounded-2xl bg-zinc-50 dark:bg-zinc-900' : 'max-w-3xl'}`}>
+                        <p className={`font-kumbh font-medium text-zinc-900 dark:text-white leading-snug ${'large' in item && item.large ? 'text-4xl sm:text-5xl font-bold tracking-tight' : 'text-base sm:text-lg'}`}>
                             "{de ? item.de : item.en}"
                         </p>
                         <div className="flex items-center gap-3 mt-auto">
@@ -326,9 +347,19 @@ const TestimonialsWall: React.FC<{ de: boolean }> = ({ de }) => (
             </div>
             {/* Stats — plain, no card styling */}
             <div className="flex flex-row divide-x divide-zinc-200 dark:divide-zinc-800 mt-2">
+                {/*
+                    Gezaehlt, nicht geschaetzt.
+
+                    Hier standen 16.430 Bilder und 1.040 Kreative — tatsaechlich
+                    sind es (Stand 18.10.2026, aus generation_jobs + job_archive)
+                    6.217 fertige Erzeugungen von 193 Menschen, bei 302
+                    Registrierungen. Abgerundet angegeben, damit die Angabe mit
+                    der Zeit richtiger wird statt falscher; wer sie aktualisiert,
+                    zaehlt `status = 'completed'` in beiden Tabellen.
+                */}
                 {[
-                    { value: '16,430', label: de ? 'Bilder generiert' : 'images generated' },
-                    { value: '1,040',  label: de ? 'Kreative' : 'creatives' },
+                    { value: de ? '6.000+' : '6,000+', label: de ? 'Bilder erzeugt' : 'images created' },
+                    { value: '190+',  label: de ? 'Kreative' : 'creatives' },
                     { value: '4 K',    label: de ? 'Max. Auflösung' : 'max resolution' },
                 ].map((s, i) => (
                     <div key={i} className="flex flex-col gap-0.5 px-4 sm:px-8 first:pl-0">
@@ -423,13 +454,23 @@ const PremiumVideoCard: React.FC<{
 
 
 // ── VerbSection — hero ────────────────────────────────────
-const VERB_SCENES = [
+/*
+    Der Kopfbereich zeigt nur, was die Anwendung kann.
+
+    "ask" ist der Sprachassistent — mitsamt Wellenform und Sprechblase. Er ist
+    geparkt, also faellt die Szene weg; kommt er zurueck, kommt sie mit. Was
+    zu einer Szene gehoert, haengt seither am Verb und nicht mehr an der
+    Platznummer: Sonst gehoerte nach dem Wegfall die Wellenform ploetzlich zu
+    "streamline".
+*/
+const ALL_VERB_SCENES = [
     { verb: 'annotate',   img: '/home/v2/hero-new-2.webp' },
-    { verb: 'ask',        img: '/home/v2/hero-new-4.webp' },
+    { verb: 'ask',        img: '/home/v2/hero-new-4.webp', voice: true },
     { verb: 'streamline', img: '/home/v2/hero-new-1.webp' },
     { verb: 'upscale',    img: '/home/v2/hero-new-3.webp' },
     { verb: 'own',        img: '/home/v2/p-taucher2.jpg' },
 ];
+const VERB_SCENES = ALL_VERB_SCENES.filter(s => !('voice' in s && s.voice) || !VOICE_ASSISTANT_PARKED);
 
 const SLOT_OPTIONS = [
     ['Japanisch',  'Klassisch',  'Bauernhof',  'Botanisch',  'Bauhaus'  ],
@@ -570,26 +611,25 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
         setActive(a => { prevActiveRef.current = a; return dx < 0 ? (a + 1) % N : (a - 1 + N) % N; });
     };
 
-    const chips = [
-        null,
-        <AskChip isActive={active === 1} de={de} />,
-        <div className="flex items-center gap-1 sm:gap-1.5">
+    const chipFor: Record<string, React.ReactNode> = {
+        ask: <AskChip isActive={VERB_SCENES[active]?.verb === 'ask'} de={de} />,
+        streamline: <div className="flex items-center gap-1 sm:gap-1.5">
             {SLOT_OPTIONS.map((opts, i) => (
                 <div key={i} className={i === 0 ? 'flex' : 'hidden sm:flex'}>
                     <SlotChip options={opts} tick={slotTick} delayMs={i * 110} />
                 </div>
             ))}
         </div>,
-        <div className="flex items-center gap-2.5 bg-zinc-900/80 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 lg:px-5 lg:py-3.5 whitespace-nowrap">
+        upscale: <div className="flex items-center gap-2.5 bg-zinc-900/80 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 lg:px-5 lg:py-3.5 whitespace-nowrap">
             <span className="text-xs lg:text-sm text-white/40">1K</span>
             <ArrowRight className="w-3 h-3 lg:w-4 lg:h-4 text-white/25 shrink-0" />
             <span className="text-xs lg:text-sm text-white font-semibold tracking-wide">4 K</span>
             <div className="w-14 lg:w-20 h-0.5 bg-white/10 rounded-full overflow-hidden ml-1">
-                <div className="h-full bg-orange-500 rounded-full" style={{ width: active === 3 ? '100%' : '0%', transition: 'width 2.4s ease' }} />
+                <div className="h-full bg-orange-500 rounded-full" style={{ width: VERB_SCENES[active]?.verb === 'upscale' ? '100%' : '0%', transition: 'width 2.4s ease' }} />
             </div>
         </div>,
-        null,
-    ];
+    };
+    const chips = VERB_SCENES.map(scene => chipFor[scene.verb] ?? null);
 
     return (
         <section
@@ -637,26 +677,30 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                                 ? 'opacity 0.6s ease 0.1s, transform 0.85s cubic-bezier(0.17,0.84,0.44,1) 0.1s'
                                 : 'opacity 0.4s ease, transform 0.65s ease-in',
                         }}>
+                        {/* Was eine Szene tut, haengt an ihrem Verb: "upscale"
+                            kommt scharf, "own" faehrt langsam heran. Ueber
+                            Platznummern ging das schief, sobald eine Szene
+                            wegfaellt. */}
                         <img src={s.img} alt="" className="w-full h-full object-cover" loading="lazy"
-                            style={i === 3 ? {
-                                filter: active === 3 ? 'blur(0px)' : 'blur(22px)',
-                                transition: active === 3 ? 'filter 2s ease 0.1s' : 'none',
-                            } : i === 4 ? {
-                                transform: active === 4 ? 'scale(1)' : 'scale(1.08)',
+                            style={s.verb === 'upscale' ? {
+                                filter: isActive ? 'blur(0px)' : 'blur(22px)',
+                                transition: isActive ? 'filter 2s ease 0.1s' : 'none',
+                            } : s.verb === 'own' ? {
+                                transform: isActive ? 'scale(1)' : 'scale(1.08)',
                                 transition: 'transform 8s cubic-bezier(0.25,0.46,0.45,0.94)',
                             } : undefined}
                         />
                         {/* Dark overlay for legibility — skipped on the "own" scene
-                            (i === 4) since the underwater shot stands on its own and
-                            the chip is null there anyway. */}
-                        {i !== 4 && <div className="absolute inset-0 bg-black/20" />}
+                            since the underwater shot stands on its own and the chip
+                            is null there anyway. */}
+                        {s.verb !== 'own' && <div className="absolute inset-0 bg-black/20" />}
                     </div>
                 );
             })}
 
             {/* Annotate doodles (scene 0) — each doodle is its own SVG, positioned relative to the image frame as a 3×3 grid: top-left, center, bottom-right. */}
             <div className="verb-doodles absolute left-5 right-5 sm:left-8 sm:right-8 lg:left-12 lg:right-12 pointer-events-none"
-                style={{ top: '16.67%', bottom: '33.33%', zIndex: 5, opacity: active === 0 ? 1 : 0, transition: 'opacity 0.6s ease' }}>
+                style={{ top: '16.67%', bottom: '33.33%', zIndex: 5, opacity: VERB_SCENES[active]?.verb === 'annotate' ? 1 : 0, transition: 'opacity 0.6s ease' }}>
                 {/* Top-left: circle */}
                 <svg viewBox="-10 -10 530 510" preserveAspectRatio="xMidYMid meet"
                     className="absolute"
@@ -664,7 +708,7 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                     <path d="M1 227.453C11.501 121.453 78.9989 21.4536 213.499 2.95358C347.999 -15.5464 523.499 98.9538 504.457 278.547C485.414 458.141 353.921 507.02 230.999 476.953C108.077 446.887 24.9739 321.216 65.6044 161.469"
                         fill="none" stroke="rgba(249,115,22,1)" strokeWidth="6.5" strokeLinecap="round"
                         vectorEffect="non-scaling-stroke" strokeDasharray="1700"
-                        strokeDashoffset={active === 0 ? 0 : 1700}
+                        strokeDashoffset={VERB_SCENES[active]?.verb === 'annotate' ? 0 : 1700}
                         style={{ transition: 'stroke-dashoffset 0.95s cubic-bezier(0.4,0,0.2,1) 0s' }} />
                 </svg>
 
@@ -675,17 +719,17 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                     <path d="M56.9023 176.427C63.6897 174.425 70.477 172.423 159.23 150.451C247.984 128.479 418.498 86.5974 597.958 42.9766"
                         fill="none" stroke="rgba(249,115,22,1)" strokeWidth="6.5" strokeLinecap="round"
                         vectorEffect="non-scaling-stroke" strokeDasharray="700"
-                        strokeDashoffset={active === 0 ? 0 : 700}
+                        strokeDashoffset={VERB_SCENES[active]?.verb === 'annotate' ? 0 : 700}
                         style={{ transition: 'stroke-dashoffset 0.65s cubic-bezier(0.4,0,0.2,1) 0.75s' }} />
                     <path d="M82.0383 112.444C81.9183 112.434 81.7983 112.425 68.9504 126.174C56.1024 139.924 30.5302 167.433 16.078 183.876C1.62586 200.318 -0.931247 204.861 2.16748 206.745C5.26621 208.628 14.0983 207.713 34.5412 208.309C54.984 208.905 86.7701 211.038 121.214 213.836"
                         fill="none" stroke="rgba(249,115,22,0.95)" strokeWidth="6.5" strokeLinecap="round"
                         vectorEffect="non-scaling-stroke" strokeDasharray="280"
-                        strokeDashoffset={active === 0 ? 0 : 280}
+                        strokeDashoffset={VERB_SCENES[active]?.verb === 'annotate' ? 0 : 280}
                         style={{ transition: 'stroke-dashoffset 0.38s cubic-bezier(0.4,0,0.2,1) 1.28s' }} />
                     <path d="M567.805 104.591C567.925 104.6 568.045 104.61 580.893 90.8605C593.741 77.1109 619.314 49.6019 633.766 33.1591C648.218 16.7163 650.775 12.1732 647.676 10.2901C644.578 8.40697 635.745 9.32137 615.303 8.72568C594.86 8.12998 563.074 5.9965 528.63 3.19845"
                         fill="none" stroke="rgba(249,115,22,0.95)" strokeWidth="6.5" strokeLinecap="round"
                         vectorEffect="non-scaling-stroke" strokeDasharray="280"
-                        strokeDashoffset={active === 0 ? 0 : 280}
+                        strokeDashoffset={VERB_SCENES[active]?.verb === 'annotate' ? 0 : 280}
                         style={{ transition: 'stroke-dashoffset 0.38s cubic-bezier(0.4,0,0.2,1) 1.38s' }} />
                 </svg>
 
@@ -696,15 +740,15 @@ const VerbSection: React.FC<{ de: boolean; onGetStarted: () => void }> = ({ de, 
                     <path d="M1 223.9C1 224.053 1 224.205 15.1792 189.673C29.3584 155.14 57.7169 85.918 76.8559 44.8579C95.995 3.79786 105.055 -7.00251 108.629 6.513C112.202 20.0285 110.013 58.1871 98.0596 139.023C86.1057 219.859 64.4526 342.216 72.1269 347.804C79.8011 353.392 117.459 238.503 141.365 169.909C165.272 101.315 174.286 82.4976 183 67.2496C191.713 52.0016 199.852 40.8938 204.109 38.8611C208.366 36.8283 208.493 44.2073 202.456 87.6164C196.419 131.026 184.215 210.241 177.927 256.236C171.64 302.23 171.64 312.602 205.232 268.948C238.825 225.294 306.01 127.3 343.366 74.6997C380.721 22.0998 386.212 17.8637 389.196 17.5381C393.52 17.0662 392.812 34.0458 390.093 70.8513C388.055 98.4467 373.948 260.493 371.149 288.32C368.35 316.147 368.354 324.98 369.83 328.403C371.306 331.827 374.253 329.575 393.375 303.382C412.498 277.19 447.706 227.124 471.23 195.307C494.754 163.491 505.527 151.439 517.012 139.023"
                         fill="none" stroke="rgba(249,115,22,1)" strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round"
                         vectorEffect="non-scaling-stroke" strokeDasharray="2200"
-                        strokeDashoffset={active === 0 ? 0 : 2200}
+                        strokeDashoffset={VERB_SCENES[active]?.verb === 'annotate' ? 0 : 2200}
                         style={{ transition: 'stroke-dashoffset 1.1s cubic-bezier(0.4,0,0.2,1) 1.0s' }} />
                 </svg>
             </div>
 
             {/* Waveform overlay (scene 1) — bounds match image slide so it stays inside the frame */}
             <div className="verb-wave absolute left-5 right-5 sm:left-8 sm:right-8 lg:left-12 lg:right-12 pointer-events-none"
-                style={{ top: '16.67%', bottom: '33.33%', zIndex: 5, opacity: active === 1 ? 1 : 0, transition: 'opacity 0.6s ease' }}>
-                <BarWaveform isActive={active === 1} />
+                style={{ top: '16.67%', bottom: '33.33%', zIndex: 5, opacity: VERB_SCENES[active]?.verb === 'ask' ? 1 : 0, transition: 'opacity 0.6s ease' }}>
+                <BarWaveform isActive={VERB_SCENES[active]?.verb === 'ask'} />
             </div>
 
 
@@ -869,22 +913,29 @@ export const AboutPage: React.FC<AboutV2PageProps> = ({
                 <div className="absolute top-1/2 -translate-y-1/2 -right-20 w-64 h-64 bg-orange-400/15 dark:bg-orange-400/20 rounded-full blur-[90px] pointer-events-none" />
                 <div className="relative z-10 max-w-6xl mx-auto flex flex-col items-center text-center gap-16">
                     <div className="flex flex-col gap-5 font-kumbh font-semibold tracking-tighter lowercase" style={{ fontSize: 'clamp(1.8rem, 4.5vw, 5rem)', lineHeight: 1.05 }}>
+                        {/*
+                            Derselbe Satz wie immer, zwei Handgriffe leiser.
+
+                            "einst" wird "lange" — das eine klingt nach Maerchen,
+                            das andere nach Erfahrung. Und aus "gehört nun uns
+                            allen" wird "gehört sie dir": Eine Behauptung ueber
+                            die Menschheit traegt schwerer als eine ueber den,
+                            der sie gerade liest. Das Bild von der Hand bleibt,
+                            es ist der Grund, warum der Satz wirkt.
+                        */}
                         {de ? (<>
                             <p className="text-zinc-900 dark:text-white">
-                                die kraft der form, farbe und ästhetik, einst ein privileg, gehört nun uns allen.
+                                die kraft von form, farbe und ästhetik war lange ein privileg.
                             </p>
                             <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-                                alles was du brauchst, liegt in deiner hand. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
+                                jetzt gehört sie dir. alles, was du brauchst, liegt in deiner hand. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
                             </p>
                         </>) : (<>
                             <p className="text-zinc-900 dark:text-white">
-                                ai masters looks, physics, and composition at a level once reserved for elite studios.
+                                the power of form, colour and composition was long a privilege.
                             </p>
                             <p className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-                                this power is now yours.
-                            </p>
-                            <p className="text-zinc-900 dark:text-white">
-                                surpass the professional standard. everything you need is at your fingertips. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
+                                now it’s yours. everything you need is already in your hands. <Logo className="inline-block w-[0.85em] h-[0.85em] align-middle" />
                             </p>
                         </>)}
                     </div>

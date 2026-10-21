@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { calcBarProgress } from './GenerationProgressRing';
+import { calcBarProgress } from '@/utils/progress';
 
 interface GeneratingRingProps {
     /** Startzeitpunkt der Generierung (ms). */

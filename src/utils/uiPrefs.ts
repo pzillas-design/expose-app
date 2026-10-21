@@ -46,79 +46,75 @@ export const useEnterGenerates = (): boolean => {
 };
 
 /**
- * Anordnung der Detailansicht auf dem Desktop.
+ * Was im Blatt unten stehen soll.
  *
- * 'column' stellt Bild und Eingabe nebeneinander, 'row' untereinander — Bild
- * oben, Eingabe unten, wie auf dem Handy. Auf schmalen Geraeten gilt ohnehin
- * immer 'row'; die Einstellung betrifft nur Breiten ab der md-Schwelle.
+ * Zwei Schalter, beide aus dem Menue hinter den drei Punkten erreichbar. Sie
+ * liegen hier und nicht am Bild: Es ist eine Vorliebe, wie man arbeitet, kein
+ * Zustand eines einzelnen Bildes — wer die Vorschlaege einmal weghaben wollte,
+ * will sie beim naechsten Bild auch nicht wiedersehen.
  *
- * Wie bei Enter bewusst je Browser und nicht je Konto: Die bessere Anordnung
- * haengt am Bildschirm, vor dem man gerade sitzt.
+ * Standard ist jeweils "zeigen": Was man noch nie gesehen hat, kann man nicht
+ * vermissen, und ein leeres Blatt erklaert sich nicht von selbst.
  */
-export type DetailLayout = 'column' | 'row';
-const DETAIL_LAYOUT_KEY = 'expose:ui:detail-layout-v1';
+const HIDE_SUGGESTIONS_KEY = 'expose_hide_suggestions';
+const HIDE_TEMPLATES_KEY = 'expose_hide_templates';
 
-export const getDetailLayout = (): DetailLayout => {
-    try {
-        return window.localStorage.getItem(DETAIL_LAYOUT_KEY) === 'row' ? 'row' : 'column';
-    } catch (_) {
-        return 'column';
-    }
+const readFlag = (key: string): boolean => {
+    try { return window.localStorage.getItem(key) === '1'; } catch (_) { return false; }
 };
 
-export const setDetailLayout = (layout: DetailLayout): void => {
-    try {
-        window.localStorage.setItem(DETAIL_LAYOUT_KEY, layout);
-    } catch (_) { /* privater Modus: dann gilt der Standard */ }
+const writeFlag = (key: string, on: boolean): void => {
+    try { window.localStorage.setItem(key, on ? '1' : '0'); } catch (_) { /* privater Modus */ }
     window.dispatchEvent(new CustomEvent(CHANGED_EVENT));
 };
 
-export const useDetailLayout = (): DetailLayout => {
-    const [value, setValue] = React.useState(getDetailLayout);
+const useFlag = (key: string): boolean => {
+    const [value, setValue] = React.useState(() => readFlag(key));
     React.useEffect(() => {
-        const onChange = () => setValue(getDetailLayout());
+        const onChange = () => setValue(readFlag(key));
         window.addEventListener(CHANGED_EVENT, onChange);
         window.addEventListener('storage', onChange);
         return () => {
             window.removeEventListener(CHANGED_EVENT, onChange);
             window.removeEventListener('storage', onChange);
         };
-    }, []);
+    }, [key]);
     return value;
 };
 
-/**
- * Bilderleiste unter dem Bild in der Detailansicht.
- *
- * Abschaltbar, weil sie Platz kostet, den sonst das Bild bekaeme — und weil
- * die Pfeile und der Wisch dasselbe leisten. Wer sie vermisst, holt sie im
- * Menue zurueck.
- *
- * Standard ist aus: Der Platz gehoert dem Bild, und Pfeile, Wischen und die
- * Galerie leisten dasselbe. Wer sie will, holt sie im Menue zurueck — und die
- * Entscheidung bleibt dann gespeichert.
- */
-const THUMB_STRIP_KEY = 'expose:ui:detail-thumbstrip-v1';
+export const getHideSuggestions = (): boolean => readFlag(HIDE_SUGGESTIONS_KEY);
+export const setHideSuggestions = (on: boolean): void => writeFlag(HIDE_SUGGESTIONS_KEY, on);
+export const useHideSuggestions = (): boolean => useFlag(HIDE_SUGGESTIONS_KEY);
 
-export const getThumbStripVisible = (): boolean => {
+export const getHideTemplates = (): boolean => readFlag(HIDE_TEMPLATES_KEY);
+export const setHideTemplates = (on: boolean): void => writeFlag(HIDE_TEMPLATES_KEY, on);
+export const useHideTemplates = (): boolean => useFlag(HIDE_TEMPLATES_KEY);
+
+/**
+ * Die Breite des Blattes in der Detailansicht, in Pixeln.
+ *
+ * Eine Vorliebe, kein Zustand: Wer sie einmal eingestellt hat, will sie beim
+ * naechsten Bild und am naechsten Tag wiederfinden. 0 bedeutet "nicht
+ * eingestellt" — dann rechnet CSS die Standardbreite aus der Fensterbreite.
+ */
+const SHEET_WIDTH_KEY = 'expose_sheet_width';
+
+export const getSheetWidth = (): number => {
     try {
-        return window.localStorage.getItem(THUMB_STRIP_KEY) === '1';
-    } catch (_) {
-        return false;
-    }
+        const raw = Number(window.localStorage.getItem(SHEET_WIDTH_KEY));
+        return Number.isFinite(raw) && raw > 0 ? raw : 0;
+    } catch (_) { return 0; }
 };
 
-export const setThumbStripVisible = (on: boolean): void => {
-    try {
-        window.localStorage.setItem(THUMB_STRIP_KEY, on ? '1' : '0');
-    } catch (_) { /* privater Modus: dann gilt der Standard */ }
+export const setSheetWidth = (px: number): void => {
+    try { window.localStorage.setItem(SHEET_WIDTH_KEY, String(Math.round(px))); } catch (_) { /* privater Modus */ }
     window.dispatchEvent(new CustomEvent(CHANGED_EVENT));
 };
 
-export const useThumbStripVisible = (): boolean => {
-    const [value, setValue] = React.useState(getThumbStripVisible);
+export const useSheetWidth = (): number => {
+    const [value, setValue] = React.useState(getSheetWidth);
     React.useEffect(() => {
-        const onChange = () => setValue(getThumbStripVisible());
+        const onChange = () => setValue(getSheetWidth());
         window.addEventListener(CHANGED_EVENT, onChange);
         window.addEventListener('storage', onChange);
         return () => {

@@ -8,14 +8,46 @@ import { X, Loader2 } from 'lucide-react';
 
 export const Theme = {
     Colors: {
-        // Structural Backgrounds
-        CanvasBg: "bg-white dark:bg-zinc-950", // App Background
-        PanelBg: "bg-white dark:bg-zinc-900", // Sidebars, Sheets
-        ModalBg: "bg-white dark:bg-zinc-900", // Modals
+        /*
+            Drei Ebenen, eine Regel: Flaechen steigen, Eingaben sinken.
+
+                CanvasBg      der Grund, auf dem alles liegt — am dunkelsten
+                PanelBg       was darauf liegt (Blatt, Dialog) — heller
+                SurfaceSunken was darin vertieft ist (Eingaben, Felder) — wieder dunkler
+
+            Die Abstaende zwischen den Ebenen sind bewusst groesser als eine
+            Zink-Stufe: Zwischen zinc-950 und zinc-900 liegen im Dunkeln nur
+            wenige Prozent Helligkeit, und auf einem hellen Bildschirm in einem
+            hellen Raum sieht man davon nichts. Jetzt rund das Doppelte.
+
+            Im dunklen Modus war das vorher umgekehrt: Das Blatt (zinc-900) lag
+            auf einem fast gleich dunklen Grund, und die Eingabekarte darin war
+            HELLER als das Blatt — sie sah aus, als laege sie obenauf, obwohl
+            man hineinschreibt. Darum wirkte die Tiefe falsch.
+
+            Im hellen Modus gilt dasselbe, nur umgekehrt in den Werten: Der
+            Grund ist leicht grau, das Blatt weiss, die Eingabe wieder grau.
+            Eine Vertiefung zeigt den Grund durch.
+        */
+        CanvasBg: "bg-[#EDEDF0] dark:bg-[#08080A]",
+        PanelBg: "bg-white dark:bg-[#1B1B20]",
+        ModalBg: "bg-white dark:bg-[#1B1B20]",
+        /*
+            Das Blatt der Detailansicht — fast schwarz, auf Wunsch.
+
+            Es ist bewusst NICHT PanelBg: Im dunklen Thema soll das Blatt mit
+            dem Grund verschmelzen statt sich als hellere Flaeche abzuheben.
+            Damit liegt es am unteren Ende der Skala, und die Eingabe darin
+            kann nur heller werden statt dunkler — unter #09090B bleibt nur
+            reines Schwarz, ein Unterschied von vier Stufen, den kein Schirm
+            zeigt. Eine leicht angehobene Eingabe ist in dunklen Oberflaechen
+            ohnehin die gelaeufige Loesung.
+        */
+        SheetBg: "bg-white dark:bg-zinc-950",
 
         // Interactive Surfaces (New Standard)
         Surface: "bg-white dark:bg-zinc-900",
-        SurfaceSubtle: "bg-zinc-50 dark:bg-zinc-800/50",
+        SurfaceSunken: "bg-[#E6E6EA] dark:bg-[#121216]",
         SurfaceHover: "hover:bg-zinc-50 dark:hover:bg-zinc-800/10",
         SurfaceActive: "bg-zinc-100 dark:bg-zinc-800",
 
@@ -122,6 +154,52 @@ interface TooltipProps {
 export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom', shortcut }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [coords, setCoords] = useState({ top: 0, left: 0 });
+    const tipRef = React.useRef<HTMLDivElement>(null);
+
+    /*
+        Erst zeichnen, dann messen, dann geradeziehen.
+
+        Vorher schaetzte der Kasten seine Breite aus der Zeichenzahl (sechs
+        Pixel je Zeichen) und schob sich danach vom Rand weg. Bei einem langen
+        Satz ergab das 670 Pixel, obwohl der Kasten bei 260 umbricht — er
+        wanderte dadurch weit nach rechts und stand schraeg neben seinem Chip
+        statt ueber ihm.
+
+        Eine Schaetzung kann das nicht leisten: Wie breit der Kasten wird,
+        haengt an Schrift, Umbruch und Hoechstbreite. Also wird er mittig
+        gesetzt und anschliessend nur so weit verschoben, wie er tatsaechlich
+        ueber den Rand steht.
+    */
+    const adjustedRef = React.useRef(false);
+    React.useLayoutEffect(() => {
+        if (!isVisible) { adjustedRef.current = false; return; }
+        // GENAU EINMAL je Anzeige korrigieren.
+        //
+        // Die erste Fassung hing an `coords` und setzte `coords` — und weil
+        // getBoundingClientRect gebrochene Werte liefert, kam die Korrektur nie
+        // exakt zur Ruhe: 7,9999 statt 8, also noch ein Zehntel, und noch
+        // eines. React zaehlt das als Endlosschleife (Fehler #185) und wirft
+        // den ganzen Baum weg — die weisse Seite.
+        //
+        // Eine Messung reicht auch: Danach steht der Kasten, bis er wieder
+        // verschwindet.
+        if (adjustedRef.current) return;
+        const el = tipRef.current;
+        if (!el) return;
+        adjustedRef.current = true;
+        const r = el.getBoundingClientRect();
+        const pad = 8;
+        let left = coords.left;
+        let top = coords.top;
+        if (r.left < pad) left += pad - r.left;
+        else if (r.right > window.innerWidth - pad) left -= r.right - (window.innerWidth - pad);
+        if (r.top < pad) top += pad - r.top;
+        else if (r.bottom > window.innerHeight - pad) top -= r.bottom - (window.innerHeight - pad);
+        // Unter einem halben Pixel lohnt keine zweite Runde.
+        if (Math.abs(left - coords.left) > 0.5 || Math.abs(top - coords.top) > 0.5) {
+            setCoords({ left: Math.round(left), top: Math.round(top) });
+        }
+    }, [isVisible, coords]);
 
     const handleMouseEnter = (e: React.MouseEvent) => {
         // Only show tooltips if using a mouse/precise pointer
@@ -130,23 +208,13 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
         const target = e.currentTarget as HTMLElement;
         const rect = target.getBoundingClientRect();
 
-        // Dynamic estimate of tooltip width based on text length to allow closer edge alignment
-        const padding = 8;
-        const charWidth = 6; // Average width per character in pixels for text-[10px]
-        const totalLen = text.length + (typeof shortcut === 'string' ? shortcut.length + 2 : shortcut ? 4 : 0);
-        const estimatedHalfWidth = Math.max(20, (totalLen * charWidth) / 2 + 10);
-
-        let left = rect.left + rect.width / 2;
-        const top = side === 'bottom' ? rect.bottom + 8 : rect.top - 8;
-
-        // Boundary check: nudge left if too close to edges
-        if (left < estimatedHalfWidth + padding) {
-            left = estimatedHalfWidth + padding;
-        } else if (left > window.innerWidth - estimatedHalfWidth - padding) {
-            left = window.innerWidth - estimatedHalfWidth - padding;
-        }
-
-        setCoords({ top, left });
+        // Mittig ueber dem Ausloeser. Ob das ans Fenster stoesst, entscheidet
+        // nicht eine Schaetzung, sondern die Messung nach dem Zeichnen — siehe
+        // unten.
+        setCoords({
+            top: side === 'bottom' ? rect.bottom + 8 : rect.top - 8,
+            left: rect.left + rect.width / 2,
+        });
         setIsVisible(true);
         if (children.props.onMouseEnter) children.props.onMouseEnter(e);
     };
@@ -166,6 +234,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ text, children, side = 'bottom
             {childWithRef}
             {isVisible && createPortal(
                 <div
+                    ref={tipRef}
                     // Ohne Rahmen: Der Kasten hebt sich durch Flaeche und
                     // Schatten ab, eine Linie daneben ist eine zweite Aussage
                     // ueber dieselbe Kante — dieselbe Regel wie bei Kopfzeile
@@ -280,7 +349,19 @@ export const Button: React.FC<ButtonProps> = ({
         // hier `text-white dark:text-zinc-950`: Dieselbe Flaeche trug je nach
         // Thema zwei verschiedene Schriftfarben, obwohl sie sich gar nicht
         // aendert — das war der eigentliche Fehler, nicht die Farbe selbst.
-        generate: `bg-gradient-to-r from-orange-500 to-red-600 text-zinc-900 shadow-sm hover:brightness-110`
+        /*
+            Heller Modus: weisse Schrift auf einem tieferen Verlauf.
+
+            Weiss auf orange-500 liegt bei 2,9:1 und faellt damit unter jede
+            Lesbarkeitsschwelle. Deshalb geht der Verlauf im hellen Modus eine
+            Stufe tiefer (orange-600 → red-700); dort traegt Weiss. Im dunklen
+            Modus bleibt es bei der dunklen Schrift auf dem helleren Verlauf —
+            die hat dort den besseren Kontrast, und der Knopf soll in beiden
+            Modi gleich stark aus der Flaeche treten, nicht gleich aussehen.
+        */
+        generate: `bg-gradient-to-r from-orange-600 to-red-700 text-white
+            dark:from-orange-500 dark:to-red-600 dark:text-zinc-900
+            shadow-sm hover:brightness-110`
     };
 
     const btn = (
@@ -306,10 +387,12 @@ export const Button: React.FC<ButtonProps> = ({
                     Lesbares uebrig.
 
                     1em folgt der Beschriftung und waechst mit jeder Knopfgroesse
-                    mit. Mehr Deckkraft dazu: 40 % waren auf dem Farbverlauf des
-                    Generieren-Knopfes kaum zu sehen.
+                    mit. Dazu 90 % Deckkraft statt 70: Auf dem Farbverlauf des
+                    Generieren-Knopfes las sich das Zeichen heller als die
+                    Beschriftung daneben, obwohl beide dieselbe Farbe tragen —
+                    eine halbdurchsichtige dunkle Schrift auf Orange wird grau.
                 */
-                <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[0.95em] leading-none opacity-70 ml-1.5">{shortcut}</kbd>
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[0.95em] leading-none opacity-90 ml-1.5">{shortcut}</kbd>
             )}
         </button>
     );
@@ -364,7 +447,7 @@ interface RoundIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, tooltip, tooltipShortcut, tooltipSide, variant = 'default', className = '', ...props }) => {
     // Structural classes
-    // 36 Pixel sichtbar, 44 Pixel treffbar.
+    // 40 Pixel sichtbar, 52 Pixel treffbar.
     //
     // Der Kreis bleibt so gross, wie er aussehen soll — eine Leiste aus
     // 44er-Kreisen waere massig. Die Trefferflaeche waechst stattdessen
@@ -373,9 +456,13 @@ export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, 
     // Anwendung, an der dieser Knopf steht, statt an jeder einzeln.
     //
     // `relative` ist noetig, damit das Pseudoelement sich auf den Knopf
-    // bezieht; `-inset-1` sind 4 Pixel je Seite, also 36 + 8 = 44.
-    const base = `relative w-9 h-9 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95
-        before:content-[''] before:absolute before:-inset-1 before:rounded-full`;
+    // bezieht; `-inset-1.5` sind 6 Pixel je Seite, also 40 + 12 = 52.
+    //
+    // Von 36 auf 40 gewachsen: Der Kreis war gegenueber dem Symbol darin (18
+    // Pixel) knapp, und auf einem Foto ist eine knappe Flaeche schwer zu
+    // treffen. 40 ist immer noch kein Klotz, gibt dem Symbol aber Luft.
+    const base = `relative w-10 h-10 flex items-center justify-center rounded-full shrink-0 backdrop-blur-md transition-all duration-200 active:scale-95
+        before:content-[''] before:absolute before:-inset-1.5 before:rounded-full`;
 
     // Aesthetic classes
     const variants = {
@@ -414,10 +501,28 @@ export const RoundIconButton: React.FC<RoundIconButtonProps> = ({ icon, active, 
 };
 
 // -- Inputs --
+/*
+    Eingaben sinken.
+ *
+ *  Vorher eine HELLE Flaeche mit Rand auf einem hellen Blatt: zwei Mittel
+ *  (Farbe und Linie) fuer eine Sache, und beide sagten das Falsche — man
+ *  schreibt hinein, also gehoert sie nach unten, nicht nach oben. Jetzt
+ *  dieselbe vertiefte Flaeche wie die Prompt-Box im Blatt, ohne Linie.
+ *
+ *  Beim Schreiben ein sehr schwacher grauer Ring. Nicht Orange: Die Farbe
+ *  gehoert dem Erzeugen-Knopf, und ein Feld, in dem man gerade tippt, muss
+ *  nicht leuchten — man weiss, wo man ist.
+ */
+const FIELD_BASE = `w-full ${Theme.Colors.SurfaceSunken} rounded-xl text-zinc-900 dark:text-zinc-100
+    border-0 outline-none focus:outline-none
+    ring-1 ring-transparent focus:ring-black/[0.07] dark:focus:ring-white/[0.09]
+    transition-[box-shadow,background-color] duration-150
+    placeholder:text-zinc-400 dark:placeholder:text-zinc-500`;
+
 export const Input = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className = '', ...props }, ref) => (
     <input
         ref={ref}
-        className={`w-full bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 border ${Theme.Geometry.Radius} px-3 py-2.5 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500/10 focus:border-zinc-300 dark:focus:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ${Typo.Body} ${className}`}
+        className={`${FIELD_BASE} px-3.5 py-2.5 ${Typo.Body} ${className}`}
         {...props}
     />
 ));
@@ -434,10 +539,23 @@ export const TableInput = React.forwardRef<HTMLInputElement, InputHTMLAttributes
 export const TextArea = React.forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(({ className = '', ...props }, ref) => (
     <textarea
         ref={ref}
-        className={`w-full bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800 border ${Theme.Geometry.Radius} p-3 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-zinc-500/10 focus:border-zinc-300 dark:focus:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/10 resize-none ${Theme.Effects.Transition} placeholder:text-zinc-400 dark:placeholder:text-zinc-500 ${Typo.Body} ${className}`}
+        className={`${FIELD_BASE} p-3.5 resize-none ${Typo.Body} ${className}`}
         {...props}
     />
 ));
+
+/*
+    Die schwebende Flaeche: Menue, Auswahlliste, Aufklappbares.
+
+    Ueberall dieselbe: Blattfarbe, 16 Pixel Rundung, ein Rand Luft innen,
+    ein weicher Schatten — und eine Haarlinie bei fuenf Prozent. Die ist die
+    einzige Linie, die das System noch kennt, und sie hat einen Grund: Eine
+    weisse Flaeche, die ueber einer weissen Flaeche schwebt, hat sonst keine
+    Kante. Wo Flaechen aneinanderstossen (Blatt, Grund, Eingabe) traegt
+    weiterhin der Farbwechsel.
+*/
+export const MenuSurface = `${Theme.Colors.PanelBg} rounded-2xl p-1.5 shadow-lg
+    ring-1 ring-black/[0.05] dark:ring-white/[0.07]`;
 
 // -- Card/Box --
 export const Card: React.FC<{ children: React.ReactNode, className?: string, onClick?: () => void }> = ({ children, className = '', onClick }) => (

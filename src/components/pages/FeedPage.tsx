@@ -1,16 +1,18 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { CanvasImage, ImageRow } from '@/types';
 import { NAV_SCROLL_OFFSET } from '@/config/layout';
-import { Loader2, Layers, Layers2, ChevronRight, Upload, Download, X } from 'lucide-react';
+import { Loader2, Layers, Layers2, ChevronLeft, ChevronRight, Upload, Download, X, Check } from 'lucide-react';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { GlobalFooter } from '@/components/layout/GlobalFooter';
 import { useMobile } from '@/hooks/useMobile';
 import { useKeyboardGridNavigation } from '@/hooks/useKeyboardGridNavigation';
 import { useItemDialog } from '@/components/ui/Dialog';
-import { Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
+import { RoundIconButton, Theme, Typo, Button, Tooltip } from '@/components/ui/DesignSystem';
 import { BlobBackground } from '@/components/ui/BlobBackground';
 import { FeedHeroSection } from '../layout/FeedHeroSection';
 import { LayerComposer } from '@/components/composer/LayerComposer';
+import { DropPanel } from '@/components/ui/DropPanel';
+import { StackList } from '@/components/feed/StackList';
 import { GeneratingRing } from '@/components/ui/GeneratingRing';
 
 /* ── TTL helpers ── */
@@ -107,35 +109,132 @@ const dayLabelOf = (key: string, lang: 'de' | 'en'): string => {
 const UploadDropZone: React.FC<{
     onClick: () => void;
     label: string;
-    sub?: string;
     active?: boolean;
     row?: boolean;
     className?: string;
-}> = ({ onClick, label, sub, active = false, row = false, className = '' }) => (
+    /** Die Zeile nimmt Dateien an, nicht nur den Klick. */
+    onDragEnter?: (e: React.DragEvent) => void;
+    onDragOver?: (e: React.DragEvent) => void;
+    onDragLeave?: (e: React.DragEvent) => void;
+    onDrop?: (e: React.DragEvent) => void;
+}> = ({ onClick, label, active = false, row = false, className = '', onDragEnter, onDragOver, onDragLeave, onDrop }) => (
     <button
         onClick={onClick}
+        onDragEnter={onDragEnter}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
         // Symbol immer ueber der Schrift, in beiden Faellen. Nebeneinander
         // zerfiel die Einheit in zwei Dinge, die zufaellig nebeneinander
         // stehen; uebereinander liest es sich als eine Sache. `row` regelt
         // seither nur noch, wie viel Luft die Flaeche bekommt.
-        className={`w-full rounded-2xl flex flex-col items-center justify-center transition-colors duration-200
-            ${row ? 'gap-3.5 py-10' : 'gap-4 px-6 py-14'}
+        /*
+            Ueber der Galerie eine ZEILE, kein Block.
+
+            Vorher war es eine hohe leere Flaeche mit Symbol ueber Schrift —
+            daneben die Tageszeilen, schmal und leise. Zwei Tonlagen direkt
+            uebereinander, und die obere behauptete mehr, als sie wert ist:
+            Hochladen ist der seltenere Weg, die meisten Bilder kommen per
+            Ziehen herein.
+
+            Jetzt dieselbe Hoehe und dieselbe Leserichtung wie eine
+            Tageszeile: Symbol und Text nebeneinander, links beginnend, gleiche
+            Rundung, gleiche Flaeche beim Ueberfahren. Der Kopf der Seite liest
+            sich damit als eine Liste: hochladen, heute, gestern.
+
+            Beim Ziehen wird daraus wieder eine Flaeche (siehe `active`): Dann
+            braucht das Ziel Groesse, und der Rest der Seite tritt zurueck.
+        */
+        /*
+            Beim Ziehen bleibt die Zeile, wie sie ist, und faerbt sich nur.
+
+            Sie wuchs frueher auf Blockhoehe auf — und weil gleichzeitig mitten
+            im Bild eine Ablageflaeche aufging, sagten zwei Dinge dasselbe, und
+            der Seitenkopf sprang dabei. Die Groesse und die Bewegung tragen
+            jetzt allein die Flaeche in der Mitte; hier genuegt der Hinweis
+            "du bist gemeint".
+        */
+        className={`w-full rounded-2xl flex transition-colors duration-200
+            ${row
+                ? 'flex-row items-center gap-3 px-4 py-3.5'
+                : 'flex-col items-center justify-center gap-4 px-6 py-14'}
             ${active
-                // Beim Ziehen etwas deutlicher, aber in derselben Tonlage —
-                // kein Farbwechsel, nur mehr davon.
-                ? 'bg-black/[0.06] dark:bg-white/[0.08]'
+                ? 'bg-black/[0.07] dark:bg-white/[0.10]'
                 : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]'}
             ${className}`}
     >
-        <Upload className="w-[18px] h-[18px] text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={1.75} />
-        {/* Beide Zeilen in derselben Schrift. Vorher trugen sie zwei Groessen
-            und zwei Farben — das machte aus zwei Saetzen zwei Ebenen, obwohl
-            sie dasselbe sagen: wie man Bilder hereinbekommt. */}
-        <span className="flex flex-col items-center gap-0.5 text-[13px] leading-tight text-zinc-500 dark:text-zinc-400">
-            <span>{label}</span>
-            {sub && <span>{sub}</span>}
-        </span>
+        <Upload className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" strokeWidth={2} />
+        {/* Eine Zeile. Zwei Zeilen machten aus einem Satz zwei, obwohl beide
+            dasselbe sagen: wie man Bilder hereinbekommt. */}
+        <span className="text-[13px] leading-tight font-medium text-zinc-500 dark:text-zinc-400">{label}</span>
     </button>
+);
+
+/**
+ * Das Abzeichen oben links: EIN Bedienelement, zwei Faelle.
+ *
+ * Vorher waren es zwei Bauteile an zwei Ecken: ein leerer Kreis links oben am
+ * Einzelbild und eine Zahl rechts oben am Deckbild eines Stapels — andere
+ * Groesse, andere Farbe, andere Seite, obwohl beide dasselbe tun (markieren).
+ *
+ * Jetzt eine Regel: Links oben steht, was man ANKLICKT, rechts oben, was man
+ * nur LIEST (Quellbild, Hochladefortschritt). Leer heisst "dieses Bild",
+ * mit Zahl heisst "dieser Stapel, alle darin".
+ *
+ * Rund, solange der Inhalt rund sein kann; ab zwei Ziffern waechst es zur
+ * Pille, ohne die Hoehe zu aendern. Deshalb min-w statt w und px statt
+ * fester Breite.
+ */
+const TileBadge: React.FC<{
+    selected: boolean;
+    /** Anzahl im Stapel; fehlt sie, ist es ein einzelnes Bild. */
+    count?: number;
+    /** Ein Punkt neben der Zahl: In diesem Stapel entsteht gerade etwas. */
+    pending?: boolean;
+    visible: boolean;
+    onClick: (e: React.MouseEvent) => void;
+    label: string;
+    /**
+     * Wo die Marke sitzt. Auf der Kachel oben links, in der Tageszeile dort,
+     * wo sonst der Pfeil steht — dieselbe Marke, zwei Plaetze.
+     */
+    wrapperClassName?: string;
+    /**
+     * Zusatz fuer die Marke selbst.
+     *
+     * Auf einer Kachel liegt sie ueber einem Foto, da traegt die weisse
+     * Flaeche. In der Tageszeile liegt sie auf hellem Grund und war dort kaum
+     * zu sehen — ein weisser Kreis auf fast weissem Grund. Dort ersetzt ein
+     * Ring die Flaeche.
+     */
+    badgeClassName?: string;
+}> = ({ selected, count, pending, visible, onClick, label, wrapperClassName = 'absolute top-0 left-0 p-2.5 z-20', badgeClassName = '' }) => (
+    <div
+        className={`${wrapperClassName} ${visible ? 'cursor-pointer' : 'pointer-events-none'}`}
+        onClick={onClick}
+    >
+        <div
+            role="button"
+            aria-label={label}
+            className={`h-[26px] min-w-[26px] px-[7px] rounded-full grid place-items-center
+                text-[12px] font-medium tabular-nums leading-none
+                transition-[opacity,transform,background-color] duration-200
+                ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}
+                ${selected
+                    ? 'bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-sm'
+                    : 'bg-white/90 dark:bg-black/60 backdrop-blur-[3px] text-zinc-700 dark:text-zinc-100 hover:bg-white dark:hover:bg-black/75'}
+                ${badgeClassName}`}
+        >
+            <span className="flex items-center gap-1 leading-none">
+                {pending && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
+                {count != null
+                    ? count
+                    : selected
+                        ? <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                        : null}
+            </span>
+        </div>
+    </div>
 );
 
 const TileChip: React.FC<{
@@ -189,8 +288,16 @@ interface FeedGridItemProps {
     hasGenerating?: boolean;
     /** Die Reihe hinter dieser Kachel — wird an onOpenGroup durchgereicht. */
     group?: ImageRow | null;
-    /** Waehlt alle Bilder dieses Stapels aus bzw. ab. Fehlt bei Einzelbildern. */
-    onToggleSelectStack?: () => void;
+    /**
+     * Waehlt alle Bilder dieses Stapels aus bzw. ab. Fehlt bei Einzelbildern.
+     *
+     * Nimmt die Reihe als Argument, aus demselben Grund wie onOpenGroup
+     * darueber: Eine je Kachel erzeugte Pfeilfunktion macht das memo() dieser
+     * Kachel wirkungslos — und dann rendert bei jedem Mauszeiger-Wechsel und
+     * bei jedem Scroll-Frame JEDE Stapelkachel der Galerie neu. Genau das war
+     * das Zappeln beim Scrollen.
+     */
+    onToggleSelectStack?: (row: ImageRow) => void;
     /**
      * Oeffnet den Stapel. Nimmt die Reihe als Argument, statt sie einzuschliessen:
      * Eine je Kachel neu erzeugte Pfeilfunktion macht memo() wirkungslos, und dann
@@ -223,6 +330,16 @@ interface FeedGridItemProps {
  * Zoom war zu sehen.
  */
 const ZOOM_RETURN_MS = 480;
+/**
+ * Der Startmassstab des Rueckkehr-Zooms. MUSS mit dem Keyframe
+ * feed-zoom-return uebereinstimmen.
+ *
+ * Stand hier fest als 1.28, waehrend der Keyframe laengst auf 1.16 gesenkt
+ * war: Die Kachel wurde einen Frame lang auf 1,28 gezeichnet und sprang dann
+ * auf 1,16, wo die Animation anfing. Genau dieser Sprung war beim Zurueck aus
+ * der Detailansicht zu sehen.
+ */
+const ZOOM_RETURN_FROM = 1.16;
 const ZOOM_RETURN_CLEAR_MS = ZOOM_RETURN_MS + 140;
 
 const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboardActive, isSelectMode, onSelectImage, onToggleSelect, setActiveIndex, actions, parentSrc, group, onToggleSelectStack, groupCount = 1, hasGenerating = false, onOpenGroup, staggerDelay, isLastViewed, isNew, daysRemaining, currentLang = 'en', isSource = false }) => {
@@ -287,7 +404,7 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                     // that occurs before the CSS animation engine kicks in.
                     // MUSS mit dem Keyframe feed-zoom-return übereinstimmen —
                     // sonst blitzt vor dem Start der Animation ein Zwischenwert auf.
-                    transform: 'scale(1.28)',
+                    transform: `scale(${ZOOM_RETURN_FROM})`,
                     opacity: 0.5,
                     animation: `feed-zoom-return ${ZOOM_RETURN_MS}ms cubic-bezier(0.25,1,0.5,1) both`,
                 }
@@ -404,37 +521,22 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         <div className={`absolute inset-0 pointer-events-none transition-colors duration-150 ${isKeyboardActive ? 'bg-black/[0.12]' : 'bg-black/0 group-hover:bg-black/[0.09]'}`} />
                     )}
 
-                    {/* Selection circle — shown on pointer hover (isKeyboardActive) or in select mode.
-                        Outer wrapper provides a generous 44×44px hit target (the visible circle
-                        is only 20px, which previously caused stray taps to bubble to the parent and
-                        open the image instead of toggling selection). */}
-                    {!isGen && !(isGroup && !isMobile && onToggleSelectStack) && (
-                        <div
-                            className={`absolute top-0 left-0 p-3 z-20 cursor-pointer ${isSelectMode || (isKeyboardActive && !isMobile) ? '' : 'pointer-events-none'}`}
+                    {/* Markieren: einzelnes Bild. Ein Deckbild bekommt stattdessen
+                        die Zahl (siehe unten) — zwei Auswahlknoepfe auf derselben
+                        Kachel, von denen einer sechs Bilder nimmt und der andere
+                        eines, waeren nicht zu erraten. */}
+                    {!isGen && !(isGroup && onToggleSelectStack) && (
+                        <TileBadge
+                            selected={isSelectMode && isSelected}
+                            visible={isSelectMode || (isKeyboardActive && !isMobile)}
+                            label={currentLang === 'de' ? 'Bild markieren' : 'Select image'}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
                                 if (!isSelectMode) actions?.setIsSelectMode?.(true);
                                 if (onToggleSelect) onToggleSelect(img.id, e.shiftKey);
                             }}
-                        >
-                            <div
-                                className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-200 ${isSelectMode && isSelected
-                                    ? 'opacity-100 scale-100 hover:scale-110 bg-gradient-to-br from-orange-400 to-red-500 shadow-md'
-                                    : isSelectMode
-                                        ? 'opacity-100 scale-100 hover:scale-110 hover:opacity-100 bg-white/90 dark:bg-zinc-800/90'
-                                        : (isKeyboardActive && !isMobile)
-                                            ? 'opacity-80 scale-100 hover:opacity-100 hover:scale-110 bg-white/90 dark:bg-zinc-800/90'
-                                            : 'opacity-0 scale-75'
-                                    }`}
-                            >
-                                {isSelectMode && isSelected && (
-                                    <svg className="w-2.5 h-2.5 text-white dark:text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                )}
-                            </div>
-                        </div>
+                        />
                     )}
 
                     {/* Source image badge — same weight + size as the Euro icon in the navbar. */}
@@ -463,46 +565,33 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         </TileChip>
                     )}
 
-                    {/* Anzahl der Bilder im Stapel.
-                        Oben rechts, derselbe Chip wie Quellbild und Upload — die
-                        Stelle ist frei, weil beide anderen nur in der
-                        Stapelansicht bzw. beim Hochladen auftreten, der Zaehler
-                        dagegen nur auf einem Deckbild in der Galerie.
-                        Der Punkt zeigt an, dass in diesem Stapel gerade etwas
-                        entsteht; dann ist die Zahl noch nicht endgueltig. */}
+                    {/*
+                        Markieren: der ganze Stapel.
+
+                        Die Zahl sagt, wie viele Bilder darin liegen; ein Klick
+                        nimmt genau diese. Das ist die Handlung, die man an einem
+                        Deckbild ueberhaupt will — der Stapel ist die Einheit,
+                        nicht das zufaellig oberste Bild. Deshalb steht sie an
+                        derselben Stelle und in derselben Form wie der leere
+                        Kreis am Einzelbild.
+
+                        Auf Beruehrungsgeraeten bleibt sie sichtbar und ist reine
+                        Auskunft: Dort ist die Mehrfachauswahl abgeschaltet.
+                    */}
                     {isGroup && !isGen && (
-                        /*
-                            Zahl und Auswahlkreis sind dasselbe Bedienelement.
-
-                            Die Zahl sagt, wie viele Bilder im Stapel liegen; ein
-                            Klick nimmt genau diese. Das ist die Handlung, die man
-                            an einem Deckbild ueberhaupt will — der Stapel ist die
-                            Einheit, nicht das zufaellig oberste Bild.
-
-                            Deshalb traegt ein Deckbild auch keinen eigenen
-                            Auswahlkreis mehr: Zwei Auswahlknoepfe auf derselben
-                            Kachel, von denen einer sechs Bilder nimmt und der
-                            andere eines, waeren nicht zu erraten.
-
-                            Sichtbar beim Ueberfahren, im Auswahlmodus und sobald
-                            etwas ausgewaehlt ist — sonst waere der Zustand
-                            unsichtbar. Auf Beruehrungsgeraeten bleibt sie
-                            sichtbar und bleibt reine Auskunft: Dort ist die
-                            Mehrfachauswahl ohnehin abgeschaltet.
-                        */
-                        <TileChip
-                            onClick={isMobile || !onToggleSelectStack ? undefined : (e) => {
+                        <TileBadge
+                            count={groupCount}
+                            pending={hasGenerating}
+                            selected={isSelected}
+                            visible={isMobile || isSelectMode || isSelected || isKeyboardActive}
+                            label={currentLang === 'de' ? 'Stapel markieren' : 'Select stack'}
+                            onClick={(e) => {
+                                if (isMobile || !onToggleSelectStack || !group) return;
                                 e.stopPropagation();
                                 e.preventDefault();
-                                onToggleSelectStack();
+                                onToggleSelectStack(group);
                             }}
-                            className={`${isMobile || isSelectMode || isSelected ? '' : 'opacity-0 group-hover:opacity-100'} transition-[opacity,background-color] duration-150 ${
-                                isSelected ? '!bg-gradient-to-br !from-orange-400 !to-red-500 shadow-md' : ''
-                            }`}
-                        >
-                            {hasGenerating && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse shrink-0" />}
-                            {groupCount}
-                        </TileChip>
+                        />
                     )}
 
                 </div>
@@ -567,6 +656,15 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     );
 
     const sentinelRef = React.useRef<HTMLDivElement>(null);
+    /**
+     * Anzahl der sichtbaren Kacheln, als Ref.
+     *
+     * Der Scroll-Zuhoerer haengt weiter oben im Aufbau als displayImages und
+     * kaeme sonst an den Wert nicht heran. Ein Ref loest das ohne die Reihenfolge
+     * im Aufbau umzustellen — und ohne den Zuhoerer bei jeder Aenderung der
+     * Bildzahl neu anzuhaengen.
+     */
+    const visibleCountRef = React.useRef(0);
     const isMobile = useMobile();
     const gridRef = React.useRef<HTMLDivElement>(null);
     const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -585,6 +683,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // state clears and scrollRef finally gets attached to the DOM.
     const [gradientOp, setGradientOp] = React.useState(1);
     const [scrollP, setScrollP] = React.useState(0);
+    /** Zuletzt gemeldete Stufe — darunter wird nicht neu gerendert. */
+    const lastPRef = React.useRef(-1);
     const hasImages = images.length > 0;
     React.useEffect(() => {
         if (!onScrollProgress) return;
@@ -592,14 +692,32 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (!el) return;
         const HERO_SCROLL_DISTANCE = 120; // must match TOP_PAD(20) + BOT_EXTRA(100) in AppNavbar hero mode
         // Reset to 0 whenever we (re-)attach so the header snaps to expanded state
-        const p0 = Math.min(el.scrollTop / HERO_SCROLL_DISTANCE, 1);
+        const p0 = Math.round(Math.min(el.scrollTop / HERO_SCROLL_DISTANCE, 1) * 50) / 50;
+        lastPRef.current = p0;
         onScrollProgress(p0);
         setScrollP(p0);
         setGradientOp(Math.max(1 - p0 * 1.3, 0));
+        /*
+            In Stufen, nicht in jedem Frame.
+
+            Jeder dieser drei Aufrufe ist eine Zustandsaenderung, und jede
+            laesst die Galerie neu rendern — bei jedem Scroll-Frame. Ueber
+            120 Pixel Weg ist das ein gutes Dutzend Durchlaeufe ueber alle
+            Kacheln, und genau das ruckelt.
+
+            Zwei Prozent Schrittweite sind auf 120 Pixel rund zwei Pixel
+            Kopfhoehe: nicht zu sehen, aber ein Fuenftel der Durchlaeufe. Und
+            weil React bei gleichem Wert gar nicht erst rendert, ist nach dem
+            Einklappen (p = 1) voellig Ruhe — also waehrend des allermeisten
+            Scrollens.
+        */
         const fn = () => {
             cancelAnimationFrame(scrollRafRef.current);
             scrollRafRef.current = requestAnimationFrame(() => {
-                const p = Math.min(el.scrollTop / HERO_SCROLL_DISTANCE, 1);
+                const raw = Math.min(el.scrollTop / HERO_SCROLL_DISTANCE, 1);
+                const p = Math.round(raw * 50) / 50;
+                if (p === lastPRef.current) return;
+                lastPRef.current = p;
                 onScrollProgress(p);
                 setScrollP(p);
                 setGradientOp(Math.max(1 - p * 1.3, 0));
@@ -625,12 +743,44 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return () => el.removeEventListener('scroll', onScroll);
     }, [effectiveGroupId, hasMore, isFetchingMore, isLoading, onLoadMore, hasImages]);
 
+    /*
+        Solange die Seite den Schirm nicht fuellt, wird weitergeladen.
+
+        Zugeklappte Tage sind eine Textzeile von 48 Pixeln. Eine Seite davon
+        fuellt den Schirm nicht einmal halb, und weil frueher ausserdem gar
+        nicht von selbst nachgeladen wurde, wenn nichts Sichtbares dazukam,
+        tropften die Tage einzeln herein, sobald man scrollte — jedes Mal ein
+        Sprung, und jedes Mal nur Text.
+
+        Jetzt holt die Seite so lange nach, bis sie anderthalb Schirme hoch ist.
+        Das sind bei zugeklappten Tagen ein paar Durchlaeufe hintereinander, die
+        niemand einzeln sieht; danach greift wieder das gewohnte Nachladen beim
+        Scrollen.
+    */
+    React.useEffect(() => {
+        if (effectiveGroupId || !hasMore || isFetchingMore || isLoading) return;
+        const el = scrollRef.current;
+        if (!el) return;
+        if (el.scrollHeight < el.clientHeight * 1.5) {
+            const id = requestAnimationFrame(() => onLoadMore?.());
+            return () => cancelAnimationFrame(id);
+        }
+    }, [effectiveGroupId, hasMore, isFetchingMore, isLoading, rows.length, onLoadMore]);
+
     const prevSelectModeRef = React.useRef(false);
     const prevSelectedCountRef = React.useRef(0);
     const lastSelectImageRef = React.useRef<string | null>(null);
-    // Set when entering select mode — the scroll for it fires once the grid has
-    // actually swapped to the select-mode layout (see renderSelectMode below).
-    const pendingSelectScrollRef = React.useRef<string | null>(null);
+    /**
+     * Beim Betreten des Auswahlmodus gemerkt: die Kachel und die Hoehe, auf der
+     * sie in diesem Moment auf dem Bildschirm stand.
+     *
+     * Der Modus klappt die Stapel auf, es kommen also Kacheln oberhalb der
+     * angetippten hinzu und alles darunter rutscht nach unten. Gemerkt wird
+     * deshalb nicht "nach oben scrollen", sondern die Bildschirmhoehe — nach
+     * dem Umbau wird genau um die Differenz nachgezogen. Die angetippte Kachel
+     * bleibt dort, wo der Finger sie verlassen hat.
+     */
+    const pendingSelectScrollRef = React.useRef<{ id: string; viewportTop: number } | null>(null);
 
     // Time-based retry: waits for the tile to exist in the DOM (up to 600ms)
     // before scrolling. Aligns it to the FIRST visible row (just below the
@@ -662,7 +812,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     React.useEffect(() => {
         const isEntering = !!isSelectMode && !prevSelectModeRef.current;
         const isExiting = !isSelectMode && prevSelectModeRef.current;
-        const isFirstSelection = !!isSelectMode && prevSelectModeRef.current && prevSelectedCountRef.current === 0 && selectedIds.length > 0;
 
         prevSelectModeRef.current = !!isSelectMode;
         prevSelectedCountRef.current = selectedIds.length;
@@ -679,11 +828,18 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             // (still-showing) grid too, so scrolling immediately would land against
             // stale coordinates that the swap invalidates a moment later — the
             // tile ends up out of view. Defer until the swap actually happened.
-            pendingSelectScrollRef.current = selectedIds[0];
-        } else if (isFirstSelection && selectedIds.length > 0) {
-            // Already showing the select-mode grid — safe to scroll right away.
-            scrollGridToTile(selectedIds[0]);
+            const el = gridRef.current?.querySelector(`[data-image-id="${selectedIds[0]}"]`) as HTMLElement | null;
+            pendingSelectScrollRef.current = {
+                id: selectedIds[0],
+                // Steckte die Kachel in einem zugeklappten Stapel, gibt es
+                // keine Hoehe zu halten. NaN heisst: nach dem Umbau an den
+                // oberen Rand holen, damit sie ueberhaupt zu sehen ist.
+                viewportTop: el ? el.getBoundingClientRect().top : NaN,
+            };
         }
+        // Eine weitere Auswahl im laufenden Modus baut das Raster NICHT um.
+        // Hier zu scrollen hiesse, eine angetippte Kachel aus einer anderen
+        // Reihe nach oben zu reissen, ohne dass sich etwas verschoben haette.
 
         // Scroll to the cover tile of the last selected image's group when exiting select mode
         if (isExiting && lastSelectImageRef.current) {
@@ -734,6 +890,13 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // IN (with the just-checked tile leading, see staggerDelay below).
     const [renderSelectMode, setRenderSelectMode] = React.useState(!!isSelectMode);
     const [isGridFading, setIsGridFading] = React.useState(false);
+    /*
+        Beim Oeffnen eines Stapels bleibt die Galerie stehen.
+
+        Sie wird nur zurueckgenommen (Deckkraft) und stillgestellt, waehrend
+        das Fenster darueber aufgeht — kurz blendete sie hier ganz aus, was
+        zusammen mit dem Fenster zwei Bewegungen fuer eine Sache waren.
+    */
     React.useEffect(() => {
         if (!!isSelectMode === renderSelectMode) return;
         setIsGridFading(true);
@@ -749,17 +912,44 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
     // instead of a pre-swap layout that's about to shift underneath it.
     React.useEffect(() => {
         if (!renderSelectMode || !pendingSelectScrollRef.current) return;
-        const targetId = pendingSelectScrollRef.current;
+        const { id, viewportTop } = pendingSelectScrollRef.current;
         pendingSelectScrollRef.current = null;
-        scrollGridToTile(targetId);
+
+        if (Number.isNaN(viewportTop)) {
+            scrollGridToTile(id);
+            return;
+        }
+
+        const start = Date.now();
+        const hold = () => {
+            const el = gridRef.current?.querySelector(`[data-image-id="${id}"]`) as HTMLElement | null;
+            const sc = scrollRef.current;
+            if (el && sc) {
+                const delta = el.getBoundingClientRect().top - viewportTop;
+                if (Math.abs(delta) > 1) {
+                    sc.scrollTo({ top: Math.max(0, sc.scrollTop + delta), behavior: 'instant' as ScrollBehavior });
+                }
+            } else if (Date.now() - start < 600) {
+                requestAnimationFrame(hold);
+            }
+        };
+        requestAnimationFrame(hold);
     }, [renderSelectMode, scrollGridToTile]);
 
     // Eine Identitaet fuer alle Kacheln. Vorher entstand je Stapelkachel bei
     // jedem Rendern eine neue Pfeilfunktion — damit war das memo() an
     // FeedGridItem wirkungslos, und ein Mauszeiger-Wechsel (der nur
     // activeIndex setzt) liess das gesamte Raster neu rendern.
+    // Eine Funktion fuer alle Stapelkacheln, nicht eine je Kachel: Sonst
+    // bekommt jede bei jedem Rendern eine neue und rendert selbst mit.
+    const handleToggleSelectStack = React.useCallback((row: ImageRow) => {
+        onToggleSelectStack?.(row.items.map(i => i.id));
+    }, [onToggleSelectStack]);
+
     const handleOpenGroup = React.useCallback((row: ImageRow) => {
-        actions?.markGroupSeen?.(row.items.map(i => i.id));
+        // Kein Loeschen der Punkte beim Aufklappen: Ein Tipp auf den Stapel
+        // raeumte bisher ALLE Varianten darin ab, gesehen oder nicht. Jede
+        // Variante bekommt ihren eigenen Moment in der Detailansicht.
         onExpandedGroupChange(row.id);
     }, [actions, onExpandedGroupChange]);
 
@@ -774,20 +964,45 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
      * ohne zweites Sortieren.
      */
     const daySections = useMemo(() => {
-        if (effectiveGroupId || renderSelectMode) return null;
+        // Auch im Auswahlmodus nach Tagen gruppiert. Dort stehen alle Bilder
+        // einzeln statt nur die Deckbilder — eine Bibliothek ohne Gliederung
+        // ist genau dann am unuebersichtlichsten, wenn man darin etwas
+        // heraussuchen soll.
+        /*
+            Auch bei offenem Stapel berechnet.
+
+            Der Stapel liegt seit dem Umbau als Fenster UEBER der Galerie, und
+            darunter soll die Galerie stehen bleiben — nicht verschwinden. Also
+            braucht sie ihre Tage auch dann, wenn gerade ein Stapel offen ist.
+        */
         const byDay = new Map<string, CanvasImage[]>();
         for (const row of rows) {
             const cover = row.items[0];
             if (!cover) continue;
             const key = dayKeyOf(row.createdAt ?? cover.createdAt);
+            // Der Tag richtet sich in BEIDEN Faellen nach der Reihe, nicht nach
+            // dem einzelnen Bild: Sonst lagen die Varianten eines Stapels auf
+            // mehreren Tagen verteilt, und derselbe Stapel taeuchte dreimal auf.
+            const items = renderSelectMode ? row.items : [cover];
             const bucket = byDay.get(key);
-            if (bucket) bucket.push(cover);
-            else byDay.set(key, [cover]);
+            if (bucket) bucket.push(...items);
+            else byDay.set(key, [...items]);
         }
         return Array.from(byDay.entries()).map(([key, covers]) => ({
             key,
             label: dayLabelOf(key, state?.currentLang === 'de' ? 'de' : 'en'),
             covers,
+            /*
+                Alle Bilder dieses Tages, nicht nur die Deckbilder.
+ 
+                Wer einen Tag markiert, meint den Tag — auch die Varianten in
+                den Stapeln, die er gerade nicht sieht. Sonst waere die Marke
+                an der Tageszeile etwas anderes als dieselbe Marke an einer
+                Kachel, und das waere eine Falle.
+            */
+            ids: rows
+                .filter(r => dayKeyOf(r.createdAt ?? r.items[0]?.createdAt) === key)
+                .flatMap(r => r.items.map(i => i.id)),
             // Die Frist haengt am Tag, nicht an der einzelnen Kachel. Steht die
             // Gruppe zu, sind die gelben Punkte an den Kacheln nicht zu sehen —
             // ohne diesen Wert verschwaende die Warnung mit dem Zuklappen, und
@@ -814,6 +1029,52 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         daysSeededRef.current = true;
         setOpenDays(new Set([daySections[0].key]));
     }, [daySections]);
+    /*
+        Was gerade hereinkommt, wird aufgeklappt.
+
+        Ein Upload, der in einem zugeklappten Tag landet, sieht aus wie ein
+        Upload, der nicht funktioniert hat: Die Kachel entsteht, aber niemand
+        sieht sie. Deshalb oeffnet jeder Tag, in dem gerade etwas hochgeladen
+        oder erzeugt wird, von selbst — EINMAL, und danach darf man ihn
+        wieder zuklappen.
+
+        Das "einmal" ist der ganze Aufwand hier: Waehrend etwas laeuft,
+        aendern sich die Bilder im Sekundentakt (Fortschritt, Vorschau,
+        Speicherpfad). Ein Effekt, der stumpf auf diese Liste hoert, haette
+        den Tag bei jeder dieser Meldungen erneut aufgeklappt — wer ihn
+        zwischendurch zuklappt, bekaeme ihn sofort wieder aufgedraengt.
+        Deshalb ein Schluessel als Zeichenkette (gleiche Tage, gleicher Wert,
+        kein neuer Lauf) und eine Merkliste der Tage, die bereits von selbst
+        aufgingen. Beruhigt sich ein Tag, faellt er aus der Merkliste — der
+        naechste Upload an diesem Tag klappt ihn wieder auf.
+    */
+    const busyDayKey = useMemo(() => {
+        const keys = new Set<string>();
+        images.forEach(i => {
+            if (!i.isGenerating && !i.uploadStatus) return;
+            if (!i.createdAt) return;
+            keys.add(dayKeyOf(i.createdAt));
+        });
+        return Array.from(keys).sort().join('|');
+    }, [images]);
+
+    const autoOpenedDaysRef = React.useRef<Set<string>>(new Set());
+    React.useEffect(() => {
+        const keys = busyDayKey ? busyDayKey.split('|') : [];
+        const current = new Set(keys);
+        autoOpenedDaysRef.current.forEach(k => { if (!current.has(k)) autoOpenedDaysRef.current.delete(k); });
+
+        const fresh = keys.filter(k => !autoOpenedDaysRef.current.has(k));
+        if (fresh.length === 0) return;
+        fresh.forEach(k => autoOpenedDaysRef.current.add(k));
+        setOpenDays(prev => {
+            let changed = false;
+            const next = new Set(prev);
+            fresh.forEach(k => { if (!next.has(k)) { next.add(k); changed = true; } });
+            return changed ? next : prev;
+        });
+    }, [busyDayKey]);
+
     const toggleDay = React.useCallback((key: string) => {
         setOpenDays(prev => {
             const next = new Set(prev);
@@ -826,9 +1087,6 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         if (effectiveGroupId) {
             return rows.find(r => r.id === effectiveGroupId)?.items || [];
         }
-        if (renderSelectMode) {
-            return rows.flatMap(r => r.items);
-        }
         // Nur was wirklich sichtbar ist — sonst zeigen Tastatur- und
         // Sprachnavigation auf Kacheln, die gar nicht im Raster stehen.
         if (daySections) {
@@ -838,6 +1096,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         }
         return rows.map(r => r.items[0]).filter(Boolean) as CanvasImage[];
     }, [effectiveGroupId, renderSelectMode, rows, daySections, openDays]);
+    visibleCountRef.current = displayImages.length;
 
     // Track which cover tile to animate when closing a group.
     // useLayoutEffect fires synchronously before paint so the first visible frame
@@ -965,11 +1224,67 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         e.stopPropagation();
     }, []);
 
+    /*
+        Abgelegt wird nur auf einer Flaeche, die sich dazu meldet.
+
+        Die Seite als Ganzes nimmt zwar zur Kenntnis, dass eine Datei in der
+        Luft ist (dafuer die Zaehler oben), aber sie nimmt nichts mehr an: Eine
+        Datei, die irgendwo zwischen den Kacheln faellt, landete frueher
+        wortlos im Hochladen — man sah nur ein neues Bild und wusste nicht,
+        wieso. Angenommen wird auf der Flaeche in der Mitte und auf der Zeile
+        im Seitenkopf; beide sagen von sich, dass sie gemeint sind.
+    */
+    /*
+        Ein- und Ausfahren des Auswahl-Blattes.
+
+        Zwei Werte, weil beides noetig ist: `mounted` haelt die Spalte noch im
+        Baum, waehrend sie zusammenlaeuft (sonst waere sie schlagartig weg),
+        und `in` wird erst im naechsten Frame wahr — eine Breite animiert nur,
+        wenn der Startwert vorher einmal gezeichnet wurde.
+    */
+    const selSheetWanted = !!isSelectMode && !isMobile && !!isSelectionSideSheetOpen;
+    const [selSheetMounted, setSelSheetMounted] = React.useState(selSheetWanted);
+    const [selSheetIn, setSelSheetIn] = React.useState(selSheetWanted);
+    React.useEffect(() => {
+        if (selSheetWanted) {
+            setSelSheetMounted(true);
+            const raf = requestAnimationFrame(() => setSelSheetIn(true));
+            return () => cancelAnimationFrame(raf);
+        }
+        setSelSheetIn(false);
+        const t = setTimeout(() => setSelSheetMounted(false), 280);
+        return () => clearTimeout(t);
+    }, [selSheetWanted]);
+
+    /** Der Stapel liegt als Fenster ueber der Galerie. */
+    const stackOpen = !!effectiveGroupId && !renderSelectMode;
+
+    const [isOverZone, setIsOverZone] = React.useState(false);
+    const handleDragCancel = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        dragCounter.current = 0;
+        setIsDropActive(false);
+        setIsOverZone(false);
+        actions?.setIsDragOver?.(false);
+    }, [actions]);
+    const handleZoneEnter = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault(); e.stopPropagation(); setIsOverZone(true);
+    }, []);
+    const handleZoneOver = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault(); e.stopPropagation();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        setIsOverZone(true);
+    }, []);
+    const handleZoneLeave = React.useCallback((e: React.DragEvent) => {
+        e.preventDefault(); e.stopPropagation(); setIsOverZone(false);
+    }, []);
+
     const handleDrop = React.useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         dragCounter.current = 0;
         setIsDropActive(false);
+        setIsOverZone(false);
         actions?.setIsDragOver?.(false);
 
         const files = e.dataTransfer.files;
@@ -1008,6 +1323,31 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         return () => window.removeEventListener('resize', updateColumns);
     }, [displayImages]);
 
+    /*
+        Mit den Pfeilen ueber den Stapel hinaus.
+
+        Im aufgeklappten Stapel enthielt die Tastaturliste nur dessen eigene
+        Bilder, und am letzten Feld war Schluss. Zum naechsten Stapel kam man
+        nur ueber Escape und erneutes Aufklappen — mit der Maus. Jetzt wechselt
+        der Pfeil am Rand den Stapel und setzt die Auswahl auf dessen erstes
+        bzw. letztes Bild.
+
+        Der Wechsel braucht zwei Durchgaenge: Erst meldet der Aufrufer den neuen
+        Stapel, dann kommt dessen Liste an. Was in der Zwischenzeit gemerkt
+        wird, steht hier — eine Kante, kein Zustand.
+    */
+    const pendingEdgeRef = React.useRef<'first' | 'last' | null>(null);
+
+    const stepStack = React.useCallback((dir: 1 | -1): boolean => {
+        if (!effectiveGroupId) return false;
+        const at = rows.findIndex(r => r.id === effectiveGroupId);
+        const next = rows[at + dir];
+        if (at === -1 || !next) return false;
+        pendingEdgeRef.current = dir === 1 ? 'first' : 'last';
+        onExpandedGroupChange(next.id);
+        return true;
+    }, [effectiveGroupId, rows, onExpandedGroupChange]);
+
     const { activeIndex, setActiveIndex } = useKeyboardGridNavigation({
         itemCount: displayImages.length,
         columns,
@@ -1016,6 +1356,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             const img = displayImages[idx];
             return img ? document.querySelector(`[data-image-id="${img.id}"]`) : null;
         }, [displayImages]),
+        onPastEnd: () => stepStack(1),
+        onBeforeStart: () => stepStack(-1),
         onEscape: () => {
             if (effectiveGroupId) { onExpandedGroupChange(null); return; }
             if (isSelectMode) actions?.setIsSelectMode?.(false);
@@ -1049,6 +1391,20 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         }
     });
 
+    /*
+        Der zweite Durchgang des Stapelwechsels: Die Liste des neuen Stapels
+        ist da, jetzt bekommt sie die Auswahl — vorne, wenn man nach rechts
+        hinausging, hinten beim Weg nach links. So laeuft der Fokus durch die
+        Stapel, als waeren sie eine einzige Reihe.
+    */
+    React.useEffect(() => {
+        const edge = pendingEdgeRef.current;
+        if (!edge || displayImages.length === 0) return;
+        pendingEdgeRef.current = null;
+        setActiveIndex(edge === 'first' ? 0 : displayImages.length - 1);
+    }, [displayImages, setActiveIndex]);
+
+
     React.useEffect(() => {
         if (!hasMore || isLoading || isFetchingMore) return;
 
@@ -1065,7 +1421,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             root: scrollRef.current
         });
 
-        if (sentinelRef.current) {
+        if (sentinelRef.current && displayImages.length > 0) {
             observer.observe(sentinelRef.current);
         }
 
@@ -1086,9 +1442,20 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
         const isNew = !effectiveGroupId
             ? rowItems.some(i => unseenIds.has(i.id))
             : unseenIds.has(img.id);
-        // TTL: use root image's createdAt for group covers
-        const rootImg = rowItems.find(i => !i.parentId) ?? img;
-        const daysLeft = getDaysRemaining(rootImg.createdAt);
+        /*
+            Die Frist dieses Bildes, nicht die seines Stapels.
+
+            Vorher zaehlte der Stammvater: Ein heute bearbeitetes Bild zeigte
+            die Restzeit des Originals, das vor zwei Wochen hochgeladen wurde —
+            und bekam seinen gelben Punkt, obwohl es noch dreizehn Tage hat.
+            Seit jedes Bild vierzehn Tage ab SEINER Entstehung lebt, ist der
+            Stammvater die falsche Auskunft.
+
+            Dass ein Stapel aeltere Mitglieder hat, die frueher gehen, sagt die
+            Tageszeile darueber — dort gehoert es hin, denn es betrifft den Tag
+            und nicht dieses eine Bild.
+        */
+        const daysLeft = getDaysRemaining(img.createdAt);
         return (
             <FeedGridItem
                 key={img.id}
@@ -1106,9 +1473,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 hasGenerating={hasGen}
                 group={row}
                 onOpenGroup={gc > 1 && row ? handleOpenGroup : undefined}
-                onToggleSelectStack={gc > 1 && row && onToggleSelectStack
-                    ? () => onToggleSelectStack(row.items.map(i => i.id))
-                    : undefined}
+                onToggleSelectStack={gc > 1 && row ? handleToggleSelectStack : undefined}
                 staggerDelay={
                     renderSelectMode
                         // In select mode the tile the user just checked leads, the rest
@@ -1158,7 +1523,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
-            onDrop={handleDrop}
+            // Faellt die Datei nicht auf einer Ablageflaeche, passiert nichts
+            // ausser Aufraeumen. Siehe die Begruendung bei handleZoneEnter.
+            onDrop={handleDragCancel}
         >
             {/* Shared hidden file input for all upload triggers */}
             <input
@@ -1176,12 +1543,18 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 {/* Drag & drop overlay */}
                 {isDropActive && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
-                        <div className="absolute inset-0 bg-black/60" />
-                        <div className={`relative flex flex-col items-center gap-3 px-10 py-8 ${Theme.Colors.ModalBg} border ${Theme.Colors.Border} ${Theme.Geometry.RadiusXl} ${Theme.Effects.ShadowLg}`}>
-                            <Upload className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
-                            <p className={`${Typo.Body} text-sm text-zinc-600 dark:text-zinc-400`}>
-                                {t?.('drop_files_here') || 'Drop files here'}
-                            </p>
+                        <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-200" />
+                        {/* Nur hier wird abgelegt. Der Rest der Seite nimmt
+                            nichts an — eine Datei, die daneben faellt,
+                            verschwindet nicht in irgendeinem Stapel. */}
+                        <div
+                            className="relative pointer-events-auto"
+                            onDragEnter={handleZoneEnter}
+                            onDragOver={handleZoneOver}
+                            onDragLeave={handleZoneLeave}
+                            onDrop={handleDrop}
+                        >
+                            <DropPanel hot={isOverZone} label={t?.('drop_files_here') || 'Drop files here'} />
                         </div>
                     </div>
                 )}
@@ -1192,7 +1565,11 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                     <FeedHeroSection />
                 )}
                 <div className="flex-1 flex flex-col">
-                    <div className="flex-1 flex flex-col relative pb-16 min-h-[100dvh]">
+                    {/* Die Mindesthoehe haelt den Fussbereich unten, solange das
+                        Raster den Schirm fuellt. Bei zugeklappten Tagen gibt es
+                        nichts zu fuellen — dann waere sie nur ein Bildschirm
+                        Schwarz zwischen Liste und Fuss. */}
+                    <div className={`flex-1 flex flex-col relative pb-16 ${displayImages.length > 0 ? 'min-h-[100dvh]' : ''}`}>
                         {/*
                             Nicht an displayImages haengen, sondern daran, ob es
                             ueberhaupt Bilder gibt.
@@ -1217,21 +1594,50 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     Gleiche Seitenabstaende wie das Raster, damit
                                     er buendig mit den Kacheln steht.
                                 */}
-                                {!effectiveGroupId && !renderSelectMode && (
-                                    <div className="px-4 sm:px-8">
-                                        <UploadDropZone
-                                            row
-                                            onClick={triggerUpload}
-                                            active={isDropActive}
-                                            label={t?.('welcome_drop_cta') || 'Upload and edit'}
-                                            sub={t?.('welcome_drop_sub') || 'or drag photos here'}
-                                        />
-                                    </div>
-                                )}
+                                {/*
+                                    Die Zeile "Fotos hochladen" stand hier, zwischen
+                                    Leiste und erster Tageszeile. Sie ist in die
+                                    Leiste gewandert, vor "Neu" — dort sucht man den
+                                    haeufigsten Knopf, und der Seitenkopf besteht
+                                    jetzt nur noch aus den Tagen. Zum Ziehen gibt es
+                                    die Flaeche, die in der Mitte aufgeht.
+                                */}
+                                {/*
+                                    Im Stapel eine Liste, in der Galerie ein Raster.
+
+                                    Ein Stapel ist dieselbe Aufnahme, mehrfach
+                                    versucht. Nebeneinander gestellte Kacheln sind
+                                    die Form fuer viele VERSCHIEDENE Bilder; zum
+                                    Vergleichen von Fassungen braucht es eine Achse,
+                                    und die ist senkrecht. Siehe StackList.
+                                */}
+                                {stackOpen ? (
+                                    /*
+                                        Im Stapel steht die Liste — und sonst nichts.
+
+                                        Kurz lag sie als Fenster ueber der Galerie; dann
+                                        war beides gleichzeitig da, die Galerie veraenderte
+                                        sich im Hintergrund, und oben gab es eine zweite
+                                        Kopfzeile. Eine Ansicht, eine Kopfzeile: Zurueck
+                                        und Name stehen in der Leiste der Anwendung, wie
+                                        bei jeder anderen Ansicht auch.
+                                    */
+                                    <StackList
+                                        key={effectiveGroupId}
+                                        images={displayImages}
+                                        activeId={activeIndex != null ? displayImages[activeIndex]?.id : null}
+                                        currentLang={state?.currentLang === 'de' ? 'de' : 'en'}
+                                        onSelect={(id) => onSelectImage?.(id)}
+                                        onGenerateMore={actions?.handleGenerateMore}
+                                        onDownload={actions?.handleDownload}
+                                        onHoverIndex={setActiveIndex}
+                                        t={t}
+                                    />
+                                ) : (
                                 <div
-                                    key={`${effectiveGroupId ?? 'root'}-${renderSelectMode ? 'select' : 'normal'}`}
+                                    key={renderSelectMode ? 'select' : 'normal'}
                                     ref={gridRef}
-                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-end gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in ${effectiveGroupId ? 'zoom-in-[99%]' : ''} duration-200 ease-out transition-opacity ${isGridFading ? 'opacity-0' : 'opacity-100'} ${effectiveGroupId ? 'pt-12 sm:pt-16' : 'pt-2 sm:pt-4'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
+                                    className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 items-end gap-x-3 gap-y-10 sm:gap-x-6 sm:gap-y-16 px-4 sm:px-8 mt-0 bg-transparent animate-in fade-in duration-[280ms] ease-out transition-opacity pt-2 sm:pt-4 ${isGridFading ? 'opacity-0' : 'opacity-100'} ${isMobile ? 'pb-[max(9rem,calc(9rem+env(safe-area-inset-bottom)))]' : ''}`}
                                 style={columnsOverride ? { gridTemplateColumns: `repeat(${columnsOverride}, minmax(0, 1fr))` } : undefined}
                                 >
                                     {daySections ? (() => {
@@ -1240,6 +1646,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         let imgIdx = 0;
                                         return daySections.flatMap(sec => {
                                             const closed = !openDays.has(sec.key);
+                                            // Der Tag gilt als markiert, wenn jedes seiner Bilder markiert ist.
+                                            const dayPicked = sec.ids.length > 0 && sec.ids.every(id => selectedIdSet.has(id));
                                             const header = (
                                                 <button
                                                     key={`day-${sec.key}`}
@@ -1256,13 +1664,54 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                     // und zwar an beiden Breiten unterschiedlich —
                                                     // daher die ungleichen Luecken zwischen den
                                                     // Tagen.
-                                                    className="col-span-full flex items-center gap-2 py-2 -my-5 sm:-my-8 px-2 -mx-2 rounded-lg text-left
-                                                        hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors duration-150 group/day"
+                                                    // Buendig mit Kacheln und Ablageflaeche: keine
+                                                    // negativen Seitenabstaende mehr, die die Zeile
+                                                    // 8 Pixel ueber die Spalte hinausschoben.
+                                                    // Dieselbe Rundung und dieselbe Flaechenfarbe
+                                                    // wie dort — und mehr Hoehe, damit die Flaeche
+                                                    // beim Ueberfahren traegt statt nur anzudeuten.
+                                                    className="col-span-full flex items-center gap-2 px-4 py-3.5 -my-5 sm:-my-8 rounded-2xl text-left
+                                                        hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors duration-150 group/day"
                                                 >
-                                                    <ChevronRight
-                                                        className={`w-4 h-4 shrink-0 text-zinc-400 transition-transform duration-200 ${closed ? '' : 'rotate-90'}`}
-                                                        strokeWidth={2}
-                                                    />
+                                                    {/*
+                                                        Ein Platz, zwei Zeichen.
+
+                                                        Im Ruhezustand der Pfeil — er sagt, ob der Tag
+                                                        offen ist. Beim Ueberfahren (und solange etwas
+                                                        aus diesem Tag markiert ist) steht an derselben
+                                                        Stelle die Marke aus dem Raster: ein Klick, und
+                                                        der ganze Tag ist markiert. Zwei Zeichen
+                                                        nebeneinander waeren eine Zeile aus Symbolen
+                                                        gewesen, und der Pfeil haette daneben nichts
+                                                        mehr zu sagen gehabt.
+                                                    */}
+                                                    <span className="relative w-[26px] h-[26px] shrink-0 grid place-items-center">
+                                                        <ChevronRight
+                                                            className={`w-4 h-4 text-zinc-400 transition-[transform,opacity] duration-200
+                                                                ${closed ? '' : 'rotate-90'}
+                                                                ${dayPicked || !onToggleSelectStack ? '' : 'group-hover/day:opacity-0'}
+                                                                ${dayPicked ? 'opacity-0' : 'opacity-100'}`}
+                                                            strokeWidth={2}
+                                                        />
+                                                        {onToggleSelectStack && (
+                                                            <TileBadge
+                                                                selected={dayPicked}
+                                                                visible
+                                                                wrapperClassName={`absolute inset-0 grid place-items-center transition-opacity duration-200
+                                                                    ${dayPicked ? 'opacity-100' : 'opacity-0 group-hover/day:opacity-100'}`}
+                                                                // Auf hellem Grund traegt ein Ring, keine Flaeche.
+                                                                badgeClassName={dayPicked
+                                                                    ? ''
+                                                                    : '!bg-transparent !backdrop-blur-none ring-[1.5px] ring-zinc-400/80 dark:ring-zinc-500 hover:!bg-black/[0.04] dark:hover:!bg-white/[0.08]'}
+                                                                label={state?.currentLang === 'de' ? 'Tag markieren' : 'Select day'}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    e.preventDefault();
+                                                                    onToggleSelectStack(sec.ids);
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </span>
                                                     {/* Dezenter: Die Kopfzeile ordnet, sie ist nicht
                                                         der Inhalt. Typo.H4 ist halbfett und in
                                                         Textfarbe — damit stand das Datum lauter da
@@ -1289,36 +1738,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         });
                                     })() : displayImages.map((img, idx) => renderTile(img, idx))}
 
-                                    {/* Layer Composer entry — only inside an expanded stack with 2+ variants.
-                                        Matches the parent image's aspect ratio (letterboxed in the square cell)
-                                        so it lines up uniformly with the other tiles. */}
-                                    {effectiveGroupId && !isSelectMode && displayImages.length >= 2 && (
-                                        <button
-                                            onClick={openComposer}
-                                            style={{ aspectRatio: `${displayImages[0].width} / ${displayImages[0].height}`, width: '100%', height: 'auto' }}
-                                            // Dieselbe Flaechensprache wie die Ablagestreifen,
-                                            // aber die Ecken der Bildkacheln: Die sind eckig,
-                                            // und ein gerundeter Kasten mittendrin bricht die
-                                            // Reihe. Rundung ist hier kein Stil, sondern eine
-                                            // Aussage ueber Zugehoerigkeit.
-                                            className="relative flex flex-col items-center justify-center gap-2.5
-                                                bg-black/[0.03] dark:bg-white/[0.04]
-                                                hover:bg-black/[0.05] dark:hover:bg-white/[0.06]
-                                                text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300
-                                                transition-colors duration-200"
-                                        >
-                                            {/* Layers2 statt SquaresSubtract: zwei ruhige
-                                                Flaechen uebereinander. Das alte Symbol trug
-                                                eine gestrichelte Kontur und einen Ausschnitt
-                                                und war damit das unruhigste Element im
-                                                ganzen Raster. */}
-                                            <Layers2 className="w-6 h-6" strokeWidth={1.5} />
-                                            <span className="text-xs font-medium px-2 text-center leading-tight">
-                                                {state?.currentLang === 'de' ? 'Ebenen kombinieren' : 'Combine layers'}
-                                            </span>
-                                        </button>
-                                    )}
                                 </div>
+                                )}
                             </>
                         ) : !isLoading && (
                             /*
@@ -1351,7 +1772,9 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                     onClick={triggerUpload}
                                     active={isDropActive}
                                     label={t?.('welcome_drop_cta') || 'Upload and edit'}
-                                    sub={t?.('welcome_drop_sub') || 'or drag photos here'}
+                                    onDragEnter={handleZoneOver}
+                                    onDragOver={handleZoneOver}
+                                    onDrop={handleDrop}
                                 />
 
                                 <button
@@ -1373,9 +1796,26 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                         </div>
                         
                         {!isLoading && !isFetchingMore && hasMore && (
-                            <div className="animate-in fade-in duration-1000 flex flex-col items-center gap-2 text-zinc-400/50 dark:text-zinc-600/50">
-                                <div className="text-[10px] uppercase tracking-[0.3em] font-medium">Scroll for more</div>
-                            </div>
+                            displayImages.length > 0 ? (
+                                <div className="animate-in fade-in duration-1000 flex flex-col items-center gap-2 text-zinc-400/50 dark:text-zinc-600/50">
+                                    <div className="text-[10px] uppercase tracking-[0.3em] font-medium">
+                                        {state?.currentLang === 'de' ? 'Weiter scrollen' : 'Scroll for more'}
+                                    </div>
+                                </div>
+                            ) : (
+                                // Zugeklappte Tage fuellen den Schirm nicht, also laedt
+                                // nichts von selbst nach. Statt "weiter scrollen" — wohin
+                                // auch — ein Knopf, der genau eine Seite holt.
+                                <button
+                                    onClick={() => onLoadMore?.()}
+                                    className="animate-in fade-in duration-500 text-[13px] font-medium px-4 py-2 rounded-full
+                                        text-zinc-500 dark:text-zinc-400
+                                        bg-black/[0.04] dark:bg-white/[0.06]
+                                        hover:bg-black/[0.07] dark:hover:bg-white/[0.10] transition-colors"
+                                >
+                                    {state?.currentLang === 'de' ? 'Ältere laden' : 'Load older'}
+                                </button>
+                            )
                         )}
                     </div>
                 )}
@@ -1411,9 +1851,24 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 </div>
             )}
 
-            {/* Selection SideSheet */}
-            {isSelectMode && !isMobile && isSelectionSideSheetOpen && (
-                <div className={`w-[380px] shrink-0 ${Theme.Colors.CanvasBg} flex flex-col z-10 relative`}>
+            {/*
+                Das Blatt der Auswahl — links, und es faehrt herein.
+
+                Es sass rechts und erschien schlagartig: Das Raster sprang in
+                dem Moment auf die schmalere Breite, und der Blick musste die
+                Seite wechseln. Jetzt steht es dort, wo das Blatt in der
+                Detailansicht auch steht, seine Spalte waechst von null auf ihre
+                Breite, und der Inhalt kommt von links herein. Das Raster rueckt
+                dadurch nicht, es staucht sich: Die Spaltenzahl bleibt, nur die
+                Kacheln werden schmaler.
+            */}
+            {selSheetMounted && !isMobile && (
+                <div
+                    style={{ width: selSheetIn ? 380 : 0 }}
+                    className={`order-first shrink-0 overflow-hidden ${Theme.Colors.SheetBg} flex flex-col z-10 relative
+                        transition-[width] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none`}
+                >
+                  <div className="w-[380px] h-full flex flex-col animate-[sheet-in_260ms_cubic-bezier(0.16,1,0.3,1)_backwards]">
                     {selectedIds.length > 0 ? (() => {
                         const selectedImages = images.filter(img => selectedIds.includes(img.id));
                         const selectedImage = selectedImages.length > 0 ? selectedImages[selectedImages.length - 1] : null;
@@ -1474,6 +1929,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                             </p>
                         </div>
                     )}
+                  </div>
                 </div>
             )}
 

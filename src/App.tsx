@@ -7,7 +7,12 @@ import { useNanoController } from '@/hooks/useNanoController';
 import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
 import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
 import { imageNameOf } from '@/utils/imageName';
+import { VOICE_ASSISTANT_PARKED } from '@/config/features';
 import { AppNavbar } from '@/components/layout/AppNavbar';
+import { DetailSheetHeader } from '@/components/layout/DetailSheetHeader';
+import { GenerationNotice } from '@/components/ui/GenerationNotice';
+import { DropPanel } from '@/components/ui/DropPanel';
+import { useMobile } from '@/hooks/useMobile';
 import { AuthModal } from '@/components/modals/AuthModal';
 import { CreationModal } from '@/components/modals/CreationModal';
 import { VoiceUploadModal } from '@/components/modals/VoiceUploadModal';
@@ -93,6 +98,9 @@ export function App() {
     const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
     const [infoImageId, setInfoImageId] = React.useState<string | null>(null);
     const [detailSidebarWidth, setDetailSidebarWidth] = React.useState(380);
+    // Fuer die Zonenerkennung beim Ziehen, die ausserhalb des Renderns laeuft.
+    const sidebarWidthRef = React.useRef(detailSidebarWidth);
+    React.useEffect(() => { sidebarWidthRef.current = detailSidebarWidth; }, [detailSidebarWidth]);
     const [detailSideSheetVisible, setDetailSideSheetVisible] = React.useState(true);
     // Auswahl-Panel der Galerie: wie das Detail-Panel standardmaessig offen.
     // Sichtbar wird es ohnehin nur im Auswahlmodus, und ohne Auswahl zeigt es
@@ -145,7 +153,9 @@ export function App() {
         const stored = loadVoiceLogs();
         return { ...empty, ...stored };
     });
-    const voiceFeatureEnabled = voiceAdminConfig.enabled;
+    // Der Schalter steht in config/features.ts — dieselbe Stelle, an der auch
+    // die Startseite nachsieht, ob sie den Assistenten noch bewerben darf.
+    const voiceFeatureEnabled = !VOICE_ASSISTANT_PARKED && voiceAdminConfig.enabled;
     const voiceRemoteLoadedRef = React.useRef(false);
 
     useEffect(() => {
@@ -411,10 +421,19 @@ export function App() {
             // Auto-reset if dragover stops firing (e.g. user drops outside app window)
             if (dragResetTimer.current) clearTimeout(dragResetTimer.current);
             dragResetTimer.current = setTimeout(resetDrag, 400);
-            // Track which zone cursor is over (only in detail view)
+            /*
+                Welches Ziel gemeint ist, entscheidet die Seite — und das Blatt
+                steht LINKS.
+
+                Hier stand die Grenze noch rechts im Fenster, aus der Zeit, als
+                das Blatt dort sass: Wer eine Referenz ueber das Blatt zog,
+                bekam "hochladen" angeboten, und das Angebot "Referenz" lag auf
+                der leeren Seite rechts neben dem Bild. Die Breite kommt
+                ausserdem aus derselben Quelle wie die Spalte selbst, statt als
+                abgeschriebene 380 danebenzustehen.
+            */
             if (locationRef2.current.startsWith('/image/')) {
-                const sidesheetW = 380;
-                setDragZone(e.clientX > window.innerWidth - sidesheetW ? 'sidesheet' : 'image');
+                setDragZone(e.clientX < sidebarWidthRef.current ? 'sidesheet' : 'image');
             }
         };
         const onDrop = async (e: DragEvent) => {
@@ -1103,20 +1122,99 @@ export function App() {
         || location.pathname === '/blog'
         || location.pathname.startsWith('/blog/');
 
+    /*
+        Die laufenden Generierungen — einmal berechnet, mit stabiler Identitaet.
+
+        Vorher stand dieser Filter direkt in den Eigenschaften der Leiste und
+        ergab bei jedem Rendern ein neues Feld. Ein Empfaenger, der daran einen
+        Effekt haengt, laeuft dadurch bei jedem Rendern erneut; setzt er dabei
+        Zustand, dreht sich das Ganze im Kreis. Genau diese Bauart hat uns
+        heute eine weisse Seite beschert — an anderer Stelle, aber nach
+        demselben Muster.
+    */
+    const runningGenerations = React.useMemo(
+        () => allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId)),
+        [allImages],
+    );
+
+    const isMobileApp = useMobile();
+
+    /**
+     * Die Detailansicht traegt ihren Kopf im Blatt, nicht ueber dem Fenster.
+     *
+     * Vorher gab es zwei Flaechen fuer eine Sache: eine Leiste mit Namen und
+     * Knoepfen ueber dem ganzen Fenster, daneben das Panel mit der Eingabe.
+     * Jetzt gibt es eine — und das Bild bekommt dafuer das ganze Fenster.
+     *
+     * Nur auf dem Desktop: Auf dem Handy ist das Blatt eine Lade, die unten
+     * sitzt und zugeschoben werden kann; dort waere der Weg zurueck mit ihr
+     * verschwunden.
+     */
+    const detailImageId = location.pathname.startsWith('/image/')
+        ? location.pathname.split('/').pop()
+        : undefined;
+    const detailImage = detailImageId ? allImages.find(i => i.id === detailImageId) : undefined;
+    const isDetailSheetLayout = !!detailImage && !isMobileApp;
+
+    const detailHeaderSlot = isDetailSheetLayout && detailImage ? (
+        <DetailSheetHeader
+            t={t}
+            title={imageNameOf(detailImage).base || 'Untitled'}
+            version={imageNameOf(detailImage).version ? `v${imageNameOf(detailImage).version}` : undefined}
+            onBack={handleBackToFeed}
+            onDownload={() => actions.handleDownload(detailImage.id)}
+            onRegenerate={() => actions.handleGenerateMore(detailImage.id)}
+            onInfo={() => setInfoImageId(detailImage.id)}
+            onDelete={() => handleDetailDelete(detailImage.id)}
+            hasPrompt={!!detailImage.generationPrompt}
+            isSideSheetVisible={detailSideSheetVisible}
+            onToggleSideSheet={() => setDetailSideSheetVisible(v => !v)}
+            voice={{
+                enabled: voiceFeatureEnabled,
+                active: voice.isActive,
+                lang: state.currentLang,
+                onStart: () => { void voice.start(); },
+                onStop: voice.stop,
+            }}
+        />
+    ) : null;
+
     const outerContainerClasses = isAppLayout
         ? "h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col overflow-hidden"
         : "min-h-[100dvh] bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-[Inter,system-ui,-apple-system,sans-serif] selection:bg-orange-500 selection:text-white flex flex-col";
 
     const mainContainerClasses = isAppLayout
-        ? "flex-1 flex flex-col overflow-hidden pt-[var(--nav-h)]"
+        ? `flex-1 flex flex-col overflow-hidden transition-[padding-top] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${isDetailSheetLayout ? 'pt-0' : 'pt-[var(--nav-h)]'}`
         : "flex-1 flex flex-col";
 
+    /*
+        Die Leiste bleibt haengen, sie wird nur weggefahren.
+
+        Vorher verschwand sie beim Oeffnen eines Bildes von einem Bild zum
+        naechsten, und der Innenabstand des Inhalts sprang im selben Moment um
+        ihre Hoehe — ein Ruck quer durch die ganze Seite. Jetzt schiebt sie
+        sich nach oben hinaus, waehrend der Abstand darunter in derselben Zeit
+        zusammenlaeuft. Zwei Bewegungen, eine Dauer, kein Sprung.
+    */
     const showGlobalNavbar = !isAdminRoute;
+    const navbarHidden = isDetailSheetLayout;
 
     return (
         <div className={outerContainerClasses}>
 
+            {/* Meldet sich, wenn eine Generierung startet und wenn eine fertig
+                ist — und verschwindet wieder, sobald sie jemand gesehen hat. */}
+            <GenerationNotice
+                generatingImages={runningGenerations}
+                lang={state.currentLang}
+                onNavigateToImage={handleSelectImage}
+            />
+
             {showGlobalNavbar && (
+                <div
+                    className={`fixed top-0 left-0 right-0 z-50 transition-[transform,opacity] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none
+                        ${navbarHidden ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}
+                >
                 <AppNavbar
                     user={user}
                     userProfile={userProfile}
@@ -1286,9 +1384,6 @@ export function App() {
                     isFeedSideSheetVisible={feedSideSheetVisible}
                     onToggleSideSheet={() => setDetailSideSheetVisible(v => !v)}
                     onToggleFeedSideSheet={() => setFeedSideSheetVisible(v => !v)}
-                    generatingImages={allImages.filter(i => i.isGenerating && (i.generationPrompt || i.parentId))}
-                    onNavigateToImage={(id) => { handleSelectImage(id); }}
-                    onGenerateMoreById={(id) => actions.handleGenerateMore(id)}
                     heroProgress={isExpandableRoute
                         ? (location.pathname === '/' && user ? feedHeroProgress : globalScrollProgress)
                         : undefined}
@@ -1312,6 +1407,7 @@ export function App() {
                     onStopVoiceMode={voice.stop}
                     onRetryVoiceMode={() => { voice.stop(); void voice.start(); }}
                 />
+                </div>
             )}
 
 
@@ -1323,11 +1419,11 @@ export function App() {
                     const sidesheetW = detailSidebarWidth;
                     return (
                         <div className="fixed inset-0 z-[100] pointer-events-none">
-                            <div className="absolute inset-0 bg-black/30" />
-                            {/* Left zone: Upload */}
+                            <div className="absolute inset-0 bg-black/40 animate-in fade-in duration-200" />
+                            {/* Links das Blatt: dort wird eine Referenz abgelegt. */}
                             <div
                                 className="absolute inset-y-0 left-0 flex items-center justify-center"
-                                style={{ right: sidesheetW }}
+                                style={{ width: sidesheetW }}
                             >
                                 {/* Ohne Rahmen. Welches Ziel gemeint ist, sagt die
                                     Flaeche selbst: Das angepeilte wird heller und
@@ -1336,28 +1432,26 @@ export function App() {
                                     Signal fuer dieselbe Aussage — und das lauteste
                                     Element in einem Moment, in dem der Nutzer auf
                                     sein Bild schaut. */}
-                                <div className={`flex flex-col items-center gap-3 px-8 py-6 rounded-2xl backdrop-blur-xl transition-all duration-150 ${dragZone === 'image'
-                                    ? 'scale-[1.04] bg-white/95 dark:bg-zinc-900/95 shadow-xl shadow-black/20'
-                                    : 'bg-white/70 dark:bg-zinc-900/70 shadow-lg shadow-black/10'}`}>
-                                    <Upload className={`w-6 h-6 transition-colors duration-150 ${dragZone === 'image' ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}`} />
-                                    <p className={`${Typo.Body} text-sm ${dragZone === 'image' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'}`}>
-                                        {lang === 'de' ? 'Hier ablegen zum Hochladen' : 'Drop here to upload'}
-                                    </p>
-                                </div>
+                                <DropPanel
+                                    hot={dragZone === 'sidesheet'}
+                                    icon={<ImageIcon className="w-8 h-8" strokeWidth={1.5} />}
+                                    label={lang === 'de' ? 'Als Referenz hinzufügen' : 'Add as reference'}
+                                    className="!px-8"
+                                />
                             </div>
-                            {/* Right zone: Reference image */}
+                            {/* Rechts das Bild: dort wird hochgeladen. */}
                             <div
                                 className="absolute inset-y-0 right-0 flex items-center justify-center"
-                                style={{ width: sidesheetW }}
+                                style={{ left: sidesheetW }}
                             >
-                                <div className={`flex flex-col items-center gap-3 px-8 py-6 rounded-2xl backdrop-blur-xl transition-all duration-150 ${dragZone === 'sidesheet'
-                                    ? 'scale-[1.04] bg-white/95 dark:bg-zinc-900/95 shadow-xl shadow-black/20'
-                                    : 'bg-white/70 dark:bg-zinc-900/70 shadow-lg shadow-black/10'}`}>
-                                    <ImageIcon className={`w-6 h-6 transition-colors duration-150 ${dragZone === 'sidesheet' ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}`} />
-                                    <p className={`${Typo.Body} text-sm text-center ${dragZone === 'sidesheet' ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-500 dark:text-zinc-500'}`}>
-                                        {lang === 'de' ? 'Als Referenz hinzufügen' : 'Add as reference'}
-                                    </p>
-                                </div>
+                                {/* Dieselbe Flaeche wie links, nur mit dem
+                                    Bildzeichen: zwei Ziele, eine Sprache — und
+                                    dieselbe wie in der Galerie. Schmaler, weil
+                                    das Blatt schmaler ist. */}
+                                <DropPanel
+                                    hot={dragZone === 'image'}
+                                    label={lang === 'de' ? 'Hier ablegen zum Hochladen' : 'Drop here to upload'}
+                                />
                             </div>
                         </div>
                     );
@@ -1533,6 +1627,7 @@ export function App() {
                             }}>
                                 <DetailPage
                                     images={allImages}
+                                    headerSlot={detailHeaderSlot}
                                     selectedId={location.pathname.split('/').pop() || ''}
                                     onBack={handleBackToFeed}
                                     onSelectImage={handleSelectImage}

@@ -159,7 +159,6 @@ export const translations = {
     welcome_desc: "Select your photos to edit or start a new flow.",
     welcome_empty_desc: "Add photos, or create something new.",
     welcome_drop_cta: "Upload photos",
-    welcome_drop_sub: "or drag them here",
     thumbstrip_hide: "Hide filmstrip",
     thumbstrip_show: "Show filmstrip",
     tiles_larger: "Larger tiles",
@@ -431,7 +430,7 @@ export const translations = {
 
     // SideSheet annotation chips
     annotations_label: "Annotations",
-    brush_label: "Brush",
+    brush_label: "Marks",
     shape_rect: "Rect",
     shape_circle: "Circle",
     shape_line: "Line",
@@ -510,7 +509,8 @@ export const translations = {
     nav_create: "New",
     nav_create_tooltip: "Upload or generate an image",
     nav_generate_new: "Generate new image",
-    nav_upload: "Upload",
+    nav_upload: "Upload photos",
+    combine_versions: "Edit layers",
     nav_menu: "Menu",
     nav_start: "Start",
     nav_settings: "Settings",
@@ -734,7 +734,6 @@ export const translations = {
     welcome_desc: "Fotos auswählen oder generieren Sie etwas Neues.",
     welcome_empty_desc: "Fotos hinzufügen oder etwas Neues erstellen.",
     welcome_drop_cta: "Fotos hochladen",
-    welcome_drop_sub: "oder hierher ziehen",
     thumbstrip_hide: "Bilderleiste ausblenden",
     thumbstrip_show: "Bilderleiste einblenden",
     tiles_larger: "Kacheln größer",
@@ -1006,7 +1005,7 @@ export const translations = {
 
     // SideSheet annotation chips
     annotations_label: "Anmerkungen",
-    brush_label: "Pinsel",
+    brush_label: "Markierungen",
     shape_rect: "Rechteck",
     shape_circle: "Kreis",
     shape_line: "Linie",
@@ -1085,7 +1084,8 @@ export const translations = {
     nav_create: "Neu",
     nav_create_tooltip: "Bild hochladen oder generieren",
     nav_generate_new: "Neues Bild generieren",
-    nav_upload: "Hochladen",
+    nav_upload: "Fotos hochladen",
+    combine_versions: "Ebenen bearbeiten",
     nav_menu: "Menü",
     nav_start: "Start",
     nav_settings: "Einstellungen",

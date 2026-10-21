@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef, memo } from 'react';
+import React, { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef, memo } from 'react';
 import { ChevronLeft, ChevronRight, Download, Info, Trash2, MoreHorizontal, Type, Square, Circle, Minus, Brush, Trash, Check, Shapes, X, Repeat } from 'lucide-react';
-import { CanvasImage } from '@/types';
-import { useDetailLayout } from '@/utils/uiPrefs';
+import { CanvasImage, ImageRow } from '@/types';
+import { useSheetWidth, setSheetWidth } from '@/utils/uiPrefs';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
@@ -166,6 +166,8 @@ interface DetailPageProps {
     onDelete: (id: string) => void;
     onDownload: (id: string) => void;
     onInfo: (id: string) => void;
+    /** Der Kopf, der im Blatt sitzt — kommt fertig von App (siehe dort). */
+    headerSlot?: React.ReactNode;
     onSidebarWidthChange?: (w: number) => void;
     isSideSheetVisible?: boolean;
     onSideSheetVisibleChange?: (v: boolean) => void;
@@ -182,21 +184,28 @@ interface DetailPageProps {
 /**
  * Die schwebenden Knoepfe ueber dem Bild.
  *
- * Immer sichtbar, aber zurueckgenommen — und auf jedem Untergrund lesbar,
- * ohne Umrandung.
+ * Immer sichtbar, auf jedem Untergrund — mit einer Regel statt mehrerer.
  *
- * Ueber hellen Motiven traegt die dunkle Fuellung. Ueber dunklen traegt das
- * weisse Zeichen selbst: Die Fuellung verschwindet dort, das Symbol bleibt. Ein
- * leichter Schlagschatten am Zeichen haelt es auch auf mittleren Tonwerten
- * ablesbar, wo weder Flaeche noch Zeichen allein genug Kontrast haetten.
+ * Der Kniff ist `backdrop-contrast(0.78)`: Kontrast senken zieht jeden Tonwert
+ * zur Mitte. Schwarz wird dadurch grau, Weiss ebenfalls. Die Flaeche hebt sich
+ * also von selbst ab, egal was darunter liegt — ohne Fallunterscheidung, ohne
+ * Rahmen, ohne eine Farbe, die auf der einen Haelfte der Bilder falsch ist.
  *
- * Das kommt ohne Ring aus — eine Umrandung haette den Knopf ueber jedem Motiv
- * als Objekt behauptet, auch dort, wo er gar nicht gebraucht wird.
+ * Eine feste Fuellung kann das nicht: Schwarz auf Schwarz bleibt unsichtbar,
+ * Weiss auf einem Schneebild ebenso. Beides hatten wir, und beides war nur fuer
+ * die Haelfte der Motive richtig.
+ *
+ * Dazu eine sehr schwache helle Fuellung fuer mittlere Tonwerte, wo das Senken
+ * des Kontrasts wenig bewirkt, und ein leichter Schlagschatten am Zeichen.
+ *
+ * Der Wert ist bewusst nah an 1: Bei 0,55 hoben sich die Knoepfe auf schwarzem
+ * Grund als deutlich helle Scheiben ab — sichtbar ja, aber lauter als das Bild,
+ * ueber dem sie liegen. Sie sollen auffindbar sein, nicht auffallen.
  */
 const FLOATING_BTN_BASE = `text-white rounded-full flex items-center
-    bg-black/35 hover:bg-black/60 backdrop-blur-md
-    shadow-lg shadow-black/25
-    [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]
+    backdrop-blur-md backdrop-contrast-[0.78] backdrop-brightness-105 backdrop-saturate-[0.95]
+    bg-white/[0.04] hover:bg-white/[0.10]
+    [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]
     transition-[background-color] duration-150`;
 
 const FLOATING_BTN = `${FLOATING_BTN_BASE} h-9 px-4 text-xs font-medium`;
@@ -204,8 +213,35 @@ const FLOATING_BTN = `${FLOATING_BTN_BASE} h-9 px-4 text-xs font-medium`;
 /** Dasselbe als quadratischer Knopf fuer ein einzelnes Symbol. */
 const FLOATING_BTN_ICON = `${FLOATING_BTN_BASE} h-9 w-9 justify-center`;
 
+/**
+ * Die Pfeile zum Blaettern: links und rechts am Rand, senkrecht in der Mitte.
+ *
+ * Vor und Zurueck sind gegenlaeufige Richtungen. Nebeneinander in einer Reihe
+ * unten waren sie das nicht mehr — und der Weg der Maus war fuer beide gleich
+ * weit nach unten statt zur jeweiligen Seite.
+ *
+ * Ohne Weichzeichner, anders als die uebrigen schwebenden Knoepfe: Diese hier
+ * liegen IMMER ueber dem Bild, und ein verwaschener Fleck, der staendig da ist,
+ * faellt mehr auf als eine ruhige dunkle Scheibe.
+ *
+ * Die Scheibe ist dunkler als zuvor (45 statt 25 Prozent), der Zug als Ganzes
+ * dafuer leiser (35 statt 60). Ein kraeftiger Kreis bei geringer Deckkraft
+ * bleibt auf hellen wie dunklen Bildern lesbar, waehrend ein heller Kreis bei
+ * hoher Deckkraft auf einer weissen Wand verschwindet.
+ *
+ * Dazu eine Klickflaeche, die ueber den sichtbaren Kreis hinausgeht —
+ * getroffen wird mit der Maus im Lauf, nicht mit dem Zirkel.
+ */
+const FLOATING_ARROW = `text-white rounded-full flex items-center justify-center
+    absolute top-1/2 -translate-y-1/2 z-40 h-12 w-12
+    bg-black/45 hover:bg-black/65
+    [&_svg]:drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]
+    transition-[background-color] duration-150
+    pointer-events-auto
+    before:absolute before:-inset-2 before:content-['']`;
+
 export const DetailPage: React.FC<DetailPageProps> = ({
-    images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange,
+    images, selectedId, onBack, onSelectImage, onDelete, onDownload, onInfo, onSidebarWidthChange, headerSlot,
     isSideSheetVisible: isSideSheetVisibleProp, onSideSheetVisibleChange, isExiting,
     hasMore, onLoadMore,
     state, actions, t
@@ -216,6 +252,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const isMainLoaded = loadedImageId === selectedId;
     // Track previous loaded image src so it stays visible during navigation flicker
     const prevLoadedSrcRef = useRef<string | null>(null);
+    /*
+        Wann das Vorschaubild des neuen Bildes steht.
+
+        Bis dahin bleibt das vorige sichtbar, damit es nicht weiss aufblitzt.
+        Danach muss es WEG: Zwei Bilder uebereinander, von denen das obere das
+        untere nicht ganz verdeckt (anderes Seitenverhaeltnis), ergeben einen
+        Rahmen aus dem alten Bild um das neue — das war das Ueberlagern.
+    */
+    const [thumbReadyId, setThumbReadyId] = useState<string | null>(null);
     const [subMenu, setSubMenu] = useState<'text' | 'shapes' | 'brush'>('text');
     // SideSheet visibility — controlled from outside if prop provided
     const [isSideSheetVisibleLocal, setIsSideSheetVisibleLocal] = useState(true);
@@ -337,86 +382,20 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     const { confirm } = useItemDialog();
 
     // Track generating children of current image
-    /**
-     * Schreibt der Nutzer gerade in ein Feld (Prompt, Titel)? Dann darf die
-     * Ansicht nicht wechseln — der Cursor würde mitten im Satz herausgerissen.
-     * Gilt für beide Sprünge: zum Platzhalter beim Start und zum Ergebnis am
-     * Ende. Dieselbe Regel steckt in useGeneration für den dortigen Pfad.
-     */
-    const isTypingNow = useCallback((): boolean => {
-        if (typeof document === 'undefined') return false;
-        const el = document.activeElement as HTMLElement | null;
-        if (!el) return false;
-        const tag = el.tagName;
-        return tag === 'TEXTAREA'
-            || (tag === 'INPUT' && !['checkbox', 'radio', 'button', 'submit', 'range', 'file'].includes((el as HTMLInputElement).type))
-            || el.isContentEditable;
-    }, []);
 
-    const generatingChild = useMemo(() =>
-        img ? images.find(i => i.parentId === img.id && i.isGenerating) : undefined,
-        [images, img]
-    );
-    /**
-     * Begleitet eine laufende Generierung: beim Start auf den Platzhalter
-     * wechseln, am Ende auf das Ergebnis — sofern der Nutzer zwischendurch
-     * nicht selbst woanders hingegangen ist.
-     *
-     * Die verfolgte Generierung wird über ihre ID nachgeschlagen, NICHT über
-     * generatingChild. Letzteres sucht Kinder des gerade angezeigten Bildes und
-     * ist leer, sobald man den Platzhalter selbst ansieht — der Code hielt die
-     * Generierung dann für beendet, verwarf den Merker, und beim nächsten
-     * Schritt auf das Quellbild galt sie als neu entdeckt. Ergebnis war eine
-     * Falle: Ein Pfeil in Richtung Quellbild warf einen sofort zum Platzhalter
-     * zurück, während die Gegenrichtung funktionierte.
-     *
-     * Zusätzlich merkt sich autoJumpedRef jeden Platzhalter, zu dem bereits
-     * gesprungen wurde. Derselbe Sprung passiert damit höchstens einmal, egal
-     * wie oft man danach am Quellbild vorbeikommt.
-     */
-    const trackedGenRef = useRef<{ childId: string; parentId: string } | null>(null);
-    const autoJumpedRef = useRef<Set<string>>(new Set());
-    const navHappenedDuringGenRef = useRef(false);
+    /*
+        Die Ansicht folgt keiner Generierung mehr.
 
-    useEffect(() => {
-        // Neue Generierung am aktuell angezeigten Bild entdeckt
-        if (generatingChild && !trackedGenRef.current && !autoJumpedRef.current.has(generatingChild.id)) {
-            trackedGenRef.current = { childId: generatingChild.id, parentId: selectedId };
-            navHappenedDuringGenRef.current = false;
-            if (selectedId !== generatingChild.id && !isTypingNow()) {
-                autoJumpedRef.current.add(generatingChild.id);
-                onSelectImage(generatingChild.id);
-            }
-            return;
-        }
+        Sie sprang frueher auf den Platzhalter, sobald am gezeigten Bild etwas
+        startete, und am Ende auf das Ergebnis. Beides nahm einem die Ansicht
+        aus der Hand: Man sieht ein Bild an, und ploetzlich steht ein grauer
+        Kasten da. Wer weiterarbeiten will, muss zurueckblaettern.
 
-        const tracked = trackedGenRef.current;
-        if (!tracked) return;
+        Jetzt bleibt man, wo man ist. Dass etwas laeuft und dass etwas fertig
+        ist, meldet die Pille oben rechts — und ein Klick darauf fuehrt hin,
+        wenn man will. Melden statt verschieben.
+    */
 
-        const trackedImage = imageMap.get(tracked.childId);
-        // Fehlt das Bild (noch nicht geladen), weiter abwarten statt abbrechen.
-        if (!trackedImage) return;
-
-        if (trackedImage.isGenerating) {
-            // Weder Quellbild noch Platzhalter: Der Nutzer ist selbst woanders
-            // hingegangen, der Sprung zum Ergebnis entfällt.
-            if (selectedId !== tracked.parentId && selectedId !== tracked.childId) {
-                navHappenedDuringGenRef.current = true;
-            }
-            return;
-        }
-
-        // Fertig
-        const userNavigated = navHappenedDuringGenRef.current
-            || (selectedId !== tracked.parentId && selectedId !== tracked.childId);
-        trackedGenRef.current = null;
-        navHappenedDuringGenRef.current = false;
-        if (userNavigated || isTypingNow()) return;
-        // Steht die Ansicht schon auf dem Platzhalter, ist das ein Nichtstun —
-        // er wird an Ort und Stelle zum fertigen Bild.
-        setIsSideSheetVisible(false);
-        onSelectImage(tracked.childId);
-    }, [generatingChild, imageMap, selectedId, onSelectImage, isTypingNow]);
     const imageViewportRef = useRef<HTMLDivElement>(null);
     // Im Zeilenmodus wird die Bildhoehe gesetzt statt gemessen. Gemessen wird
     // deshalb der Hauptbereich: Wuerde der Bildbereich sich selbst messen,
@@ -444,6 +423,49 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         }
     }, [img?.isGenerating, selectedId]);
     const showBlob = img?.isGenerating || waitingForGeneratedLoad === selectedId;
+
+    /**
+     * Die Balkenreihe unter dem Bild: wo man im STAPEL steht.
+     *
+     * Nicht ueber alle Bilder — bei fuenfzig waere die Reihe kein Hinweis
+     * mehr, sondern ein Muster. Gezeigt wird der Stapel, zu dem das Bild
+     * gehoert; links und rechts deutet je ein kurzer Stummel an, dass dahinter
+     * der naechste Stapel liegt.
+     *
+     * Die Reihenfolge kommt aus der flachen Liste, nach der auch die Pfeile
+     * blaettern. Haette die Reihe eine eigene, zeigte sie beim Weiterblaettern
+     * irgendwann woanders hin als die Navigation.
+     */
+    const stackBars = React.useMemo(() => {
+        const row = state.rows?.find((r: ImageRow) => r.items.some(i => i.id === selectedId));
+        // Auch ein einzelnes Bild bekommt seine Reihe: dann besteht sie aus
+        // einem Balken und den beiden Stummeln daneben. Sie sagt dann nicht
+        // "du bist bei 3 von 6", sondern "hier geht es weiter" — und das ist
+        // genau das, was man an einem Einzelbild wissen will.
+        const ids = new Set((row?.items ?? [{ id: selectedId }]).map(i => i.id));
+        const members: { id: string; at: number }[] = [];
+        images.forEach((im, at) => { if (ids.has(im.id)) members.push({ id: im.id, at }); });
+        if (members.length === 0) return null;
+        const first = members[0].at;
+        const last = members[members.length - 1].at;
+        return {
+            members,
+            current: members.findIndex(m => m.id === selectedId),
+            hasPrevStack: first > 0,
+            hasNextStack: last < images.length - 1,
+            // Steht man am Rand des Stapels, wird der Stummel in dieser
+            // Richtung eine Spur heller: Der naechste Schritt fuehrt hinaus.
+            atStart: selectedId === members[0].id,
+            atEnd: selectedId === members[members.length - 1].id,
+            // Einzelbild: Die Reihe besteht aus einem Balken und zwei
+            // Stummeln — vorher und nachher sieht sie GLEICH aus. Deshalb
+            // kann sie beim Wechsel nicht von selbst etwas zeigen; dort
+            // muss die Bewegung her (siehe unten).
+            isSingle: members.length === 1,
+        };
+    }, [state.rows, images, selectedId]);
+
+    const showDots = !isMobile && !!stackBars && stackBars.members.length <= 14;
 
     const thumbStripInnerRef = useRef<HTMLDivElement>(null);
     // First-mount flag: use instant scroll on entry, smooth on subsequent navigation
@@ -682,13 +704,6 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     e.preventDefault();
                     navigate(1);
                     break;
-                case 'e':
-                case 'E':
-                    if (!e.metaKey && !e.ctrlKey && !e.altKey) {
-                        e.preventDefault();
-                        setIsSideSheetVisible(!isSideSheetVisible);
-                    }
-                    break;
                 case 'a':
                 case 'A':
                     if (!e.metaKey && !e.ctrlKey && !e.altKey && isSideSheetVisible) {
@@ -723,13 +738,23 @@ export const DetailPage: React.FC<DetailPageProps> = ({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [navigate, confirm, onDelete, onDownload, selectedId, onBack, actions, isSideSheetVisible, setIsSideSheetVisible, state.sideSheetMode]);
 
-    // Anordnung: nebeneinander, untereinander oder Vollbild. Auf schmalen
-    // Geraeten gilt immer untereinander.
-    const detailLayout = useDetailLayout();
-    // Die Zeilenanordnung gilt nur, SOLANGE die Eingabe sichtbar ist. Im
-    // Vollbild gibt es nichts zu teilen: Dort soll das Bild die ganze Flaeche
-    // bekommen und mittig darin stehen.
-    const isRowLayout = !isMobile && detailLayout === 'row' && isSideSheetActuallyVisible;
+    /*
+        Eine Ansicht, kein Umschalter.
+
+        Es gab drei: Spalten, Zeilen, Vollbild. Drei Anordnungen fuer eine
+        Seite heisst, dass zwei davon schlechter sind als die dritte — und dass
+        jede Aenderung an der Detailansicht dreimal gedacht und dreimal
+        getestet werden muss. Auf dem Desktop steht das Blatt links, das Bild
+        daneben, fertig. Auf schmalen Geraeten untereinander, weil nebeneinander
+        dort nicht geht.
+    */
+
+    /**
+     * Die feste Spalte: nur dort, wo das Blatt seinen eigenen Kopf traegt
+     * (Desktop). Auf schmalen Geraeten liegt es unter dem Bild und ist dann
+     * keine Spalte, sondern die Fortsetzung der Seite.
+     */
+    const isSheetColumn = !!headerSlot && !isMobile;
 
     /**
      * Breite des Seitenpanels — fest, nicht mehr ziehbar.
@@ -746,40 +771,72 @@ export const DetailPage: React.FC<DetailPageProps> = ({
      * sich schlechter. CSS rechnet das selbst, es braucht keine Messung und
      * keinen Zustand.
      */
-    const SIDEBAR_WIDTH = 'clamp(360px, 30vw, 480px)';
+    /*
+        Wer die Breite selbst eingestellt hat, bekommt seine; alle anderen die
+        gerechnete. Die Grenzen gelten fuer beide — unter 340 wird die Eingabe
+        eng, ueber 620 liest sich der Text nur breiter, nicht besser.
+    */
+    const storedSheetWidth = useSheetWidth();
+    // Waehrend des Ziehens zaehlt diese, danach wieder die gespeicherte.
+    const [liveSheetWidth, setSheetWidthState] = useState<number | null>(null);
+    const effectiveStoredWidth = liveSheetWidth ?? storedSheetWidth;
+    const SIDEBAR_WIDTH = effectiveStoredWidth > 0
+        ? `${effectiveStoredWidth}px`
+        : 'clamp(360px, 30vw, 480px)';
     /** Nominalwert fuer alles, was eine Zahl braucht (Drop-Zonen, Sprachkontext). */
-    const SIDEBAR_WIDTH_PX = typeof window === 'undefined'
-        ? 380
-        : Math.round(Math.min(Math.max(window.innerWidth * 0.30, 360), 480));
+    const SIDEBAR_WIDTH_PX = effectiveStoredWidth > 0
+        ? effectiveStoredWidth
+        : (typeof window === 'undefined'
+            ? 380
+            : Math.round(Math.min(Math.max(window.innerWidth * 0.30, 360), 480)));
+    const SHEET_MIN = 340;
+    const SHEET_MAX = 620;
 
-    /**
-     * Hoehe des Bildbereichs im Zeilenmodus.
-     *
-     * Das Bild sitzt buendig unter der Leiste und nimmt die volle Breite; seine
-     * Hoehe folgt daraus. Die Eingabe rueckt direkt darunter — es bleibt kein
-     * Streifen dazwischen, und bei einem 4:3-Bild ist der Bereich genau so hoch
-     * wie das Bild.
-     *
-     * Zweite Grenze fuer Hochformate: Sonst fuellte ein 3:4-Bild bei voller
-     * Breite den ganzen Bildschirm und die Eingabe waere nicht mehr zu sehen.
-     */
-    const [rowImageHeight, setRowImageHeight] = useState<number | undefined>(undefined);
-    useEffect(() => {
-        if (!isRowLayout) { setRowImageHeight(undefined); return; }
-        const compute = () => {
-            const el = mainRef.current;
-            if (!el || !imgNaturalDims.width || !imgNaturalDims.height) return;
-            const byWidth = el.clientWidth * imgNaturalDims.height / imgNaturalDims.width;
-            const maxH = Math.max(220, el.clientHeight - MIN_PANEL_HEIGHT);
-            setRowImageHeight(Math.round(Math.min(byWidth, maxH)));
+    /*
+        Der Griff an der Kante.
+
+        Er zeigt sich erst, wenn jemand dort eine halbe Sekunde verweilt: Die
+        Kante ist der Weg zwischen Blatt und Bild, und ein Griff, der bei jedem
+        Vorbeifahren aufleuchtet, macht aus diesem Weg eine Baustelle. Wer die
+        Breite aendern will, haelt ohnehin an.
+
+        Waehrend des Ziehens wird die Breite direkt gesetzt und erst am Ende
+        gespeichert — ein Schreibvorgang je Pixel waere Unfug.
+    */
+    const [edgeArmed, setEdgeArmed] = useState(false);
+    const [isResizing, setIsResizing] = useState(false);
+    const edgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const dragWidthRef = useRef<number>(0);
+
+    const armEdge = () => {
+        if (edgeTimerRef.current) clearTimeout(edgeTimerRef.current);
+        edgeTimerRef.current = setTimeout(() => setEdgeArmed(true), 500);
+    };
+    const disarmEdge = () => {
+        if (edgeTimerRef.current) { clearTimeout(edgeTimerRef.current); edgeTimerRef.current = null; }
+        if (!isResizing) setEdgeArmed(false);
+    };
+    useEffect(() => () => { if (edgeTimerRef.current) clearTimeout(edgeTimerRef.current); }, []);
+
+    const startResize = useCallback((e: React.PointerEvent) => {
+        e.preventDefault();
+        setIsResizing(true);
+        const onMove = (ev: PointerEvent) => {
+            const w = Math.min(SHEET_MAX, Math.max(SHEET_MIN, ev.clientX));
+            dragWidthRef.current = w;
+            setSheetWidthState(w);
         };
-        compute();
-        const el = mainRef.current;
-        const obs = el ? new ResizeObserver(compute) : null;
-        if (el && obs) obs.observe(el);
-        window.addEventListener('resize', compute);
-        return () => { obs?.disconnect(); window.removeEventListener('resize', compute); };
-    }, [isRowLayout, imgNaturalDims.width, imgNaturalDims.height]);
+        const onUp = () => {
+            setIsResizing(false);
+            setEdgeArmed(false);
+            if (dragWidthRef.current > 0) { setSheetWidth(dragWidthRef.current); setSheetWidthState(null); }
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+        };
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+    }, []);
+
 
     const MIN_PANEL_HEIGHT = 200;
 
@@ -800,13 +857,17 @@ export const DetailPage: React.FC<DetailPageProps> = ({
     if (!img) return null;
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950">
+        <div className={`flex-1 flex flex-col overflow-hidden ${Theme.Colors.CanvasBg}`}>
             {/* Removed internal header - handled by AppNavbar */}
 
-            <main ref={mainRef} className={`flex-1 flex flex-col ${isRowLayout ? '' : 'md:flex-row'} md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+            {/* Auf schmalen Geraeten scrollt die SEITE, nicht ein Kasten darin:
+                Bild oben, Blatt darunter, ein Scrollbereich fuer alles. Auf dem
+                Desktop stehen beide nebeneinander und nichts scrollt ausser dem
+                Blatt selbst. */}
+            <main ref={mainRef} className={`flex-1 flex flex-col md:flex-row md:overflow-hidden ${isMobile && state.sideSheetMode === 'brush' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
                 {/* Canvas Area — mobile brush: flex-1 (fills screen); mobile normal: fixed aspect-ratio height; desktop: flex-1 */}
                 <div
-                    className={`flex flex-col bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
+                    className={`flex flex-col ${Theme.Colors.CanvasBg} relative overflow-hidden group ${isMobile && state.sideSheetMode === 'brush' ? 'flex-1' : 'shrink-0 md:flex-1 md:shrink'}`}
                     style={isMobile && state.sideSheetMode !== 'brush'
                         ? {
                             height: (imgNaturalDims.width ?? 0) > 0 && (imgNaturalDims.height ?? 0) > 0
@@ -816,40 +877,151 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         : undefined
                     }
                 >
+                    {/*
+                        Der Schein des Bildes auf dem Grund.
+
+                        Dasselbe Vorschaubild, stark weichgezeichnet, gross
+                        gezogen und auf wenige Prozent gedimmt: Die Flaeche
+                        nimmt dadurch die Farbe des Bildes an, ohne dass man
+                        ein zweites Bild sieht. Bei einem Aussenfoto wird der
+                        Grund leicht gruen, bei einem Abendbild warm.
+
+                        Es kostet nichts: Das Vorschaubild ist ohnehin geladen.
+                        Im hellen Modus schwaecher als im dunklen — auf Weiss
+                        faellt Farbe staerker auf als auf Schwarz.
+
+                        Der dunkle Rahmen ringsum war keine Absicht: Ein
+                        Weichzeichner mischt am Rand das ein, was AUSSERHALB des
+                        Bildes liegt, und das ist nichts. Je staerker gestreut
+                        wird, desto breiter dieser Saum — bei 90 Pixeln sah es
+                        aus wie eine Vignette. Die Ebene ist deshalb deutlich
+                        groesser gezogen als ihr Feld (die Streubreite muss auf
+                        jeder Seite hineinpassen), und `overflow-hidden`
+                        beschneidet erst danach. Damit bleibt nur die Mitte des
+                        Scheins stehen, und die hat keine Raender.
+                    */}
+                    {!isMobile && img.thumbSrc && !showBlob && (
+                        <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <img
+                                key={img.id}
+                                src={img.thumbSrc}
+                                className="w-full h-full object-cover scale-[2.2] blur-[180px]
+                                    opacity-[0.07] dark:opacity-[0.11]
+                                    animate-[view-in_700ms_cubic-bezier(0.16,1,0.3,1)_both]"
+                                alt=""
+                            />
+                        </div>
+                    )}
+
                     {/* Image Container */}
                     <div
-                        className={`relative overflow-hidden min-h-0 ${isRowLayout ? 'shrink-0' : 'flex-1'}`}
-                        style={isRowLayout && rowImageHeight ? { height: `${rowImageHeight}px` } : undefined}
+                        className="relative overflow-hidden min-h-0 flex-1"
                     >
 
-                        {/* Floating action buttons */}
+                        {/* Blaettern: an den Seiten, senkrecht in der Mitte des Bildes.
+                            Beide Pfeile bleiben stehen und werden am Rand der Liste nur
+                            abgeschaltet — eine Taste, die verschwindet, verschiebt die
+                            andere und laesst die Maus ins Leere greifen. */}
+                        {state.sideSheetMode !== 'brush' && !isMobile && (
+                            <div className={`absolute inset-0 pointer-events-none z-40 transition-opacity duration-200 opacity-35 group-hover:opacity-100`}>
+                                {/* Wo es nicht weitergeht, steht kein Pfeil.
+                                    Ein abgeschalteter Knopf ist ein Angebot, das
+                                    keines ist — und seit die beiden an den Raendern
+                                    kleben statt nebeneinander, verschiebt das
+                                    Weglassen auch nichts mehr. */}
+                                {idx > 0 && (
+                                    <button
+                                        onClick={() => handleSelectWithin(images[idx - 1].id)}
+                                        aria-label={t('previous') || 'Zurück'}
+                                        className={`${FLOATING_ARROW} left-5`}
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                )}
+                                {idx < images.length - 1 && (
+                                    <button
+                                        onClick={() => handleSelectWithin(images[idx + 1].id)}
+                                        aria-label={t('next') || 'Weiter'}
+                                        className={`${FLOATING_ARROW} right-5`}
+                                    >
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Balken: wo man im Stapel steht, und dass es daneben
+                            weitergeht. Nur beim Darueberfahren — beim Ansehen
+                            gehoert die Flaeche dem Bild. */}
+                        {/* Weitere Knoepfe am unteren Bildrand. Sind Punkte da, ruecken
+                            sie eine Reihe hoeher — zwei Dinge auf derselben Linie
+                            uebereinander waeren weder lesbar noch treffbar. */}
+                        {/*
+                            Die Balkenreihe: wo man steht, und dass es weitergeht.
+
+                            Zwei Faelle, zwei Arten von Bewegung:
+
+                            Im STAPEL aendert sich die Reihe von selbst — der
+                            breite Balken sitzt an einer anderen Stelle, und die
+                            Breiten laufen dorthin. Da genuegt der Uebergang.
+
+                            Bei EINZELBILDERN sieht die Reihe vorher und nachher
+                            gleich aus (Stummel, Balken, Stummel). Dort kann
+                            nichts "sich aendern", also muss der Schritt selbst
+                            gezeigt werden: Die Reihe rueckt um eine Stelle in die
+                            gegangene Richtung, und der Balken waechst aus der
+                            Breite eines Stummels heran — so, als waere der
+                            Stummel von dort gerade der aktuelle geworden.
+
+                            Farbe nach Thema: Die Reihe steht am unteren Rand des
+                            BEREICHS, nicht auf dem Bild. Weiss war dort im hellen
+                            Thema auf hellgrauem Grund unsichtbar.
+                        */}
+                        {state.sideSheetMode !== 'brush' && showDots && stackBars && (
+                            <div
+                                key={stackBars.isSingle
+                                    ? `bars-single-${selectedId}`
+                                    : (stackBars.members[0]?.id ?? 'bars')}
+                                style={transition !== 'none'
+                                    ? { animation: `bars-step-${transition} 340ms cubic-bezier(0.16,1,0.3,1) both` }
+                                    : undefined}
+                                className="absolute bottom-5 left-0 right-0 flex justify-center items-center gap-1.5 pointer-events-none z-40
+                                    opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            >
+                                {stackBars.hasPrevStack && (
+                                    <span className={`h-[3px] w-2 rounded-full mr-1 transition-all duration-200
+                                        ${stackBars.atStart
+                                            ? 'bg-zinc-900/45 dark:bg-white/45'
+                                            : 'bg-zinc-900/15 dark:bg-white/15'}`} />
+                                )}
+                                {stackBars.members.map((m, i) => (
+                                    <span
+                                        key={m.id}
+                                        style={stackBars.isSingle && transition !== 'none'
+                                            ? { animation: `bar-activate-${transition} 340ms cubic-bezier(0.16,1,0.3,1) both` }
+                                            : undefined}
+                                        className={`h-[3px] rounded-full transition-all duration-200 ${i === stackBars.current
+                                            ? 'w-7 bg-zinc-900/80 dark:bg-white/90'
+                                            : 'w-4 bg-zinc-900/25 dark:bg-white/30'}`}
+                                    />
+                                ))}
+                                {stackBars.hasNextStack && (
+                                    <span className={`h-[3px] w-2 rounded-full ml-1 transition-all duration-200
+                                        ${stackBars.atEnd
+                                            ? 'bg-zinc-900/45 dark:bg-white/45'
+                                            : 'bg-zinc-900/15 dark:bg-white/15'}`} />
+                                )}
+                            </div>
+                        )}
+
                         {state.sideSheetMode !== 'brush' && (
-                            <div className={`absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
-                                <div className="flex items-center gap-1.5 pointer-events-auto">
-                                    {/* Blaettern steht jetzt in derselben Zeile wie die
-                                        uebrigen Handlungen am Bild. An den Seitenraendern
-                                        lagen die Pfeile weit auseinander und mitten im
-                                        Motiv; unten bilden sie mit "Mehr" und "Bearbeiten"
-                                        eine Gruppe, die man an einem Ort findet. */}
-                                    {idx > 0 && (
-                                        <button
-                                            onClick={() => handleSelectWithin(images[idx - 1].id)}
-                                            aria-label={t('previous') || 'Zurück'}
-                                            className={FLOATING_BTN_ICON}
-                                        >
-                                            <ChevronLeft className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                    {idx < images.length - 1 && (
-                                        <button
-                                            onClick={() => handleSelectWithin(images[idx + 1].id)}
-                                            aria-label={t('next') || 'Weiter'}
-                                            className={FLOATING_BTN_ICON}
-                                        >
-                                            <ChevronRight className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                    {img.generationPrompt && (
+                            <div className={`absolute ${showDots ? 'bottom-12' : 'bottom-6'} left-0 right-0 flex justify-center pointer-events-none z-40 transition-opacity duration-200 ${isMobile && img.isGenerating ? 'opacity-100' : isMobile ? 'hidden' : 'opacity-60 group-hover:opacity-100'}`}>
+                                <div className="relative flex items-center gap-1.5 pointer-events-auto">
+                                    <div className="flex items-center gap-1.5">
+                                    {/* "Mehr" steht oben im Blatt, hinter dem Herunterladen.
+                                        Hier unten waere es dasselbe ein zweites Mal — und
+                                        der Platz ueber dem Bild gehoert dem Bild. */}
+                                    {img.generationPrompt && !headerSlot && (
                                         <Tooltip text={t('generate_more')} shortcut="M">
                                             <button
                                                 onClick={() => actions.handleGenerateMore(img)}
@@ -860,13 +1032,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                             </button>
                                         </Tooltip>
                                     )}
-                                    {!isSideSheetVisible && !showBlob && (
-                                        <Tooltip text={t('open_editing_panel')} shortcut="E">
-                                            <button onClick={() => setIsSideSheetVisible(true)} className={FLOATING_BTN}>
-                                                {t('nav_edit')}
-                                            </button>
-                                        </Tooltip>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -885,12 +1051,27 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             // oben aus, damit es mit der Eingabe daneben auf einer
                             // Linie beginnt. Das war die falsche Haelfte: Buendig
                             // werden soll die Box, nicht das Bild.
-                            className="absolute inset-0 flex justify-center items-center"
+                            // Mit Insel: linksbuendig, damit das Bild unmittelbar an
+                            // das Blatt heranrueckt. Mittig blieb zwischen beiden ein
+                            // Streifen leeren Grundes stehen, der nach Luecke aussah
+                            // und nicht nach Rand. Ohne Insel wie bisher mittig.
+                            //
+                            // Linksbuendig nur, solange links auch WIRKLICH ein
+                            // Blatt steht. Beim Markieren faehrt es ein, seine
+                            // Spalte bleibt aber als Null-Breite stehen — das Bild
+                            // klebte dadurch an der linken Fensterkante statt mittig
+                            // zu stehen. Kein Blatt, keine Buendigkeit.
+                            className={`absolute inset-0 flex items-center ${isSheetColumn && isSideSheetActuallyVisible ? 'justify-start' : 'justify-center'}`}
                             style={state.sideSheetMode === 'brush' ? { paddingBottom: BRUSH_BOTTOM_RESERVE } : undefined}
                         >
                             {displayBox.width > 0 && displayBox.height > 0 && (
                                 <div
-                                    className={`relative shrink-0 transition-[opacity,transform] duration-[180ms] ease-in ${isExiting ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}
+                                    // Hinaus ist die Spiegelung von hinein: derselbe
+                                    // Massstab (94 %), nur kuerzer und anziehend statt
+                                    // ausklingend. Vorher waren es 90 % in 180 ms gegen
+                                    // 93 % in 380 ms — zwei Bewegungen, die nichts
+                                    // miteinander zu tun hatten.
+                                    className={`relative shrink-0 transition-[opacity,transform] duration-[180ms] ease-[cubic-bezier(0.4,0,1,1)] ${isExiting ? 'opacity-0 scale-[0.94]' : 'opacity-100 scale-100'}`}
                                     style={{ width: displayBox.width, height: displayBox.height }}
                                 >
                                     {/* Loading state while generating or waiting for image */}
@@ -908,8 +1089,15 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         }
                                         return <BlobBackground />;
                                     })()}
-                                    {/* Previous image stays visible during navigation to prevent white flash */}
-                                    {!isMainLoaded && !showBlob && prevLoadedSrcRef.current && (
+                                    {/*
+                                        Das vorige Bild haelt die Flaeche, bis das neue
+                                        etwas zu zeigen hat — innerhalb eines Stapels bis
+                                        dessen Vorschaubild steht, beim Wechsel zwischen
+                                        Stapeln bis das Wischen vorbei ist (dort IST es
+                                        das, worueber gewischt wird).
+                                    */}
+                                    {!isMainLoaded && !showBlob && prevLoadedSrcRef.current
+                                        && (transition !== 'none' || thumbReadyId !== img.id) && (
                                         <img
                                             src={prevLoadedSrcRef.current}
                                             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
@@ -920,13 +1108,18 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                         <div className={`absolute inset-0 ${showBlob ? 'overflow-hidden' : ''}`}>
                                             <img
                                                 src={img.thumbSrc}
+                                                onLoad={() => setThumbReadyId(img.id)}
                                                 className={`w-full h-full object-contain pointer-events-none ${showBlob ? 'blur-xl brightness-100 dark:brightness-50 scale-110' : ''}`}
                                                 style={
                                                     transition !== 'none'
                                                         ? { animation: `detail-img-swipe-${transition} 260ms cubic-bezier(0.25,1,0.5,1) both` }
                                                         : suppressEntryAnimRef.current
                                                             ? {}
-                                                            : { animation: 'detail-img-in 220ms cubic-bezier(0.25,1,0.5,1) both' }
+                                                                                            // Der Eintritt in die Ansicht: deutlicher und
+                                                            // weicher auslaufend als frueher (0.96 in 220 ms
+                                                            // sah man kaum). Das Bild kommt aus einer Kachel,
+                                                            // es soll sichtbar ankommen.
+                                                            : { animation: 'view-in 280ms cubic-bezier(0.16,1,0.3,1) both' }
                                                 }
                                                 alt=""
                                             />
@@ -1030,7 +1223,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 )}
 
                                 {subMenu === 'shapes' && (
-                                    <div className={`bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full px-2 py-1.5 pointer-events-auto flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200`}>
+                                    <div className={`bg-white/95 dark:bg-[#1B1B20]/95 backdrop-blur-xl ${Theme.Effects.Shadow} rounded-full px-2 py-1.5 pointer-events-auto flex items-center gap-2 animate-in slide-in-from-bottom-2 fade-in duration-200`}>
                                         <button
                                             onClick={() => {
                                                 actions.setMaskTool('select');
@@ -1064,7 +1257,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                                 )}
 
                                 {subMenu === 'brush' && (
-                                    <div className={`bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full px-5 py-2 pointer-events-auto flex items-center gap-4 w-64 animate-in slide-in-from-bottom-2 fade-in duration-200`}>
+                                    <div className={`bg-white/95 dark:bg-[#1B1B20]/95 backdrop-blur-xl ${Theme.Effects.Shadow} rounded-full px-5 py-2 pointer-events-auto flex items-center gap-4 w-64 animate-in slide-in-from-bottom-2 fade-in duration-200`}>
                                         <span className="text-[11px] font-medium text-zinc-500 w-8">{state.brushSize}px</span>
                                         <input
                                             type="range"
@@ -1088,7 +1281,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                             </div>
 
                             {/* Primary Row: 3 Tools + Done */}
-                            <div className={`flex items-center gap-1.5 p-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border border-black/5 dark:border-white/5 ${Theme.Effects.Shadow} rounded-full pointer-events-auto overflow-hidden`}>
+                            <div className={`flex items-center gap-1.5 p-3 bg-white/95 dark:bg-[#1B1B20]/95 backdrop-blur-xl ${Theme.Effects.Shadow} rounded-full pointer-events-auto overflow-hidden`}>
                                 <Tooltip text={t('tooltip_tool_text') || 'Text platzieren'} side="top">
                                     <button
                                         onClick={() => {
@@ -1147,33 +1340,81 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                     // Linie daneben waere eine zweite Aussage ueber dieselbe
                     // Grenze. Der Ziehgriff zum Verbreitern sitzt ohnehin dort
                     // und zeigt sie an, sobald man ihn braucht.
-                    className={`flex flex-col relative md:overflow-hidden bg-white dark:bg-zinc-950 md:shrink-0 md:transition-[width,height,padding-top] md:duration-300 md:ease-in-out motion-reduce:md:transition-none ${!isSideSheetActuallyVisible && (isMobile || isRowLayout) ? 'hidden' : ''}`}
+                    /*
+                        Als schwebende Insel links.
+
+                        Das Blatt ist keine Wand am Fensterrand mehr, sondern eine
+                        Flaeche, die auf dem dunklen Grund liegt: ringsum Abstand,
+                        runde Ecken, eigener Untergrund. Dadurch gehoert der Rest
+                        des Fensters sichtbar dem Bild — und das Blatt liest sich
+                        als EIN Ding, nicht als die zweite Haelfte einer Teilung.
+
+                        Links, weil der Blick dort anfaengt: erst wer das ist und
+                        was man tun kann, dann das Bild.
+                    */
+                    // Waehrend des Ziehens KEINE Breitenanimation: Sonst laeuft
+                    // die Kante dem Zeiger hinterher, und das fuehlt sich an wie
+                    // ein Gummiband statt wie ein Griff.
+                    className={`flex flex-col relative md:overflow-hidden md:shrink-0 ${isResizing ? '' : 'md:transition-[width,height,padding-top] md:duration-[260ms] md:ease-[cubic-bezier(0.16,1,0.3,1)]'} motion-reduce:md:transition-none
+                        ${isSheetColumn
+                            // Im hellen Modus eine Haarlinie dazu: Weiss auf Zink-50
+                            // ist ein Unterschied von drei Prozent Helligkeit — der
+                            // Schatten allein traegt die Kante dort nicht.
+                            // Eine Spalte, keine Insel: Sie reicht oben, unten und
+                            // links an den Rand. Die Insel brauchte Abstand ringsum,
+                            // und genau der lag auch zwischen Blatt und Bild — jetzt
+                            // stossen sie aneinander, und die Kante entsteht aus dem
+                            // Wechsel der Flaeche.
+                            ? `md:order-first ${Theme.Colors.SheetBg}
+                                md:animate-[sheet-in_260ms_cubic-bezier(0.16,1,0.3,1)_backwards]`
+                            // Schmale Geraete: alles unter dem Bild ist EIN Blatt,
+                            // und es reicht bis zur Unterkante. Vorher war es
+                            // durchsichtig und endete mit seinem Inhalt — darunter
+                            // kam der Grund wieder zum Vorschein, als waere die
+                            // Seite nicht fertig geworden. `flex-1` fuellt den Rest,
+                            // auch wenn wenig darin steht.
+                            : `flex-1 ${Theme.Colors.SheetBg}`}
+                        ${!isSideSheetActuallyVisible && isSheetColumn ? 'hidden' : ''}`}
                     style={isMobile
                         ? undefined
-                        : isRowLayout
-                            // Keine gesetzte Hoehe: Die Leiste nimmt, was das Bild
-                            // uebrig laesst. Damit rueckt sie unmittelbar an das
-                            // Bild heran, und es gibt nichts mehr zu ziehen.
-                            //
-                            // Ausgeblendet wird sie ueber `hidden` in der
-                            // Klassenliste, nicht ueber eine Hoehe von 0: Im
-                            // Seitenmodus schrumpft eine Breite sichtbar zusammen,
-                            // hier gibt es nichts zu schrumpfen — die Leiste
-                            // bekommt ihre Hoehe vom uebrigen Platz, und 0 waere
-                            // wirkungslos geblieben. Genau daran lag es, dass
-                            // Ausblenden im Zeilenmodus nichts tat.
-                            ? { width: '100%' }
-                            : {
-                                width: isSideSheetActuallyVisible ? SIDEBAR_WIDTH : '0px',
-                                paddingTop: Math.max(0, imageTopOffset - PANEL_INNER_PT),
-                            }}
+                        : {
+                            width: isSideSheetActuallyVisible ? SIDEBAR_WIDTH : '0px',
+                            // Mit Kopf im Blatt faengt das Blatt oben an.
+                            paddingTop: headerSlot ? 0 : Math.max(0, imageTopOffset - PANEL_INNER_PT),
+                        }}
                 >
-                    {/* Resizer Handle — desktop only */}
+                    {/*
+                        Der Griff an der rechten Kante des Blattes.
+
+                        Eine Flaeche von acht Pixeln, die den Zeiger annimmt; die
+                        sichtbare Linie erscheint erst nach einer halben Sekunde
+                        Verweilen und ist zwei Pixel breit. Beim Ziehen bleibt sie
+                        stehen. Kein Griff mit Punkten, keine dauerhafte Linie —
+                        die Kante gehoert dem Blatt, nicht dem Werkzeug.
+                    */}
+                    {isSheetColumn && isSideSheetActuallyVisible && (
+                        <div
+                            onPointerEnter={armEdge}
+                            onPointerLeave={disarmEdge}
+                            onPointerDown={startResize}
+                            onDoubleClick={() => { setSheetWidth(0); setSheetWidthState(null); }}
+                            className="hidden md:block absolute top-0 right-0 bottom-0 w-2 translate-x-1/2 z-30 cursor-col-resize"
+                            aria-label={t('resize') || 'Breite ändern'}
+                            role="separator"
+                        >
+                            <div
+                                className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] rounded-full
+                                    bg-zinc-400/60 dark:bg-zinc-500/50
+                                    transition-opacity duration-200
+                                    ${edgeArmed || isResizing ? 'opacity-100' : 'opacity-0'}`}
+                            />
+                        </div>
+                    )}
+
 
                     <SideSheet
                         key={state.selectedImage?.id ?? 'no-selection'}
-                        width={isMobile || isRowLayout ? '100%' : `${SIDEBAR_WIDTH_PX}px`}
-                        rowLayout={isRowLayout}
+                        width={isMobile ? '100%' : `${SIDEBAR_WIDTH_PX}px`}
                         disableMobileSheet={isMobile}
                         selectedImage={state.selectedImage}
                         selectedImages={state.selectedImages}
@@ -1189,6 +1430,7 @@ export const DetailPage: React.FC<DetailPageProps> = ({
                         onBrushResizeEnd={() => actions.setIsBrushResizing(false)}
                         onGenerate={actions.handleGenerate}
                         onUpdateAnnotations={actions.handleUpdateAnnotations}
+                        headerSlot={headerSlot}
                         onUpdatePrompt={actions.handleUpdatePrompt}
                         onUpdateVariables={actions.handleUpdateVariables}
                         onDeleteImage={actions.handleDeleteImage}

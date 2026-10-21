@@ -576,8 +576,20 @@ export const useGeneration = ({
 
         // Record which image was active when generate was pressed — used to guard auto-navigate
         generationSourceIds.current[newId] = activeIdRef.current;
-        // Auto-navigate to finished result when the async job completes
-        navigateOnCompleteIds.current.add(newId);
+        /*
+            Nur Einzelauftraege holen den Nutzer zum Ergebnis.
+
+            Bei einem Stapelauftrag zeigt `generationSourceIds` fuer JEDES Bild
+            auf dasselbe gerade offene Bild — die Bedingung "ich schaue noch auf
+            die Quelle" ist damit bei allen erfuellt, und jedes Fertigwerden
+            sprang erneut dorthin. Wer zehn Bilder erzeugt, wird zehnmal
+            weggerissen, auch wenn er laengst woanders scrollt. Dass etwas
+            fertig ist, sagt die Meldung oben rechts; der Weg dorthin ist ein
+            Klick und kein Zwang.
+        */
+        if (batchSize === 1) {
+            navigateOnCompleteIds.current.add(newId);
+        }
 
         // Immediately snap to the loading skeleton so user sees progress
         if (shouldSnap) {

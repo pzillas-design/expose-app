@@ -209,7 +209,10 @@ html:not(.dark) {
 @keyframes feed-zoom-return {
   from {
     opacity: 0.5;
-    transform: scale(1.28);
+    /* 1,16 statt 1,28: Derselbe Schritt wie ueberall, nur andersherum —
+       vorher sprang die Kachel sichtbar staerker als alle anderen
+       Uebergaenge der Anwendung. */
+    transform: scale(1.16);
   }
 
   to {
@@ -227,10 +230,113 @@ html:not(.dark) {
   }
 }
 
-@keyframes detail-img-in {
+/*
+ * Die Vorschlaege der KI kommen herein.
+ *
+ * Eine Kurve, die schnell anfaengt und weich auslaeuft (0.16,1,0.3,1): Das
+ * liest sich als "ist angekommen", waehrend eine gleichfoermige Bewegung
+ * stockend wirkt. Dazu ein Hauch Massstab — ohne ihn sieht ein reines
+ * Hochschieben nach Liste aus, nicht nach Einsetzen.
+ */
+@keyframes chip-in {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: translateY(8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/*
+ * Aus dem Chip wird die Flaeche.
+ *
+ * Kein Einblenden einer zweiten Box, sondern dasselbe Element, das waechst:
+ * Es startet in Chipgroesse und geht auf seine volle Hoehe. Deshalb von
+ * 0.96 statt von 0 — bei 0 saehe es aus, als erschiene etwas Neues.
+ */
+@keyframes panel-grow {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+
+  60% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Der Inhalt kommt eine Spur spaeter als die Flaeche, die ihn traegt. */
+@keyframes panel-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/*
+ * Das Blatt kommt von LINKS herein — ueberall, wo eines aufgeht.
+ *
+ * Vierzig Pixel in 260 ms: weit genug, dass man die Richtung sieht, kurz
+ * genug, dass niemand darauf wartet. Vorher waren es vierzehn Pixel, was eher
+ * nach Zittern aussah als nach Hereinkommen, und in der Galerie erschien das
+ * Blatt ueberhaupt ohne Bewegung — und rechts.
+ *
+ * Wird mit fill-mode `backwards` benutzt, nicht `both`: Bei `both` bleibt der
+ * Endzustand als Transformation stehen — auch translateX(0) ist eine —, und
+ * ein Vorfahr mit Transformation macht `position: fixed` relativ zu sich. Alle
+ * Fenster, die im Blatt geoeffnet wurden, sassen dadurch in Panelbreite statt
+ * im Bildschirm.
+ */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes sheet-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
+/*
+ * Der Eintritt: Inhalt waechst aus 94 Prozent heran.
+ *
+ * Das ist der eine Massstab fuer alle Ansichtswechsel — Kachel zu Stapel,
+ * Stapel zu Bild, Ebenen-Editor. Gegenstueck ist der Rueckkehr-Zoom
+ * (feed-zoom-return), der von oben kommt statt von unten: Hinein waechst
+ * es heran, zurueck schrumpft es auf die Kachel zu.
+ *
+ * Fehlte lange: Die Aufrufe standen in der Anwendung, der Name zeigte aber
+ * ins Leere. Ein unbekannter Animationsname ist kein Fehler, der auffaellt —
+ * der Browser laesst ihn still liegen, und die Ansicht erschien hart. Genau
+ * das war das "Wackeln" beim Bildwechsel: nicht zu viel Bewegung, sondern
+ * gar keine.
+ */
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
   }
 
   to {
@@ -239,7 +345,132 @@ html:not(.dark) {
   }
 }
 
-/* Snappy step-in for the credits top-up flow (slight upward + scale overshoot) */
+/*
+ * Die Balkenreihe rueckt eine Stelle weiter.
+ *
+ * Bewusst OHNE Deckkraft: Die Reihe zeigt sich nur beim Darueberfahren, und
+ * eine Animation mit `fill: both` haelt den Endwert fest — sie waere nach dem
+ * ersten Wechsel dauerhaft sichtbar geblieben, auch wenn der Zeiger laengst
+ * woanders ist. Bewegt wird deshalb nur die Lage.
+ *
+ * Der Weg ist kurz (14 Pixel): Die Reihe ist ein Hinweis am Rand, kein
+ * Hauptdarsteller. Richtung und Kurve wie beim Bild darueber.
+ */
+@keyframes bars-step-next {
+  from { transform: translateX(14px); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes bars-step-prev {
+  from { transform: translateX(-14px); }
+  to   { transform: translateX(0); }
+}
+
+/*
+ * Bei Einzelbildern waechst der Balken aus einem Stummel heran.
+ *
+ * Vorher und nachher sieht die Reihe gleich aus — ohne das hier passierte
+ * beim Weiterblaettern sichtbar nichts. Der Balken startet auf Stummelbreite
+ * und an der Stelle, an der der Stummel stand, aus dem man kommt; damit liest
+ * sich der Wechsel als "der von dort ist jetzt der hier".
+ */
+@keyframes bar-activate-next {
+  from { width: 8px; transform: translateX(18px); }
+  to   { width: 28px; transform: translateX(0); }
+}
+
+@keyframes bar-activate-prev {
+  from { width: 8px; transform: translateX(-18px); }
+  to   { width: 28px; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes view-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes bars-step-next {
+    from { transform: none; } to { transform: none; }
+  }
+  @keyframes bars-step-prev {
+    from { transform: none; } to { transform: none; }
+  }
+  @keyframes bar-activate-next {
+    from { width: 28px; transform: none; } to { width: 28px; transform: none; }
+  }
+  @keyframes bar-activate-prev {
+    from { width: 28px; transform: none; } to { width: 28px; transform: none; }
+  }
+}
+
+/*
+ * Die Ablageflaeche kommt heran, wenn eine Datei in der Luft ist.
+ *
+ * Derselbe Massstab wie bei jedem anderen Eintritt (0.94), nur kuerzer: Es ist
+ * ein Angebot, kein Ansichtswechsel.
+ */
+@keyframes drop-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/*
+ * Der Pfeil atmet, solange die Datei in der Luft ist.
+ *
+ * Vier Pixel, anderthalb Sekunden, weiches Ein und Aus: gerade genug, dass das
+ * Auge "hier hinein" versteht, und wenig genug, dass es neben einem Foto nicht
+ * zappelt.
+ */
+@keyframes drop-arrow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes drop-panel-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes drop-arrow {
+    0%, 100% { transform: none; }
+  }
+}
+
+/*
+ * Der Stapel faechert auseinander.
+ *
+ * Auf der Kachel liegen zwei graue Blaetter hinter dem Deckbild. Geht der
+ * Stapel auf, kommt jede Zeile aus der Lage der vorigen heran — weiter unten
+ * heisst weiter her (`--fan-from`) — und wird dabei aus einer grauen Flaeche
+ * zu ihrem Bild. Das Bild selbst blendet ueber dem Grau ein, nicht aus dem
+ * Nichts: So liest sich die Bewegung als "die Blaetter werden zu den Bildern".
+ */
+@keyframes stack-fan {
+  from {
+    opacity: 0;
+    transform: translateY(var(--fan-from, -24px)) scaleX(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes stack-fan {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
 @keyframes credits-step-in {
   from {
     opacity: 0;

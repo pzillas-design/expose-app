@@ -530,6 +530,12 @@ export const imageService = {
             activeTemplateId: record.generation_params?.activeTemplateId,
             variableValues: record.generation_params?.variableValues,
             userId: record.user_id,
+            // Nur die Liste, nicht die Huelle: Version und Sprache sind
+            // Sache der Route, die den Zwischenspeicher schreibt.
+            editSuggestions: Array.isArray(record.edit_suggestions?.items)
+                ? record.edit_suggestions.items
+                : undefined,
+            editSuggestionsLang: record.edit_suggestions?.lang,
             jobId: record.job_id || undefined,
             createdAt: new Date(record.created_at).getTime(),
             generationStartTime: new Date(record.created_at).getTime(),
