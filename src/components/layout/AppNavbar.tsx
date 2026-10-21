@@ -692,28 +692,16 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                         opacity: surfaceOpacity,
                     }}
                 />
-                {/* Die Unterkante als Flaeche, nicht als Linie: 20 Pixel, die
-                    nach unten auslaufen. Sie trennt, ohne etwas zu behaupten —
-                    eine gezogene Linie waere an dieser Stelle die einzige in
-                    der ganzen Anwendung. */}
-                <div
-                    aria-hidden
-                    /*
-                        Die Kante laeuft in der Farbe der Leiste aus, nicht in
-                        Schwarz.
+                {/*
+                    Keine Kante unter der Leiste — weder Linie noch Schatten.
 
-                        Im hellen Thema ist die Leiste selbst grau — ein
-                        dunkler Schatten darunter sah aus, als haette jemand
-                        eine zweite, falsche Kante gezeichnet. Jetzt setzt sich
-                        die Flaeche der Leiste nach unten fort und verliert
-                        sich; im dunklen Thema bleibt es beim Schatten, weil
-                        dort Dunkel das ist, was ausklingt.
-                    */
-                    className="absolute left-0 right-0 top-full h-5 -z-10
-                        bg-gradient-to-b from-[#EDEDF0]/85 to-transparent
-                        dark:from-black/40 dark:to-transparent"
-                    style={{ opacity: surfaceOpacity }}
-                />
+                    Hier lag zuletzt ein Verlauf von zwanzig Pixeln. Als
+                    Schatten wirkte er falsch (die Leiste ist im hellen Thema
+                    selbst grau), und in der Farbe der Leiste wirkte er wie ein
+                    unsauberer Rand. Was trennt, ist die Flaeche selbst: Die
+                    Leiste ist eine Spur anders gefaerbt als die Seite, und das
+                    genuegt. So machen es die Systemleisten auch.
+                */}
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
                     {isBlogPost ? (
@@ -1025,14 +1013,6 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 aria-hidden
                 className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
                     bg-[#EDEDF0]/85 dark:bg-[#0C0C11]/80"
-            />
-            <div
-                aria-hidden
-                /* Siehe Galerie-Kopfzeile: im hellen Thema die Farbe der
-                   Leiste, nicht Schwarz. */
-                className="absolute left-0 right-0 top-full h-5 -z-10
-                    bg-gradient-to-b from-[#EDEDF0]/85 to-transparent
-                    dark:from-black/40 dark:to-transparent"
             />
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">

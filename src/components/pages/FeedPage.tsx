@@ -13,6 +13,7 @@ import { FeedHeroSection } from '../layout/FeedHeroSection';
 import { LayerComposer } from '@/components/composer/LayerComposer';
 import { DropPanel } from '@/components/ui/DropPanel';
 import { StackList } from '@/components/feed/StackList';
+import { getAverageColor } from '@/utils/averageColor';
 import { GeneratingRing } from '@/components/ui/GeneratingRing';
 
 /* ── TTL helpers ── */
@@ -374,6 +375,19 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
     }, [targetOpacity]);
     const isGen = !!img.isGenerating;
     const isGroup = groupCount > 1;
+
+    /*
+        Die mittlere Farbe des Deckbilds, einmal je Bild und Sitzung.
+        Nur fuer Stapel — Einzelbilder haben nichts, was dahinterliegt.
+    */
+    const [stackColor, setStackColor] = React.useState<string | null>(null);
+    const colorSrc = img.thumbSrc || img.src;
+    React.useEffect(() => {
+        if (!isGroup || !colorSrc) { setStackColor(null); return; }
+        let alive = true;
+        getAverageColor(colorSrc).then(c => { if (alive) setStackColor(c); });
+        return () => { alive = false; };
+    }, [isGroup, colorSrc]);
     const playedReturnRef = React.useRef(false);
     if (isLastViewed) playedReturnRef.current = true;
 
@@ -424,81 +438,55 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
             >
 
                 {/*
-                    Was unter dem Deckbild hervorschaut, sind die Bilder selbst.
+                    Die Blaetter hinter dem Deckbild tragen dessen Farbe.
 
-                    Vorher zwei graue Balken. Die sagten "da ist noch mehr", aber
-                    nicht WAS — und bei einem Stapel aus Fassungen desselben
-                    Fotos ist genau das die Auskunft, die man sucht.
+                    Drei Fassungen hat diese Stelle gehabt: graue Balken (sagen
+                    nichts), dann das Bild selbst (ruckelte beim Ueberfahren,
+                    weil zwei weitere Bildebenen mitskaliert werden mussten, und
+                    sah an der Kante grob aus) — und jetzt eine einzige Flaeche
+                    in der mittleren Farbe des Deckbilds. Die kostet im Betrieb
+                    gar nichts: Gerechnet wird einmal je Bild und Sitzung auf
+                    einer 1x1-Leinwand, danach ist es eine Hintergrundfarbe.
 
-                    Gezeigt wird dabei das DECKBILD selbst, nicht die
-                    Geschwister. Das kostet genau nichts: Dieselbe URL liegt
-                    bereits geladen und dekodiert im Zwischenspeicher, es
-                    kommt keine einzige Anfrage dazu. Die Geschwister zu laden
-                    waere ehrlicher, brachte aber zwei zusaetzliche Vorschauen
-                    je Stapel — fuer elf sichtbare Pixel, abgedunkelt, an denen
-                    niemand einen Unterschied erkennt. Die Fassungen eines
-                    Stapels sind ohnehin Varianten desselben Fotos.
-
-                    Nur den sichtbaren Streifen zu laden ginge nicht ohne
-                    serverseitigen Zuschnitt je Bild — eine eigene Verarbeitung
-                    pro Kachel, teurer als die Vorschau, die ohnehin da ist.
-                    Stattdessen sitzt die Vorschau mit `object-bottom` so, dass
-                    genau die Unterkante hervorsieht.
+                    Je weiter hinten, desto dunkler — zwei Blaetter in
+                    derselben Farbe waeren ein Block, und Tiefe entsteht aus
+                    dem Unterschied. Ohne Farbe (CORS verweigert das Auslesen)
+                    bleibt es beim Grau von frueher.
                 */}
-                {isGroup && (() => {
-                    const sheetSrc = img.thumbSrc || img.src;
-                    const Sheet: React.FC<{ src?: string; className: string; style: React.CSSProperties }> = ({ src, className, style }) => (
-                        <div className={className} style={style}>
-                            {src && (
-                                <img
-                                    src={src}
-                                    alt=""
-                                    aria-hidden
-                                    loading="lazy"
-                                    decoding="async"
-                                    className="w-full h-full object-cover object-bottom brightness-[0.97] dark:brightness-[0.75]"
-                                />
-                            )}
-                        </div>
-                    );
-                    return (
-                        <>
-                            {groupCount > 2 && (
-                                <Sheet
-                                    src={sheetSrc}
-                                    // Graue Flaeche bleibt als Unterlage: Solange das
-                                    // Bild nicht geladen ist, steht dort dasselbe wie
-                                    // frueher, statt eines Lochs.
-                                    className="absolute h-full -z-20 overflow-hidden bg-zinc-200 dark:bg-zinc-800"
-                                    style={{
-                                        left: '10px', right: '10px',
-                                        bottom: 0,
-                                        // translateY statt bottom: bottom ist eine
-                                        // Layout-Eigenschaft und zwingt den Browser bei
-                                        // jedem Frame zu einem neuen Umbruch. transform
-                                        // erledigt die Grafikkarte allein.
-                                        transform: `translateY(${isKeyboardActive ? 28 : 20}px) scaleX(0.93)`,
-                                        transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
-                                        willChange: 'transform',
-                                        boxShadow: '0 1px 2px rgba(0,0,0,0.10)',
-                                    }}
-                                />
-                            )}
-                            <Sheet
-                                src={sheetSrc}
-                                className="absolute h-full -z-10 overflow-hidden bg-zinc-300 dark:bg-zinc-700"
+                {isGroup && (
+                    <>
+                        {groupCount > 2 && (
+                            <div
+                                className={`absolute h-full -z-20 ${stackColor ? '' : 'bg-zinc-200 dark:bg-zinc-800'}`}
                                 style={{
-                                    left: '5px', right: '5px',
+                                    left: '10px', right: '10px',
                                     bottom: 0,
-                                    transform: `translateY(${isKeyboardActive ? 16 : 11}px) scaleX(0.96)`,
+                                    ...(stackColor ? { backgroundColor: stackColor, filter: 'brightness(0.82)' } : {}),
+                                    // translateY statt bottom: bottom ist eine
+                                    // Layout-Eigenschaft und zwingt den Browser bei
+                                    // jedem Frame zu einem neuen Umbruch. transform
+                                    // erledigt die Grafikkarte allein.
+                                    transform: `translateY(${isKeyboardActive ? 28 : 20}px) scaleX(0.93)`,
                                     transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
                                     willChange: 'transform',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.10)',
                                 }}
                             />
-                        </>
-                    );
-                })()}
+                        )}
+                        <div
+                            className={`absolute h-full -z-10 ${stackColor ? '' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                            style={{
+                                left: '5px', right: '5px',
+                                bottom: 0,
+                                ...(stackColor ? { backgroundColor: stackColor, filter: 'brightness(0.91)' } : {}),
+                                transform: `translateY(${isKeyboardActive ? 16 : 11}px) scaleX(0.96)`,
+                                transition: 'transform 260ms cubic-bezier(0.25,1,0.5,1)',
+                                willChange: 'transform',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                            }}
+                        />
+                    </>
+                )}
 
                 {/* Main card */}
                 <div className={`absolute inset-0 overflow-hidden ring-1 ring-black/5 dark:ring-white/10 ${isGen ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-white dark:bg-black group-hover:bg-zinc-50 dark:group-hover:bg-black transition-colors'}`}>
