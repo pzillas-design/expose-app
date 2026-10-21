@@ -166,12 +166,12 @@ const StackRow: React.FC<{
                     <span className="text-[14px] font-medium text-zinc-700 dark:text-zinc-200 tabular-nums">
                         {isOriginal ? 'Original' : `v${version}`}
                     </span>
+                    {/* Beim Platzhalter nur das Wort: Der Ring liegt auf dem
+                        Bild, wo man ohnehin hinsieht. Er ist fuer Fotos
+                        gezeichnet (helle Linie) und waere hier auf heller
+                        Flaeche unsichtbar — zwei Ringe fuer dieselbe Auskunft
+                        braucht es ohnehin nicht. */}
                     {isPending ? (
-                        {/* Nur das Wort: Der Ring liegt auf dem Bild, wo man
-                            ohnehin hinsieht. Er ist fuer Fotos gezeichnet
-                            (helle Linie) und waere hier auf heller Flaeche
-                            unsichtbar — zwei Ringe fuer dieselbe Auskunft
-                            braucht es ohnehin nicht. */}
                         <span className="text-[13px] text-zinc-400 dark:text-zinc-500">
                             {lang === 'de' ? 'wird erzeugt' : 'generating'}
                         </span>
