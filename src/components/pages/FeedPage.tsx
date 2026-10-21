@@ -193,9 +193,14 @@ const TileBadge: React.FC<{
     visible: boolean;
     onClick: (e: React.MouseEvent) => void;
     label: string;
-}> = ({ selected, count, pending, visible, onClick, label }) => (
+    /**
+     * Wo die Marke sitzt. Auf der Kachel oben links, in der Tageszeile dort,
+     * wo sonst der Pfeil steht — dieselbe Marke, zwei Plaetze.
+     */
+    wrapperClassName?: string;
+}> = ({ selected, count, pending, visible, onClick, label, wrapperClassName = 'absolute top-0 left-0 p-2.5 z-20' }) => (
     <div
-        className={`absolute top-0 left-0 p-2.5 z-20 ${visible ? 'cursor-pointer' : 'pointer-events-none'}`}
+        className={`${wrapperClassName} ${visible ? 'cursor-pointer' : 'pointer-events-none'}`}
         onClick={onClick}
     >
         <div
@@ -944,6 +949,17 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
             key,
             label: dayLabelOf(key, state?.currentLang === 'de' ? 'de' : 'en'),
             covers,
+            /*
+                Alle Bilder dieses Tages, nicht nur die Deckbilder.
+ 
+                Wer einen Tag markiert, meint den Tag — auch die Varianten in
+                den Stapeln, die er gerade nicht sieht. Sonst waere die Marke
+                an der Tageszeile etwas anderes als dieselbe Marke an einer
+                Kachel, und das waere eine Falle.
+            */
+            ids: rows
+                .filter(r => dayKeyOf(r.createdAt ?? r.items[0]?.createdAt) === key)
+                .flatMap(r => r.items.map(i => i.id)),
             // Die Frist haengt am Tag, nicht an der einzelnen Kachel. Steht die
             // Gruppe zu, sind die gelben Punkte an den Kacheln nicht zu sehen —
             // ohne diesen Wert verschwaende die Warnung mit dem Zuklappen, und
@@ -1530,6 +1546,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         let imgIdx = 0;
                                         return daySections.flatMap(sec => {
                                             const closed = !openDays.has(sec.key);
+                                            // Der Tag gilt als markiert, wenn jedes seiner Bilder markiert ist.
+                                            const dayPicked = sec.ids.length > 0 && sec.ids.every(id => selectedIdSet.has(id));
                                             const header = (
                                                 <button
                                                     key={`day-${sec.key}`}
@@ -1555,10 +1573,41 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                     className="col-span-full flex items-center gap-2 px-4 py-3.5 -my-5 sm:-my-8 rounded-2xl text-left
                                                         hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors duration-150 group/day"
                                                 >
-                                                    <ChevronRight
-                                                        className={`w-4 h-4 shrink-0 text-zinc-400 transition-transform duration-200 ${closed ? '' : 'rotate-90'}`}
-                                                        strokeWidth={2}
-                                                    />
+                                                    {/*
+                                                        Ein Platz, zwei Zeichen.
+
+                                                        Im Ruhezustand der Pfeil — er sagt, ob der Tag
+                                                        offen ist. Beim Ueberfahren (und solange etwas
+                                                        aus diesem Tag markiert ist) steht an derselben
+                                                        Stelle die Marke aus dem Raster: ein Klick, und
+                                                        der ganze Tag ist markiert. Zwei Zeichen
+                                                        nebeneinander waeren eine Zeile aus Symbolen
+                                                        gewesen, und der Pfeil haette daneben nichts
+                                                        mehr zu sagen gehabt.
+                                                    */}
+                                                    <span className="relative w-[26px] h-[26px] shrink-0 grid place-items-center">
+                                                        <ChevronRight
+                                                            className={`w-4 h-4 text-zinc-400 transition-[transform,opacity] duration-200
+                                                                ${closed ? '' : 'rotate-90'}
+                                                                ${dayPicked || !onToggleSelectStack ? '' : 'group-hover/day:opacity-0'}
+                                                                ${dayPicked ? 'opacity-0' : 'opacity-100'}`}
+                                                            strokeWidth={2}
+                                                        />
+                                                        {onToggleSelectStack && (
+                                                            <TileBadge
+                                                                selected={dayPicked}
+                                                                visible
+                                                                wrapperClassName={`absolute inset-0 grid place-items-center transition-opacity duration-200
+                                                                    ${dayPicked ? 'opacity-100' : 'opacity-0 group-hover/day:opacity-100'}`}
+                                                                label={state?.currentLang === 'de' ? 'Tag markieren' : 'Select day'}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    e.preventDefault();
+                                                                    onToggleSelectStack(sec.ids);
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </span>
                                                     {/* Dezenter: Die Kopfzeile ordnet, sie ist nicht
                                                         der Inhalt. Typo.H4 ist halbfett und in
                                                         Textfarbe — damit stand das Datum lauter da
