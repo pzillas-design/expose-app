@@ -14,6 +14,7 @@ import { LayerComposer } from '@/components/composer/LayerComposer';
 import { DropPanel } from '@/components/ui/DropPanel';
 import { StackList } from '@/components/feed/StackList';
 import { getAverageColor } from '@/utils/averageColor';
+import { IMAGE_FILE_ACCEPT } from '@/utils/imageFiles';
 import { GeneratingRing } from '@/components/ui/GeneratingRing';
 
 /* ── TTL helpers ── */
@@ -1580,7 +1581,7 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                 type="file"
                 id="feed-upload-input"
                 className="hidden"
-                accept="image/*"
+                accept={IMAGE_FILE_ACCEPT}
                 multiple
                 // Gleiche Regel wie beim Drop: Ist ein Stapel geöffnet, landen die
                 // Bilder dort statt in einem neuen.

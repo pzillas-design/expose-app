@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Upload } from 'lucide-react';
+import { IMAGE_FILE_ACCEPT, isUploadableImageFile } from '@/utils/imageFiles';
 
 interface VoiceUploadModalProps {
     isOpen: boolean;
@@ -35,7 +36,7 @@ export const VoiceUploadModal: React.FC<VoiceUploadModalProps> = ({ isOpen, onCl
                         e.preventDefault();
                         setIsDragOver(false);
                         const files: File[] = e.dataTransfer
-                            ? Array.from(e.dataTransfer.files as FileList).filter((f: File) => f.type.startsWith('image/'))
+                            ? Array.from(e.dataTransfer.files as FileList).filter(isUploadableImageFile)
                             : [];
                         if (files.length > 0) {
                             const dt = new DataTransfer();
@@ -56,7 +57,7 @@ export const VoiceUploadModal: React.FC<VoiceUploadModalProps> = ({ isOpen, onCl
                 <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept={IMAGE_FILE_ACCEPT}
                     multiple
                     className="hidden"
                     onChange={(e) => {

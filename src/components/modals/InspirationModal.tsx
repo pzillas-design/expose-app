@@ -3,6 +3,11 @@ import { Upload, Check, ArrowLeft, Clipboard } from 'lucide-react';
 import { Button } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { TranslationFunction } from '@/types';
+import {
+    IMAGE_FILE_ACCEPT,
+    isUploadableImageFile,
+    readImageFileAsDataUrl as fileToDataUrl,
+} from '@/utils/imageFiles';
 
 // ─── Crop logic (inlined from CropModal, no separate modal needed) ────────────
 type DragMode = 'move' | 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'w' | 'e' | null;
@@ -18,18 +23,6 @@ interface InspirationModalProps {
 }
 
 type ModalState = 'empty' | 'preview' | 'cropping';
-
-function fileToDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => {
-            if (typeof e.target?.result === 'string') resolve(e.target.result);
-            else reject(new Error('Failed to read file'));
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
 
 export const InspirationModal: React.FC<InspirationModalProps> = ({
     isOpen, onClose, onComplete, initialSrc, t, lang,
@@ -246,7 +239,7 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
                     setIsDragOver(false);
 
                     // 1. Native file drag
-                    const file = Array.from(e.dataTransfer.files as FileList).find((f: File) => f.type.startsWith('image/'));
+                    const file = Array.from(e.dataTransfer.files as FileList).find(isUploadableImageFile);
                     if (file) { loadImage(file); return; }
 
                     // 2. DataTransfer item (same-browser tab drag)
@@ -352,7 +345,7 @@ export const InspirationModal: React.FC<InspirationModalProps> = ({
             <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept={IMAGE_FILE_ACCEPT}
                 className="hidden"
                 onChange={async (e) => {
                     const file = e.target.files?.[0];

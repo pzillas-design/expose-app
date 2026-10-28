@@ -7,6 +7,7 @@ import { useNanoController } from '@/hooks/useNanoController';
 import { useGeminiLiveVoice, playVoiceSound } from '@/hooks/useGeminiLiveVoice';
 import type { VoiceDiagnostics, VoiceToolCallLog, VoiceTranscriptLog } from '@/types';
 import { imageNameOf } from '@/utils/imageName';
+import { isUploadableImageFile } from '@/utils/imageFiles';
 import { VOICE_ASSISTANT_PARKED } from '@/config/features';
 import { AppNavbar } from '@/components/layout/AppNavbar';
 import { DetailSheetHeader } from '@/components/layout/DetailSheetHeader';
@@ -444,7 +445,7 @@ export function App() {
             // SideSheet marks handled drops to prevent double-upload
             if ((e as any).__sideSheetHandled) return;
             e.preventDefault();
-            const files = (Array.from(e.dataTransfer?.files || []) as File[]).filter(f => f.type.startsWith('image/'));
+            const files = (Array.from(e.dataTransfer?.files || []) as File[]).filter(isUploadableImageFile);
             if (files.length === 0) return;
             // Auf der Erstellen-Seite ist ein fallengelassenes Bild eine Referenz,
             // kein neuer Upload — sonst tauchte es in der Galerie auf statt rechts.
