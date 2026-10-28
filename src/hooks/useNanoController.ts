@@ -4,6 +4,7 @@ import { imageService } from '../services/imageService';
 import { CanvasImage, ImageRow, AnnotationObject } from '../types';
 import { generateId } from '../utils/ids';
 import { downloadImage, downloadImagesAsZip } from '../utils/imageUtils';
+import { isUploadableImageFile } from '../utils/imageFiles';
 import { storageService } from '../services/storageService';
 // useCanvasNavigation.ts import removed - free canvas is no longer used
 import { useToast } from '../components/ui/Toast';
@@ -614,7 +615,7 @@ export const useNanoController = () => {
 
     const handleProcessFiles = useCallback((files: FileList | DataTransferItemList | File[], targetFolderId?: string) => {
         const dropped = (Array.from(files as any) as any[]).map(f => f instanceof File ? f : f.getAsFile?.()).filter((f): f is File => !!f);
-        const fileArray = dropped.filter(f => f.type.startsWith('image/'));
+        const fileArray = dropped.filter(isUploadableImageFile);
         if (fileArray.length === 0) {
             // Vorher ein stummes return: Der Nutzer sah die Einladung "Dateien
             // hier ablegen", liess los, und nichts geschah. Ein PDF wird nicht

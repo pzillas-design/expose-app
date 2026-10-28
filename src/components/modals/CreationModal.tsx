@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button, Typo, Theme, IconButton } from '@/components/ui/DesignSystem';
 import { TranslationFunction, PromptTemplate, getGenerationPriceUsd, formatPriceEur } from '@/types';
 import { loadGenerationSettings } from '@/utils/generationSettings';
+import { IMAGE_FILE_ACCEPT, isUploadableImageFile, readImageFileAsDataUrl } from '@/utils/imageFiles';
 import { X, Sparkles, Wand2, Ratio, ChevronDown, Check, Paperclip, Trash, Camera } from 'lucide-react';
 import { getCurrentProviderTierLabel } from '@/utils/modelLabels';
 
@@ -80,16 +81,14 @@ export const CreationModal: React.FC<CreationModalProps> = ({
     }, [isOpen, initialTemplate]);
 
     const processFilesLocally = (files: FileList | File[]) => {
-        Array.from(files).forEach(file => {
-            if (!file.type.startsWith('image/')) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target?.result as string;
-                if (result) {
-                    setAttachments(prev => [...prev, result]);
-                }
-            };
-            reader.readAsDataURL(file);
+        Array.from(files).forEach(async file => {
+            if (!isUploadableImageFile(file)) return;
+            try {
+                const result = await readImageFileAsDataUrl(file);
+                setAttachments(prev => [...prev, result]);
+            } catch (err) {
+                console.error('Attachment could not be read:', err);
+            }
         });
     };
 
@@ -208,7 +207,7 @@ export const CreationModal: React.FC<CreationModalProps> = ({
                                     id="creation-file-upload"
                                     className="hidden"
                                     multiple
-                                    accept="image/*"
+                                    accept={IMAGE_FILE_ACCEPT}
                                     onChange={handleFileInput}
                                 />
                                 <Button

@@ -12,6 +12,7 @@ import { useMobile } from '@/hooks/useMobile';
 import { InspirationModal } from '@/components/modals/InspirationModal';
 import { generateId } from '@/utils/ids';
 import { compressImage } from '@/utils/imageUtils';
+import { isUploadableImageFile, readImageFileAsDataUrl } from '@/utils/imageFiles';
 import { PRIMARY_PROVIDER } from '@/config/provider';
 import { Theme, Typo, Tooltip, RoundIconButton, Button } from '@/components/ui/DesignSystem';
 import { ContextTip, ContextTipChip } from '@/components/ui/ContextTip';
@@ -1138,7 +1139,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     // ── Reference Image ──
     // Listen for global paste-reference-image events (Cmd+V with image in clipboard on detail page)
     React.useEffect(() => {
-        const handler = (e: Event) => {
+        const handler = async (e: Event) => {
             const file = (e as CustomEvent<File>).detail;
             if (!file) return;
             // Erstellen-Ansicht: dort gibt es kein ausgewähltes Bild, das Referenzbild
@@ -1149,15 +1150,14 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                 if (props.onAddReference) props.onAddReference(file);
                 return;
             }
-            const reader = new FileReader();
-            reader.onload = ev => {
-                if (typeof ev.target?.result === 'string') {
-                    setViewingRefAnn(null);
-                    setInspirationInitialSrc(ev.target.result);
-                    setIsInspirationOpen(true);
-                }
-            };
-            reader.readAsDataURL(file);
+            try {
+                const src = await readImageFileAsDataUrl(file);
+                setViewingRefAnn(null);
+                setInspirationInitialSrc(src);
+                setIsInspirationOpen(true);
+            } catch (err) {
+                console.error('Reference image could not be read:', err);
+            }
         };
         document.addEventListener('paste-reference-image', handler);
         return () => document.removeEventListener('paste-reference-image', handler);
@@ -1200,7 +1200,7 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         setInspirationInitialSrc(null);
     };
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         // Tell App.tsx's document-level drop listener to skip this — we're handling it as reference
@@ -1208,17 +1208,15 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         onGlobalDragLeave();
         setIsSideZoneActive(false);
         if (!selectedImage && !props.onAddReference) return;
-        const files = (Array.from(e.dataTransfer.files) as File[]).filter(f => f.type.startsWith('image/'));
-        if (files.length > 0) {
-            const reader = new FileReader();
-            reader.onload = ev => {
-                if (typeof ev.target?.result === 'string') {
-                    setViewingRefAnn(null);
-                    setInspirationInitialSrc(ev.target.result);
-                    setIsInspirationOpen(true);
-                }
-            };
-            reader.readAsDataURL(files[0]);
+        const files = (Array.from(e.dataTransfer.files) as File[]).filter(isUploadableImageFile);
+        if (files.length === 0) return;
+        try {
+            const src = await readImageFileAsDataUrl(files[0]);
+            setViewingRefAnn(null);
+            setInspirationInitialSrc(src);
+            setIsInspirationOpen(true);
+        } catch (err) {
+            console.error('Reference image could not be read:', err);
         }
     };
 

@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { generateId } from '../utils/ids';
+import { readImageFileAsDataUrl } from '../utils/imageFiles';
 import { CanvasImage, AnnotationObject, TranslationFunction } from '../types';
 
 interface UseAnnotationHandlerProps {
@@ -22,11 +23,14 @@ export const useAnnotationHandler = ({
         if (!selectedImage || !user) return;
 
         // 1. Client-side preview for immediate feedback
-        const reader = new FileReader();
-        const src = await new Promise<string>((resolve) => {
-            reader.onload = (e) => resolve(e.target?.result as string);
-            reader.readAsDataURL(file);
-        });
+        let src: string;
+        try {
+            src = await readImageFileAsDataUrl(file);
+        } catch (err) {
+            console.error('Reference image could not be read:', err);
+            showToast(t('upload_failed'), "error");
+            return;
+        }
 
         // 2. Persistent upload to storage
         const import_storageService = await import('../services/storageService');

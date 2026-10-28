@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import { calcBarProgress } from '@/utils/progress';
 
 interface GeneratingRingProps {
     /** Startzeitpunkt der Generierung (ms). */
     generationStartTime?: number;
-    /** Geschätzte Dauer in ms. Fehlt sie, gibt es keinen sinnvollen Fortschritt. */
+    /** Geschätzte Dauer in ms. Fehlt sie, wird mit DEFAULT_ETA_MS gerechnet. */
     estimatedDuration?: number;
     /** Durchmesser in Pixeln. */
     size?: number;
@@ -15,38 +14,36 @@ interface GeneratingRingProps {
 /**
  * Fortschrittsring für ein gerade entstehendes Bild.
  *
- * Ein endlos drehender Spinner sagt nur "es passiert etwas". Da wir die Dauer
- * je Modell und Auflösung schätzen können, zeigt ein sich füllender Kreis
- * zusätzlich, wie weit es ist.
+ * Ein endlos drehender Spinner sagt nur "es passiert etwas". Der Ring sagt
+ * zusätzlich, wie weit es ist — und das tut er jetzt IMMER.
  *
- * Ohne Schätzung bleibt es beim Spinner — ein Ring, der eine Genauigkeit
- * vortäuscht, die wir nicht haben, wäre schlechter als gar keiner.
+ * Vorher fiel er ohne Schätzung auf den Spinner zurück, mit der Begründung,
+ * ein Ring täusche sonst eine Genauigkeit vor, die wir nicht haben. In der
+ * Praxis kam der Fall nicht selten vor: Nach einem Neuladen werden laufende
+ * Aufträge aus der Datenbank rekonstruiert, und dort stand keine Schätzung.
+ * Dann drehte es sich endlos, während dieselbe Generierung oben rechts in der
+ * Meldung brav volllief — die rechnet seit jeher mit 30 Sekunden, wenn sie
+ * nichts Besseres weiß. Eine angenommene Dauer ist hier das kleinere Übel:
+ * Der Fortschritt ist ohnehin bei 85 % gedeckelt, und das Ende setzt das
+ * fertige Bild.
  */
+/** Angenommene Dauer, wenn keine Schätzung vorliegt. Wie in GenerationNotice. */
+const DEFAULT_ETA_MS = 30000;
 export const GeneratingRing: React.FC<GeneratingRingProps> = ({
     generationStartTime, estimatedDuration, size = 28, className = '',
 }) => {
-    const hasEstimate = !!estimatedDuration && estimatedDuration > 0;
+    const eta = estimatedDuration && estimatedDuration > 0 ? estimatedDuration : DEFAULT_ETA_MS;
 
     // Eigener Takt: Der Fortschritt ergibt sich aus der Uhr, nicht aus einer
     // Zustandsänderung — ohne Takt bliebe der Ring stehen. 250 ms sind flüssig
     // genug und kosten bei den wenigen gleichzeitigen Platzhaltern nichts.
     const [, setTick] = useState(0);
     useEffect(() => {
-        if (!hasEstimate) return;
         const id = window.setInterval(() => setTick(t => t + 1), 250);
         return () => window.clearInterval(id);
-    }, [hasEstimate]);
+    }, []);
 
-    if (!hasEstimate) {
-        return (
-            <Loader2
-                className={`animate-[spin_3s_linear_infinite] text-white/70 ${className}`}
-                style={{ width: size, height: size }}
-            />
-        );
-    }
-
-    const progress = calcBarProgress(generationStartTime, estimatedDuration!);
+    const progress = calcBarProgress(generationStartTime, eta);
     const r = 9;
     const circumference = 2 * Math.PI * r;
 

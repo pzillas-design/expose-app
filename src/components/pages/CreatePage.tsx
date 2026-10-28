@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SideSheet } from '@/components/sidesheet/SideSheet';
 import { useMobile } from '@/hooks/useMobile';
 import { compressImage } from '@/utils/imageUtils';
+import { IMAGE_FILE_ACCEPT, readImageFileAsDataUrl } from '@/utils/imageFiles';
 import { Button } from '@/components/ui/DesignSystem';
 
 const ASPECT_RATIOS = [
@@ -106,28 +107,29 @@ export const CreatePage: React.FC<CreatePageProps> = ({
         return () => ro.disconnect();
     }, [ratioW, ratioH]);
 
-    const handleAddReference = useCallback((file: File) => {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            if (typeof e.target?.result === 'string') {
-                // Compress to max 1024px / 0.8 quality so the payload stays
-                // well under Supabase's 6 MB edge-function body limit.
-                try {
-                    const blob = await compressImage(e.target.result as string, 1024, 0.8);
-                    const compressed = await new Promise<string>((res, rej) => {
-                        const r = new FileReader();
-                        r.onload = ev => res(ev.target?.result as string);
-                        r.onerror = rej;
-                        r.readAsDataURL(blob);
-                    });
-                    setReferenceFiles(prev => [...prev, compressed]);
-                } catch {
-                    // fallback: use raw data URL if compression fails
-                    setReferenceFiles(prev => [...prev, e.target!.result as string]);
-                }
-            }
-        };
-        reader.readAsDataURL(file);
+    const handleAddReference = useCallback(async (file: File) => {
+        let dataUrl: string;
+        try {
+            dataUrl = await readImageFileAsDataUrl(file);
+        } catch (err) {
+            console.error('Reference image could not be read:', err);
+            return;
+        }
+        // Compress to max 1024px / 0.8 quality so the payload stays
+        // well under Supabase's 6 MB edge-function body limit.
+        try {
+            const blob = await compressImage(dataUrl, 1024, 0.8);
+            const compressed = await new Promise<string>((res, rej) => {
+                const r = new FileReader();
+                r.onload = ev => res(ev.target?.result as string);
+                r.onerror = rej;
+                r.readAsDataURL(blob);
+            });
+            setReferenceFiles(prev => [...prev, compressed]);
+        } catch {
+            // fallback: use raw data URL if compression fails
+            setReferenceFiles(prev => [...prev, dataUrl]);
+        }
     }, []);
 
     const handleRemoveReference = useCallback((idx: number) => {
@@ -153,7 +155,7 @@ export const CreatePage: React.FC<CreatePageProps> = ({
                     <input
                         ref={uploadRef}
                         type="file"
-                        accept="image/*"
+                        accept={IMAGE_FILE_ACCEPT}
                         multiple
                         className="hidden"
                         onChange={(e) => {

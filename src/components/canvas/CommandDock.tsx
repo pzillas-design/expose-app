@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ZoomOut, ZoomIn, Menu, Upload, Plus, Home, Sparkles, Pencil } from 'lucide-react';
 import { IconButton, Typo, Theme, Tooltip } from '@/components/ui/DesignSystem';
 import { TranslationFunction } from '@/types';
+import { IMAGE_FILE_ACCEPT } from '@/utils/imageFiles';
 
 interface CommandDockProps {
  zoom: number;
@@ -71,7 +72,7 @@ export const CommandDock: React.FC<CommandDockProps> = ({
  ref={fileInputRef}
  onChange={handleFileChange}
  className="hidden"
- accept="image/*"
+ accept={IMAGE_FILE_ACCEPT}
  multiple
  />
 

@@ -5,6 +5,7 @@ import { storageService } from '@/services/storageService';
 import { CanvasImage, ImageRow } from '@/types';
 import { sortRowItems } from '@/utils/stacks';
 import { parseUploadName } from '@/utils/imageName';
+import { isUploadableImageFile, toWebImageBlob } from '@/utils/imageFiles';
 
 interface UseFileHandlerProps {
     user: any;
@@ -45,8 +46,6 @@ export const useFileHandler = ({
 
         for (const file of files) {
             const skeletonId = generateId();
-            const extension = file.name.split('.').pop()?.toLowerCase();
-            const isHeic = ['heic', 'heif'].includes(extension || '');
             // Traegt der Dateiname eine Fassung (haus_v2.jpg), wird sie
             // uebernommen: Sonst hiesse die naechste Bearbeitung wieder v2, und
             // zwei verschiedene Bilder trugen dieselbe Nummer.
@@ -94,22 +93,8 @@ export const useFileHandler = ({
 
             // 2. PROCESS FILE (WITH HEIC CONVERSION IF NEEDED)
             const getFileData = async (): Promise<{ src: string, file: File | Blob }> => {
-                if (isHeic) {
-                    try {
-                        const heic2any = (await import('heic2any')).default;
-                        const convertedBlob = await heic2any({
-                            blob: file,
-                            toType: "image/jpeg",
-                            quality: 0.8
-                        });
-                        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-                        return { src: URL.createObjectURL(blob), file: blob };
-                    } catch (err) {
-                        console.error("HEIC conversion failed:", err);
-                        // Fallback to original file
-                    }
-                }
-                return { src: URL.createObjectURL(file), file };
+                const blob = await toWebImageBlob(file);
+                return { src: URL.createObjectURL(blob), file: blob };
             };
 
             getFileData().then(({ src, file: processedFile }) => {
@@ -236,11 +221,7 @@ export const useFileHandler = ({
 
     const handleFileDrop = useCallback(async (e: React.DragEvent) => {
         e.preventDefault();
-        const files = Array.from(e.dataTransfer.files).filter((f: File) => {
-            const isImage = f.type.startsWith('image/');
-            const isHeic = /\.(heic|heif)$/i.test(f.name);
-            return isImage || isHeic;
-        });
+        const files = Array.from(e.dataTransfer.files).filter(isUploadableImageFile);
         if (files.length === 0) return;
         processFiles(files);
     }, [processFiles]);

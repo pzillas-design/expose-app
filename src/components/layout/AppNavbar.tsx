@@ -398,15 +398,11 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             )}
         </div>
     ) : isGroupDrillDown && groupInfo ? (
+        // Ohne Fassungsspanne: siehe die Stapel-Kopfzeile weiter unten.
         <div className="flex items-center gap-1.5">
             <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate max-w-[200px]">
                 {groupInfo}
             </span>
-            {groupVersionLabel && (
-                <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
-                    {groupVersionLabel}
-                </span>
-            )}
         </div>
     ) : (
         <button
@@ -686,23 +682,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                 */}
                 <div
                     aria-hidden
-                    className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
-                        bg-[#EDEDF0]/85 dark:bg-[#0C0C11]/80"
+                    className="absolute inset-0 -z-10 backdrop-blur-[64px] backdrop-saturate-[1.4]
+                        bg-[#F6F6F8]/55 dark:bg-[#0C0C11]/50"
                     style={{
                         opacity: surfaceOpacity,
                     }}
                 />
-                {/* Die Unterkante als Flaeche, nicht als Linie: 20 Pixel, die
-                    nach unten auslaufen. Sie trennt, ohne etwas zu behaupten —
-                    eine gezogene Linie waere an dieser Stelle die einzige in
-                    der ganzen Anwendung. */}
-                <div
-                    aria-hidden
-                    className="absolute left-0 right-0 top-full h-5 -z-10
-                        bg-gradient-to-b from-black/[0.045] to-transparent
-                        dark:from-black/40 dark:to-transparent"
-                    style={{ opacity: surfaceOpacity }}
-                />
+                {/*
+                    Keine Kante unter der Leiste — weder Linie noch Schatten.
+
+                    Hier lag zuletzt ein Verlauf von zwanzig Pixeln. Als
+                    Schatten wirkte er falsch (die Leiste ist im hellen Thema
+                    selbst grau), und in der Farbe der Leiste wirkte er wie ein
+                    unsauberer Rand. Was trennt, ist die Flaeche selbst: Die
+                    Leiste ist eine Spur anders gefaerbt als die Seite, und das
+                    genuegt. So machen es die Systemleisten auch.
+                */}
                 {/* LEFT: Upload + Create (with labels when expanded) */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto min-w-0">
                     {isBlogPost ? (
@@ -1012,14 +1007,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             */}
             <div
                 aria-hidden
-                className="absolute inset-0 -z-10 backdrop-blur-3xl backdrop-saturate-[1.3]
-                    bg-[#EDEDF0]/85 dark:bg-[#0C0C11]/80"
-            />
-            <div
-                aria-hidden
-                className="absolute left-0 right-0 top-full h-5 -z-10
-                    bg-gradient-to-b from-black/[0.045] to-transparent
-                    dark:from-black/40 dark:to-transparent"
+                className="absolute inset-0 -z-10 backdrop-blur-[64px] backdrop-saturate-[1.4]
+                    bg-[#F6F6F8]/55 dark:bg-[#0C0C11]/50"
             />
                 {/* LEFT: Back button */}
                 <div className="flex-1 basis-0 grow flex items-center gap-2 justify-start relative z-10 pointer-events-auto">
@@ -1038,17 +1027,22 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                     {progressRing}
                 </div>
 
-                {/* CENTER: Group title — same font as the detail view; a folder icon
-                    to the left of the title is the minimal "this is a stack" signal. */}
-                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-10 max-w-[60%]">
+                {/*
+                    CENTER: Name des Stapels — und seit Neuestem ein Knopf daneben.
+
+                    z-20 statt z-10: Die rechte Gruppe ist ein Flex-Kind mit
+                    `grow`, ihr Kasten reicht also bis zur Mitte, auch wenn ihr
+                    Inhalt rechts aussen klebt. Bei gleicher Ebene gewinnt sie,
+                    weil sie spaeter im Dokument steht — und schluckte die Klicks
+                    auf den Knopf hier. Genau deshalb liess er sich nicht treffen.
+                */}
+                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 justify-center pointer-events-none z-20 max-w-[60%]">
                     <span className="text-[13px] font-medium text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
                         {groupInfo}
                     </span>
-                    {groupVersionLabel && (
-                        <span className="text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums shrink-0">
-                            {groupVersionLabel}
-                        </span>
-                    )}
+                    {/* Die Spanne "v1–v15" stand hier und sagte nichts, was man
+                        braucht: Wie viele Fassungen es sind, sieht man in der
+                        Liste darunter, und welche man ansieht, steht an ihr. */}
                     {/*
                         Direkt neben dem Namen, denn es betrifft genau diesen
                         Stapel. Vorher stand es als Kachel mitten im Raster —
@@ -1102,7 +1096,8 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
             */}
             <div
                 aria-hidden
-                className="absolute inset-0 -z-10 backdrop-blur-2xl bg-white/60 dark:bg-zinc-950/50"
+                className="absolute inset-0 -z-10 backdrop-blur-[64px] backdrop-saturate-[1.4]
+                    bg-[#F6F6F8]/55 dark:bg-[#0C0C11]/50"
             />
             {/* LEFT: Back or Actions */}
             <div className="flex-1 basis-0 grow flex items-center justify-start gap-1 min-w-0">
