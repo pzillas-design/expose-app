@@ -1,5 +1,5 @@
 import React from 'react';
-import { Repeat, Download, Pencil } from 'lucide-react';
+import { Repeat, Download, Pencil, Trash2 } from 'lucide-react';
 import { GeneratingRing } from '@/components/ui/GeneratingRing';
 import type { CanvasImage } from '@/types';
 import { imageNameOf } from '@/utils/imageName';
@@ -30,6 +30,7 @@ interface StackListProps {
     onSelect: (id: string) => void;
     onGenerateMore?: (img: CanvasImage) => void;
     onDownload?: (id: string) => void;
+    onDelete?: (img: CanvasImage) => void;
     onHoverIndex?: (idx: number | null) => void;
     t?: (key: any) => string;
 }
@@ -53,15 +54,21 @@ const ROW_DIM = 'opacity-100 md:opacity-45 md:group-hover/row:opacity-100';
 const RowAction: React.FC<{
     onClick: () => void;
     icon: React.ReactNode;
-    children: React.ReactNode;
+    /** Beschriftung. Ohne `children` steht sie nur im Tooltip. */
+    label: string;
+    children?: React.ReactNode;
     primary?: boolean;
-}> = ({ onClick, icon, children, primary = false }) => (
+    danger?: boolean;
+}> = ({ onClick, icon, label, children, primary = false, danger = false }) => (
     <button
         onClick={e => { e.stopPropagation(); onClick(); }}
-        className={`h-9 px-3.5 rounded-full inline-flex items-center gap-2 text-[13px] font-medium
+        title={label}
+        aria-label={label}
+        className={`h-9 rounded-full inline-flex items-center justify-center gap-2 text-[13px] font-medium
+            ${children ? 'px-3.5' : 'w-9 px-0'}
             text-zinc-600 dark:text-zinc-300
             hover:bg-black/[0.05] dark:hover:bg-white/[0.08]
-            hover:text-zinc-900 dark:hover:text-white
+            ${danger ? 'hover:text-red-600 dark:hover:text-red-400' : 'hover:text-zinc-900 dark:hover:text-white'}
             transition-colors duration-150
             ${primary ? 'group-hover/row:bg-black/[0.05] dark:group-hover/row:bg-white/[0.08] group-hover/row:text-zinc-900 dark:group-hover/row:text-white' : ''}`}
     >
@@ -80,9 +87,10 @@ const StackRow: React.FC<{
     onSelect: (id: string) => void;
     onGenerateMore?: (img: CanvasImage) => void;
     onDownload?: (id: string) => void;
+    onDelete?: (img: CanvasImage) => void;
     onHoverIndex?: (idx: number | null) => void;
     t?: (key: any) => string;
-}> = ({ img, idx, fallbackVersion, isActive, lang, onSelect, onGenerateMore, onDownload, onHoverIndex, t }) => {
+}> = ({ img, idx, fallbackVersion, isActive, lang, onSelect, onGenerateMore, onDownload, onDelete, onHoverIndex, t }) => {
     const { version } = imageNameOf(img);
     const isOriginal = !img.parentId;
     /*
@@ -244,20 +252,47 @@ const StackRow: React.FC<{
 
                 <div className={`flex flex-wrap items-center gap-0.5 -ml-3.5 transition-opacity duration-200
                     ${isPending ? 'hidden' : ROW_DIM}`}>
-                    <RowAction primary onClick={() => onSelect(img.id)} icon={<Pencil className="w-3.5 h-3.5" />}>
+                    <RowAction
+                        primary
+                        onClick={() => onSelect(img.id)}
+                        icon={<Pencil className="w-3.5 h-3.5" />}
+                        label={lang === 'de' ? 'Bearbeiten' : 'Edit'}
+                    >
                         {lang === 'de' ? 'Bearbeiten' : 'Edit'}
                     </RowAction>
+                    {/*
+                        Nur noch das Zeichen, ohne Wort.
+
+                        "Bearbeiten" fuehrt dorthin, wo man weiterarbeitet — das
+                        bleibt beschriftet. Die drei anderen sind Handgriffe am
+                        fertigen Bild: Pfeil im Kreis, Pfeil nach unten,
+                        Papierkorb sagen das kuerzer, und die Zeile wird
+                        ruhiger. Der Name steht im Tooltip und fuer
+                        Vorlesewerkzeuge in aria-label.
+                    */}
                     {/* "Mehr" wiederholt einen Auftrag. Beim Original gibt es
                         keinen, also auch nichts zu wiederholen. */}
                     {onGenerateMore && !!img.generationPrompt && (
-                        <RowAction onClick={() => onGenerateMore(img)} icon={<Repeat className="w-3.5 h-3.5" />}>
-                            {t?.('nav_more') || (lang === 'de' ? 'Mehr' : 'More')}
-                        </RowAction>
+                        <RowAction
+                            onClick={() => onGenerateMore(img)}
+                            icon={<Repeat className="w-4 h-4" />}
+                            label={t?.('nav_more') || (lang === 'de' ? 'Mehr' : 'More')}
+                        />
                     )}
                     {onDownload && (
-                        <RowAction onClick={() => onDownload(img.id)} icon={<Download className="w-3.5 h-3.5" />}>
-                            {lang === 'de' ? 'Sichern' : 'Save'}
-                        </RowAction>
+                        <RowAction
+                            onClick={() => onDownload(img.id)}
+                            icon={<Download className="w-4 h-4" />}
+                            label={lang === 'de' ? 'Sichern' : 'Save'}
+                        />
+                    )}
+                    {onDelete && (
+                        <RowAction
+                            danger
+                            onClick={() => onDelete(img)}
+                            icon={<Trash2 className="w-4 h-4" />}
+                            label={t?.('delete') || (lang === 'de' ? 'Löschen' : 'Delete')}
+                        />
                     )}
                 </div>
             </div>
@@ -266,7 +301,7 @@ const StackRow: React.FC<{
 };
 
 export const StackList: React.FC<StackListProps> = ({
-    images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onHoverIndex, t,
+    images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onDelete, onHoverIndex, t,
 }) => {
     /*
         Die naechste freie Fassungsnummer dieses Stapels.
@@ -306,6 +341,7 @@ export const StackList: React.FC<StackListProps> = ({
                     onSelect={onSelect}
                     onGenerateMore={onGenerateMore}
                     onDownload={onDownload}
+                    onDelete={onDelete}
                     onHoverIndex={onHoverIndex}
                     t={t}
                 />
