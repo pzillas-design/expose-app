@@ -148,7 +148,7 @@ export const useNanoController = () => {
         authEmail, setAuthEmail,
         authError, setAuthError,
         isAuthLoading,
-        handleAddFunds, handleSignOut, updateProfile, deleteAccount,
+        handleAddFunds, handleOpenInvoices, handleSignOut, updateProfile, deleteAccount,
         ensureValidSession
     } = useAuth({
         isAuthDisabled,
@@ -878,6 +878,7 @@ export const useNanoController = () => {
         setAuthEmail,
         setAuthError,
         handleAddFunds,
+        handleOpenInvoices,
         handleSignOut,
         handleDeleteAccount: deleteAccount,
         updateProfile,
@@ -917,7 +918,7 @@ export const useNanoController = () => {
         setBrushSize, setMaskTool, setActiveShape,
         addUserCategory, deleteUserCategory, addUserItem, deleteUserItem, selectAndSnap, selectMultiple,
         handleSelection, moveSelection, moveRowSelection, setAuthModalMode, setIsAuthModalOpen, setAuthEmail,
-        setAuthError, handleAddFunds, handleSignOut, deleteAccount, updateProfile, setIsDragOver, handleFileDrop,
+        setAuthError, handleAddFunds, handleOpenInvoices, handleSignOut, deleteAccount, updateProfile, setIsDragOver, handleFileDrop,
         setIsSettingsOpen, setIsAdminOpen, setIsSelectMode, handleProcessFile, handleDeleteImage, handleSaveComposite, handleDownload,
         handleUpdateAnnotations, handleUpdatePrompt, handleUpdateVariables, handleUpdateImageTitle, performGeneration, handleGenerate,
         handleGenerateMore, handleNavigateParent, setIsBrushResizing, handleCreateNew,

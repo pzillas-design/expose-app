@@ -1753,6 +1753,7 @@ export function App() {
                 onClose={() => setIsCreditsModalOpen(false)}
                 currentBalance={credits || 0}
                 onAddFunds={actions.handleAddFunds}
+                onOpenInvoices={actions.handleOpenInvoices}
                 t={t}
             />
 
@@ -1766,6 +1767,7 @@ export function App() {
                             onQualityModeChange={setQualityMode}
                             currentBalance={credits || 0}
                             onAddFunds={actions.handleAddFunds}
+                            onOpenInvoices={actions.handleOpenInvoices}
                             themeMode={state.themeMode}
                             onThemeChange={setThemeMode}
                             lang={langSetting}

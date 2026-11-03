@@ -196,6 +196,8 @@ export const translations = {
 
     // Multi Select & Context Menu
     images_selected: "images",
+    invoices: "Invoices",
+    invoices_none: "No payments yet.",
     delete_confirm_multi: "Are you sure you want to delete these images?",
     delete_confirm_single: "Are you sure you want to delete this image?",
     download_all: "Download All",
@@ -771,6 +773,8 @@ export const translations = {
 
     // Multi Select & Context Menu
     images_selected: "Bilder",
+    invoices: "Rechnungen",
+    invoices_none: "Noch keine Zahlungen vorhanden.",
     delete_confirm_multi: "Möchtest du diese Bilder wirklich löschen?",
     delete_confirm_single: "Möchtest du dieses Bild wirklich löschen?",
     download_all: "Alle herunterladen",

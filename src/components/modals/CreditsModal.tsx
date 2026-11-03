@@ -3,7 +3,7 @@ import { trackCreditsPurchased } from '@/utils/analytics';
 import { Button, Theme } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { TranslationFunction } from '@/types';
-import { X, Loader2, Plus } from 'lucide-react';
+import { X, Loader2, Plus, ReceiptText } from 'lucide-react';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 import { useMobile } from '@/hooks/useMobile';
 
@@ -15,6 +15,8 @@ interface CreditsModalProps {
     onClose: () => void;
     currentBalance: number;
     onAddFunds: (amount: number) => Promise<void>;
+    /** Oeffnet das Stripe-Kundenportal mit allen Rechnungen. */
+    onOpenInvoices?: () => void | Promise<void>;
     isReduced?: boolean;
     t: TranslationFunction;
 }
@@ -24,6 +26,7 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     onClose,
     currentBalance,
     onAddFunds,
+    onOpenInvoices,
     isReduced = false,
     t
 }) => {
@@ -172,6 +175,25 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                             </div>
                         </div>
                     )
+                    )}
+
+                    {/*
+                        Die Belege, dort wo das Geld hineingeht.
+
+                        Stripe mailt die Rechnung, aber in Firmen-Postfaechern
+                        bleibt sie gern haengen -- dann steht der Kunde ohne
+                        Beleg da und fragt nach. Von hier holt er ihn sich
+                        selbst. Leise gesetzt: Aufladen bleibt die Handlung
+                        dieses Fensters, das hier ist der Nachweis darueber.
+                    */}
+                    {onOpenInvoices && !isReduced && !isTopUpExpanded && (
+                        <button
+                            onClick={() => { void onOpenInvoices(); }}
+                            className="mt-5 w-full inline-flex items-center justify-center gap-2 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                        >
+                            <ReceiptText className="w-3.5 h-3.5" />
+                            {t('invoices') || 'Rechnungen'}
+                        </button>
                     )}
                 </div>
             </div>
