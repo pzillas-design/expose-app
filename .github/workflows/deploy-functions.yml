@@ -37,15 +37,20 @@ jobs:
       # Installed via npm rather than supabase/setup-cli@v1: that action resolves
       # the "latest" release through the GitHub API and failed with
       # "rate limit exceeded" on a shared runner.
+      # Version festgenagelt: Die CLI hat eine Rueckfrage vor jedem
+      # Deploy eingefuehrt ("Confirmation required ... Re-run with --yes").
+      # Ohne Terminal bricht sie ab, und der Lauf vom 03.11. hat nichts
+      # ausgerollt, ohne dass am Code etwas falsch war. --yes unten faengt
+      # das ab; die feste Version haelt die naechste solche Aenderung auf.
       - name: Install Supabase CLI
-        run: npm install -g supabase
+        run: npm install -g supabase@3.0.0
 
       # Public endpoints & webhooks — must be deployed WITHOUT JWT verification.
       - name: Deploy no-JWT functions
         run: |
           for fn in generate-image-fal fal-webhook stripe-webhook stripe-checkout admin-stats admin-refund cleanup-expired-images; do
             echo "::group::deploy $fn"
-            supabase functions deploy "$fn" --project-ref rhocpnetpxficxnrprsq --no-verify-jwt
+            supabase functions deploy "$fn" --project-ref rhocpnetpxficxnrprsq --no-verify-jwt --yes
             echo "::endgroup::"
           done
 
@@ -54,6 +59,6 @@ jobs:
         run: |
           for fn in generate-image delete-user; do
             echo "::group::deploy $fn"
-            supabase functions deploy "$fn" --project-ref rhocpnetpxficxnrprsq
+            supabase functions deploy "$fn" --project-ref rhocpnetpxficxnrprsq --yes
             echo "::endgroup::"
           done
