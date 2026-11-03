@@ -183,6 +183,30 @@ const translateError = (errorMsg: string, t: (key: any) => string): string => {
 
 
 
+/*
+    Das fertige Bild an seinen Platz setzen -- und die Reihe neu ordnen.
+
+    Der Platzhalter sitzt dort, wohin ihn seine GERATENE Fassungsnummer
+    gestellt hat. Die endgueltige vergibt der Server erst beim Speichern, und
+    beide gehen auseinander, sobald zwei Auftraege gleichzeitig laufen: Wer
+    zuerst fertig ist, bekommt die naechste freie Nummer, nicht die, die beim
+    Abschicken absehbar war. Wurde das Ergebnis nur an Ort und Stelle
+    eingesetzt, blieb es an der geratenen Stelle -- im Stapel stand das
+    Neueste dann zwischen zwei Stunden alten Fassungen, und erst ein
+    Neuladen rueckte es zurecht.
+
+    Deshalb hier dieselbe Sortierung wie beim Laden und beim Einfuegen des
+    Platzhalters: eine Ordnung, drei Wege.
+*/
+const replaceAndSort = (
+    rows: ImageRow[],
+    id: string,
+    next: (prev: CanvasImage) => CanvasImage,
+): ImageRow[] => rows.map(row => {
+    if (!row.items.some(i => i.id === id)) return row;
+    return { ...row, items: sortRowItems(row.items.map(i => (i.id === id ? next(i) : i))) };
+});
+
 export const useGeneration = ({
     rows, setRows, user, userProfile, credits, setCredits,
     qualityMode, isAuthDisabled, selectAndSnap, activeIdRef, setIsSettingsOpen, showToast, t, confirm, onImageSaved, onGenerationComplete, onSignIn
@@ -331,27 +355,19 @@ export const useGeneration = ({
                     setTimeout(onComplete, 200);
                 }
 
-                setRows(prev => prev.map(row => ({
-                    ...row,
-                    items: row.items.map(item => {
-                        if (item.id === jobId) {
-                            // MERGE: Preserve local state that might have been changed while polling
-                            return {
-                                ...finalImage,
-                                src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`,
-                                // Preserve local edits (even empty strings)
-                                userDraftPrompt: item.userDraftPrompt !== undefined ? item.userDraftPrompt : finalImage.userDraftPrompt,
-                                activeTemplateId: item.activeTemplateId !== undefined ? item.activeTemplateId : finalImage.activeTemplateId,
-                                variableValues: item.variableValues !== undefined ? item.variableValues : finalImage.variableValues,
-                                // If the local item has annotations (e.g. user started brushing), prefer those
-                                // UNLESS the final image has new annotations from the server (e.g. generation result)
-                                annotations: (item.annotations && item.annotations.length > 0 && (!finalImage.annotations || finalImage.annotations.length === 0))
-                                    ? item.annotations
-                                    : (finalImage.annotations || [])
-                            };
-                        }
-                        return item;
-                    })
+                setRows(prev => replaceAndSort(prev, jobId, item => ({
+                    // MERGE: Preserve local state that might have been changed while polling
+                    ...finalImage,
+                    src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`,
+                    // Preserve local edits (even empty strings)
+                    userDraftPrompt: item.userDraftPrompt !== undefined ? item.userDraftPrompt : finalImage.userDraftPrompt,
+                    activeTemplateId: item.activeTemplateId !== undefined ? item.activeTemplateId : finalImage.activeTemplateId,
+                    variableValues: item.variableValues !== undefined ? item.variableValues : finalImage.variableValues,
+                    // If the local item has annotations (e.g. user started brushing), prefer those
+                    // UNLESS the final image has new annotations from the server (e.g. generation result)
+                    annotations: (item.annotations && item.annotations.length > 0 && (!finalImage.annotations || finalImage.annotations.length === 0))
+                        ? item.annotations
+                        : (finalImage.annotations || []),
                 })));
 
                         // Job succeeded — clear any pending retry fn
@@ -714,10 +730,7 @@ export const useGeneration = ({
                         src: finalImage.src.includes('?') ? `${finalImage.src}&refreshed=true` : `${finalImage.src}${cacheBuster}`
                     };
 
-                    setRows(prev => prev.map(row => ({
-                        ...row,
-                        items: row.items.map(i => i.id === newId ? refreshedImage : i)
-                    })));
+                    setRows(prev => replaceAndSort(prev, newId, () => refreshedImage));
 
                     // Clean up and navigate — only if still in detail view on source/placeholder
                     navigateOnCompleteIds.current.delete(newId);
@@ -917,7 +930,7 @@ export const useGeneration = ({
                             });
                         delete jobTimingRef.current[newId];
                     }
-                    setRows(prev => prev.map(row => ({ ...row, items: row.items.map(i => i.id === newId ? finalImage : i) })));
+                    setRows(prev => replaceAndSort(prev, newId, () => finalImage));
 
                     navigateOnCompleteIds.current.delete(newId);
                     revealWhenReady(newId);
