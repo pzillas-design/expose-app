@@ -1669,6 +1669,21 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         onSelect={(id) => onSelectImage?.(id)}
                                         onGenerateMore={actions?.handleGenerateMore}
                                         onDownload={actions?.handleDownload}
+                                        onDelete={async (img) => {
+                                            // Dieselbe Rueckfrage wie im Raster — eine
+                                            // Fassung ist schnell weg und nicht
+                                            // wiederzubekommen.
+                                            const confirmed = await confirm({
+                                                // Titel und Frage sind zwei Dinge: Im Raster steht
+                                                // zweimal derselbe Satz untereinander.
+                                                title: t?.('delete') || 'Delete',
+                                                description: t?.('delete_confirm_single') || 'Do you really want to delete this image?',
+                                                confirmLabel: t?.('delete') || 'Delete',
+                                                cancelLabel: t?.('cancel') || 'Cancel',
+                                                variant: 'danger',
+                                            });
+                                            if (confirmed) actions?.handleDeleteImage?.(img.id, true);
+                                        }}
                                         onHoverIndex={setActiveIndex}
                                         t={t}
                                     />

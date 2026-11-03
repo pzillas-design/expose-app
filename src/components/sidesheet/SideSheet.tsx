@@ -618,38 +618,38 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
         if (selectedImage.id === lastSelectedIdRef.current) return;
 
         if (!isMulti) {
-            // Ein erzeugtes Bild ist ein Ergebnis, kein Entwurf — das Panel
-            // startet dort leer. Vorher wurden variableValues und
-            // activeTemplateId auch für Kinder geladen, userDraftPrompt aber
-            // nicht: Man sah Chips ohne Text und wusste nicht, was gelten soll.
-            //
-            // Die Felder bleiben am Bild gespeichert, sie werden hier nur nicht
-            // als Entwurf angezeigt — "Mehr" liest sie weiterhin direkt vom
-            // Bild und spielt die Anfrage unverändert nach.
-            const isGeneratedChild = !!selectedImage.parentId || !!selectedImage.generationPrompt;
-            if (isGeneratedChild) {
-                setPrompt('');
-                setActiveTemplateId(null);
-                setControlValues({});
-                setExpandedTemplateId(null);
-            } else {
-                setPrompt(selectedImage.userDraftPrompt || '');
-                setActiveTemplateId(selectedImage.activeTemplateId || null);
-                setControlValues(selectedImage.variableValues || {});
-                /*
-                    Zugeklappt starten, immer.
+            /*
+                Das Feld wird nie von selbst leer.
 
-                    Aufgeklappt wiederherzustellen war richtig, solange die
-                    Gruppen unter einer Chip-Reihe standen. Seit das Aufklappen
-                    die ganze Reihe verdraengt, ist es etwas anderes: ein
-                    geoeffnetes Menue. Ein Menue, das beim naechsten Bild von
-                    selbst wieder offensteht, hat niemand aufgemacht.
+                Hier stand vorher: Ein erzeugtes Bild ist ein Ergebnis, kein
+                Entwurf, also startet das Panel dort leer. Das kostete aber
+                genau das, was man nach einer Bearbeitung am haeufigsten
+                braucht -- den Satz, der sie ausgeloest hat. Wer zurueck auf das
+                Bild ging, fand ein leeres Feld und musste neu tippen, was er
+                eben getippt hatte.
 
-                    Was wirklich zaehlt, steht ohnehin im Prompt: Die
-                    eingesetzten Zeilen bleiben, der Aufklapp-Zustand nicht.
-                */
-                setExpandedTemplateId(null);
-            }
+                Jetzt steht beim Kind, was es erzeugt hat: der getippte Text
+                (userDraftPrompt), und wo der fehlt -- Altbestand und der
+                synchrone Erzeugungsweg -- der tatsaechlich gesendete Auftrag
+                (generationPrompt). Vorlage und Chips kommen mit, sonst stuende
+                Text ohne die Chips da, die ihn ergaenzt haben.
+            */
+            setPrompt(selectedImage.userDraftPrompt || selectedImage.generationPrompt || '');
+            setActiveTemplateId(selectedImage.activeTemplateId || null);
+            setControlValues(selectedImage.variableValues || {});
+            /*
+                Zugeklappt starten, immer.
+
+                Aufgeklappt wiederherzustellen war richtig, solange die
+                Gruppen unter einer Chip-Reihe standen. Seit das Aufklappen
+                die ganze Reihe verdraengt, ist es etwas anderes: ein
+                geoeffnetes Menue. Ein Menue, das beim naechsten Bild von
+                selbst wieder offensteht, hat niemand aufgemacht.
+
+                Was wirklich zaehlt, steht ohnehin im Prompt: Die
+                eingesetzten Zeilen bleiben, der Aufklapp-Zustand nicht.
+            */
+            setExpandedTemplateId(null);
         }
 
         // Zustand von Dialogen und Beschriftungen darf nie zwischen Bildern

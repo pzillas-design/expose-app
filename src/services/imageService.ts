@@ -442,9 +442,11 @@ export const imageService = {
             generationStartTime: sourceImage.generationStartTime,
             generationPrompt: payload.prompt,
             quality: qualityMode,
-            userDraftPrompt: '', // Clean prompt field for generated images
-            activeTemplateId: undefined, // No preset carried over
-            variableValues: undefined, // No variables carried over,
+            // Prompt, Vorlage und Chips bleiben am Ergebnis stehen (kommen
+            // ueber ...sourceImage vom Platzhalter): Das Panel zeigt sie
+            // wieder an, wenn man spaeter auf das Bild zurueckgeht. Hier
+            // wurden sie frueher geleert — damit war der eben getippte Satz
+            // nach der Bearbeitung weg.
             version: result.version || targetVersion || (sourceImage.version || 1) + 1,
             title: result.title || targetTitle || (sourceImage.title?.includes(' v')
                 ? sourceImage.title.split(' v')[0] + ` v${(sourceImage.version || 1) + 1}`
