@@ -77,6 +77,25 @@ const RowAction: React.FC<{
     </button>
 );
 
+/**
+ * Was der Mensch geschrieben hat, ohne die Regie fuer das Modell.
+ *
+ * Vor den Auftrag setzt der Server eine Rollenangabe der Bilder ("Image 1:
+ * original. Image 2: annotation overlay — red marks indicate edit zones; do
+ * not render them."). Die gehoert zur Anfrage, nicht in die Liste: Unter
+ * jeder Fassung standen zwei Zeilen Technik, bevor der eigentliche Satz kam.
+ */
+const cleanPrompt = (raw?: string): string => {
+    let text = (raw || '').trim();
+    // Fuehrende "Image N: ..."-Saetze abschneiden, einen nach dem anderen.
+    for (let i = 0; i < 6; i++) {
+        const next = text.replace(/^Images?\s+\d+(\s*[–-]\s*\d+)?\s*:[^.]*\.\s*/i, '');
+        if (next === text) break;
+        text = next;
+    }
+    return text.trim();
+};
+
 const StackRow: React.FC<{
     img: CanvasImage;
     idx: number;
@@ -124,7 +143,7 @@ const StackRow: React.FC<{
         daneben. Unter dem Original stand damit ein Satz, der eine Herkunft
         behauptete, die es nicht gibt.
     */
-    const prompt = (img.generationPrompt || '').trim();
+    const prompt = cleanPrompt(img.generationPrompt);
     /*
         Volle Aufloesung nur dort, wo jemand hinsieht.
 
@@ -178,15 +197,22 @@ const StackRow: React.FC<{
                 ihren Klick bei sich (stopPropagation in RowAction).
             */
             role="button"
-            tabIndex={isPending ? -1 : 0}
-            onClick={() => { if (!isPending) onSelect(img.id); }}
+            /*
+                Auch die entstehende Fassung laesst sich oeffnen.
+
+                Sie war ausgenommen -- kein Klick, kein Fokus --, obwohl die
+                Detailansicht einen Platzhalter laengst zeigen kann, samt Ring
+                und Restzeit. Wer sehen wollte, woran gerade gearbeitet wird,
+                kam nicht hinein.
+            */
+            tabIndex={0}
+            onClick={() => onSelect(img.id)}
             onKeyDown={e => {
-                if (isPending) return;
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(img.id); }
             }}
             className={`group/row animate-[stack-fan_460ms_cubic-bezier(0.16,1,0.3,1)_backwards]
                 flex flex-col md:flex-row md:items-start gap-4 md:gap-8 outline-none
-                ${isPending ? '' : 'cursor-pointer'}`}
+                cursor-pointer`}
         >
             <div
                 ref={frameRef}

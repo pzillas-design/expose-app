@@ -531,15 +531,29 @@ export const useGeneration = ({
             if (!i) return false;
             return stackIdOf(i) === sourceFolderId;
         });
-        // Derive the next version from the visible "_vN" in the *titles*, not the
-        // `version` column — persisted generations get a global counter in that
-        // column (e.g. 21, 22), which would make titles jump to "_v22" instead of
-        // the expected per-stack "_v3". Mirrors handleSaveComposite().
+        /*
+            Die naechste Nummer so zaehlen, wie die Oberflaeche sie zeigt.
+
+            Hier wurde frueher die Endung "_vN" im TITEL gelesen. Angezeigt
+            wird aber die Spalte `version` (siehe imageNameOf), und die beiden
+            laufen auseinander: Der Server vergibt in der Spalte die naechste
+            freie Nummer ueber alle gleichnamigen Bilder, waehrend der Titel
+            vom Client stammt. In einem Stapel stand deshalb ein Titel "_v13"
+            neben einer Spalte 18 -- und der naechste Platzhalter bekam 14,
+            angezeigt als "v16", wo es ein v16 schon gab. Zwei Zeilen mit
+            derselben Nummer, eine davon "wird erzeugt".
+
+            Jetzt zaehlt dieselbe Quelle, die auch auf dem Bild steht, und
+            laufende Platzhalter zaehlen mit: Wer zweimal hintereinander
+            wiederholt, bekommt zwei verschiedene Nummern.
+        */
         const parseVer = (t?: string) => {
             const m = (t || '').match(/_v(\d+)$/);
             return m ? parseInt(m[1], 10) : 1;
         };
-        const maxVersion = siblings.reduce((max, item) => Math.max(max, parseVer(item.title)), 0);
+        const shownVersionOf = (item: CanvasImage) =>
+            typeof item.version === 'number' && item.version > 0 ? item.version : parseVer(item.title);
+        const maxVersion = siblings.reduce((max, item) => Math.max(max, shownVersionOf(item)), 0);
         const newVersion = maxVersion + 1;
         const currentAnnotations = sourceImage.annotations || [];
 
