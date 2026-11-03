@@ -125,8 +125,35 @@ const StackRow: React.FC<{
         behauptete, die es nicht gibt.
     */
     const prompt = (img.generationPrompt || '').trim();
-    // Volle Aufloesung; das Vorschaubild dient nur als Platzhalter, bis sie da ist.
-    const full = img.src || img.thumbSrc;
+    /*
+        Volle Aufloesung nur dort, wo jemand hinsieht.
+
+        Ein Stapel mit fuenfzehn Fassungen hielt fuenfzehn 4K-Bilder
+        gleichzeitig im Speicher. Entscheidend ist nicht die Dateigroesse,
+        sondern die entpackte: Ein 4000x3000-Bild belegt rund 48 MB, sobald es
+        gezeichnet ist, und `loading="lazy"` verschiebt das nur, es nimmt
+        nichts zurueck. Safari hat die Seite darum irgendwann neu geladen
+        ("benoetigte sehr viel Speicher").
+
+        Jetzt traegt jede Zeile die volle Aufloesung nur, solange sie in der
+        Naehe des Fensters steht (anderthalb Bildschirme nach oben und unten);
+        weiter weg faellt sie auf das Vorschaubild zurueck, das ohnehin schon
+        geladen ist. Im Blick bleibt damit alles so scharf wie vorher, im
+        Speicher liegen aber drei Bilder statt fuenfzehn.
+    */
+    const frameRef = React.useRef<HTMLDivElement | null>(null);
+    const [isNear, setIsNear] = React.useState(idx < 2);
+    React.useEffect(() => {
+        const node = frameRef.current;
+        if (!node || typeof IntersectionObserver === 'undefined') { setIsNear(true); return; }
+        const io = new IntersectionObserver(
+            entries => setIsNear(entries[0]?.isIntersecting ?? true),
+            { rootMargin: '150% 0px' },
+        );
+        io.observe(node);
+        return () => io.disconnect();
+    }, []);
+    const full = isNear ? (img.src || img.thumbSrc) : (img.thumbSrc || img.src);
 
     const imgRef = React.useCallback((node: HTMLImageElement | null) => {
         if (node?.complete) node.style.opacity = '1';
@@ -162,6 +189,7 @@ const StackRow: React.FC<{
                 ${isPending ? '' : 'cursor-pointer'}`}
         >
             <div
+                ref={frameRef}
                 style={{ aspectRatio: `${img.width} / ${img.height}` }}
                 className={`relative w-full md:w-[72%] shrink-0 overflow-hidden bg-zinc-200 dark:bg-zinc-800
                     ring-1 transition-[box-shadow] duration-200
