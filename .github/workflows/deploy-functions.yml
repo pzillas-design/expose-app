@@ -11,6 +11,9 @@ on:
     branches: [main]
     paths:
       - 'supabase/functions/**'
+      # Auch die Datei selbst: Wer am Ausrollen etwas repariert, will das
+      # Ergebnis sehen, ohne erst eine Funktion anfassen zu muessen.
+      - '.github/workflows/deploy-functions.yml'
   workflow_dispatch:
 
 jobs:
