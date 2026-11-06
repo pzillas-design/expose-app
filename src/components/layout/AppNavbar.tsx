@@ -880,6 +880,21 @@ export const AppNavbar: React.FC<AppNavbarProps> = ({
                             </button>
                         ) : (
                             <>
+                                {/*
+                                    Platz fuer die Meldung ueber laufende
+                                    Erzeugungen.
+
+                                    Sie lag vorher als schwebende Scheibe oben
+                                    rechts ueber der Leiste und verdeckte dabei
+                                    den Guthabenstand. In der Leiste steht sie
+                                    in der Reihe mit allem anderen und nimmt
+                                    niemandem den Platz weg; fehlt die Leiste
+                                    (Handy, Detailansicht), schwebt sie wie
+                                    bisher. Gefuellt wird der Platz per Portal
+                                    aus GenerationNotice.
+                                */}
+                                <div id="generation-notice-slot" className="hidden md:flex items-center" />
+
                                 {credits !== undefined && credits !== null && user && (
                                     <Tooltip text={t('balance')}>
                                         <button
