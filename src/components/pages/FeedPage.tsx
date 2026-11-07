@@ -1725,6 +1725,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         onSelect={(id) => onSelectImage?.(id)}
                                         onGenerateMore={actions?.handleGenerateMore}
                                         onDownload={actions?.handleDownload}
+                                        // Was hier gross im Fenster steht, ist gesehen.
+                                        onSeen={(id) => actions?.markSeen?.([id])}
                                         onDelete={async (img) => {
                                             // Dieselbe Rueckfrage wie im Raster — eine
                                             // Fassung ist schnell weg und nicht
@@ -1821,6 +1823,24 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                             selected={dayPicked}
                                                             visible={dayPicked || isDayHovered === sec.key}
                                                             wrapperClassName="relative ml-0.5 shrink-0"
+                                                            /*
+                                                                Auf der Seite, nicht auf einem Foto.
+
+                                                                Im Raster liegt die Marke ueber einem
+                                                                Bild, da traegt die weisse bzw.
+                                                                schwarze Flaeche. Hier liegt sie auf
+                                                                dem Grund der Seite -- im dunklen Thema
+                                                                also eine fast schwarze Scheibe auf
+                                                                fast schwarzem Grund, und damit
+                                                                unsichtbar. Leer ist sie deshalb ein
+                                                                Ring: in beiden Themen sichtbar, und
+                                                                er sieht aus wie das Kaestchen, das er
+                                                                ist. Markiert bleibt die orangene
+                                                                Flaeche, die ueberall traegt.
+                                                            */
+                                                            badgeClassName={dayPicked
+                                                                ? ''
+                                                                : 'bg-transparent dark:bg-transparent backdrop-blur-0 ring-1 ring-zinc-300 dark:ring-zinc-600 hover:bg-zinc-100 dark:hover:bg-white/10 hover:ring-zinc-400 dark:hover:ring-zinc-400'}
                                                             label={state?.currentLang === 'de' ? 'Tag markieren' : 'Select day'}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

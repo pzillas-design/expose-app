@@ -31,6 +31,8 @@ interface StackListProps {
     onGenerateMore?: (img: CanvasImage) => void;
     onDownload?: (id: string) => void;
     onDelete?: (img: CanvasImage) => void;
+    /** Diese Fassung steht gross im Fenster -- der Punkt "neu" darf weg. */
+    onSeen?: (id: string) => void;
     onHoverIndex?: (idx: number | null) => void;
     t?: (key: any) => string;
 }
@@ -107,9 +109,10 @@ const StackRow: React.FC<{
     onGenerateMore?: (img: CanvasImage) => void;
     onDownload?: (id: string) => void;
     onDelete?: (img: CanvasImage) => void;
+    onSeen?: (id: string) => void;
     onHoverIndex?: (idx: number | null) => void;
     t?: (key: any) => string;
-}> = ({ img, idx, fallbackVersion, isActive, lang, onSelect, onGenerateMore, onDownload, onDelete, onHoverIndex, t }) => {
+}> = ({ img, idx, fallbackVersion, isActive, lang, onSelect, onGenerateMore, onDownload, onDelete, onSeen, onHoverIndex, t }) => {
     const { version } = imageNameOf(img);
     const isOriginal = !img.parentId;
     /*
@@ -161,6 +164,9 @@ const StackRow: React.FC<{
         Speicher liegen aber drei Bilder statt fuenfzehn.
     */
     const frameRef = React.useRef<HTMLDivElement | null>(null);
+    // Der Beobachter wird einmal gesetzt; die Rueckmeldung darf sich aendern.
+    const onSeenRef = React.useRef(onSeen);
+    onSeenRef.current = onSeen;
     const [isNear, setIsNear] = React.useState(idx < 2);
     React.useEffect(() => {
         const node = frameRef.current;
@@ -170,8 +176,25 @@ const StackRow: React.FC<{
             { rootMargin: '150% 0px' },
         );
         io.observe(node);
-        return () => io.disconnect();
-    }, []);
+
+        /*
+            Gesehen heisst: Es stand gross im Fenster.
+
+            Ein zweiter, engerer Blick als der oben -- der laedt schon
+            anderthalb Bildschirme im Voraus, das waere kein Ansehen. Hier
+            zaehlt erst, was wirklich im Fenster steht, und zwar zu einem
+            guten Drittel. Dann faellt der Punkt "neu" sofort weg, ohne
+            Wartezeit: In dieser Liste ist jede Fassung gross zu sehen.
+        */
+        const seenIo = new IntersectionObserver(entries => {
+            if (entries[0]?.isIntersecting && document.visibilityState === 'visible') {
+                onSeenRef.current?.(img.id);
+            }
+        }, { threshold: 0.35 });
+        seenIo.observe(node);
+
+        return () => { io.disconnect(); seenIo.disconnect(); };
+    }, [img.id]);
     const full = isNear ? (img.src || img.thumbSrc) : (img.thumbSrc || img.src);
 
     const imgRef = React.useCallback((node: HTMLImageElement | null) => {
@@ -355,7 +378,7 @@ const StackRow: React.FC<{
 };
 
 export const StackList: React.FC<StackListProps> = ({
-    images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onDelete, onHoverIndex, t,
+    images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onDelete, onSeen, onHoverIndex, t,
 }) => {
     /*
         Die naechste freie Fassungsnummer dieses Stapels.
@@ -396,6 +419,7 @@ export const StackList: React.FC<StackListProps> = ({
                     onGenerateMore={onGenerateMore}
                     onDownload={onDownload}
                     onDelete={onDelete}
+                    onSeen={onSeen}
                     onHoverIndex={onHoverIndex}
                     t={t}
                 />

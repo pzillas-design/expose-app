@@ -65,38 +65,32 @@ export const useNanoController = () => {
      * keiner.
      *
      * Jetzt drei Regeln:
-     *  - Nur in der Detailansicht. Eine Kachel ist zu klein, um ein Ergebnis
-     *    zu beurteilen; sie zu streifen ist kein Ansehen.
-     *  - Und erst nach 1,2 Sekunden darauf. Wer durchblaettert, laesst alles
-     *    stehen; wer anhaelt, hat hingesehen.
-     *  - Die Zeit laeuft nur, solange der Tab vorne ist. Ein Bild, das in
-     *    einem Hintergrundtab stand, hat niemand gesehen.
+     *  - Nur in der Detailansicht oder in der Stapelliste. Eine Kachel im
+     *    Raster ist zu klein, um ein Ergebnis zu beurteilen; sie zu streifen
+     *    ist kein Ansehen. Gross dargestellt dagegen schon.
+     *  - Dort aber sofort. Hier stand eine Verweildauer von 1,2 Sekunden --
+     *    gedacht gegen das Durchblaettern, in der Praxis blieb der Punkt
+     *    gefuehlt an Bildern haengen, die laengst angesehen waren.
+     *  - Nur, solange der Tab vorne ist. Ein Bild, das in einem
+     *    Hintergrundtab stand, hat niemand gesehen.
      *
      * Ausserdem gilt eine Handlung am Bild als gesehen, sofort: Wer es
      * herunterlaedt oder damit weiterarbeitet, kennt es.
      */
-    const SEEN_DWELL_MS = 1200;
     React.useEffect(() => {
         if (!activeId || !unseenIds.has(activeId)) return;
 
-        let timer: any = null;
-        const stop = () => { if (timer) { clearTimeout(timer); timer = null; } };
-        const start = () => {
-            if (timer || document.visibilityState !== 'visible') return;
-            timer = setTimeout(() => {
-                // Beim Ablauf noch einmal pruefen: In der Galerie setzt eine
-                // Auswahl ebenfalls activeId, und dort gilt die Regel nicht.
-                if (window.location.pathname.startsWith('/image/')) clearUnseen([activeId]);
-            }, SEEN_DWELL_MS);
+        const markIfVisible = () => {
+            if (document.visibilityState !== 'visible') return;
+            // In der Galerie setzt eine Auswahl ebenfalls activeId, und dort
+            // gilt die Regel nicht -- nur die Detailansicht zaehlt.
+            if (window.location.pathname.startsWith('/image/')) clearUnseen([activeId]);
         };
-        const onVisibility = () => { document.visibilityState === 'visible' ? start() : stop(); };
+        const onVisibility = () => markIfVisible();
 
-        start();
+        markIfVisible();
         document.addEventListener('visibilitychange', onVisibility);
-        return () => {
-            stop();
-            document.removeEventListener('visibilitychange', onVisibility);
-        };
+        return () => document.removeEventListener('visibilitychange', onVisibility);
     }, [activeId, unseenIds, clearUnseen]);
     const [isCanvasLoading, setIsCanvasLoading] = useState(false);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
