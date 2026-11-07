@@ -301,8 +301,24 @@ export const adminService = {
 
         if (presetsError) throw presetsError;
 
+        /*
+            Ohne bekannten Nutzer nur die eingebauten.
+
+            Die Liste wird einmal geholt, bevor die Anmeldung durch ist --
+            dann steht hier noch keine Nutzer-ID. Zurueck kam bisher ALLES,
+            was die Datenbank herausgibt, und fuer ein Konto mit Adminrolle
+            ist das auch jede eigene Vorlage jedes Kunden: In der eigenen
+            Liste stand ploetzlich "Aussenfoto / Baustelle" von jemand
+            anderem. Fuer gewoehnliche Konten verhindert das schon die
+            Datenbank; die Adminrolle hebelt genau diese Regel aus.
+
+            Also: Ohne Nutzer nur, was allen gehoert. Die vollstaendige Sicht
+            bleibt dem Verwaltungsbereich.
+        */
         if (!userId) {
-            return (allPresets || []).map(p => this._mapDbPreset(p));
+            return (allPresets || [])
+                .filter(p => p.user_id === null && !p.is_custom)
+                .map(p => this._mapDbPreset(p));
         }
 
         // Fetch user preferences (hidden presets)

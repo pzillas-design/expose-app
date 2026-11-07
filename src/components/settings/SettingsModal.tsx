@@ -24,6 +24,7 @@ interface SettingsModalProps {
     onQualityModeChange: (mode: GenerationQuality) => void;
     currentBalance: number;
     onAddFunds: (amount: number) => void;
+    onOpenInvoices?: () => void | Promise<void>;
     themeMode: 'light' | 'dark' | 'auto';
     onThemeChange: (mode: 'light' | 'dark' | 'auto') => void;
     lang: LocaleKey | 'auto';
@@ -40,7 +41,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
     isOpen, onClose,
-    qualityMode, onQualityModeChange, currentBalance, onAddFunds,
+    qualityMode, onQualityModeChange, currentBalance, onAddFunds, onOpenInvoices,
     themeMode, onThemeChange, lang, onLangChange, onSignOut, onDeleteAccount, user, userProfile, t,
     currentLang = 'en',
     onChangePassword
@@ -305,6 +306,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onClose={() => setIsCreditsModalOpen(false)}
                 currentBalance={currentBalance}
                 onAddFunds={onAddFunds}
+                onOpenInvoices={onOpenInvoices}
                 t={t}
             />
         </Modal>

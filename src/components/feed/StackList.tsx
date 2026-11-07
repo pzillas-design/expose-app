@@ -31,6 +31,8 @@ interface StackListProps {
     onGenerateMore?: (img: CanvasImage) => void;
     onDownload?: (id: string) => void;
     onDelete?: (img: CanvasImage) => void;
+    /** Diese Fassung steht gross im Fenster -- der Punkt "neu" darf weg. */
+    onSeen?: (id: string) => void;
     onHoverIndex?: (idx: number | null) => void;
     t?: (key: any) => string;
 }
@@ -77,6 +79,25 @@ const RowAction: React.FC<{
     </button>
 );
 
+/**
+ * Was der Mensch geschrieben hat, ohne die Regie fuer das Modell.
+ *
+ * Vor den Auftrag setzt der Server eine Rollenangabe der Bilder ("Image 1:
+ * original. Image 2: annotation overlay — red marks indicate edit zones; do
+ * not render them."). Die gehoert zur Anfrage, nicht in die Liste: Unter
+ * jeder Fassung standen zwei Zeilen Technik, bevor der eigentliche Satz kam.
+ */
+const cleanPrompt = (raw?: string): string => {
+    let text = (raw || '').trim();
+    // Fuehrende "Image N: ..."-Saetze abschneiden, einen nach dem anderen.
+    for (let i = 0; i < 6; i++) {
+        const next = text.replace(/^Images?\s+\d+(\s*[–-]\s*\d+)?\s*:[^.]*\.\s*/i, '');
+        if (next === text) break;
+        text = next;
+    }
+    return text.trim();
+};
+
 const StackRow: React.FC<{
     img: CanvasImage;
     idx: number;
@@ -88,9 +109,10 @@ const StackRow: React.FC<{
     onGenerateMore?: (img: CanvasImage) => void;
     onDownload?: (id: string) => void;
     onDelete?: (img: CanvasImage) => void;
+    onSeen?: (id: string) => void;
     onHoverIndex?: (idx: number | null) => void;
     t?: (key: any) => string;
-}> = ({ img, idx, fallbackVersion, isActive, lang, onSelect, onGenerateMore, onDownload, onDelete, onHoverIndex, t }) => {
+}> = ({ img, idx, fallbackVersion, isActive, lang, onSelect, onGenerateMore, onDownload, onDelete, onSeen, onHoverIndex, t }) => {
     const { version } = imageNameOf(img);
     const isOriginal = !img.parentId;
     /*
@@ -124,9 +146,56 @@ const StackRow: React.FC<{
         daneben. Unter dem Original stand damit ein Satz, der eine Herkunft
         behauptete, die es nicht gibt.
     */
-    const prompt = (img.generationPrompt || '').trim();
-    // Volle Aufloesung; das Vorschaubild dient nur als Platzhalter, bis sie da ist.
-    const full = img.src || img.thumbSrc;
+    const prompt = cleanPrompt(img.generationPrompt);
+    /*
+        Volle Aufloesung nur dort, wo jemand hinsieht.
+
+        Ein Stapel mit fuenfzehn Fassungen hielt fuenfzehn 4K-Bilder
+        gleichzeitig im Speicher. Entscheidend ist nicht die Dateigroesse,
+        sondern die entpackte: Ein 4000x3000-Bild belegt rund 48 MB, sobald es
+        gezeichnet ist, und `loading="lazy"` verschiebt das nur, es nimmt
+        nichts zurueck. Safari hat die Seite darum irgendwann neu geladen
+        ("benoetigte sehr viel Speicher").
+
+        Jetzt traegt jede Zeile die volle Aufloesung nur, solange sie in der
+        Naehe des Fensters steht (anderthalb Bildschirme nach oben und unten);
+        weiter weg faellt sie auf das Vorschaubild zurueck, das ohnehin schon
+        geladen ist. Im Blick bleibt damit alles so scharf wie vorher, im
+        Speicher liegen aber drei Bilder statt fuenfzehn.
+    */
+    const frameRef = React.useRef<HTMLDivElement | null>(null);
+    // Der Beobachter wird einmal gesetzt; die Rueckmeldung darf sich aendern.
+    const onSeenRef = React.useRef(onSeen);
+    onSeenRef.current = onSeen;
+    const [isNear, setIsNear] = React.useState(idx < 2);
+    React.useEffect(() => {
+        const node = frameRef.current;
+        if (!node || typeof IntersectionObserver === 'undefined') { setIsNear(true); return; }
+        const io = new IntersectionObserver(
+            entries => setIsNear(entries[0]?.isIntersecting ?? true),
+            { rootMargin: '150% 0px' },
+        );
+        io.observe(node);
+
+        /*
+            Gesehen heisst: Es stand gross im Fenster.
+
+            Ein zweiter, engerer Blick als der oben -- der laedt schon
+            anderthalb Bildschirme im Voraus, das waere kein Ansehen. Hier
+            zaehlt erst, was wirklich im Fenster steht, und zwar zu einem
+            guten Drittel. Dann faellt der Punkt "neu" sofort weg, ohne
+            Wartezeit: In dieser Liste ist jede Fassung gross zu sehen.
+        */
+        const seenIo = new IntersectionObserver(entries => {
+            if (entries[0]?.isIntersecting && document.visibilityState === 'visible') {
+                onSeenRef.current?.(img.id);
+            }
+        }, { threshold: 0.35 });
+        seenIo.observe(node);
+
+        return () => { io.disconnect(); seenIo.disconnect(); };
+    }, [img.id]);
+    const full = isNear ? (img.src || img.thumbSrc) : (img.thumbSrc || img.src);
 
     const imgRef = React.useCallback((node: HTMLImageElement | null) => {
         if (node?.complete) node.style.opacity = '1';
@@ -151,17 +220,25 @@ const StackRow: React.FC<{
                 ihren Klick bei sich (stopPropagation in RowAction).
             */
             role="button"
-            tabIndex={isPending ? -1 : 0}
-            onClick={() => { if (!isPending) onSelect(img.id); }}
+            /*
+                Auch die entstehende Fassung laesst sich oeffnen.
+
+                Sie war ausgenommen -- kein Klick, kein Fokus --, obwohl die
+                Detailansicht einen Platzhalter laengst zeigen kann, samt Ring
+                und Restzeit. Wer sehen wollte, woran gerade gearbeitet wird,
+                kam nicht hinein.
+            */
+            tabIndex={0}
+            onClick={() => onSelect(img.id)}
             onKeyDown={e => {
-                if (isPending) return;
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(img.id); }
             }}
             className={`group/row animate-[stack-fan_460ms_cubic-bezier(0.16,1,0.3,1)_backwards]
                 flex flex-col md:flex-row md:items-start gap-4 md:gap-8 outline-none
-                ${isPending ? '' : 'cursor-pointer'}`}
+                cursor-pointer`}
         >
             <div
+                ref={frameRef}
                 style={{ aspectRatio: `${img.width} / ${img.height}` }}
                 className={`relative w-full md:w-[72%] shrink-0 overflow-hidden bg-zinc-200 dark:bg-zinc-800
                     ring-1 transition-[box-shadow] duration-200
@@ -301,7 +378,7 @@ const StackRow: React.FC<{
 };
 
 export const StackList: React.FC<StackListProps> = ({
-    images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onDelete, onHoverIndex, t,
+    images, activeId, currentLang = 'de', onSelect, onGenerateMore, onDownload, onDelete, onSeen, onHoverIndex, t,
 }) => {
     /*
         Die naechste freie Fassungsnummer dieses Stapels.
@@ -342,6 +419,7 @@ export const StackList: React.FC<StackListProps> = ({
                     onGenerateMore={onGenerateMore}
                     onDownload={onDownload}
                     onDelete={onDelete}
+                    onSeen={onSeen}
                     onHoverIndex={onHoverIndex}
                     t={t}
                 />

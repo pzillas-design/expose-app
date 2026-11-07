@@ -48,6 +48,8 @@ export interface CanvasImage {
   // 'uploading' item shows a circular progress ring driven by uploadProgress.
   uploadStatus?: 'queued' | 'uploading';
   uploadProgress?: number; // 0–100, only meaningful while uploadStatus === 'uploading'
+  /** Platz in der Warteschlange (1 = als naechstes dran), solange 'queued'. */
+  uploadQueuePos?: number;
 
   parentId?: string;
   folderId?: string; // Immutable root of the stack — shared by all variants

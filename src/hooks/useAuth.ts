@@ -344,6 +344,48 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
     }, [isAuthDisabled, showToast, t]);
 
 
+    /*
+        Rechnungen holen, statt auf sie zu warten.
+
+        Stripe mailt die Rechnung, aber Firmen-Postfaecher halten solche
+        Mails gern zurueck -- gemeldet von einer Kundin, deren Belege nie
+        ankamen. Das Kundenportal von Stripe zeigt ihr alle Zahlungen samt
+        Rechnung zum Herunterladen; die Sitzung dafuer legt die Edge Function
+        an, weil dafuer der Stripe-Kunde noetig ist.
+    */
+    const handleOpenInvoices = useCallback(async () => {
+        if (isAuthDisabled) {
+            showToast('Rechnungen gibt es nur mit echtem Konto.', 'error');
+            return;
+        }
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('No active session');
+
+            const { data, error } = await supabase.functions.invoke('stripe-portal', {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+                body: { return_url: window.location.href },
+            });
+            if (error) {
+                let message = error.message;
+                try {
+                    const body = await (error as any).context?.json?.();
+                    if (body?.error) message = body.error;
+                } catch { /* ignore parse errors */ }
+                throw new Error(message);
+            }
+            if (data?.reason === 'no_customer') {
+                showToast(t('invoices_none') || 'Noch keine Zahlungen vorhanden.', 'success');
+                return;
+            }
+            if (!data?.url) throw new Error('No portal URL received from server.');
+            const win = window.open(data.url, '_blank');
+            if (!win) window.location.href = data.url;
+        } catch (err: any) {
+            showToast(err.message || 'Rechnungen konnten nicht geöffnet werden.', 'error');
+        }
+    }, [isAuthDisabled, showToast, t]);
+
     const updateProfile = useCallback(async (updates: { full_name?: string }) => {
         if (!user || isAuthDisabled) return;
         try {
@@ -406,6 +448,7 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
         authError,
         setAuthError,
         handleAddFunds,
+        handleOpenInvoices,
         handleSignOut,
         updateProfile,
         deleteAccount,

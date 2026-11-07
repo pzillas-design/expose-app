@@ -51,7 +51,7 @@ jobs:
       # Public endpoints & webhooks — must be deployed WITHOUT JWT verification.
       - name: Deploy no-JWT functions
         run: |
-          for fn in generate-image-fal fal-webhook stripe-webhook stripe-checkout admin-stats admin-refund cleanup-expired-images; do
+          for fn in generate-image-fal fal-webhook stripe-webhook stripe-checkout stripe-portal admin-stats admin-refund cleanup-expired-images; do
             echo "::group::deploy $fn"
             supabase functions deploy "$fn" --project-ref rhocpnetpxficxnrprsq --no-verify-jwt --yes
             echo "::endgroup::"

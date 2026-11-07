@@ -187,6 +187,21 @@ const UploadDropZone: React.FC<{
  * Pille, ohne die Hoehe zu aendern. Deshalb min-w statt w und px statt
  * fester Breite.
  */
+/**
+ * Passt der Inhalt in einen Kreis?
+ *
+ * Ein einzelnes Zeichen (Haken, Ladekreis, Pfeil) oder eine Zahl bis 99 ja;
+ * alles Laengere braucht Platz nach rechts.
+ */
+const compactBadgeContent = (children: React.ReactNode): boolean => {
+    const kids = React.Children.toArray(children).filter(c => c !== null && c !== false && c !== '');
+    if (kids.length !== 1) return false;
+    const only: any = kids[0];
+    if (typeof only === 'number') return String(only).length <= 2;
+    if (typeof only === 'string') return only.trim().length <= 2;
+    return React.isValidElement(only);
+};
+
 const TileBadge: React.FC<{
     selected: boolean;
     /** Anzahl im Stapel; fehlt sie, ist es ein einzelnes Bild. */
@@ -210,7 +225,11 @@ const TileBadge: React.FC<{
      * Ring die Flaeche.
      */
     badgeClassName?: string;
-}> = ({ selected, count, pending, visible, onClick, label, wrapperClassName = 'absolute top-0 left-0 p-2.5 z-20', badgeClassName = '' }) => (
+}> = ({ selected, count, pending, visible, onClick, label, wrapperClassName = 'absolute top-0 left-0 p-2.5 z-20', badgeClassName = '' }) => {
+    // Ohne den Punkt daneben steht hier hoechstens eine zweistellige Zahl oder
+    // ein Haken -- dann rund (siehe compactBadgeContent).
+    const badgeIsCompact = !pending && (count == null || String(count).length <= 2);
+    return (
     <div
         className={`${wrapperClassName} ${visible ? 'cursor-pointer' : 'pointer-events-none'}`}
         onClick={onClick}
@@ -218,7 +237,8 @@ const TileBadge: React.FC<{
         <div
             role="button"
             aria-label={label}
-            className={`h-[26px] min-w-[26px] px-[7px] rounded-full grid place-items-center
+            className={`h-[26px] rounded-full grid place-items-center
+                ${badgeIsCompact ? 'w-[26px] px-0' : 'min-w-[26px] px-[7px]'}
                 text-[12px] font-medium tabular-nums leading-none
                 transition-[opacity,transform,background-color] duration-200
                 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}
@@ -237,7 +257,8 @@ const TileBadge: React.FC<{
             </span>
         </div>
     </div>
-);
+    );
+};
 
 const TileChip: React.FC<{
     children: React.ReactNode;
@@ -246,6 +267,17 @@ const TileChip: React.FC<{
     title?: string;
 }> = ({ children, className = '', onClick, title }) => {
     const Tag: any = onClick ? 'button' : 'div';
+    /*
+        Rund, solange der Inhalt hineinpasst.
+
+        Die Scheibe ist 22 Pixel hoch und trug links und rechts je 6 Pixel
+        Polsterung. Bei einem 16 Pixel breiten Ladekreis ergab das 28 zu 22 --
+        ein sichtbar in die Laenge gezogener Kreis, und genau dort, wo ein
+        Kreis das Erwartete ist. Steht nur ein Zeichen oder eine ein- bis
+        zweistellige Zahl darin, ist die Scheibe jetzt quadratisch und damit
+        kreisrund; laengerer Text laesst sie wie bisher in die Breite gehen.
+    */
+    const isCompact = compactBadgeContent(children);
     return (
     <Tag
         onClick={onClick}
@@ -260,7 +292,8 @@ const TileChip: React.FC<{
         // top-3/right-3 statt top-2/right-2: Der Auswahlkreis sitzt in einem
         // Feld mit p-3, also 12 Pixel von der Ecke. Das Abzeichen sass auf 8
         // und stand damit sichtbar anders als sein Gegenstueck.
-        className={`absolute top-3 right-3 z-20 h-[22px] min-w-[22px] px-1.5 rounded-full
+        className={`absolute top-3 right-3 z-20 h-[22px] rounded-full
+            ${isCompact ? 'w-[22px] px-0' : 'min-w-[22px] px-1.5'}
             grid place-items-center
             bg-black/45 backdrop-blur-[3px]
             text-[11px] font-normal tabular-nums leading-none text-white
@@ -375,6 +408,8 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
         if (node?.complete) node.style.opacity = String(targetOpacity);
     }, [targetOpacity]);
     const isGen = !!img.isGenerating;
+    /** Laeuft der Upload dieses Bildes noch? (Blob-Quelle, noch kein Speicherpfad) */
+    const isUploadingTile = !img.isGenerating && !img.storage_path && !!img.src?.startsWith('blob:');
     const isGroup = groupCount > 1;
 
     /*
@@ -564,16 +599,25 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         />
                     )}
 
-                    {/* Source image badge — same weight + size as the Euro icon in the navbar. */}
-                    {isSource && (
+                    {/*
+                        Herkunftszeichen -- aber nicht, solange das Bild laeuft.
+
+                        Im Auswahlmodus gilt jedes elternlose Bild als Quelle, und
+                        das Zeichen stand an derselben Stelle wie der
+                        Fortschrittsring. Wer dort Fotos hochlud, sah deshalb
+                        waehrend des gesamten Uploads nur ein ruhendes Pfeilchen:
+                        kein Balken, kein Ring, keine Angabe. Was gerade passiert,
+                        geht vor; das Zeichen kommt danach.
+                    */}
+                    {isSource && !isUploadingTile && (
                         <TileChip>
                             <Upload className="w-[13px] h-[13px]" strokeWidth={2} />
                         </TileChip>
                     )}
 
-                    {/* Upload state — queued items spin without progress; the single
+                    {/* Upload state — queued items show their place in line; the single
                         actively uploading item fills a clock-style progress ring 0→100. */}
-                    {!isGen && !isSource && !img.storage_path && img.src?.startsWith('blob:') && (
+                    {isUploadingTile && (
                         <TileChip>
                             {img.uploadStatus === 'uploading' ? (
                                 <svg viewBox="0 0 20 20" className="w-[16px] h-[16px] -rotate-90">
@@ -585,7 +629,19 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                                         strokeDashoffset={(2 * Math.PI * 8) * (1 - Math.min(100, img.uploadProgress ?? 0) / 100)} />
                                 </svg>
                             ) : (
-                                <Loader2 className="w-[14px] h-[14px] animate-[spin_3s_linear_infinite]" />
+                                /*
+                                    Warten mit Angabe statt endlosem Drehen.
+
+                                    Die Bilder gehen eines nach dem anderen hoch.
+                                    Alle anderen trugen bisher einen Kreisel, der
+                                    nichts sagt -- bei zwanzig Fotos neunzehnmal
+                                    dasselbe Nichts. Jetzt steht da, der wievielte
+                                    man in der Schlange ist; beim laufenden Bild
+                                    fuellt sich der Ring wie zuvor.
+                                */
+                                img.uploadQueuePos
+                                    ? <span className="px-[1px]">{img.uploadQueuePos}</span>
+                                    : <Loader2 className="w-[14px] h-[14px] animate-[spin_3s_linear_infinite]" />
                             )}
                         </TileChip>
                     )}
@@ -1669,6 +1725,8 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                         onSelect={(id) => onSelectImage?.(id)}
                                         onGenerateMore={actions?.handleGenerateMore}
                                         onDownload={actions?.handleDownload}
+                                        // Was hier gross im Fenster steht, ist gesehen.
+                                        onSeen={(id) => actions?.markSeen?.([id])}
                                         onDelete={async (img) => {
                                             // Dieselbe Rueckfrage wie im Raster — eine
                                             // Fassung ist schnell weg und nicht
@@ -1765,6 +1823,24 @@ export const FeedPage: React.FC<FeedPageProps> = ({ images, rows, isLoading, has
                                                             selected={dayPicked}
                                                             visible={dayPicked || isDayHovered === sec.key}
                                                             wrapperClassName="relative ml-0.5 shrink-0"
+                                                            /*
+                                                                Auf der Seite, nicht auf einem Foto.
+
+                                                                Im Raster liegt die Marke ueber einem
+                                                                Bild, da traegt die weisse bzw.
+                                                                schwarze Flaeche. Hier liegt sie auf
+                                                                dem Grund der Seite -- im dunklen Thema
+                                                                also eine fast schwarze Scheibe auf
+                                                                fast schwarzem Grund, und damit
+                                                                unsichtbar. Leer ist sie deshalb ein
+                                                                Ring: in beiden Themen sichtbar, und
+                                                                er sieht aus wie das Kaestchen, das er
+                                                                ist. Markiert bleibt die orangene
+                                                                Flaeche, die ueberall traegt.
+                                                            */
+                                                            badgeClassName={dayPicked
+                                                                ? ''
+                                                                : 'bg-transparent dark:bg-transparent backdrop-blur-0 ring-1 ring-zinc-300 dark:ring-zinc-600 hover:bg-zinc-100 dark:hover:bg-white/10 hover:ring-zinc-400 dark:hover:ring-zinc-400'}
                                                             label={state?.currentLang === 'de' ? 'Tag markieren' : 'Select day'}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

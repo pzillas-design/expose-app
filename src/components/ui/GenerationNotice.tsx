@@ -57,6 +57,17 @@ export const GenerationNotice: React.FC<GenerationNoticeProps> = ({
     const [hovered, setHovered] = useState(false);
     const [, setTick] = useState(0);
 
+    /*
+        Das Feld in der Leiste, falls es gerade eines gibt. Nach jedem Lauf
+        nachgesehen: Die Leiste kommt und geht mit der Ansicht (Detailansicht
+        blendet sie aus), und die Meldung soll dann wieder schweben.
+    */
+    const [slot, setSlot] = useState<HTMLElement | null>(null);
+    useEffect(() => {
+        const found = document.getElementById('generation-notice-slot');
+        setSlot(prev => (prev === found ? prev : found));
+    });
+
     const prevIdsRef = useRef<Set<string>>(new Set());
     /** Namen der laufenden Bilder, damit die Fertigmeldung sagen kann, welches. */
     const prevTitlesRef = useRef<Map<string, string>>(new Map());
@@ -166,13 +177,36 @@ export const GenerationNotice: React.FC<GenerationNoticeProps> = ({
             : (isGerman ? 'Bild wird erzeugt' : 'Generating image');
 
     const clickable = phase === 'done' && !!doneId && !!onNavigateToImage;
-    const open = expanded || hovered;
+    const inBar = !!slot;
+
+    /*
+        In der Leiste faehrt sie nur beim Darueberfahren auf.
+
+        Dort stehen Guthaben und Menue daneben; wuerde die Meldung von selbst
+        breit werden, ruecken die beiden zweimal zur Seite, ohne dass jemand
+        etwas getan hat. Schwebend ist das anders -- dort steht sie fuer sich
+        und darf sich melden.
+    */
+    const open = inBar ? hovered : (expanded || hovered);
     const text = phase === 'done'
         ? (doneTitle ? `${doneTitle} ${isGerman ? 'ist fertig' : 'is ready'}` : label)
         : label;
 
+    /*
+        In der Leiste, wenn dort Platz ist.
+
+        Als schwebende Scheibe lag die Meldung oben rechts UEBER der
+        Kopfleiste und verdeckte den Guthabenstand -- zwei Dinge auf einem
+        Platz. Auf dem Schreibtisch haengt sie sich deshalb in die Leiste
+        selbst (ein leeres Feld dort nimmt sie auf), wo sie in der Reihe mit
+        allem anderen steht. Fehlt die Leiste -- Handy, Detailansicht --,
+        schwebt sie wie bisher.
+    */
+
     return createPortal(
-        <div className="fixed top-4 right-4 z-[900] pointer-events-none flex justify-end">
+        <div className={inBar
+            ? 'flex items-center'
+            : 'fixed top-4 right-4 z-[900] pointer-events-none flex justify-end'}>
             <button
                 type="button"
                 disabled={!clickable}
@@ -182,10 +216,16 @@ export const GenerationNotice: React.FC<GenerationNoticeProps> = ({
                 aria-live="polite"
                 // Groesser und luftiger als zuvor, und ohne Rand: Die Flaeche
                 // traegt, wie ueberall sonst.
-                className={`pointer-events-auto h-12 pl-4 pr-4 rounded-full inline-flex items-center gap-3
-                    bg-white/90 dark:bg-[#1B1B20]/90 backdrop-blur-xl shadow-sm
+                className={`pointer-events-auto rounded-full inline-flex items-center
                     animate-[chip-in_320ms_cubic-bezier(0.16,1,0.3,1)_both]
-                    ${clickable ? 'cursor-pointer hover:bg-white dark:hover:bg-[#1B1B20]' : 'cursor-default'}
+                    ${inBar
+                        // In der Leiste traegt sie keine eigene Flaeche: Die
+                        // Leiste ist schon eine. Nur beim Darueberfahren hebt
+                        // sie sich ab, wie die Knoepfe daneben.
+                        ? 'h-10 px-3 gap-2 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                        : 'h-12 pl-4 pr-4 gap-3 bg-white/90 dark:bg-[#1B1B20]/90 backdrop-blur-xl shadow-sm'}
+                    ${clickable ? 'cursor-pointer' : 'cursor-default'}
+                    ${clickable && !inBar ? 'hover:bg-white dark:hover:bg-[#1B1B20]' : ''}
                     transition-colors duration-150`}
             >
                 {/* Links das Zeichen: waehrend des Laufs der Fortschritt, am
@@ -235,6 +275,6 @@ export const GenerationNotice: React.FC<GenerationNoticeProps> = ({
                 )}
             </button>
         </div>,
-        document.body,
+        slot ?? document.body,
     );
 };

@@ -21,6 +21,15 @@ interface UseFileHandlerProps {
 // persistImage waits for the previous one. Queued items show a plain spinner,
 // the single active item drives a circular progress ring via uploadProgress.
 let uploadChain: Promise<void> = Promise.resolve();
+/*
+    Wie viele noch warten.
+
+    Die Bilder gehen eines nach dem anderen hoch; alle anderen zeigten
+    solange einen endlos drehenden Kreis, der nichts sagt. Mit dem Platz in
+    der Schlange steht wenigstens da, wie viele noch vor einem liegen -- und
+    beim Bild, das gerade laeuft, fuellt sich ohnehin der Ring.
+*/
+let queuedCount = 0;
 const enqueueUpload = (job: () => Promise<void>): void => {
     uploadChain = uploadChain.then(job, job);
 };
@@ -154,10 +163,22 @@ export const useFileHandler = ({
                                 })));
                             };
 
-                            patchItem({ uploadStatus: 'queued', uploadProgress: 0 });
+                            queuedCount += 1;
+                            patchItem({ uploadStatus: 'queued', uploadProgress: 0, uploadQueuePos: queuedCount });
 
                             enqueueUpload(async () => {
-                                patchItem({ uploadStatus: 'uploading', uploadProgress: 0 });
+                                // Dieses hier ist dran: Alle, die noch warten,
+                                // ruecken einen Platz auf.
+                                queuedCount = Math.max(0, queuedCount - 1);
+                                setRows(prev => prev.map(row => ({
+                                    ...row,
+                                    items: row.items.map(item => (
+                                        item.uploadStatus === 'queued' && typeof item.uploadQueuePos === 'number'
+                                            ? { ...item, uploadQueuePos: Math.max(1, item.uploadQueuePos - 1) }
+                                            : item
+                                    )),
+                                })));
+                                patchItem({ uploadStatus: 'uploading', uploadProgress: 0, uploadQueuePos: undefined });
                                 try {
                                     const res = await imageService.persistImage(
                                         finalImage, user.id, user.email,
@@ -171,6 +192,7 @@ export const useFileHandler = ({
                                             storage_path: res.storage_path,
                                             uploadStatus: undefined,
                                             uploadProgress: undefined,
+                                            uploadQueuePos: undefined,
                                             ...(signedUrl ? {
                                                 src: signedUrl,
                                                 originalSrc: signedUrl,
@@ -178,11 +200,11 @@ export const useFileHandler = ({
                                             } : {})
                                         });
                                     } else {
-                                        patchItem({ uploadStatus: undefined, uploadProgress: undefined });
+                                        patchItem({ uploadStatus: undefined, uploadProgress: undefined, uploadQueuePos: undefined });
                                     }
                                 } catch (e) {
                                     console.error('Queued upload failed:', e);
-                                    patchItem({ uploadStatus: undefined, uploadProgress: undefined });
+                                    patchItem({ uploadStatus: undefined, uploadProgress: undefined, uploadQueuePos: undefined });
                                 }
                             });
                         }
