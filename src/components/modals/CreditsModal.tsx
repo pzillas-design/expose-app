@@ -3,7 +3,7 @@ import { trackCreditsPurchased } from '@/utils/analytics';
 import { Button, Theme } from '@/components/ui/DesignSystem';
 import { Modal } from '@/components/ui/Modal';
 import { TranslationFunction } from '@/types';
-import { X, Loader2, Plus, ReceiptText } from 'lucide-react';
+import { X, Loader2, Plus } from 'lucide-react';
 import { useAnimatedCounter } from '@/hooks/useAnimatedCounter';
 import { useMobile } from '@/hooks/useMobile';
 
@@ -202,7 +202,6 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                                 try { await onOpenInvoices(); } finally { setIsOpeningInvoices(false); }
                             }}
                             isLoading={isOpeningInvoices}
-                            icon={<ReceiptText className="w-4 h-4" />}
                             className="mt-3 w-full h-12"
                         >
                             {t('invoices') || 'Rechnungen'}
