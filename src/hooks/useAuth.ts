@@ -358,6 +358,20 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
             showToast('Rechnungen gibt es nur mit echtem Konto.', 'error');
             return;
         }
+        /*
+            Den Tab SOFORT aufmachen, noch im Klick.
+
+            Erst die Adresse holen und dann window.open zu rufen, heisst: Der
+            Browser sieht ein Fenster, das aus dem Nichts aufgeht, und blockt
+            es. Dann sprang die Seite selbst zu Stripe -- und wer in der
+            Zwischenzeit ein zweites Mal klickte, brach den ersten Aufruf ab:
+            Portal offen, Fehlermeldung trotzdem. Genau das war zu sehen.
+
+            Also zuerst ein leerer Tab (das erlaubt der Browser, es steht
+            direkt im Klick), und wenn die Adresse da ist, faehrt er sie an.
+            Geht etwas schief, wird er wieder geschlossen.
+        */
+        const tab = window.open('', '_blank');
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('No active session');
@@ -375,14 +389,24 @@ export const useAuth = ({ isAuthDisabled, getResolvedLang, t }: UseAuthProps) =>
                 throw new Error(message);
             }
             if (data?.reason === 'no_customer') {
+                tab?.close();
                 showToast(t('invoices_none') || 'Noch keine Zahlungen vorhanden.', 'success');
                 return;
             }
             if (!data?.url) throw new Error('No portal URL received from server.');
-            const win = window.open(data.url, '_blank');
-            if (!win) window.location.href = data.url;
+            if (tab && !tab.closed) tab.location.href = data.url;
+            else window.location.href = data.url;
         } catch (err: any) {
-            showToast(err.message || 'Rechnungen konnten nicht geöffnet werden.', 'error');
+            tab?.close();
+            // Die Meldung der Bibliothek ("Failed to send a request to the
+            // Edge Function") sagt dem Nutzer nichts.
+            const technical = /Failed to send a request|Failed to fetch|NetworkError/i.test(err?.message || '');
+            showToast(
+                technical
+                    ? (t('invoices_failed') || 'Rechnungen konnten nicht geöffnet werden. Bitte noch einmal versuchen.')
+                    : (err.message || t('invoices_failed') || 'Rechnungen konnten nicht geöffnet werden.'),
+                'error',
+            );
         }
     }, [isAuthDisabled, showToast, t]);
 
