@@ -36,6 +36,13 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
     const [isTopUpExpanded, setIsTopUpExpanded] = useState(false);
     const [showMinError, setShowMinError] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    /*
+        Das Portal braucht einen Moment (die Funktion startet kalt), und ohne
+        Rueckmeldung klickt man ein zweites Mal -- dann bricht der erste
+        Aufruf ab und meldet einen Fehler, waehrend der zweite das Portal
+        oeffnet. Genau das war zu sehen: Seite da, Fehler trotzdem.
+    */
+    const [isOpeningInvoices, setIsOpeningInvoices] = useState(false);
 
     // Animate the balance counter
     const animatedBalance = useAnimatedCounter(currentBalance ?? 0, 800);
@@ -187,13 +194,19 @@ export const CreditsModal: React.FC<CreditsModalProps> = ({
                         dieses Fensters, das hier ist der Nachweis darueber.
                     */}
                     {onOpenInvoices && !isReduced && !isTopUpExpanded && (
-                        <button
-                            onClick={() => { void onOpenInvoices(); }}
-                            className="mt-5 w-full inline-flex items-center justify-center gap-2 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                        <Button
+                            variant="secondary"
+                            onClick={async () => {
+                                if (isOpeningInvoices) return;
+                                setIsOpeningInvoices(true);
+                                try { await onOpenInvoices(); } finally { setIsOpeningInvoices(false); }
+                            }}
+                            isLoading={isOpeningInvoices}
+                            icon={<ReceiptText className="w-4 h-4" />}
+                            className="mt-3 w-full h-12"
                         >
-                            <ReceiptText className="w-3.5 h-3.5" />
                             {t('invoices') || 'Rechnungen'}
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>
