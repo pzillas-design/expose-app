@@ -47,6 +47,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onChangePassword
 }) => {
     const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
+    // Gesperrt, solange das Portal geholt wird -- ein zweiter Klick braeche
+    // den ersten Aufruf ab (siehe useAuth.handleOpenInvoices).
+    const [isOpeningInvoices, setIsOpeningInvoices] = useState(false);
     const [isResDropdownOpen, setIsResDropdownOpen] = useState(false);
     const [isAppearanceDropdownOpen, setIsAppearanceDropdownOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
@@ -183,9 +186,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 {(currentBalance || 0).toFixed(2)} €
                             </span>
                         </div>
-                        <Button variant="primary-mono" size="m" onClick={() => setIsCreditsModalOpen(true)}>
-                            {t('top_up')}
-                        </Button>
+                        {/*
+                            Aufladen und Rechnungen teilen sich die Zeile:
+                            zweimal dasselbe Thema, einmal hinein, einmal
+                            hinterher. Der Beleg steht zurueckgenommen
+                            daneben, das Aufladen bleibt die Handlung.
+                        */}
+                        <div className="flex items-center gap-2">
+                            {onOpenInvoices && (
+                                <Button
+                                    variant="secondary"
+                                    size="m"
+                                    onClick={async () => {
+                                        if (isOpeningInvoices) return;
+                                        setIsOpeningInvoices(true);
+                                        try { await onOpenInvoices(); } finally { setIsOpeningInvoices(false); }
+                                    }}
+                                    isLoading={isOpeningInvoices}
+                                >
+                                    {t('invoices') || 'Rechnungen'}
+                                </Button>
+                            )}
+                            <Button variant="primary-mono" size="m" onClick={() => setIsCreditsModalOpen(true)}>
+                                {t('top_up')}
+                            </Button>
+                        </div>
                     </div>
                 </section>
 
