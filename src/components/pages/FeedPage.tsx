@@ -615,36 +615,42 @@ const FeedGridItem = memo<FeedGridItemProps>(({ img, idx, isSelected, isKeyboard
                         </TileChip>
                     )}
 
-                    {/* Upload state — queued items show their place in line; the single
-                        actively uploading item fills a clock-style progress ring 0→100. */}
-                    {isUploadingTile && (
-                        <TileChip>
-                            {img.uploadStatus === 'uploading' ? (
-                                <svg viewBox="0 0 20 20" className="w-[16px] h-[16px] -rotate-90">
-                                    <circle cx="10" cy="10" r="8" fill="none" strokeWidth="2.5"
-                                        className="stroke-white/30" />
-                                    <circle cx="10" cy="10" r="8" fill="none" strokeWidth="2.5" strokeLinecap="round"
-                                        className="stroke-white transition-[stroke-dashoffset] duration-200"
-                                        strokeDasharray={2 * Math.PI * 8}
-                                        strokeDashoffset={(2 * Math.PI * 8) * (1 - Math.min(100, img.uploadProgress ?? 0) / 100)} />
-                                </svg>
-                            ) : (
-                                /*
-                                    Warten mit Angabe statt endlosem Drehen.
+                    {/*
+                        Ein Ring fuer beides: warten und laufen.
 
-                                    Die Bilder gehen eines nach dem anderen hoch.
-                                    Alle anderen trugen bisher einen Kreisel, der
-                                    nichts sagt -- bei zwanzig Fotos neunzehnmal
-                                    dasselbe Nichts. Jetzt steht da, der wievielte
-                                    man in der Schlange ist; beim laufenden Bild
-                                    fuellt sich der Ring wie zuvor.
-                                */
-                                img.uploadQueuePos
-                                    ? <span className="px-[1px]">{img.uploadQueuePos}</span>
-                                    : <Loader2 className="w-[14px] h-[14px] animate-[spin_3s_linear_infinite]" />
-                            )}
-                        </TileChip>
-                    )}
+                        Wartende trugen zuerst einen endlos drehenden Kreisel
+                        (sagt nichts), dann ihren Platz in der Schlange (eine
+                        nackte Zahl auf einem Foto liest sich wie eine
+                        Nummerierung der Bilder, nicht wie eine Wartenummer).
+                        Jetzt steht ueberall derselbe Ring: bei den Wartenden
+                        auf funf Prozent stehen geblieben -- angefangen, aber
+                        noch nicht dran --, beim laufenden Bild fuellt er sich
+                        bis hundert. Nichts dreht sich, nichts blinkt, und ein
+                        Blick ueber das Raster sagt, wie weit es ist.
+
+                        Der Platz in der Schlange steht weiterhin im Tooltip,
+                        fuer den, der es genau wissen will.
+                    */}
+                    {isUploadingTile && (() => {
+                        const isActive = img.uploadStatus === 'uploading';
+                        const pct = isActive ? Math.min(100, Math.max(0, img.uploadProgress ?? 0)) : 5;
+                        const r = 8, circumference = 2 * Math.PI * r;
+                        const waitLabel = img.uploadQueuePos
+                            ? (currentLang === 'de' ? `Platz ${img.uploadQueuePos} in der Warteschlange` : `Number ${img.uploadQueuePos} in the queue`)
+                            : (currentLang === 'de' ? 'Wird hochgeladen' : 'Uploading');
+                        return (
+                            <TileChip title={isActive ? `${Math.round(pct)}%` : waitLabel}>
+                                <svg viewBox="0 0 20 20" className="w-[16px] h-[16px] -rotate-90">
+                                    <circle cx="10" cy="10" r={r} fill="none" strokeWidth="2.5"
+                                        className="stroke-white/30" />
+                                    <circle cx="10" cy="10" r={r} fill="none" strokeWidth="2.5" strokeLinecap="round"
+                                        className="stroke-white transition-[stroke-dashoffset] duration-200"
+                                        strokeDasharray={circumference}
+                                        strokeDashoffset={circumference * (1 - pct / 100)} />
+                                </svg>
+                            </TileChip>
+                        );
+                    })()}
 
                     {/*
                         Markieren: der ganze Stapel.
