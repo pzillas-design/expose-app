@@ -117,6 +117,36 @@ export const migrateProviderToNB21Once = (): { ran: boolean; migrated: boolean }
     }
 };
 
+/**
+ * Zurueck auf Nano Banana 2.1.
+ *
+ * Seedream war eine Zeit lang der Standard -- gleiche Geschwindigkeit, ein
+ * Drittel billiger. Die Bilder haben in der Praxis nicht ueberzeugt, also ist
+ * NB 2.1 wieder der Standard, und wer nie selbst gewechselt hat, soll nicht
+ * auf dem alten Standard sitzen bleiben.
+ *
+ * Bewegt wird nur 'seedream', und nur einmal je Browser. Wer danach bewusst
+ * Seedream waehlt, behaelt es: Die Marke steht dann schon.
+ *
+ * Die Aufloesung bleibt, wie sie ist -- an ihr hat sich nichts geaendert, und
+ * ein Bild, das gestern 2K war, soll heute nicht kleiner herauskommen.
+ */
+const NB21_DEFAULT_KEY = 'expose:provider-migration:nb21-default-v1';
+export const migrateSeedreamToNB21Once = (): { ran: boolean; migrated: boolean } => {
+    try {
+        if (typeof window === 'undefined') return { ran: false, migrated: false };
+        if (window.localStorage.getItem(NB21_DEFAULT_KEY)) return { ran: false, migrated: false };
+
+        const current = loadGenerationSettings();
+        const changed = current.provider === 'seedream';
+        if (changed) saveGenerationSettings({ ...current, provider: 'nano-banana-21' });
+        window.localStorage.setItem(NB21_DEFAULT_KEY, new Date().toISOString());
+        return { ran: true, migrated: changed };
+    } catch (_) {
+        return { ran: false, migrated: false };
+    }
+};
+
 /** @deprecated Use revertProviderToNB2Once. Kept for older callers / no-op safety. */
 export const migrateProviderToOpenAIOnce = (): { ran: boolean; migrated: boolean } => {
     // The original openai migration is intentionally a no-op now — we reverted
