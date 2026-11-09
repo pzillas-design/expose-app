@@ -175,17 +175,16 @@ export interface GenerationSettings {
 }
 
 export const DEFAULT_GENERATION_SETTINGS: GenerationSettings = {
-  // Seedream 5 Flash als Standard: gleiche Geschwindigkeit wie die uebrigen
-  // Modelle (p50 30,4 s gegen 26-31 s gemessen), aber 0,18 EUR statt 0,24-0,50.
-  // Wer etwas anderes will, waehlt es im Modell-Dialog; eine einmal getroffene
-  // Wahl wird davon nicht angeruehrt, dies gilt nur fuer neue Browser.
+  // Nano Banana 2.1 als Standard. Seedream war kurz der Standard (billiger bei
+  // gleicher Geschwindigkeit); die Bilder haben in der Praxis nicht ueberzeugt.
+  // Wer im Modell-Dialog etwas anderes gewaehlt hat, behaelt seine Wahl --
+  // dies hier gilt fuer neue Browser, und die Umstellung in
+  // generationSettings.ts holt die nach, die nie gewechselt haben.
   //
-  // 2K statt 1K, weil Seedream pauschal abgerechnet wird — 1K kostet dasselbe
-  // wie 2K (0,18 EUR Verkauf, 0,027 Einkauf, siehe COSTS/'sd-*'). Bei 1K
-  // bekaeme der Nutzer also fuer dasselbe Geld das kleinere Bild. 2K ist
-  // ausserdem mit 59 % des Volumens ohnehin die meistgenutzte Stufe.
-  provider:     'seedream',
-  resolution:   'nb2-2k',
+  // 1K statt 2K: 0,24 EUR statt 0,50 bei NB 2.1. Das war schon vor Seedream die
+  // Standardstufe; wer mehr Aufloesung will, stellt sie im Dialog ein.
+  provider:     'nano-banana-21',
+  resolution:   'nb2-1k',
   quality:      'high',
   aspectRatio:  'auto',
   outputFormat: 'jpeg',

@@ -25,7 +25,6 @@ import { DEFAULT_GENERATION_SETTINGS, type GenerationSettings } from '@/types';
  * ContextTip fuehrt darunter Buch, ob er schon gezeigt wurde, und sorgt
  * nebenbei dafuer, dass nicht zwei Hinweise gleichzeitig aufgehen.
  */
-const MODEL_HINT_KEY = 'expose_tip_seedream_default_v1';
 
 /**
  * Die Chips unter "Vorlagen".
@@ -309,33 +308,8 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
     React.useEffect(() => {
         setPreviewSettings(prev => prev.resolution === qualityMode ? prev : { ...prev, resolution: qualityMode });
     }, [qualityMode]);
-    // Einmaliger Hinweis auf das neue Standardmodell.
-    //
-    // Nur fuer Bestandsnutzer: Wer schon eine Wahl gespeichert hat, bekommt den
-    // neuen Standard nicht aufgedrueckt — sonst wuerde eine bewusste
-    // Entscheidung ueberschrieben. Der Hinweis ist der Ersatz dafuer: zeigen,
-    // nicht umstellen. Wer bereits Seedream nutzt, sieht ihn nie.
-    const [showModelHint, setShowModelHint] = React.useState(false);
-    React.useEffect(() => {
-        // Ob der Hinweis schon gezeigt wurde, verwaltet ContextTip selbst ueber
-        // storageKey — hier nur die Frage, ob er ueberhaupt gemeint ist. Wer
-        // bereits Seedream nutzt, braucht ihn nicht.
-        //
-        // Absichtlich nur beim Aufbau: Er soll nicht bei jedem Modellwechsel
-        // wieder erscheinen.
-        if (previewSettings.provider !== 'seedream') setShowModelHint(true);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-    // Das Wegblenden und Merken uebernimmt ContextTip ueber storageKey. Hier
-    // nur noch das vorzeitige Beenden, wenn der Nutzer von sich aus in die
-    // Einstellungen geht oder das Modell wechselt — dann hat der Hinweis seinen
-    // Zweck erfuellt und braucht nicht auszulaufen.
-    const dismissModelHint = React.useCallback(() => {
-        setShowModelHint(false);
-    }, []);
 
     const handleSettingsChange = (next: GenerationSettings) => {
-        dismissModelHint();
         setPreviewSettings(next);
         // Persist so imageService.generateImage can read at invoke time.
         saveGenerationSettings(next);
@@ -1645,24 +1619,9 @@ export const SideSheet = React.forwardRef<any, SideSheetProps>((props, ref) => {
                                         <div className="ml-auto flex items-center gap-3">
                                             {/* Settings — round icon button with Tooltip, same pattern as the reference-image button. */}
                                             <div className="relative shrink-0">
-                                                {showModelHint && (
-                                                    <ContextTip
-                                                        storageKey={MODEL_HINT_KEY}
-                                                        content={
-                                                            <p className="text-sm leading-6 text-zinc-700 dark:text-zinc-200">
-                                                                {lang === 'de'
-                                                                    ? 'Neu: Seedream 5 Flash — bessere Bilder, günstiger.'
-                                                                    : 'New: Seedream 5 Flash — better images, cheaper.'}
-                                                            </p>
-                                                        }
-                                                        placement="auto"
-                                                        enabled
-                                                        onDismiss={dismissModelHint}
-                                                    />
-                                                )}
                                                 <Tooltip text={lang === 'de' ? 'Bild-Einstellungen' : 'Image settings'} side="top">
                                                     <button
-                                                        onClick={() => { dismissModelHint(); setIsSettingsModalOpen(true); }}
+                                                        onClick={() => setIsSettingsModalOpen(true)}
                                                         aria-label={lang === 'de' ? 'Bild-Einstellungen' : 'Image settings'}
                                                         className={`${PROMPT_ICON_BTN} ${PROMPT_ICON_BTN_IDLE}`}
                                                     >

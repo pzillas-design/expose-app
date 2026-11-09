@@ -41,7 +41,7 @@ const AboutPage = React.lazy(() => import('@/components/pages/AboutPage').then(m
 import { AdminRoute } from '@/components/admin/AdminRoute';
 import { useItemDialog } from '@/components/ui/Dialog';
 import { fetchVoiceAdminConfig, getEmptyVoiceDiagnostics, loadVoiceAdminConfig, saveVoiceAdminConfig, updateVoiceAdminConfig, loadVoiceLogs, saveVoiceLogs, clearVoiceLogsStorage, persistToolCallLog, persistTranscriptLog } from '@/services/voiceAdminService';
-import { loadGenerationSettings, saveGenerationSettings, revertProviderToNB2Once, upgradeUserToNBProOnce, migrateProviderToNB21Once } from '@/utils/generationSettings';
+import { loadGenerationSettings, saveGenerationSettings, revertProviderToNB2Once, upgradeUserToNBProOnce, migrateProviderToNB21Once, migrateSeedreamToNB21Once } from '@/utils/generationSettings';
 
 class ModalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
     // React 19 ships no .d.ts — declare props explicitly so TS finds it
@@ -226,6 +226,9 @@ export function App() {
         // Danach aufrufen: Die Rückmigration setzt ggf. erst auf fal-nb2, von dort
         // geht es weiter auf 2.1. Umgekehrte Reihenfolge würde das rückgängig machen.
         migrateProviderToNB21Once();
+        // Zurueck von Seedream auf NB 2.1 -- einmal je Browser, nur fuer die,
+        // die nie selbst gewechselt haben (siehe generationSettings.ts).
+        migrateSeedreamToNB21Once();
     }, []);
 
     // Targeted one-shot: upgrade specific users to Nano Banana Pro (see
