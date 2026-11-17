@@ -167,6 +167,25 @@ const StackRow: React.FC<{
     // Der Beobachter wird einmal gesetzt; die Rueckmeldung darf sich aendern.
     const onSeenRef = React.useRef(onSeen);
     onSeenRef.current = onSeen;
+
+    /*
+        Der Rahmen gehoert dem Bild, nicht seiner Herkunft.
+
+        Eine Bearbeitung kann ein anderes Format haben als das Original --
+        querformatiges Zimmer hinein, hochformatiger Ausschnitt heraus. Die
+        gespeicherten Masse stammen aber noch vom Platzhalter, und der hat sie
+        vom Quellbild geerbt. Die Fassung stand dann im Rahmen des Originals
+        und wurde beschnitten.
+
+        Deshalb zuerst die echten Pixelmasse (realWidth/realHeight), wenn sie
+        da sind, und sobald das Bild geladen ist, seine tatsaechliche Groesse.
+        Die luegt nie.
+    */
+    const storedRatio = (img.realWidth && img.realHeight)
+        ? img.realWidth / img.realHeight
+        : (img.width && img.height ? img.width / img.height : null);
+    const [naturalRatio, setNaturalRatio] = React.useState<number | null>(null);
+    const frameRatio = String(naturalRatio ?? storedRatio ?? 3 / 2);
     const [isNear, setIsNear] = React.useState(idx < 2);
     React.useEffect(() => {
         const node = frameRef.current;
@@ -198,7 +217,14 @@ const StackRow: React.FC<{
     const full = isNear ? (img.src || img.thumbSrc) : (img.thumbSrc || img.src);
 
     const imgRef = React.useCallback((node: HTMLImageElement | null) => {
-        if (node?.complete) node.style.opacity = '1';
+        if (!node?.complete) return;
+        node.style.opacity = '1';
+        // Aus dem Zwischenspeicher geladen: onLoad bleibt aus, die Masse sind
+        // trotzdem schon da.
+        if (node.naturalWidth > 0 && node.naturalHeight > 0) {
+            const r = node.naturalWidth / node.naturalHeight;
+            setNaturalRatio(prev => (prev && Math.abs(prev - r) < 0.001 ? prev : r));
+        }
     }, []);
 
     return (
@@ -239,7 +265,7 @@ const StackRow: React.FC<{
         >
             <div
                 ref={frameRef}
-                style={{ aspectRatio: `${img.width} / ${img.height}` }}
+                style={{ aspectRatio: frameRatio }}
                 className={`relative w-full md:w-[72%] shrink-0 overflow-hidden bg-zinc-200 dark:bg-zinc-800
                     ring-1 transition-[box-shadow] duration-200
                     ${isActive ? 'ring-black/20 dark:ring-white/25' : 'ring-black/5 dark:ring-white/10'}`}
@@ -251,7 +277,14 @@ const StackRow: React.FC<{
                         alt=""
                         loading="lazy"
                         decoding="async"
-                        onLoad={e => { (e.currentTarget as HTMLImageElement).style.opacity = '1'; }}
+                        onLoad={e => {
+                            const el = e.currentTarget as HTMLImageElement;
+                            el.style.opacity = '1';
+                            if (el.naturalWidth > 0 && el.naturalHeight > 0) {
+                                const r = el.naturalWidth / el.naturalHeight;
+                                setNaturalRatio(prev => (prev && Math.abs(prev - r) < 0.001 ? prev : r));
+                            }
+                        }}
                         className={`absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500
                             ${isPending ? 'blur-2xl scale-110 brightness-105 dark:brightness-50' : ''}`}
                     />
