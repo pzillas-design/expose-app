@@ -127,9 +127,55 @@ export const sortRowItems = (items: CanvasImage[]): CanvasImage[] => {
 export const buildRows = (images: CanvasImage[]): ImageRow[] => {
     const byId = new Map(images.map(img => [img.id, img]));
 
+    /*
+        Die Wurzel des Stapels, notfalls erlaufen.
+
+        `folderId` ist der kurze Weg, aber sie kann fehlen: Die Sicherung legte
+        Zeilen ohne sie an (behoben, aber der Altbestand bleibt), und ein
+        einzelnes Bild ohne sie riss den ganzen Stapel auf -- es stand als
+        eigener Stapel im Raster, direkt neben dem, zu dem es gehoert.
+
+        Darum hier nicht nur lesen, sondern folgen: ueber folderId, sonst ueber
+        parentId, so lange, bis ein Bild erreicht ist, das keinen Vorfahr mehr
+        hat. Was nicht geladen ist (Seitenweise!), bleibt unberuehrt -- dort
+        waere Raten schlimmer als die bisherige Zuordnung.
+    */
+    const rootCache = new Map<string, string>();
+    const resolveStackId = (img: CanvasImage): string => {
+        const cached = rootCache.get(img.id);
+        if (cached) return cached;
+
+        const path: string[] = [];
+        let cur: CanvasImage = img;
+        let answer: string | null = null;
+
+        for (let guard = 0; guard < 64; guard++) {
+            path.push(cur.id);
+            const fid = cur.folderId;
+            if (fid && fid !== cur.id) {
+                const next = byId.get(fid);
+                if (!next || path.includes(next.id)) { answer = fid; break; }
+                cur = next;
+                continue;
+            }
+            if (cur.parentId && cur.parentId !== cur.id) {
+                const parent = byId.get(cur.parentId);
+                if (!parent || path.includes(parent.id)) { answer = fid ?? cur.parentId; break; }
+                cur = parent;
+                continue;
+            }
+            answer = cur.id;
+            break;
+        }
+
+        const result = answer ?? stackIdOf(img);
+        for (const id of path) rootCache.set(id, result);
+        return result;
+    };
+
     const groups = new Map<string, CanvasImage[]>();
     for (const img of images) {
-        const key = stackIdOf(img);
+        const key = resolveStackId(img);
         const bucket = groups.get(key);
         if (bucket) bucket.push(img);
         else groups.set(key, [img]);

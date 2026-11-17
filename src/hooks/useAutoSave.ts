@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/services/supabaseClient';
 import { ImageRow, CanvasImage } from '@/types';
+import { stackIdOf } from '@/utils/stacks';
 
 /**
  * Auto-Save Hook
@@ -32,6 +33,16 @@ function imageToPayload(img: CanvasImage, userId: string) {
             variableValues: img.variableValues
         },
         ...(img.parentId !== undefined ? { parent_id: img.parentId } : {}),
+        /*
+            Der Stapel gehoert in JEDE Zeile.
+
+            Diese Sicherung schreibt mit upsert -- und legt die Zeile an, wenn
+            es sie noch nicht gibt. Ohne folder_id entstand sie dann ohne
+            Stapelzugehoerigkeit, und das Bild stand fortan als eigener Stapel
+            im Raster. Sechs solche Zeilen lagen in der Datenbank, alle aus
+            den letzten Tagen.
+        */
+        folder_id: stackIdOf(img),
         created_at: new Date(img.createdAt || Date.now()).toISOString(),
         updated_at: new Date().toISOString()
     };
